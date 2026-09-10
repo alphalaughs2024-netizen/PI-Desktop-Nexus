@@ -1696,6 +1696,26 @@ describe("DesktopAgentRuntime deferred tool catalog", () => {
       false,
     );
   });
+
+  it("pre-activates only deterministic capability matches before a request", async () => {
+    const runtime = createRuntime({
+      pluginSkills: [{ id: "recipe", name: "Recipe" }],
+    });
+    const agent = (runtime as any).agent;
+
+    (runtime as any).preactivateToolsForPrompt(
+      "Create a skill and preview the HTML page",
+    );
+    const names = agent.state.tools.map((tool: any) => tool.name);
+    expect(names).toContain("Skill");
+    expect(names).toContain("BrowserPreview");
+
+    (runtime as any).resetDeferredToolsForPrompt();
+    (runtime as any).preactivateToolsForPrompt("Make the application better");
+    expect(agent.state.tools.map((tool: any) => tool.name)).not.toContain("Skill");
+    expect(agent.state.tools.map((tool: any) => tool.name)).not.toContain("BrowserPreview");
+    await runtime.dispose();
+  });
 });
 
 describe("DesktopAgentRuntime mode and tool composition", () => {

@@ -910,6 +910,12 @@ pi-agent-core's `addedToolNames`, and rebuilds the next-turn context with those
 schemas. Providers with native deferred-tool search receive the definitions at
 that load point; other providers receive the active definitions normally.
 
+Before the first provider request, the sidecar may pre-activate a narrowly
+matched deferred tool for explicit requests to list, load, create, update, or
+use a skill; preview HTML; or check, scaffold, or package a plugin. This only
+adds the schema — it never performs an action — and ambiguous wording still
+uses `ToolSearch`.
+
 Deferred activation is reset before each new user prompt, so a previous task
 cannot make an unrelated first request carry a growing tool set. The tool
 registry, host permission path, tool timeout, and workspace containment rules

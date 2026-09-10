@@ -3970,6 +3970,37 @@ export class DesktopAgentRuntime {
     this.agent.state.tools = this.activeTools();
   }
 
+  /**
+   * Activate an obvious capability before the first provider request. This is
+   * deliberately a small, deterministic vocabulary: it saves a ToolSearch
+   * turn without guessing an action or broadening the tool surface for vague
+   * requests. ToolSearch remains the fallback for everything else.
+   */
+  private preactivateToolsForPrompt(input: string): void {
+    const text = input.toLowerCase();
+    const requested = new Set<string>();
+    if (/\b(?:list|load|create|use|update)\s+(?:a |an |the )?skills?\b/.test(text)) {
+      requested.add(SKILL_TOOL_NAME);
+    }
+    if (/\b(?:preview|browser preview|open.*html|view.*html)\b/.test(text)) {
+      requested.add("BrowserPreview");
+    }
+    if (/\b(?:validate|check)\b.*\bplugin\b|\bplugin\b.*\b(?:validate|check)\b/.test(text)) {
+      requested.add("PluginCheck");
+    }
+    if (/\b(?:create|scaffold)\b.*\bplugin\b/.test(text)) {
+      requested.add("PluginScaffold");
+    }
+    if (/\b(?:pack|package|build)\b.*\bplugin\b/.test(text)) {
+      requested.add("PluginPack");
+    }
+    for (const name of requested) {
+      if (this.deferredToolNames.has(name)) this.activeDeferredToolNames.add(name);
+    }
+    this.agent.state.tools = this.activeTools();
+    this.agent.state.systemPrompt = this.composeSystemPrompt();
+  }
+
   private buildSubmitTool(kind: ProposalKind): AgentTool {
     const name = SUBMIT_TOOL_NAMES[kind];
     return {
@@ -6177,6 +6208,7 @@ export class DesktopAgentRuntime {
     this.turnSubagentUsage = undefined;
     // Capabilities and path-scoped instruction claims belong to one prompt.
     this.resetDeferredToolsForPrompt();
+    this.preactivateToolsForPrompt(promptContent(input));
     this.pathInstructionClaims.clear();
     this.pendingUserMessageId = userMessageId;
     this.resetRunRecoveryState();
