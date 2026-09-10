@@ -99,6 +99,12 @@ test("manual reload uses the registry path and refreshes the dev permission ceil
   const reload = slice(mainSrc, "handle(IPC.invoke.pluginReload", "// Scaffold a starter plugin");
   assert.match(reload, /host\.call<\{ plugins: any\[\] \}>\("plugins\.list"\)/);
   assert.match(reload, /find\(\(candidate\) => candidate\?\.id === id\)/);
+  assert.match(reload, /if \(plugin\.source === "dev"\)/);
+  assert.match(reload, /host\.call<\{ plugin: any \}>\("plugins\.loadDev", \{ path: plugin\.path \}\)/);
+  assert.ok(
+    reload.indexOf('"plugins.loadDev"') < reload.indexOf("plugins.loadFromPath"),
+    "manual development reload must persist the current manifest before loading it",
+  );
   assert.match(
     reload,
     /plugins\.loadFromPath\(plugin\.path, plugin\.permissions \?\? \[\], \{\s*development: plugin\.source === "dev",\s*\}\)/,

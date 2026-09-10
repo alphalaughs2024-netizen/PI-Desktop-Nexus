@@ -164,9 +164,9 @@ restarts: the folder is picked once, not once per edit.
   immediately — grants follow the manifest downwards, never upwards.
 - The Plugins page offers Reload for `source: "dev"` rows inside the row's More
   actions menu. After a permission-gated hot reload, choosing it explicitly
-  reloads the registered folder with the current manifest and refreshes the
-  permission ceiling used by later file-watch reloads. The action does not
-  require picking the folder again.
+  re-registers the registered folder from its current manifest, then reloads it
+  and refreshes the permission ceiling used by later file-watch reloads. The
+  action does not require picking the folder again.
 - A failed reload (syntax error, invalid manifest) leaves the plugin unloaded
   but still watched, so the save that fixes it recovers the plugin. The failure
   is reported as a toast plus a plugin-changed event; the registry row does not
