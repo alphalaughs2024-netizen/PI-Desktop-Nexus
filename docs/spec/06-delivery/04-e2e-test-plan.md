@@ -122,6 +122,22 @@ Each scenario is documented in this format:
 
 ### Release & Packaging
 
+#### E2E-201: Fork test build installs beside the official application
+
+- **Preconditions**: Official PI-Desktop is installed; a PI Desktop Nexus
+  Windows NSIS or portable build is available.
+- **Steps**: 1) Install or run PI Desktop Nexus. 2) Launch both applications.
+  3) Inspect Start-menu shortcuts, taskbar groups, app-data folders, and the
+  Nexus update link.
+- **Expected**: Nexus uses app id `com.akshay.pi-desktop-nexus`, executable
+  `PI-Desktop-Nexus.exe`, and its own shortcut/data identity. It neither joins
+  the official taskbar group nor reads/writes official PI-Desktop state, and it
+  only checks the fork's GitHub Releases feed.
+- **Specs linked**: `01-product/01-product-scope.md`
+- **Acceptance**: Quality (safe fork testing)
+- **Milestone**: M6+
+- **Status**: Unit/source-contract covered; manual Windows packaging validation pending
+
 #### E2E-192: Linux release publishes a system-Electron ASAR asset
 
 - **Preconditions**: A `vX.Y.Z` tag matches `apps/desktop/package.json`; the

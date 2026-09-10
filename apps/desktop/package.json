@@ -1,10 +1,10 @@
 {
   "name": "@pi-desktop/desktop",
   "version": "0.14.6",
-  "desktopName": "pi-desktop.desktop",
+  "desktopName": "pi-desktop-nexus.desktop",
   "private": true,
-  "description": "PI-Desktop Electron application",
-  "homepage": "https://github.com/vastsa/PI-Desktop",
+  "description": "PI Desktop Nexus fork test application",
+  "homepage": "https://github.com/alphalaughs2024-netizen/PI-Desktop-fork",
   "author": {
     "name": "vastsa",
     "email": "hhxk666@gmail.com"
@@ -71,16 +71,16 @@
     "zustand": "^5.0.15"
   },
   "build": {
-    "appId": "com.pi-desktop.app",
-    "productName": "PI-Desktop",
+    "appId": "com.akshay.pi-desktop-nexus",
+    "productName": "PI Desktop Nexus",
     "directories": {
       "output": "release"
     },
     "publish": [
       {
         "provider": "github",
-        "owner": "vastsa",
-        "repo": "PI-Desktop"
+        "owner": "alphalaughs2024-netizen",
+        "repo": "PI-Desktop-fork"
       }
     ],
     "files": [
@@ -195,7 +195,7 @@
       ]
     },
     "win": {
-      "executableName": "PI-Desktop",
+      "executableName": "PI-Desktop-Nexus",
       "target": [
         {
           "target": "nsis",
@@ -221,27 +221,27 @@
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
-      "shortcutName": "PI-Desktop",
-      "artifactName": "PI-Desktop-Setup-${version}.${ext}"
+      "shortcutName": "PI Desktop Nexus",
+      "artifactName": "PI-Desktop-Nexus-Setup-${version}.${ext}"
     },
     "portable": {
-      "artifactName": "PI-Desktop-Portable-${version}.${ext}",
+      "artifactName": "PI-Desktop-Nexus-Portable-${version}.${ext}",
       "requestExecutionLevel": "user"
     },
     "deb": {
-      "packageName": "pi-desktop",
-      "artifactName": "pi-desktop_${version}_${arch}.${ext}"
+      "packageName": "pi-desktop-nexus",
+      "artifactName": "pi-desktop-nexus_${version}_${arch}.${ext}"
     },
     "rpm": {
-      "packageName": "pi-desktop",
-      "artifactName": "pi-desktop-${version}-${arch}.${ext}",
+      "packageName": "pi-desktop-nexus",
+      "artifactName": "pi-desktop-nexus-${version}-${arch}.${ext}",
       "fpm": [
         "--rpm-rpmbuild-define",
         "_build_id_links none"
       ]
     },
     "linux": {
-      "executableName": "pi-desktop",
+      "executableName": "pi-desktop-nexus",
       "syncDesktopName": true,
       "target": [
         {

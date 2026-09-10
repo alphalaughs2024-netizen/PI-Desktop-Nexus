@@ -2,10 +2,10 @@ import type { EnglishCatalog } from "../en/index.js";
 
 export const ko = {
   app: {
-    name: "PI-Desktop",
-    shellName: "PI-Desktop",
+    name: "PI Desktop Nexus",
+    shellName: "PI Desktop Nexus",
     tagline: "로컬 AI 코딩 파트너",
-    starting: "PI-Desktop 시작 중…",
+    starting: "PI Desktop Nexus 시작 중…",
     loadingView: "화면 불러오는 중…",
     uiCrashed: "인터페이스에 문제가 발생했습니다",
   },

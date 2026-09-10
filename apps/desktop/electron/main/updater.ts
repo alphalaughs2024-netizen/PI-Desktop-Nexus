@@ -32,7 +32,9 @@ import {
 
 const { autoUpdater } = electronUpdaterPkg;
 
-export const RELEASES_URL = "https://github.com/vastsa/PI-Desktop/releases/latest";
+/** The fork must never discover or install official PI-Desktop releases. */
+export const RELEASES_URL =
+  "https://github.com/alphalaughs2024-netizen/PI-Desktop-fork/releases/latest";
 
 const AUTO_CHECK_INITIAL_DELAY_MS = 15_000;
 const AUTO_CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000;

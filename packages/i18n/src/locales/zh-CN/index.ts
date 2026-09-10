@@ -2,10 +2,10 @@ import type { EnglishCatalog } from "../en/index.js";
 
 export const zhCN = {
   app: {
-    name: "PI-Desktop",
-    shellName: "PI-Desktop",
+    name: "PI Desktop Nexus",
+    shellName: "PI Desktop Nexus",
     tagline: "本地 AI 编程助手",
-    starting: "正在启动 PI-Desktop…",
+    starting: "正在启动 PI Desktop Nexus…",
     loadingView: "正在加载页面…",
     uiCrashed: "界面出现了问题",
   },
@@ -197,7 +197,7 @@ export const zhCN = {
     quickActionsTitle: "快捷操作",
     quickActionOpenProject: "打开项目",
     emptyHint: "添加服务并打开项目即可开始。",
-    placeholder: "让 PI-Desktop 帮你做任何事",
+    placeholder: "让 PI Desktop Nexus 帮你做任何事",
     placeholderHome: "随便问问",
     placeholderHint: "输入 / 使用命令 · @ 引用文件",
     placeholderHomeHint: "输入 / 使用命令 · @ 引用文件",

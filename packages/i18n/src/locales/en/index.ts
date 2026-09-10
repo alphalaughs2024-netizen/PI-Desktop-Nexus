@@ -1,9 +1,9 @@
 export const en = {
   app: {
-    name: "PI-Desktop",
-    shellName: "PI-Desktop",
+    name: "PI Desktop Nexus",
+    shellName: "PI Desktop Nexus",
     tagline: "Local AI coding partner",
-    starting: "Starting PI-Desktop…",
+    starting: "Starting PI Desktop Nexus…",
     loadingView: "Loading view…",
     uiCrashed: "Something went wrong with the interface",
   },
@@ -202,7 +202,7 @@ export const en = {
     quickActionsTitle: "Quick actions",
     quickActionOpenProject: "Open a project",
     emptyHint: "Add a provider and open a project to start.",
-    placeholder: "Ask PI-Desktop to help with anything",
+    placeholder: "Ask PI Desktop Nexus to help with anything",
     placeholderHome: "Ask anything",
     placeholderHint: "Type / for commands · @ for files",
     placeholderHomeHint: "Type / for commands · @ for files",

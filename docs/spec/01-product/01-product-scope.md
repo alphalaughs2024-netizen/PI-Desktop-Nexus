@@ -136,3 +136,12 @@ the internal `page = "chat"` route value; that value is not an operating mode.
 | macOS Intel | Published | Native x64 DMG/ZIP release lane; signing/notarization remains credential-gated |
 | Windows x64 | Published | NSIS installer, portable exe, and in-app update lane for NSIS; native qualification continues |
 | Linux x64 | Published | AppImage, deb, and rpm packages; AppImage update lane; glibc 2.35+ (Ubuntu 22.04, Debian 12, Fedora 36+); native qualification continues |
+
+### Fork test identity
+
+The PI Desktop Nexus fork test build uses application id
+`com.akshay.pi-desktop-nexus`, distinct executable, shortcut, Linux package,
+and desktop-entry names, and its own GitHub Releases feed. Its Electron app
+name therefore creates a separate user-data directory and Windows taskbar
+identity from the official PI-Desktop installation; the two builds may be
+installed and run independently.

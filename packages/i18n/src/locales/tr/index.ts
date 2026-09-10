@@ -2,10 +2,10 @@ import type { EnglishCatalog } from "../en/index.js";
 
 export const tr = {
   app: {
-    name: "PI-Desktop",
-    shellName: "PI-Desktop",
+    name: "PI Desktop Nexus",
+    shellName: "PI Desktop Nexus",
     tagline: "Yerel AI kodlama ortağı",
-    starting: "PI-Desktop başlatılıyor…",
+    starting: "PI Desktop Nexus başlatılıyor…",
     loadingView: "Görünüm yükleniyor…",
     uiCrashed: "Arayüzde bir sorun oluştu",
   },

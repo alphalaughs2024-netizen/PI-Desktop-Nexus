@@ -2,10 +2,10 @@ import type { EnglishCatalog } from "../en/index.js";
 
 export const zhTW = {
   app: {
-    name: "PI-Desktop",
-    shellName: "PI-Desktop",
+    name: "PI Desktop Nexus",
+    shellName: "PI Desktop Nexus",
     tagline: "本地 AI 程式設計助手",
-    starting: "正在啟動 PI-Desktop…",
+    starting: "正在啟動 PI Desktop Nexus…",
     loadingView: "正在載入頁面…",
     uiCrashed: "介面出現了問題",
   },
