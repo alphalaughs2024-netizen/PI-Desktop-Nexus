@@ -54,7 +54,6 @@ without sending their full schemas up front:
 - `BrowserPreview`
 - `PluginCheck`, `PluginScaffold`, and `PluginPack`
 - plugin-declared agent tools
-- `Skill` when an enabled plugin contributes skills
 
 These tools appear in a bounded `# On-demand tools` catalog with compact
 descriptions. The model calls the local `ToolSearch` tool with an exact name or
@@ -63,6 +62,8 @@ The sidecar resets this deferred set at the beginning of every new user prompt.
 The host permission, workspace/scratch containment, timeout, and audit rules do
 not change when a tool is loaded. `ToolSearch` itself never executes a workspace
 operation and never bypasses host-core policy.
+
+In Agent mode, `Skill` is core whenever the current instruction catalog is non-empty. Its schema is available in the first provider request, while every skill body remains on-demand and is returned only after a `Skill { id }` call. Plan and Goal modes do not receive `Skill`.
 
 ## 3. Common Tool Constraints
 

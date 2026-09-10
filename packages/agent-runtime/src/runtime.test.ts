@@ -1489,6 +1489,7 @@ describe("DesktopAgentRuntime deferred tool catalog", () => {
       "Edit",
       "Write",
       "asktool",
+      "Skill",
       "EnterPlanMode",
       "EnterGoalMode",
       "new_context",
@@ -1499,7 +1500,7 @@ describe("DesktopAgentRuntime deferred tool catalog", () => {
     expect(names).not.toContain("BrowserPreview");
     expect(names).not.toContain("PluginCheck");
     expect(names).not.toContain("plugin_demo_validate");
-    expect(names).not.toContain("Skill");
+    expect((runtime as any).deferredToolNames.has("Skill")).toBe(false);
 
     const prompt = (runtime as any).agent.state.systemPrompt as string;
     expect(prompt).toContain("# On-demand tools");
@@ -1741,7 +1742,7 @@ describe("DesktopAgentRuntime deferred tool catalog", () => {
 
     (runtime as any).resetDeferredToolsForPrompt();
     (runtime as any).preactivateToolsForPrompt("Make the application better");
-    expect(agent.state.tools.map((tool: any) => tool.name)).not.toContain("Skill");
+    expect(agent.state.tools.map((tool: any) => tool.name)).toContain("Skill");
     expect(agent.state.tools.map((tool: any) => tool.name)).not.toContain("BrowserPreview");
     await runtime.dispose();
   });
@@ -5147,10 +5148,11 @@ describe("DesktopAgentRuntime plugin skills (D174)", () => {
       id: "demo.hello/release-notes",
       name: "Release notes",
       description: "Draft release notes from the changelog.",
+      source: "user" as const,
     },
   ];
 
-  it("advertises the catalog and loads the Skill tool on demand", async () => {
+  it("makes a listed Skill available in the first Agent request", async () => {
     const runtime = createRuntime({
       instructionCatalog,
       projectInstructions: {
@@ -5164,13 +5166,8 @@ describe("DesktopAgentRuntime plugin skills (D174)", () => {
     expect(prompt).toContain("`demo.hello/release-notes`");
     // Only the catalog line travels up front; the body loads on demand.
     expect(prompt).not.toContain("Skill: Release notes");
-    expect(agent.state.tools.some((tool: any) => tool.name === "Skill")).toBe(false);
-    const search = agent.state.tools.find(
-      (tool: any) => tool.name === "ToolSearch",
-    );
-    await search.execute("search-1", { query: "Skill" });
-    await (runtime as any).rebuiltAgentContext();
     expect(agent.state.tools.some((tool: any) => tool.name === "Skill")).toBe(true);
+    expect((runtime as any).deferredToolNames.has("Skill")).toBe(false);
     // The user's own instructions come last, so they keep the final word.
     expect(prompt.indexOf("# Skills")).toBeLessThan(
       prompt.indexOf("# Project instructions"),
@@ -5227,16 +5224,11 @@ describe("DesktopAgentRuntime plugin skills (D174)", () => {
     await runtime.dispose();
   });
 
-  it("routes a Skill call to the host tool bridge", async () => {
+  it("routes a core Skill call to the host tool bridge", async () => {
     const host = {
       call: vi.fn().mockResolvedValue({ ok: true, content: "# Skill: Release notes" }),
     };
     const runtime = createRuntime({ instructionCatalog, host });
-    const search = (runtime as any).agent.state.tools.find(
-      (entry: any) => entry.name === "ToolSearch",
-    );
-    await search.execute("search-1", { query: "Skill" });
-    await (runtime as any).rebuiltAgentContext();
     const tool = (runtime as any).agent.state.tools.find(
       (entry: any) => entry.name === "Skill",
     );
