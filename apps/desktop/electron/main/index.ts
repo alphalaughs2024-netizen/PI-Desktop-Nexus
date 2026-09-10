@@ -8396,8 +8396,15 @@ function registerIpc() {
   handle(IPC.invoke.pluginReload, async (id: string) => {
     if (!host) throw new Error("host unavailable");
     const listed = await host.call<{ plugins: any[] }>("plugins.list");
-    const plugin = (listed.plugins ?? []).find((candidate) => candidate?.id === id);
+    let plugin = (listed.plugins ?? []).find((candidate) => candidate?.id === id);
     if (!plugin?.path) throw new Error(`PLUGIN_NOT_FOUND: ${id}`);
+    // A development reload is the explicit permission-review action. Refresh
+    // its persisted registry entry from manifest.json before recreating the
+    // runtime so the watcher receives the newly approved permission ceiling.
+    if (plugin.source === "dev") {
+      const loaded = await host.call<{ plugin: any }>("plugins.loadDev", { path: plugin.path });
+      plugin = loaded.plugin;
+    }
     await plugins.loadFromPath(plugin.path, plugin.permissions ?? [], {
       development: plugin.source === "dev",
     });
