@@ -608,6 +608,14 @@ A catalog entry may additionally pin a model-level wire API (for example,
 through the Responses adapter instead of Chat Completions. Without a
 model-level pin the provider-wide style applies unchanged.
 
+The pinned `@earendil-works/pi-ai@0.85.1` distribution carries a reproducible
+pnpm patch: when a Responses stream emits `response.completed` or
+`response.incomplete`, processing finalizes and returns without waiting for the
+HTTP iterator to close. This preserves ordinary premature-EOF and error
+handling while avoiding a completed turn that remains active behind a
+never-closing gateway stream. The patch is removed only after Nexus pins an
+upstream pi-ai release that includes the equivalent terminal-event return.
+
 This is the **universal escape hatch** guaranteeing market coverage beyond native integrations.
 
 ## 17. Multi-provider product rules
@@ -625,6 +633,9 @@ This is the **universal escape hatch** guaranteeing market coverage beyond nativ
 8. Reasoning capability is model-specific unless the provider has an explicit
    compatibility override; provider defaults must not override a session's
    selected model during turn resolution.
+9. Composer capability badges use the configured binding's effective modalities.
+   Settings retains and displays the catalog's published modalities as the
+   comparison baseline for an explicit image or document override.
 
 ## 18. Validation rules
 

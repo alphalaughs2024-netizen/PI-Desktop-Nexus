@@ -1256,7 +1256,8 @@ export const de = {
       "review": "Überprüfen",
       "browser": "Browser",
       "file": "Dateien",
-      "plugin": "Plugin-Ansicht"
+      "plugin": "Plugin-Ansicht",
+      "contextVault": "Kontextspeicher"
     },
     "pluginView": {
       "failed": "Diese Ansicht konnte nicht geladen werden. Laden Sie das Plugin neu und versuchen Sie es erneut."
@@ -1316,6 +1317,7 @@ export const de = {
       "tooLarge": "Datei ist zu groß für die Vorschau"
     }
   },
+  "contextVault": { "noProject": "Open a project to use its private vault.", "health": "{{reviewed}} reviewed architecture · {{decisions}} user decisions · {{stale}} possibly stale", "newClaim": "New claim", "userDecision": "User decision", "export": "Export", "import": "Import", "search": "Search durable project knowledge", "emptyTitle": "No durable knowledge yet", "emptyBody": "Claims stay private to this project. Save only decisions and facts worth reusing.", "claim": "Claim", "category": "Category", "impact": "Impact", "scope": "Scope", "recheckGuidance": "Re-check guidance", "evidencePath": "Evidence path", "evidenceExcerpt": "Literal evidence excerpt", "save": "Save", "recheck": "Re-check evidence", "markReviewed": "Mark reviewed", "delete": "Delete", "categories": { "architecture": "Architecture", "decisions": "Decisions", "conventions": "Conventions", "gotchas": "Gotchas", "notes": "Notes" }, "freshness": { "fresh": "Fresh", "possibly_stale": "Possibly stale", "stale": "Stale", "unavailable": "Unavailable", "unverified": "Unverified" }, "review": { "reviewed": "Reviewed", "conflicted": "Conflicted", "superseded": "Superseded", "pending": "Pending" } },
   "palette": {
     "placeholder": "Suchbefehle…",
     "empty": "Keine Befehle gefunden",

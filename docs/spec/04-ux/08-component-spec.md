@@ -3106,3 +3106,9 @@ Sidebar footer                                        Popover (360px max)
     panel width (ADR 0151)
 19. Expanded sidebar session titles, project/group titles, and empty-state copy
     use the 13px compact token while primary sidebar actions remain at 14px
+20. Assistant copy and completed-turn controls are not shown while that
+    assistant turn is streaming, awaiting delegates, or otherwise active; they
+    return once the turn settles.
+21. Context Vault is a localized native work-panel tab. Its header actions wrap,
+    list and editor scroll independently, and widths below 560px stack the list
+    above the editor rather than allowing horizontal overflow.

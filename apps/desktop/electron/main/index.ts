@@ -6915,12 +6915,13 @@ function registerIpc() {
           providerId: provider?.id ?? "",
           contextWindow: modelConfig.contextWindow,
           maxTokens: modelConfig.maxTokens,
-          // Published modalities, taken before the binding is applied. This
-          // record is what the settings panel compares its checkboxes against,
-          // so letting a stored override shape it would make the override its
-          // own justification and the panel could never show what models.dev
-          // actually says.
-          modalities: catalogModelConfig.modalities ?? { input: ["text"], output: ["text"] },
+          // Keep the catalog shape alongside the effective binding shape. The
+          // Composer needs the latter for its badges; Settings compares an
+          // override against the former.
+          publishedModalities: catalogModelConfig.modalities ?? { input: ["text"], output: ["text"] },
+          // This list drives Composer's capability badges, so it must describe
+          // the configured binding rather than only models.dev's baseline.
+          modalities: modelConfig.modalities ?? { input: ["text"], output: ["text"] },
           // ModelInfo is catalog metadata. Keep its published reasoning fields
           // intact; Composer and runtime resolve the exact user binding when
           // they need effective per-provider capabilities.

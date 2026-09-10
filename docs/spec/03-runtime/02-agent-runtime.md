@@ -875,6 +875,11 @@ otherwise; the agent calls Grep rather than shelling out to `rg`. Bash must
 still not assume `rg` is present. The agent must not repeat a search whose
 answer is already in context.
 
+Workspace-relative paths emitted by `Glob` and `Grep` always use `/`, including
+on Windows and whether Grep used system `rg` or the in-process fallback. This
+keeps paths portable in prompts, transcripts, and follow-up tool calls; scratch
+and externally approved absolute paths retain their native spelling.
+
 The edit-discipline block carries the line-anchored `Edit` contract of
 [18-line-anchored-edit-contract](18-line-anchored-edit-contract.md): the op
 table, the `+`-only body rule, "ranges name changed lines only", "re-ground on

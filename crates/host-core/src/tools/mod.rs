@@ -1139,9 +1139,13 @@ fn require_workspace(workspace: Option<&Path>) -> Result<&Path, (String, String)
 /// Path shown to the model and recorded downstream: workspace files keep the
 /// familiar workspace-relative form; scratch files stay absolute so they are
 /// unambiguous (the model addresses scratch by absolute path only).
+fn normalize_workspace_display_path(path: String) -> String {
+    path.replace('\\', "/")
+}
+
 fn display_tool_path(root_kind: ToolRoot, workspace_root: &Path, resolved: &Path) -> String {
     match root_kind {
-        ToolRoot::Workspace => relative_display(workspace_root, resolved),
+        ToolRoot::Workspace => normalize_workspace_display_path(relative_display(workspace_root, resolved)),
         ToolRoot::Scratch | ToolRoot::External => resolved.to_string_lossy().to_string(),
     }
 }
@@ -2900,6 +2904,7 @@ mod tests {
         assert_eq!(full.lines().count(), lines, "spill kept every line");
     }
 
+    #[cfg(unix)]
     #[tokio::test]
     async fn bash_stderr_keeps_the_tail() {
         // A failing command's actionable message is its last line.
@@ -4257,5 +4262,13 @@ mod tests {
 
         let written = std::fs::read_to_string(&target).unwrap();
         assert_eq!(written, "line one\r\nline TWO replaced\r\nline three\r\n");
+    }
+
+    #[test]
+    fn workspace_display_paths_always_use_forward_slashes() {
+        assert_eq!(
+            normalize_workspace_display_path("src\\components\\Composer.tsx".into()),
+            "src/components/Composer.tsx"
+        );
     }
 }

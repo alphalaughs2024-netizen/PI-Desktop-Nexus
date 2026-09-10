@@ -212,7 +212,18 @@ describe("check", () => {
 
   it("rejects symlinks, which host-core refuses to copy", async () => {
     const dir = await scaffolded("panel-basic");
-    await symlink(join(dir, "main.js"), join(dir, "link.js"));
+    const link = join(dir, "link");
+    try {
+      await symlink(join(dir, "main.js"), link);
+    } catch (error) {
+      // Windows usually requires Developer Mode or elevation for a file
+      // symlink. A directory junction has the same rejection semantics for a
+      // plugin package and needs neither.
+      if (process.platform !== "win32") throw error;
+      const target = join(dir, "junction-target");
+      await mkdir(target);
+      await symlink(target, link, "junction");
+    }
     expect((await check(dir)).errors.map((e) => e.code)).toContain("package.symlink");
   });
 

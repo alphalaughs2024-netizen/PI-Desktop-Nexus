@@ -56,8 +56,9 @@ test("the capability checkboxes show and follow the published value", () => {
     /const effective = typeof value === "boolean" \? value : published/,
   );
   // The published baseline is models.dev, never the stored override.
-  assert.match(pickerSource, /modelMatchesFilter\(info, "vision"\) : false/);
-  assert.match(pickerSource, /modelMatchesFilter\(info, "pdf"\) : false/);
+  assert.match(pickerSource, /const publishedInfo = info && \{/);
+  assert.match(pickerSource, /modelMatchesFilter\(publishedInfo, "vision"\) : false/);
+  assert.match(pickerSource, /modelMatchesFilter\(publishedInfo, "pdf"\) : false/);
 });
 
 test("the capability row carries no explanatory copy or extra controls", () => {
@@ -139,13 +140,15 @@ test("a configured model keeps its published record when discovery omits it", ()
   assert.match(liveReturn.slice(0, 260), /models: withConfiguredBindings\(models\)/);
 });
 
-test("the published record is not shaped by the stored override", () => {
-  // ModelInfo.modalities is the baseline the panel compares against. Applying
-  // the binding to it would make an override its own justification.
+test("the picker reports binding capabilities while Settings retains a published baseline", () => {
+  // Composer consumes `modalities`, which must reflect an explicit binding
+  // override. Settings instead uses the separately retained catalog field.
   assert.match(
     mainSource,
-    /modalities: catalogModelConfig\.modalities \?\? \{ input: \["text"\], output: \["text"\] \}/,
+    /publishedModalities: catalogModelConfig\.modalities \?\? \{ input: \["text"\], output: \["text"\] \}/,
   );
+  assert.match(mainSource, /modalities: modelConfig\.modalities \?\? \{ input: \["text"\], output: \["text"\] \}/);
+  assert.match(pickerSource, /modalities: info\.publishedModalities \?\? info\.modalities/);
   const decorate = mainSource.slice(
     mainSource.indexOf("const decorate ="),
     mainSource.indexOf("const withConfiguredBindings"),

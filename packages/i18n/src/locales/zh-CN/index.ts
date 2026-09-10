@@ -1266,6 +1266,7 @@ export const zhCN = {
       browser: "浏览器",
       file: "文件",
       plugin: "插件视图",
+      contextVault: "上下文保险库",
     },
     pluginView: {
       failed: "无法加载该视图。请重新加载插件后重试。",
@@ -1324,6 +1325,19 @@ export const zhCN = {
       binary: "二进制文件，无法预览",
       tooLarge: "文件过大，无法预览",
     },
+  },
+  contextVault: {
+    noProject: "打开项目后即可使用其私有知识库。",
+    health: "{{reviewed}} 条已审阅架构 · {{decisions}} 条用户决策 · {{stale}} 条可能过期",
+    newClaim: "新建声明", userDecision: "用户决策", export: "导出", import: "导入",
+    search: "搜索持久项目知识", emptyTitle: "还没有持久知识",
+    emptyBody: "声明仅属于此项目。只保存值得复用的决策和事实。",
+    claim: "声明", category: "类别", impact: "影响", scope: "范围",
+    recheckGuidance: "复查指引", evidencePath: "证据路径", evidenceExcerpt: "原始证据摘录",
+    save: "保存", recheck: "复查证据", markReviewed: "标记为已审阅", delete: "删除",
+    categories: { architecture: "架构", decisions: "决策", conventions: "约定", gotchas: "注意事项", notes: "备注" },
+    freshness: { fresh: "新鲜", possibly_stale: "可能过期", stale: "已过期", unavailable: "不可用", unverified: "未验证" },
+    review: { reviewed: "已审阅", conflicted: "有冲突", superseded: "已替代", pending: "待审阅" },
   },
   palette: {
     placeholder: "搜索命令…",
