@@ -1200,6 +1200,9 @@ load a skill always refer to the user-owned recipes above. The runtime sends a
 compact collaboration core on every request; its detailed searching, editing,
 preview, shell, and delegation playbook is the on-demand
 `pi-desktop/agent-operations` guidance document.
+Plugin guidance is scope-checked again when it is loaded, so disabling a plugin
+or narrowing its project scope takes effect even for a session whose earlier
+catalog still named the document.
 
 ## 12c. Subagent API (D202)
 

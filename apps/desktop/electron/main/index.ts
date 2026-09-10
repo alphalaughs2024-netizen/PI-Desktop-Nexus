@@ -1503,6 +1503,22 @@ async function loadUserSkillBody(
   return { id: skill.id, name: skill.name, body: result.body };
 }
 
+/**
+ * Plugin guidance is scope-checked again when it is loaded. A session may
+ * retain an old catalog while the user disables a plugin or narrows its scope.
+ */
+function loadPluginGuidanceBody(
+  id: string,
+  projectPath: string | null,
+): { id: string; name: string; body: string } {
+  const skill = plugins.getSkills().find((candidate) => candidate.id === id);
+  if (!skill) throw new Error(`unknown plugin guidance "${id}"`);
+  if (!pluginActiveInProject(skill.pluginId, projectPath)) {
+    throw new Error(`plugin guidance "${id}" is not enabled for this project`);
+  }
+  return plugins.loadSkillBody(id);
+}
+
 async function resolveEffectiveCommandShell(): Promise<CommandShellCatalog> {
   if (!host) throw new Error("host unavailable");
   const catalog = await host.call<CommandShellCatalog>("commandShells.list");
@@ -5034,7 +5050,7 @@ async function startSidecar(): Promise<void> {
       const skill =
         loadBuiltinSkillBody(id) ??
         (await loadUserSkillBody(id, projectPath)) ??
-        plugins.loadSkillBody(id);
+        loadPluginGuidanceBody(id, projectPath);
       return {
         ok: true,
         content: `# Skill: ${skill.name} (${skill.id})\n\n${skill.body}`,

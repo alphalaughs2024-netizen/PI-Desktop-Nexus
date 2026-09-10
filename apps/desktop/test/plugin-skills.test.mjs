@@ -111,9 +111,19 @@ test("the built-in skill body loads through the same Skill tool", () => {
   assert.match(builtinSrc, /export function loadBuiltinSkillBody/);
   assert.match(
     mainSrc,
-    /loadBuiltinSkillBody\(id\) \?\?\s*\(await loadUserSkillBody\(id, projectPath\)\) \?\?\s*plugins\.loadSkillBody\(id\)/,
+    /loadBuiltinSkillBody\(id\) \?\?\s*\(await loadUserSkillBody\(id, projectPath\)\) \?\?\s*loadPluginGuidanceBody\(id, projectPath\)/,
   );
   assert.match(mainSrc, /const userIds = \(await activeUserSkills/);
+});
+
+test("plugin guidance is scope-checked again when loaded on demand", () => {
+  const start = mainSrc.indexOf("function loadPluginGuidanceBody(");
+  assert.notEqual(start, -1);
+  const body = mainSrc.slice(start, start + 900);
+  assert.match(body, /plugins\.getSkills\(\)\.find/);
+  assert.match(body, /pluginActiveInProject\(skill\.pluginId, projectPath\)/);
+  assert.match(body, /not enabled for this project/);
+  assert.match(body, /plugins\.loadSkillBody\(id\)/);
 });
 
 test("the built-in skill ships as a packaged resource with a dev fallback", () => {
