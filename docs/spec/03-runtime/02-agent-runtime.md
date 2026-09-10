@@ -903,8 +903,10 @@ the mode's core set:
 - Plan: `Read`, `Glob`, `Grep`, `BrowserPreview`, and `Bash`
 - both modes: `ToolSearch` when at least one deferred capability exists
 
-In Agent mode, `Glob` and `Grep` join `BrowserPreview`, plugin tools, `Skill`,
-and plugin-development helpers in the deferred set. Both contract modes keep
+In Agent mode, `Glob` and `Grep` join `BrowserPreview`, plugin tools, and
+plugin-development helpers in the deferred set. When the instruction catalog is
+non-empty, `Skill` is instead a core tool from the first request; the bodies
+remain on-demand through its id-based call. Both contract modes keep
 their read/inspection core available, while the kind's submit tool
 (`SubmitPlan` or `SubmitGoal`) is exposed only during the planning state, and
 only for the active kind. Deferred tools are registered but their names and
