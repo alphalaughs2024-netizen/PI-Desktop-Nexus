@@ -5550,6 +5550,9 @@ Each scenario is documented in this format:
   - Main writes one content-addressed image blob and sends the sidecar a
     transient image attachment; the provider adapter emits an image content
     block/data URL, not only `@<scratch-path>` text.
+  - Deferred tool preactivation inspects only the typed prompt text. An
+    image-only submission reaches the provider without a text-matcher type
+    error, and an accompanying text prompt can still activate matching tools.
   - The durable message contains `kind`, display `name`, MIME/size, and the
     `attachments/<sha256>` ref, but no base64 or image bytes.
   - After reload, history hydration restores the image block from the bounded

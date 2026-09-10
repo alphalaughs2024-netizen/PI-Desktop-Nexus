@@ -6210,7 +6210,10 @@ export class DesktopAgentRuntime {
     this.turnSubagentUsage = undefined;
     // Capabilities and path-scoped instruction claims belong to one prompt.
     this.resetDeferredToolsForPrompt();
-    this.preactivateToolsForPrompt(promptContent(input));
+    // Tool pre-activation only inspects the user's typed words. `promptContent`
+    // deliberately becomes a multimodal block array when an image is attached,
+    // which is valid provider input but not valid text for the matcher.
+    this.preactivateToolsForPrompt(typeof input === "string" ? input : input.text);
     this.pathInstructionClaims.clear();
     this.pendingUserMessageId = userMessageId;
     this.resetRunRecoveryState();

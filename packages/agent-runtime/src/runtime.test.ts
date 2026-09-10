@@ -1674,6 +1674,35 @@ describe("DesktopAgentRuntime deferred tool catalog", () => {
     await runtime.dispose();
   });
 
+  it("accepts an image-only prompt while preactivating deferred tools", async () => {
+    const runtime = createRuntime();
+    const agent = (runtime as any).agent;
+    agent.prompt = vi.fn(async () => undefined);
+    agent.waitForIdle = vi.fn(async () => undefined);
+    (runtime as any).automaticCompactionNeeded = vi.fn(() => false);
+    const preactivate = vi.spyOn(runtime as any, "preactivateToolsForPrompt");
+
+    await expect(
+      (runtime as any).prompt({
+        text: "",
+        attachments: [
+          {
+            path: "attachments/test.png",
+            name: "test.png",
+            kind: "image",
+            mimeType: "image/png",
+            data: "AQI=",
+          },
+        ],
+      }),
+    ).resolves.toBeDefined();
+
+    expect(preactivate).toHaveBeenCalledWith("");
+    expect(agent.prompt).toHaveBeenCalledWith("", expect.any(Array));
+
+    await runtime.dispose();
+  });
+
   it("resets deferred capabilities at the beginning of a new prompt", async () => {
     const runtime = createRuntime();
     const agent = (runtime as any).agent;

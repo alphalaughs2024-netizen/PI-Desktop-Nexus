@@ -96,20 +96,23 @@ No host RPC or storage schema change is required.
    bound for a vision model is read into memory; larger images use streamed
    hashing/copying and the existing safe path fallback
 7. snapshot the effective shell ID and dialect for the turn
-8. start pi turn with the resolved session configuration and effective
+8. reset and preactivate deferred tools from the typed text only. Structured
+   attachment blocks remain intact for the provider turn and are never passed
+   to text-only tool matching.
+9. start pi turn with the resolved session configuration and effective
    thinking level; HTTP 429 setup and stream failures use the runtime-owned
    silent ten-retry budget, while other transient transport/provider failures
    share a runtime-owned bounded ten-retry budget across the setup and stream
    phases (D127, D186, D245, D258, D378)
-9. stream normalized answer and thinking events to UI
-10. on tool calls, delegate to Rust host bridge with the durable `sessionId`;
+10. stream normalized answer and thinking events to UI
+11. on tool calls, delegate to Rust host bridge with the durable `sessionId`;
     host resolves the session-bound workspace root
-11. if pi finishes a message with `stopReason: "error"`, finalize any partial
+12. if pi finishes a message with `stopReason: "error"`, finalize any partial
     assistant bubble with a structured `UiMessage.error`, persist it in the
     transcript, and emit a normalized lifecycle `error` event carrying the
     same provider `AppError`; even a failure with no answer text remains a
     visible assistant error message
-12. finalize and persist successful answer/thinking blocks independently
+13. finalize and persist successful answer/thinking blocks independently
 
 While an active turn has no new transcript row, the runtime emits a normalized
 `status` event that names the quiet interval: `starting` for the prompt
