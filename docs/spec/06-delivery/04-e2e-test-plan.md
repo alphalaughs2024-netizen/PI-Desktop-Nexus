@@ -130,9 +130,9 @@ Each scenario is documented in this format:
   3) Inspect Start-menu shortcuts, taskbar groups, app-data folders, and the
   Nexus update link.
 - **Expected**: Nexus uses app id `com.akshay.pi-desktop-nexus`, executable
-  `PI-Desktop-Nexus.exe`, and its own shortcut/data identity. It neither joins
-  the official taskbar group nor reads/writes official PI-Desktop state, and it
-  only checks the fork's GitHub Releases feed.
+  `PI-Desktop-Nexus.exe`, and default data root `~/.pi-desktop-nexus`. It
+  neither joins the official taskbar group nor reads/writes the official
+  `~/.pi-desktop` state, and it only checks the fork's GitHub Releases feed.
 - **Specs linked**: `01-product/01-product-scope.md`
 - **Acceptance**: Quality (safe fork testing)
 - **Milestone**: M6+

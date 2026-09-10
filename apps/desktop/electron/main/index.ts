@@ -278,6 +278,10 @@ const ErrorCodes = {
   PLAN_PERMISSION_MODE_REQUIRED: "PLAN_PERMISSION_MODE_REQUIRED",
 } as const;
 
+// Nexus must never share the official PI-Desktop host profile by default.
+// PI_DESKTOP_DATA_DIR remains an explicit override for development and tests.
+const DEFAULT_DATA_DIR_NAME = ".pi-desktop-nexus";
+
 /**
  * Strip the Windows extended-length path prefix (`\\?\`) so that shell APIs
  * like `ShellExecuteW` (used by Electron's `shell.openPath`) work correctly.
@@ -914,7 +918,7 @@ const browserHost = new BrowserHost({
     if (!sessionId) return null;
     const root =
       process.env.PI_DESKTOP_DATA_DIR?.trim() ||
-      join(homedir(), ".pi-desktop");
+      join(homedir(), DEFAULT_DATA_DIR_NAME);
     return join(root, "scratch", sessionId);
   },
   onState: emitBrowserState,
@@ -955,7 +959,7 @@ const IMPORT_SOURCES = new Set<ExternalSource>([
 ]);
 
 const dataDir =
-  process.env.PI_DESKTOP_DATA_DIR || join(homedir(), ".pi-desktop");
+  process.env.PI_DESKTOP_DATA_DIR || join(homedir(), DEFAULT_DATA_DIR_NAME);
 
 // Agent extensions (D387/D388, ADR 0214): plugins contribute the modules,
 // the sidecar loads them; this bridge carries commands, diagnostics, and

@@ -141,7 +141,8 @@ the internal `page = "chat"` route value; that value is not an operating mode.
 
 The PI Desktop Nexus fork test build uses application id
 `com.akshay.pi-desktop-nexus`, distinct executable, shortcut, Linux package,
-and desktop-entry names, and its own GitHub Releases feed. Its Electron app
-name therefore creates a separate user-data directory and Windows taskbar
-identity from the official PI-Desktop installation; the two builds may be
-installed and run independently.
+and desktop-entry names, its own GitHub Releases feed, and a default host data
+directory of `~/.pi-desktop-nexus`. Its Electron app name and host data root
+are therefore separate from the official PI-Desktop installation; the two
+builds may be installed and run independently. `PI_DESKTOP_DATA_DIR` remains
+an explicit override for test harnesses.
