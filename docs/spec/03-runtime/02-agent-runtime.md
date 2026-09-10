@@ -579,7 +579,10 @@ the global catalog on every launch and passes `subagents` /
 `subagentProviders` in the sidecar params, so editing a definition takes effect
 on the next prompt. The catalog is capped at `MAX_SUBAGENT_DEFINITIONS` (16);
 a malformed or unreadable document becomes a launch diagnostic and never fails
-the launch.
+the launch. Independent launch inputs — model metadata, shell resolution,
+providers, instruction chain, user capabilities, and MCP refresh — are read in
+parallel; dependencies such as credentials and resolved MCP tools wait only for
+their prerequisite result.
 
 Frontmatter adds `permission: inherit | ask | accept-edits | auto` (default
 `inherit`), which controls the scope the delegate's tool calls resolve under

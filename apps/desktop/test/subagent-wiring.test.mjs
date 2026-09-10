@@ -34,7 +34,7 @@ test("every launch resolves the subagent catalog and its pinned models", () => {
   assert.match(mainSource, /await loadSubagentDefinitions\(projectPath, \{/);
   assert.match(
     mainSource,
-    /userDocuments: await activeUserSubagentDocuments\(projectPath\),/,
+    /userDocuments: userSubagentDocuments,/,
   );
   assert.match(mainSource, /await resolveSubagentProviders\(\{/);
   assert.match(mainSource, /subagents: subagentCatalog\.definitions,/);

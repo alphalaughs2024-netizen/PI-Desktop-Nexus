@@ -1533,12 +1533,32 @@ async function resolveAgentRuntimeLaunch(
   } = {},
 ) {
   if (!host) throw new Error("host unavailable");
-  await modelsDevCatalog.ensureLoaded();
-  const commandShell = (await resolveEffectiveCommandShell()).effective!;
-  const providers = await host.call<{ providers: RuntimeProvider[] }>(
-    "providers.list",
-    { includeDisabled: false },
-  );
+  const projectPath =
+    typeof session.projectPath === "string" && session.projectPath.trim()
+      ? session.projectPath.trim()
+      : undefined;
+  // Most launch inputs come from independent stores. Start them together so a
+  // slow capability registry or MCP refresh does not serialize shell, model,
+  // provider, and instruction loading before the first provider request.
+  const [
+    ,
+    commandShellCatalog,
+    providers,
+    projectInstructions,
+    userSkills,
+    userSubagentDocuments,
+  ] = await Promise.all([
+    modelsDevCatalog.ensureLoaded(),
+    resolveEffectiveCommandShell(),
+    host.call<{ providers: RuntimeProvider[] }>("providers.list", {
+      includeDisabled: false,
+    }),
+    loadInstructionChain(projectPath),
+    activeUserSkills(projectPath),
+    activeUserSubagentDocuments(projectPath),
+    refreshUserMcp(projectPath),
+  ]);
+  const commandShell = commandShellCatalog.effective!;
   const requestedProviderId = overrides.providerId ?? session.providerId;
   const provider =
     providers.providers.find((item) => item.id === requestedProviderId) ||
@@ -1612,18 +1632,11 @@ async function resolveAgentRuntimeLaunch(
         storedModel?.defaultThinkingLevel,
     ),
   );
-  const projectPath =
-    typeof session.projectPath === "string" && session.projectPath.trim()
-      ? session.projectPath.trim()
-      : undefined;
-  const projectInstructions = await loadInstructionChain(projectPath);
   sessionProjects.set(sessionId, projectPath ?? null);
   // Everything below is filtered by activation scope: a plugin, MCP server or
   // skill limited to certain projects must be invisible to a session on any
   // other one — not merely refused when called, since a tool the model can see
   // is a tool it will try.
-  const userSkills = await activeUserSkills(projectPath);
-  await refreshUserMcp(projectPath);
   const userMcpTools = await userMcp.toolsForProject(projectPath ?? null);
   // Instruction catalog (D174): only id/name/description/source cross to the
   // sidecar; the document body is fetched on demand through the local `Skill`
@@ -1655,7 +1668,7 @@ async function resolveAgentRuntimeLaunch(
   // live on this side. The user's own definitions (D202) are scope-filtered like the
   // skills above; a delegate the model can see is one it will try to call.
   const subagentCatalog = await loadSubagentDefinitions(projectPath, {
-    userDocuments: await activeUserSubagentDocuments(projectPath),
+    userDocuments: userSubagentDocuments,
   });
   const subagentBindings = await resolveSubagentProviders({
     definitions: subagentCatalog.definitions,
