@@ -13,3 +13,21 @@ test("Windows host-core statically links the MSVC CRT for clean installs", async
     /\[target\.x86_64-pc-windows-msvc\]\s*\nrustflags = \["-C", "target-feature=\+crt-static"\]/,
   );
 });
+
+test("Windows keyboard hook retains only a weak stdout sender", async () => {
+  const keyboard = await readFile(
+    new URL("../../../crates/host-core/src/keyboard.rs", import.meta.url),
+    "utf8",
+  );
+  const rpc = await readFile(
+    new URL("../../../crates/host-core/src/rpc/mod.rs", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(keyboard, /OnceLock<mpsc::WeakUnboundedSender<String>>/);
+  assert.match(keyboard, /tx\.downgrade\(\)/);
+  assert.doesNotMatch(keyboard, /OnceLock<mpsc::UnboundedSender<String>>/);
+  assert.match(rpc, /crate::keyboard::start\(tx\.clone\(\)\)/);
+  assert.match(rpc, /tokio::time::timeout\(STDOUT_WRITER_SHUTDOWN, writer_done_rx\)/);
+});
+
