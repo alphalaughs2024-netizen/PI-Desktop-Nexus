@@ -12,6 +12,7 @@ use tokio::sync::{mpsc, oneshot, Mutex, Semaphore};
 use crate::agent_capabilities::CapabilityLevel;
 use crate::artifacts;
 use crate::audit;
+use crate::context_vault;
 use crate::notifications;
 use crate::permissions::{PermissionDecision, PermissionManager};
 use crate::plans;
@@ -936,6 +937,13 @@ fn skill_err(err: impl ToString) -> JsonRpcError {
     }
 }
 
+fn context_vault_err(err: impl ToString) -> JsonRpcError {
+    let msg = err.to_string();
+    if msg.contains("CONTEXT_VAULT_INVALID") { rpc_err(1002, msg, "CONTEXT_VAULT_INVALID") }
+    else if msg.contains("CONTEXT_VAULT_NOT_FOUND") { rpc_err(1007, msg, "CONTEXT_VAULT_NOT_FOUND") }
+    else { rpc_err(1000, msg, "INTERNAL") }
+}
+
 /// Read the create/import/update payload for a user skill. Absent fields stay
 /// absent so `update` can distinguish "unchanged" from "cleared".
 fn parse_skill_input(params: &Value) -> Result<crate::user_skills::UserSkillInput, JsonRpcError> {
@@ -1023,6 +1031,60 @@ async fn handle_request(
     }
 
     match method {
+        "contextVault.list" | "contextVault.search" => {
+            let project = params.get("projectPath").and_then(Value::as_str).ok_or_else(|| rpc_err(1002, "projectPath required", "INVALID_PARAMS"))?;
+            let query = params.get("query").and_then(Value::as_str);
+            let st = state.lock().await;
+            let workspace = st.workspace.get().map(|workspace| workspace.path.clone());
+            Ok(json!({ "claims": context_vault::list_with_staleness(&st.db, project, query, workspace.as_deref().map(Path::new)).map_err(context_vault_err)? }))
+        }
+        "contextVault.create" => {
+            let project = params.get("projectPath").and_then(Value::as_str).ok_or_else(|| rpc_err(1002, "projectPath required", "INVALID_PARAMS"))?;
+            let input = serde_json::from_value(params.get("claim").cloned().unwrap_or_else(|| params.clone())).map_err(|e| rpc_err(1002, e.to_string(), "INVALID_PARAMS"))?;
+            let agent = params.get("agent").and_then(Value::as_bool).unwrap_or(false);
+            let st = state.lock().await;
+            let workspace = st.workspace.get().map(|workspace| workspace.path.clone());
+            context_vault::create_with_workspace(&st.db, project, input, agent, workspace.as_deref().map(Path::new)).map_err(context_vault_err)
+        }
+        "contextVault.update" => {
+            let project = params.get("projectPath").and_then(Value::as_str).ok_or_else(|| rpc_err(1002, "projectPath required", "INVALID_PARAMS"))?;
+            let id = require_id(&params)?;
+            let input = serde_json::from_value(params.get("claim").cloned().unwrap_or_else(|| params.clone())).map_err(|e| rpc_err(1002, e.to_string(), "INVALID_PARAMS"))?;
+            let st = state.lock().await;
+            let workspace = st.workspace.get().map(|workspace| workspace.path.clone());
+            Ok(json!({ "claim": context_vault::update(&st.db, project, &id, input, workspace.as_deref().map(Path::new)).map_err(context_vault_err)? }))
+        }
+        "contextVault.delete" => {
+            let project = params.get("projectPath").and_then(Value::as_str).ok_or_else(|| rpc_err(1002, "projectPath required", "INVALID_PARAMS"))?;
+            let id = require_id(&params)?;
+            let st = state.lock().await;
+            Ok(json!({ "ok": context_vault::delete(&st.db, project, &id).map_err(context_vault_err)? }))
+        }
+        "contextVault.review" => {
+            let project = params.get("projectPath").and_then(Value::as_str).ok_or_else(|| rpc_err(1002, "projectPath required", "INVALID_PARAMS"))?;
+            let id = require_id(&params)?; let status = params.get("state").and_then(Value::as_str).unwrap_or("unverified"); let note = params.get("note").and_then(Value::as_str).unwrap_or("");
+            let st = state.lock().await;
+            Ok(json!({ "claim": context_vault::review(&st.db, project, &id, status, note).map_err(context_vault_err)? }))
+        }
+        "contextVault.recheck" | "contextVault.brief" => {
+            let project = params.get("projectPath").and_then(Value::as_str).ok_or_else(|| rpc_err(1002, "projectPath required", "INVALID_PARAMS"))?;
+            let st = state.lock().await;
+            let workspace = st.workspace.get().ok_or_else(|| rpc_err(1007, "open a project before using Context Vault", "PROJECT_UNAVAILABLE"))?;
+            if method == "contextVault.recheck" { let id = require_id(&params)?; Ok(json!({ "claim": context_vault::recheck(&st.db, project, &id, Path::new(&workspace.path)).map_err(context_vault_err)? })) }
+            else { let query = params.get("query").and_then(Value::as_str).unwrap_or(""); context_vault::brief(&st.db, project, query, Path::new(&workspace.path)).map_err(context_vault_err) }
+        }
+        "contextVault.relevance" => {
+            let project = params.get("projectPath").and_then(Value::as_str).ok_or_else(|| rpc_err(1002, "projectPath required", "INVALID_PARAMS"))?; let query = params.get("query").and_then(Value::as_str).unwrap_or(""); let st = state.lock().await; let workspace = st.workspace.get().map(|workspace| workspace.path.clone()); context_vault::relevance(&st.db, project, query, workspace.as_deref().map(Path::new)).map_err(context_vault_err)
+        }
+        "contextVault.export" => {
+            let project = params.get("projectPath").and_then(Value::as_str).ok_or_else(|| rpc_err(1002, "projectPath required", "INVALID_PARAMS"))?; let st = state.lock().await; context_vault::export(&st.db, project).map_err(context_vault_err)
+        }
+        "contextVault.importPreview" => {
+            let project = params.get("projectPath").and_then(Value::as_str).ok_or_else(|| rpc_err(1002, "projectPath required", "INVALID_PARAMS"))?; let pack = params.get("pack").ok_or_else(|| rpc_err(1002, "pack required", "INVALID_PARAMS"))?; let st = state.lock().await; context_vault::import_preview(&st.db, project, pack).map_err(context_vault_err)
+        }
+        "contextVault.importApply" => {
+            let project = params.get("projectPath").and_then(Value::as_str).ok_or_else(|| rpc_err(1002, "projectPath required", "INVALID_PARAMS"))?; let pack = params.get("pack").ok_or_else(|| rpc_err(1002, "pack required", "INVALID_PARAMS"))?; let selected = params.get("selected").and_then(Value::as_array).map(|items| items.iter().filter_map(Value::as_u64).map(|v| v as usize).collect::<Vec<_>>()).unwrap_or_default(); let st = state.lock().await; context_vault::import_apply(&st.db, project, pack, &selected).map_err(context_vault_err)
+        }
         "app.handshake" => {
             let client_version = params
                 .get("protocolVersion")
@@ -1055,7 +1117,7 @@ async fn handle_request(
                 "version": HOST_VERSION,
                 "capabilities": [
                     "tools", "sessions", "providers", "secrets", "plugins", "permissions",
-                    "scheduled", "artifacts", "plans", "search", "turns", "notifications"
+                    "scheduled", "artifacts", "plans", "search", "turns", "notifications", "contextVault"
                 ]
             }))
         }

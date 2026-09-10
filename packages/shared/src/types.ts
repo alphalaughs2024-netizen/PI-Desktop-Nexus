@@ -1979,3 +1979,48 @@ export type TokenUsageHistoryResult = {
     turnCount: number;
   };
 };
+
+export type ContextVaultCategory =
+  | "architecture"
+  | "decisions"
+  | "conventions"
+  | "gotchas"
+  | "notes";
+
+export type ContextVaultEvidence = {
+  path: string;
+  excerpt: string;
+  symbolHint?: string;
+  mtimeMs?: number;
+};
+
+export type ContextVaultRelationship = {
+  type: "supersedes" | "related_to";
+  targetId: string;
+};
+
+export type ContextVaultClaimInput = {
+  claim: string;
+  category: ContextVaultCategory;
+  impact: string;
+  scope: string;
+  recheckGuidance: string;
+  tags?: string[];
+  evidence?: ContextVaultEvidence[];
+  verification?: { state: string; note?: string; lastCheckedAt?: number };
+  provenance?: { kind: "agent" | "manual" | "user" | "import"; label?: string };
+  relationships?: ContextVaultRelationship[];
+};
+
+export type ContextVaultClaim = ContextVaultClaimInput & {
+  id: string;
+  projectPath: string;
+  tags: string[];
+  evidence: ContextVaultEvidence[];
+  verification: { state: string; note?: string; lastCheckedAt?: number };
+  freshness: "fresh" | "stale" | "unavailable" | "unverified" | "possibly_stale";
+  provenance: { kind: "agent" | "manual" | "user" | "import"; label?: string };
+  relationships: ContextVaultRelationship[];
+  createdAt: number;
+  updatedAt: number;
+};

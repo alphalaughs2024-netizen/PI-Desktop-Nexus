@@ -1,5 +1,5 @@
 export const PROTOCOL_VERSION = 11 as const;
-export const SCHEMA_VERSION = 14 as const;
+export const SCHEMA_VERSION = 16 as const;
 /** Separate identity for the forked test build; never shares official app state. */
 export const APP_ID = "com.akshay.pi-desktop-nexus";
 export const APP_NAME = "PI Desktop Nexus";
@@ -97,6 +97,14 @@ export const IPC = {
     sessionListRevisions: "pi-desktop/session/listRevisions",
     sessionActivateRevision: "pi-desktop/session/activateRevision",
     sessionGetScratchPath: "pi-desktop/session/getScratchPath",
+    contextVaultList: "pi-desktop/contextVault/list",
+    contextVaultCreate: "pi-desktop/contextVault/create",
+    contextVaultUpdate: "pi-desktop/contextVault/update",
+    contextVaultDelete: "pi-desktop/contextVault/delete",
+    contextVaultReview: "pi-desktop/contextVault/review",
+    contextVaultRecheck: "pi-desktop/contextVault/recheck",
+    contextVaultExport: "pi-desktop/contextVault/export",
+    contextVaultImport: "pi-desktop/contextVault/import",
     sessionOpenScratchPath: "pi-desktop/session/openScratchPath",
     projectOpenFolder: "pi-desktop/project/openFolder",
     settingsGet: "pi-desktop/settings/get",

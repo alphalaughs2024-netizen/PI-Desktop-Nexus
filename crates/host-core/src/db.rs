@@ -4,12 +4,12 @@ use serde::Serialize;
 use serde_json::Value;
 use std::path::{Path, PathBuf};
 
-/// Storage schema v14: SQLite holds
+/// Storage schema v16: SQLite holds
 /// index data only; transcript content lives in per-session JSONL files
 /// (D119, `transcripts.rs`). v11 adds the Plan/Goal approval kind (D198).
 /// v12 added A2A broker tables (ADR 0147); v13 drops them (ADR 0165).
 /// v14 adds plugin session ownership and the soft-delete marker (D367).
-pub const SCHEMA_VERSION: i64 = 15;
+pub const SCHEMA_VERSION: i64 = 16;
 
 /// Absolute approval deadline for a newly submitted Plan or Goal proposal.
 pub const PLAN_APPROVAL_TIMEOUT_MS: i64 = 30 * 60 * 1000;
@@ -294,6 +294,26 @@ CREATE TABLE artifacts (
   updated_at INTEGER NOT NULL,
   PRIMARY KEY (session_id, path)
 ) WITHOUT ROWID;
+
+CREATE TABLE context_vault_claims (
+  id TEXT PRIMARY KEY,
+  project_path TEXT NOT NULL,
+  claim TEXT NOT NULL,
+  category TEXT NOT NULL CHECK (category IN ('architecture','decisions','conventions','gotchas','notes')),
+  impact TEXT NOT NULL,
+  scope TEXT NOT NULL,
+  recheck_guidance TEXT NOT NULL,
+  tags_json TEXT NOT NULL DEFAULT '[]',
+  evidence_json TEXT NOT NULL DEFAULT '[]',
+  verification_json TEXT NOT NULL DEFAULT '{"state":"unverified"}',
+  freshness TEXT NOT NULL DEFAULT 'unverified' CHECK (freshness IN ('fresh','stale','unavailable','unverified','possibly_stale')),
+  provenance_json TEXT NOT NULL DEFAULT '{"kind":"manual"}',
+  relationships_json TEXT NOT NULL DEFAULT '[]',
+  relevance_text TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+CREATE INDEX idx_context_vault_project_updated ON context_vault_claims(project_path, updated_at DESC);
 CREATE INDEX idx_artifacts_time ON artifacts(updated_at DESC);
 
 CREATE TABLE message_revisions (
@@ -498,28 +518,28 @@ impl Database {
                         backup.display()
                     )
                 })?;
-                migrate_v8_to_v15(&conn, path)?;
+                migrate_v8_to_v16(&conn, path)?;
             }
             8 => {
-                migrate_v8_to_v15(&conn, path)?;
+                migrate_v8_to_v16(&conn, path)?;
             }
             9 => {
-                migrate_v9_to_v15(&conn, path)?;
+                migrate_v9_to_v16(&conn, path)?;
             }
             10 => {
-                migrate_v10_to_v15(&conn, path)?;
+                migrate_v10_to_v16(&conn, path)?;
             }
             11 => {
-                migrate_v11_to_v15(&conn, path)?;
+                migrate_v11_to_v16(&conn, path)?;
             }
             12 => {
-                migrate_v12_to_v15(&conn, path)?;
+                migrate_v12_to_v16(&conn, path)?;
             }
             13 => {
-                migrate_v13_to_v15(&conn, path)?;
+                migrate_v13_to_v16(&conn, path)?;
             }
             14 => {
-                migrate_v14_to_v15(&conn, path)?;
+                migrate_v14_to_v16(&conn, path)?;
             }
             legacy @ 1..=6 => {
                 let _ = conn.execute_batch("PRAGMA wal_checkpoint(TRUNCATE);");
@@ -527,6 +547,7 @@ impl Database {
                 archive_legacy_db(path, legacy)?;
                 return Self::open(path);
             }
+            15 => migrate_v15_to_v16(&conn, path)?,
             SCHEMA_VERSION => {}
             other => {
                 return Err(anyhow!(
@@ -1286,7 +1307,7 @@ fn create_migration_backup(conn: &Connection, path: &Path, version: i64) -> Resu
     Ok(backup)
 }
 
-fn migrate_v8_to_v15(conn: &Connection, path: &Path) -> Result<()> {
+fn migrate_v8_to_v16(conn: &Connection, path: &Path) -> Result<()> {
     let backup = create_migration_backup(conn, path, 8)?;
     let tx = conn.unchecked_transaction()?;
     migrate_v8_to_v9_tx(&tx)?;
@@ -1296,6 +1317,7 @@ fn migrate_v8_to_v15(conn: &Connection, path: &Path) -> Result<()> {
     migrate_v12_to_v13_tx(&tx)?;
     migrate_v13_to_v14_tx(&tx)?;
     migrate_v14_to_v15_tx(&tx)?;
+    migrate_v15_to_v16_tx(&tx)?;
     tx.commit().with_context(|| {
         format!(
             "commit schema v8 to v15 migration; backup {} remains",
@@ -1305,7 +1327,7 @@ fn migrate_v8_to_v15(conn: &Connection, path: &Path) -> Result<()> {
     Ok(())
 }
 
-fn migrate_v9_to_v15(conn: &Connection, path: &Path) -> Result<()> {
+fn migrate_v9_to_v16(conn: &Connection, path: &Path) -> Result<()> {
     let backup = create_migration_backup(conn, path, 9)?;
     let tx = conn.unchecked_transaction()?;
     migrate_v9_to_v10_tx(&tx)?;
@@ -1314,6 +1336,7 @@ fn migrate_v9_to_v15(conn: &Connection, path: &Path) -> Result<()> {
     migrate_v12_to_v13_tx(&tx)?;
     migrate_v13_to_v14_tx(&tx)?;
     migrate_v14_to_v15_tx(&tx)?;
+    migrate_v15_to_v16_tx(&tx)?;
     tx.commit().with_context(|| {
         format!(
             "commit schema v9 to v15 migration; backup {} remains",
@@ -1323,7 +1346,7 @@ fn migrate_v9_to_v15(conn: &Connection, path: &Path) -> Result<()> {
     Ok(())
 }
 
-fn migrate_v10_to_v15(conn: &Connection, path: &Path) -> Result<()> {
+fn migrate_v10_to_v16(conn: &Connection, path: &Path) -> Result<()> {
     let backup = create_migration_backup(conn, path, 10)?;
     let tx = conn.unchecked_transaction()?;
     migrate_v10_to_v11_tx(&tx)?;
@@ -1331,6 +1354,7 @@ fn migrate_v10_to_v15(conn: &Connection, path: &Path) -> Result<()> {
     migrate_v12_to_v13_tx(&tx)?;
     migrate_v13_to_v14_tx(&tx)?;
     migrate_v14_to_v15_tx(&tx)?;
+    migrate_v15_to_v16_tx(&tx)?;
     tx.commit().with_context(|| {
         format!(
             "commit schema v10 to v15 migration; backup {} remains",
@@ -1340,13 +1364,14 @@ fn migrate_v10_to_v15(conn: &Connection, path: &Path) -> Result<()> {
     Ok(())
 }
 
-fn migrate_v11_to_v15(conn: &Connection, path: &Path) -> Result<()> {
+fn migrate_v11_to_v16(conn: &Connection, path: &Path) -> Result<()> {
     let backup = create_migration_backup(conn, path, 11)?;
     let tx = conn.unchecked_transaction()?;
     migrate_v11_to_v12_tx(&tx)?;
     migrate_v12_to_v13_tx(&tx)?;
     migrate_v13_to_v14_tx(&tx)?;
     migrate_v14_to_v15_tx(&tx)?;
+    migrate_v15_to_v16_tx(&tx)?;
     tx.commit().with_context(|| {
         format!(
             "commit schema v11 to v15 migration; backup {} remains",
@@ -1356,12 +1381,13 @@ fn migrate_v11_to_v15(conn: &Connection, path: &Path) -> Result<()> {
     Ok(())
 }
 
-fn migrate_v12_to_v15(conn: &Connection, path: &Path) -> Result<()> {
+fn migrate_v12_to_v16(conn: &Connection, path: &Path) -> Result<()> {
     let backup = create_migration_backup(conn, path, 12)?;
     let tx = conn.unchecked_transaction()?;
     migrate_v12_to_v13_tx(&tx)?;
     migrate_v13_to_v14_tx(&tx)?;
     migrate_v14_to_v15_tx(&tx)?;
+    migrate_v15_to_v16_tx(&tx)?;
     tx.commit().with_context(|| {
         format!(
             "commit schema v12 to v15 migration; backup {} remains",
@@ -1371,11 +1397,12 @@ fn migrate_v12_to_v15(conn: &Connection, path: &Path) -> Result<()> {
     Ok(())
 }
 
-fn migrate_v13_to_v15(conn: &Connection, path: &Path) -> Result<()> {
+fn migrate_v13_to_v16(conn: &Connection, path: &Path) -> Result<()> {
     let backup = create_migration_backup(conn, path, 13)?;
     let tx = conn.unchecked_transaction()?;
     migrate_v13_to_v14_tx(&tx)?;
     migrate_v14_to_v15_tx(&tx)?;
+    migrate_v15_to_v16_tx(&tx)?;
     tx.commit().with_context(|| {
         format!(
             "commit schema v13 to v15 migration; backup {} remains",
@@ -1385,16 +1412,54 @@ fn migrate_v13_to_v15(conn: &Connection, path: &Path) -> Result<()> {
     Ok(())
 }
 
-fn migrate_v14_to_v15(conn: &Connection, path: &Path) -> Result<()> {
+fn migrate_v14_to_v16(conn: &Connection, path: &Path) -> Result<()> {
     let backup = create_migration_backup(conn, path, 14)?;
     let tx = conn.unchecked_transaction()?;
     migrate_v14_to_v15_tx(&tx)?;
+    migrate_v15_to_v16_tx(&tx)?;
     tx.commit().with_context(|| {
         format!(
             "commit schema v14 to v15 migration; backup {} remains",
             backup.display()
         )
     })?;
+    Ok(())
+}
+
+fn migrate_v15_to_v16_tx(tx: &rusqlite::Transaction<'_>) -> Result<()> {
+    tx.execute_batch(
+        r#"
+        CREATE TABLE IF NOT EXISTS context_vault_claims (
+          id TEXT PRIMARY KEY,
+          project_path TEXT NOT NULL,
+          claim TEXT NOT NULL,
+          category TEXT NOT NULL CHECK (category IN ('architecture','decisions','conventions','gotchas','notes')),
+          impact TEXT NOT NULL,
+          scope TEXT NOT NULL,
+          recheck_guidance TEXT NOT NULL,
+          tags_json TEXT NOT NULL DEFAULT '[]',
+          evidence_json TEXT NOT NULL DEFAULT '[]',
+          verification_json TEXT NOT NULL DEFAULT '{"state":"unverified"}',
+          freshness TEXT NOT NULL DEFAULT 'unverified' CHECK (freshness IN ('fresh','stale','unavailable','unverified','possibly_stale')),
+          provenance_json TEXT NOT NULL DEFAULT '{"kind":"manual"}',
+          relationships_json TEXT NOT NULL DEFAULT '[]',
+          relevance_text TEXT NOT NULL,
+          created_at INTEGER NOT NULL,
+          updated_at INTEGER NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_context_vault_project_updated
+          ON context_vault_claims(project_path, updated_at DESC);
+        "#,
+    )?;
+    tx.pragma_update(None, "user_version", 16i64)?;
+    Ok(())
+}
+
+fn migrate_v15_to_v16(conn: &Connection, path: &Path) -> Result<()> {
+    let backup = create_migration_backup(conn, path, 15)?;
+    let tx = conn.unchecked_transaction()?;
+    migrate_v15_to_v16_tx(&tx)?;
+    tx.commit().with_context(|| format!("commit schema v15 to v16 migration; backup {} remains", backup.display()))?;
     Ok(())
 }
 

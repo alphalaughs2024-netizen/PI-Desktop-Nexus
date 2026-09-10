@@ -2,6 +2,7 @@ mod activation;
 mod agent_capabilities;
 mod artifacts;
 mod audit;
+mod context_vault;
 mod db;
 mod keyboard;
 mod mcp_servers;

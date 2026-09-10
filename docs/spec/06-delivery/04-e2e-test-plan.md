@@ -9893,3 +9893,43 @@ sample extensions under `apps/desktop/test/fixtures/pi-extensions/`.
   declaration, `mode-prompts.test.ts` updated wording); desktop
   journey is Draft (do not run E2E locally unless explicitly
   requested)
+
+#### E2E-NEXUS-001: Native Context Vault is selective and project-isolated
+
+- **Preconditions**: Nexus has upgraded from a profile that contains legacy
+  `local.context-vault` plugin settings; two workspace roots are available.
+- **Steps**: 1) Open each project and open Context Vault from the work-panel
+  launcher. 2) Confirm both native vaults start empty. 3) Create a repository
+  claim with literal relative evidence in project A, then switch projects.
+  4) Start an ordinary task and a task matching the claim. 5) Export project A,
+  inspect the JSON, then import it into project B through preview.
+- **Expected**: Legacy settings are untouched and not shown. No claim leaks to
+  project B. The ordinary task gets no brief or forced save; the matching task
+  sees availability metadata only and may explicitly brief. The pack contains
+  no secrets, sessions, absolute paths, mtimes, or workspace contents; preview
+  labels duplicates/overlaps/invalid items and only chosen valid claims merge.
+- **Specs linked**: ADR 0217, runtime and storage specifications.
+- **Status**: Draft.
+
+#### E2E-NEXUS-002: Context Vault freshness, review, and supersession
+
+- **Steps**: 1) Create an evidenced claim and explicitly re-check it. 2) Mark
+  it reviewed. 3) Modify its cited file without opening a brief. 4) Search the
+  vault, then brief it. 5) Save a replacement using `supersedes`.
+- **Expected**: Metadata-only queries label the changed claim possibly stale
+  without crawling or reading the workspace. Brief reads only cited evidence
+  and marks fresh/stale/unavailable. Only fresh reviewed claims are usable; a
+  superseded claim remains auditable and the replacement is visible.
+- **Status**: Draft.
+
+#### E2E-NEXUS-003: Assistant replies persist across restart and long history
+
+- **Steps**: 1) Create more than 100 assistant/user messages and close Nexus.
+  2) Reopen the same Nexus profile and select the session. 3) Load older
+  history if the conversation exceeds the visible safety window. 4) Interrupt
+  a streamed reply, quit, and reopen.
+- **Expected**: Existing assistant replies remain visible after reopen; the
+  renderer initially retains up to 1,000 recent rows and pages earlier rows
+  without destructive replacement. Interrupted streaming output is recovered
+  according to its completed/aborted state rather than silently disappearing.
+- **Status**: Draft.

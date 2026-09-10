@@ -897,11 +897,15 @@ export class PluginRuntime {
   /** Plugin ids inside `reloadDevPlugin`, whose watch must outlive the unload. */
   private reloading = new Set<string>();
   private watcher: DevPluginWatcher;
+  /** Plugin state follows the owning desktop profile, never a hard-coded home path. */
+  private dataDir: string;
 
   constructor(
     services?: Partial<PluginHostServices>,
     watcherOptions?: Pick<DevPluginWatcherDeps, "watch" | "debounceMs" | "max">,
+    dataDir?: string,
   ) {
+    this.dataDir = dataDir ?? process.env.PI_DESKTOP_DATA_DIR?.trim() ?? join(homedir(), ".pi-desktop");
     this.services = {
       getWorkspacePath: () => null,
       showToast: (message, level) => {
@@ -2912,10 +2916,7 @@ export class PluginRuntime {
 
   /** Per-plugin data directory. Host-owned; the fs API cannot reach it. */
   private pluginDataDir(pluginId: string): string {
-    const root = process.env.PI_DESKTOP_DATA_DIR
-      ? resolve(process.env.PI_DESKTOP_DATA_DIR)
-      : join(homedir(), ".pi-desktop");
-    return join(root, "plugins", "data", pluginId.replace(/[^a-zA-Z0-9._-]/g, "_"));
+    return join(this.dataDir, "plugins", "data", pluginId.replace(/[^a-zA-Z0-9._-]/g, "_"));
   }
 
   private browserSessionId(pluginId?: string): string | undefined {

@@ -21,7 +21,7 @@ import {
   statSync,
   writeFileSync,
 } from "node:fs";
-import { readFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { listInstalledFonts } from "./system-fonts";
 import {
   applyNetworkProxyFromAppSettings,
@@ -860,7 +860,7 @@ const plugins: PluginRuntime = new PluginRuntime({
     if (pluginId === BROWSER_PLUGIN_ID) browserHost.disposeGuest();
     sendToRenderer(IPC.event.pluginChanged,{ reason: "reload", pluginId });
   },
-});
+}, undefined, process.env.PI_DESKTOP_DATA_DIR?.trim() || join(homedir(), DEFAULT_DATA_DIR_NAME));
 const userMcp = new UserMcpRuntime({
   createClient: (config) => new McpServerClient(config),
   connectTimeoutMs: MCP_CONNECT_TIMEOUT_MS,
@@ -1835,6 +1835,14 @@ async function resolveAgentRuntimeLaunch(
         ...(modelConfig ? { modelConfig } : {}),
       },
       pluginTools: [
+        // Host-owned Context Vault tools are deliberately not plugin tools:
+        // they remain available when all third-party plugins are disabled.
+        ...[
+          { name: "context_search", description: "Search concise durable Context Vault claims for the current project. Does not read workspace files.", parameters: { type: "object", properties: { query: { type: "string" } }, required: ["query"] } },
+          { name: "context_brief", description: "Explicitly re-check cited evidence and return at most eight relevant Context Vault claims.", parameters: { type: "object", properties: { query: { type: "string" } }, required: ["query"] } },
+          { name: "context_save", description: "Save one verified, durable repository-evidenced claim. Use only when it would prevent a future mistake.", parameters: { type: "object", properties: { claim: { type: "object" } }, required: ["claim"] } },
+          { name: "context_review", description: "Mark a Context Vault claim reviewed, conflicted, or superseded after interpreting its evidence.", parameters: { type: "object", properties: { id: { type: "string" }, state: { type: "string" }, note: { type: "string" } }, required: ["id", "state"] } },
+        ],
         ...plugins
           .getTools()
           .filter((tool) => pluginActiveInProject(tool.pluginId, projectPath))
@@ -4596,6 +4604,21 @@ function wireHost(h: HostProcess) {
               content: { error: e instanceof Error ? e.message : String(e) },
             };
           }
+        } else if (q.toolName.startsWith("context_")) {
+          try {
+            if (!projectPath) throw new Error("open a project before using Context Vault");
+            const args = (q.args && typeof q.args === "object" ? q.args : {}) as Record<string, unknown>;
+            const call = q.toolName === "context_search" ? "contextVault.search" : q.toolName === "context_brief" ? "contextVault.brief" : q.toolName === "context_save" ? "contextVault.create" : q.toolName === "context_review" ? "contextVault.review" : "";
+            if (!call) throw new Error("unknown Context Vault tool");
+            const params = q.toolName === "context_save"
+              ? { projectPath, claim: args.claim, agent: true }
+              : q.toolName === "context_review"
+                ? { projectPath, id: args.id, state: args.state, note: args.note ?? "" }
+                : { projectPath, query: args.query ?? "" };
+            payload = { executionId: q.executionId, ok: true, content: await h.call(call, params) };
+          } catch (e) {
+            payload = { executionId: q.executionId, ok: false, errorCode: "TOOL_FAILED", content: { error: e instanceof Error ? e.message : String(e) } };
+          }
         } else if (!tool) {
           payload = {
             executionId: q.executionId,
@@ -6382,6 +6405,47 @@ function registerIpc() {
     return host.call<{ path: string }>("session.getScratchPath", {
       sessionId: String(input?.sessionId || ""),
     });
+  });
+  handle(IPC.invoke.contextVaultList, async (input: { projectPath: string; query?: string }) => {
+    if (!host) throw new Error("host unavailable");
+    return host.call("contextVault.list", { projectPath: input.projectPath, query: input.query ?? "" });
+  });
+  handle(IPC.invoke.contextVaultCreate, async (input: { projectPath: string; claim: unknown }) => {
+    if (!host) throw new Error("host unavailable");
+    return host.call("contextVault.create", { projectPath: input.projectPath, claim: input.claim, agent: false });
+  });
+  handle(IPC.invoke.contextVaultUpdate, async (input: { projectPath: string; id: string; claim: unknown }) => {
+    if (!host) throw new Error("host unavailable");
+    return host.call("contextVault.update", { projectPath: input.projectPath, id: input.id, claim: input.claim });
+  });
+  handle(IPC.invoke.contextVaultDelete, async (input: { projectPath: string; id: string }) => {
+    if (!host) throw new Error("host unavailable");
+    return host.call("contextVault.delete", input);
+  });
+  handle(IPC.invoke.contextVaultReview, async (input: { projectPath: string; id: string; state: string; note?: string }) => {
+    if (!host) throw new Error("host unavailable");
+    return host.call("contextVault.review", input);
+  });
+  handle(IPC.invoke.contextVaultRecheck, async (input: { projectPath: string; id: string }) => {
+    if (!host) throw new Error("host unavailable");
+    return host.call("contextVault.recheck", input);
+  });
+  handle(IPC.invoke.contextVaultExport, async (input: { projectPath: string }) => {
+    if (!host || !mainWindow) throw new Error("host unavailable");
+    const result = await dialog.showSaveDialog(mainWindow, { title: "Export Context Vault", defaultPath: "context-vault.json", filters: [{ name: "JSON", extensions: ["json"] }] });
+    if (result.canceled || !result.filePath) return { ok: false };
+    const pack = await host.call("contextVault.export", input);
+    await writeFile(result.filePath, JSON.stringify(pack, null, 2), "utf8");
+    return { ok: true };
+  });
+  handle(IPC.invoke.contextVaultImport, async (input: { projectPath: string }) => {
+    if (!host || !mainWindow) throw new Error("host unavailable");
+    const selected = await dialog.showOpenDialog(mainWindow, { title: "Import Context Vault", properties: ["openFile"], filters: [{ name: "JSON", extensions: ["json"] }] });
+    if (selected.canceled || !selected.filePaths[0]) return { imported: 0, skipped: 0 };
+    const pack = JSON.parse(await readFile(selected.filePaths[0], "utf8"));
+    const preview = await host.call<{ items?: Array<{ index: number; status: string }> }>("contextVault.importPreview", { projectPath: input.projectPath, pack });
+    const indexes = (preview.items ?? []).filter((item) => item.status === "selectable").map((item) => item.index);
+    return host.call("contextVault.importApply", { projectPath: input.projectPath, pack, selected: indexes });
   });
   handle(IPC.invoke.sessionOpenScratchPath, async (input: { sessionId: string }) => {
     if (!host) throw new Error("host unavailable");

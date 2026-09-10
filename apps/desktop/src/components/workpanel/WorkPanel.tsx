@@ -13,6 +13,7 @@ import {
   isToolWorkPanelTab,
   parsePluginViewRef,
   pluginWorkPanelTab,
+  contextVaultWorkPanelTab,
 } from "../../lib/work-panel-tabs";
 import { pluginViewIcon, pluginViewInitial } from "../../lib/plugin-view-icons";
 import { useAppStore } from "../../stores/app-store";
@@ -27,12 +28,14 @@ import {
   IconFileText,
   IconPanel,
   IconPlug,
+  IconBookOpen,
 } from "../icons";
 import { ReviewTab } from "./ReviewTab";
 import { FilesTab } from "./FilesTab";
 import { PluginViewTab } from "./PluginViewTab";
 import { WorkTabEmpty } from "./WorkTabEmpty";
 import { SubagentPanel } from "./SubagentPanel";
+import { ContextVaultTab } from "./ContextVaultTab";
 import type { SubagentPanelSelection } from "../../lib/subagent-panel";
 import {
   WORK_PANEL_MAX_WIDTH,
@@ -44,6 +47,7 @@ const TAB_ICONS = {
   review: IconDiff,
   file: IconFileText,
   plugin: IconPlug,
+  contextVault: IconBookOpen,
 } as const;
 
 type WorkPanelResizeState = {
@@ -239,6 +243,12 @@ export function WorkPanel({
     },
     [activateTab, closeContext, openWorkPanelTab, tabs],
   );
+  const openContextVault = useCallback(() => {
+    const tab = contextVaultWorkPanelTab();
+    if (tabs.some((candidate) => candidate.id === tab.id)) activateTab(tab.id);
+    else openWorkPanelTab(tab);
+    closeContext();
+  }, [activateTab, closeContext, openWorkPanelTab, tabs]);
 
   const onTriggerKeyDown = (event: ReactKeyboardEvent<HTMLButtonElement>) => {
     if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
@@ -481,6 +491,12 @@ export function WorkPanel({
                 aria-label={t("panel.title")}
                 onKeyDown={onContextKeyDown}
               >
+                <div className="work-panel-menu-group" role="group">
+                  <div className="work-panel-menu-title">Nexus</div>
+                  <button type="button" role="menuitemradio" aria-checked={activeTab?.kind === "contextVault"} tabIndex={-1} data-work-panel-menu-item="" className="work-panel-menu-item" onClick={openContextVault}>
+                    <IconBookOpen size={15} /><span className="work-panel-menu-label">Context Vault</span>
+                  </button>
+                </div>
                 {pluginViews.length > 0 && (
                   <div
                     className="work-panel-menu-group"
@@ -649,6 +665,11 @@ export function WorkPanel({
               aria-labelledby={`work-panel-title-${activeTab.id}`}
             >
               <ReviewTab />
+            </div>
+          )}
+          {!subagentPanel && activeTab?.kind === "contextVault" && (
+            <div id={`work-panel-surface-${activeTab.id}`} className="work-panel-tabpane" role="tabpanel" aria-labelledby={`work-panel-title-${activeTab.id}`}>
+              <ContextVaultTab />
             </div>
           )}
           {!subagentPanel && activeTab?.kind === "file" && (

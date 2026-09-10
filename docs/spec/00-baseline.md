@@ -83,7 +83,10 @@
 > refresh through ADR 0201 / D368, and the opt-in local MCP control plane
 > through ADR 0203 / D370 (catalog and bind tightened by D372). Protocol v11 remains unchanged; schema v15 adds the Host-owned turn queue
 > (D386 / ADR 0213) on top of schema v14, which added the
-> plugin origin sidecar and soft-delete marker. Session mutation, arbitrary
+> plugin origin sidecar and soft-delete marker. Schema v16 adds the Nexus-only
+> host-owned Context Vault (ADR 0217): project-scoped claims, manual JSON
+> packs, explicit evidence rechecks, and optional native agent tools without
+> importing legacy plugin data. Session mutation, arbitrary
 > re-binding, provider/model binding, batch-delete, and tag operations remain
 > deferred; an explicit `projectId` is the limited project-binding exception
 > for imported sessions. The local control plane is loopback-only and does not

@@ -80,6 +80,8 @@ import type {
   PlansPendingResult,
   UpdateState,
   WindowControlAction,
+  ContextVaultClaim,
+  ContextVaultClaimInput,
   CloseBehavior,
   TrustedExtensionStatusEvent,
   TrustedExtensionUiPrompt,
@@ -343,6 +345,20 @@ export const api = {
     invoke<{ ok: boolean; path: string }>(IPC.invoke.sessionOpenScratchPath, {
       sessionId,
     }),
+  listContextVault: (projectPath: string, query?: string) =>
+    invoke<{ claims: ContextVaultClaim[] }>(IPC.invoke.contextVaultList, { projectPath, query }),
+  createContextVaultClaim: (projectPath: string, claim: ContextVaultClaimInput) =>
+    invoke<{ status: string; claim?: ContextVaultClaim }>(IPC.invoke.contextVaultCreate, { projectPath, claim }),
+  updateContextVaultClaim: (projectPath: string, id: string, claim: ContextVaultClaimInput) =>
+    invoke<{ claim: ContextVaultClaim | null }>(IPC.invoke.contextVaultUpdate, { projectPath, id, claim }),
+  deleteContextVaultClaim: (projectPath: string, id: string) =>
+    invoke<{ ok: boolean }>(IPC.invoke.contextVaultDelete, { projectPath, id }),
+  reviewContextVaultClaim: (projectPath: string, id: string, state: string, note = "") =>
+    invoke<{ claim: ContextVaultClaim | null }>(IPC.invoke.contextVaultReview, { projectPath, id, state, note }),
+  recheckContextVaultClaim: (projectPath: string, id: string) =>
+    invoke<{ claim: ContextVaultClaim | null }>(IPC.invoke.contextVaultRecheck, { projectPath, id }),
+  exportContextVault: (projectPath: string) => invoke<{ ok: boolean }>(IPC.invoke.contextVaultExport, { projectPath }),
+  importContextVault: (projectPath: string) => invoke<{ imported: number; skipped: number }>(IPC.invoke.contextVaultImport, { projectPath }),
   openProjectFolder: (path: string) =>
     invoke<{ ok: boolean; path: string }>(IPC.invoke.projectOpenFolder, path),
   renameSession: (id: string, title: string) =>

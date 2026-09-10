@@ -1494,6 +1494,7 @@ export class DesktopAgentRuntime {
     const defaultSystemPrompt = [
       DEFAULT_RUNTIME_SYSTEM_PROMPT,
       "Collaboration: answer in the user's language. Before tool work, briefly say what you are doing; give a self-contained final answer. Work through safe blockers instead of stopping early. Call tools through the native tool-call interface, never as prose. Load `pi-desktop/agent-operations` from Plugin guidance for detailed search, editing, preview, shell, or delegation workflow guidance.",
+      "Context Vault is durable project knowledge, not a transcript, repository index, or unquestioned truth. Use its native context_search or context_brief tools selectively for resumed work, unfamiliar architecture, conventions, recurring gotchas, or non-trivial work that depends on prior decisions. Never require a brief for ordinary work. Save at most one claim only when it is verified, non-obvious, durable, likely to prevent a future mistake, and backed by exact current workspace evidence. Never save task summaries, routine edits, trivial facts, guesses, temporary debugging, secrets, credentials, personal data, or an every-run note. At completion, silently consider whether one qualifying claim exists; do nothing when it does not.",
       ...(this.subagents.length && this.subagentModelSummary()
         ? [this.subagentModelSummary()!]
         : []),

@@ -342,7 +342,11 @@ export type PendingPlanRefreshResult = "pending" | "terminal" | "unavailable";
 
 const WORK_PANEL_STORAGE_KEY = "pi.desktop.workPanel";
 const SESSION_TRANSCRIPT_CACHE_LIMIT = 20;
-export const SESSION_TRANSCRIPT_PAGE_SIZE = 100;
+// A compact tail is still important for very large transcripts, but 100 rows
+// made ordinary conversations appear to lose assistant replies after a reload.
+// Keep a practical complete conversation visible on reopen; paging remains for
+// unusually long sessions and never changes the canonical JSONL transcript.
+export const SESSION_TRANSCRIPT_PAGE_SIZE = 1_000;
 export const SESSION_TRANSCRIPT_CONTENT_LIMIT = 64 * 1024;
 export { RETAINED_SESSION_PANE_LIMIT };
 // Preserve the original 320px tool-content minimum beside the 44px activity rail.

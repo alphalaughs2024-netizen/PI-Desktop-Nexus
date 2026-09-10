@@ -1,5 +1,6 @@
 export type WorkPanelTabKind =
   | "review"
+  | "contextVault"
   | "file"
   | "plugin";
 
@@ -69,6 +70,10 @@ export function toolWorkPanelTab(
   return { id: kind, kind };
 }
 
+export function contextVaultWorkPanelTab(): WorkPanelTab {
+  return { id: "context-vault", kind: "contextVault" };
+}
+
 /**
  * A plugin-contributed view (ADR 0104).
  *
@@ -116,7 +121,7 @@ export function parsePluginViewRef(
 export function isKnownWorkPanelTab(tab: WorkPanelTab): boolean {
   return (
     Boolean(tab) &&
-    (tab.kind === "review" || tab.kind === "file" || tab.kind === "plugin")
+    (tab.kind === "review" || tab.kind === "contextVault" || tab.kind === "file" || tab.kind === "plugin")
   );
 }
 
