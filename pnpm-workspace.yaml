@@ -35,6 +35,11 @@ overrides:
   # a major its parent has not declared. Verified against `docs:build` and
   # `docs:dev` (serves 200); drop it for vitepress 2 once that ships stable.
   vite@5: '>=6.4.3 <7'
+# @earendil-works/pi-ai 0.85.1 otherwise waits for the HTTP iterator to close
+# after a terminal Responses event. Remove this once the pinned upstream
+# release includes the same early return.
+patchedDependencies:
+  '@earendil-works/pi-ai@0.85.1': patches/@earendil-works__pi-ai@0.85.1.patch
 # Drop this list once the pinned @earendil-works packages are older than
 # pnpm's supply-chain age gate (packages published within the last day).
 minimumReleaseAgeExclude:

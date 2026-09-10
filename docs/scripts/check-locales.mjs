@@ -9,7 +9,7 @@ const chineseRoot = path.join(docsRoot, 'zh-CN/spec')
 function markdownFiles(directory) {
   return fs.readdirSync(directory, { recursive: true, withFileTypes: true })
     .filter((entry) => entry.isFile() && entry.name.endsWith('.md'))
-    .map((entry) => path.relative(directory, path.join(entry.parentPath, entry.name)))
+    .map((entry) => path.relative(directory, path.join(entry.parentPath, entry.name)).replaceAll(path.sep, '/'))
     .sort()
 }
 

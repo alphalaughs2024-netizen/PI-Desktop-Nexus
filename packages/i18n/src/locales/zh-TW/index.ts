@@ -1266,6 +1266,7 @@ export const zhTW = {
       browser: "瀏覽器",
       file: "檔案",
       plugin: "外掛檢視",
+      contextVault: "內容保管庫",
     },
     pluginView: {
       failed: "無法載入該檢視。請重新載入外掛後重試。",
@@ -1325,6 +1326,7 @@ export const zhTW = {
       tooLarge: "檔案過大，無法預覽",
     },
   },
+  contextVault: { noProject: "Open a project to use its private vault.", health: "{{reviewed}} reviewed architecture · {{decisions}} user decisions · {{stale}} possibly stale", newClaim: "New claim", userDecision: "User decision", export: "Export", import: "Import", search: "Search durable project knowledge", emptyTitle: "No durable knowledge yet", emptyBody: "Claims stay private to this project. Save only decisions and facts worth reusing.", claim: "Claim", category: "Category", impact: "Impact", scope: "Scope", recheckGuidance: "Re-check guidance", evidencePath: "Evidence path", evidenceExcerpt: "Literal evidence excerpt", save: "Save", recheck: "Re-check evidence", markReviewed: "Mark reviewed", delete: "Delete", categories: { architecture: "Architecture", decisions: "Decisions", conventions: "Conventions", gotchas: "Gotchas", notes: "Notes" }, freshness: { fresh: "Fresh", possibly_stale: "Possibly stale", stale: "Stale", unavailable: "Unavailable", unverified: "Unverified" }, review: { reviewed: "Reviewed", conflicted: "Conflicted", superseded: "Superseded", pending: "Pending" } },
   palette: {
     placeholder: "搜尋命令…",
     empty: "沒有找到命令",

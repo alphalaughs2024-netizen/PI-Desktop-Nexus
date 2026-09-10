@@ -9936,3 +9936,20 @@ sample extensions under `apps/desktop/test/fixtures/pi-extensions/`.
   without destructive replacement. Interrupted streaming output is recovered
   according to its completed/aborted state rather than silently disappearing.
 - **Status**: Draft.
+
+#### E2E-NEXUS-004: Stabilized capabilities, terminal streams, and narrow vault UI
+
+- **Steps**: 1) Configure a catalog text-only model with image support enabled,
+  then disabled, and attach an image to an image-only and a text-plus-image
+  prompt. 2) Feed the Responses adapter a terminal event followed by an
+  iterator that never closes. 3) On Windows run `Glob` and both `rg` and
+  fallback `Grep` paths. 4) Inspect an active assistant message then let it
+  settle. 5) Open Context Vault at a 360px work-panel width in English and
+  Chinese.
+- **Expected**: The Vision badge and transport follow the binding override;
+  disabled image support follows the deliberate fallback. A terminal Responses
+  event completes without an EOF. Workspace paths contain `/`. Active assistant
+  controls are absent and return after completion. Context Vault has localized
+  titles and controls, wrapping actions, independently usable list/editor
+  scroll areas, and no horizontal overflow.
+- **Status**: Unit/source-contract covered; desktop journey is Draft.

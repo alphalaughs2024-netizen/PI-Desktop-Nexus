@@ -2227,7 +2227,7 @@ const MessageRow = memo(function MessageRow({
             )}
           </div>
         ) : null}
-        {!editing && (hasAnswer || showRevisionPager) ? (
+        {!editing && (!isRunning || isUser) && (hasAnswer || showRevisionPager) ? (
           <div className="message-actions">
             {showRevisionPager ? (
               <div className="message-revision-pager" role="group" aria-label={t("chat.revisions")}>
@@ -2264,7 +2264,7 @@ const MessageRow = memo(function MessageRow({
                 </TooltipButton>
               </div>
             ) : null}
-            {hasAnswer ? <CopyButton text={message.content} label={copyLabel} /> : null}
+            {!isRunning && hasAnswer ? <CopyButton text={message.content} label={copyLabel} /> : null}
             {isUser ? (
               <TooltipButton
                 className="copy-btn icon"

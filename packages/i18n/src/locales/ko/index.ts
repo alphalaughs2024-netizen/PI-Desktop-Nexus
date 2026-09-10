@@ -1276,6 +1276,7 @@ export const ko = {
       browser: "브라우저",
       file: "파일",
       plugin: "플러그인 화면",
+      contextVault: "컨텍스트 보관함",
     },
     pluginView: {
       failed: "이 화면을 불러올 수 없습니다. 플러그인을 새로 고친 후 다시 시도하세요.",
@@ -1335,6 +1336,7 @@ export const ko = {
       tooLarge: "파일이 너무 커서 미리 볼 수 없음",
     },
   },
+  contextVault: { noProject: "Open a project to use its private vault.", health: "{{reviewed}} reviewed architecture · {{decisions}} user decisions · {{stale}} possibly stale", newClaim: "New claim", userDecision: "User decision", export: "Export", import: "Import", search: "Search durable project knowledge", emptyTitle: "No durable knowledge yet", emptyBody: "Claims stay private to this project. Save only decisions and facts worth reusing.", claim: "Claim", category: "Category", impact: "Impact", scope: "Scope", recheckGuidance: "Re-check guidance", evidencePath: "Evidence path", evidenceExcerpt: "Literal evidence excerpt", save: "Save", recheck: "Re-check evidence", markReviewed: "Mark reviewed", delete: "Delete", categories: { architecture: "Architecture", decisions: "Decisions", conventions: "Conventions", gotchas: "Gotchas", notes: "Notes" }, freshness: { fresh: "Fresh", possibly_stale: "Possibly stale", stale: "Stale", unavailable: "Unavailable", unverified: "Unverified" }, review: { reviewed: "Reviewed", conflicted: "Conflicted", superseded: "Superseded", pending: "Pending" } },
   palette: {
     placeholder: "명령 검색…",
     empty: "명령을 찾을 수 없음",

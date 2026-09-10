@@ -1106,6 +1106,8 @@ export type ModelInfo = {
   releaseDate?: string;
   lastUpdated?: string;
   modalities?: ModelModalities;
+  /** Catalog modalities before a provider binding applies local overrides. */
+  publishedModalities?: ModelModalities;
   openWeights?: boolean;
   limit?: ModelLimit;
   cost?: ModelCost;

@@ -436,8 +436,15 @@ export function ModelSelectionPanes({
                 publishedLevelsById.get(binding.id.toLowerCase()) ?? [];
               const enabledLevels = sortThinkingLevels(binding.thinkingLevels);
               const info = infoById.get(binding.id.toLowerCase());
-              const publishedImages = info ? modelMatchesFilter(info, "vision") : false;
-              const publishedDocuments = info ? modelMatchesFilter(info, "pdf") : false;
+              // ModelInfo.modalities is the binding's effective capability for
+              // Composer. Settings deliberately compares its checkbox against
+              // the unmodified catalog baseline.
+              const publishedInfo = info && {
+                ...info,
+                modalities: info.publishedModalities ?? info.modalities,
+              };
+              const publishedImages = publishedInfo ? modelMatchesFilter(publishedInfo, "vision") : false;
+              const publishedDocuments = publishedInfo ? modelMatchesFilter(publishedInfo, "pdf") : false;
               const expanded = expandedModelId === binding.id;
               const advancedId = `model-advanced-${binding.id}`;
               return (
