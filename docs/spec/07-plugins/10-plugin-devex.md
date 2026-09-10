@@ -175,6 +175,22 @@ restarts: the folder is picked once, not once per edit.
 - Watchers are released on unload, disable, uninstall and quit, and are capped
   at 16 plugins; past the cap the app logs and edits need a manual reload.
 
+## 7.1 Plugin guidance is not a user Skill
+
+`contributes.skills` remains the backward-compatible manifest name for a
+plugin's Markdown instruction documents, but the agent must present those
+documents as **Plugin guidance**, not as user Skills. A plugin is an installed
+capability package; it may provide tools, panels, commands, services, and
+supporting guidance. A user Skill is a reusable task recipe the user owns under
+the global or project skill registry.
+
+The agent prompt lists user-owned recipes under **Skills** and plugin or bundled
+documents under **Plugin guidance**. Consequently, unqualified user requests to
+list, load, use, or create a skill target only user-owned Skills. Plugin guidance
+is loaded only when the user names the plugin or the plugin capability is needed
+for the task. Both document types retain the common on-demand `Skill` transport
+for efficient body loading, but their origin and user intent stay distinct.
+
 ## 8. Debugging
 
 Implemented today:

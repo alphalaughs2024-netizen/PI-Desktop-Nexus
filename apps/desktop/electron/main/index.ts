@@ -1625,16 +1625,14 @@ async function resolveAgentRuntimeLaunch(
   const userSkills = await activeUserSkills(projectPath);
   await refreshUserMcp(projectPath);
   const userMcpTools = await userMcp.toolsForProject(projectPath ?? null);
-  // Skill catalog (D174): only id/name/description cross to the sidecar; the
-  // document body is fetched on demand through the local `Skill` tool. Host
-  // skills come first so a plugin's entry reads as a refinement of them, and
-  // the user's own skills come last so they win a name clash in the model's
-  // reading order.
+  // Instruction catalog (D174): only id/name/description/source cross to the
+  // sidecar; the document body is fetched on demand through the local `Skill`
+  // tool. User-owned Skills are recipes; plugin entries are separate guidance.
   const pluginSkills = [
     ...builtinSkills({
       workspacePath: projectPath,
       pluginPaths: plugins.listLoaded().map((loaded) => loaded.path),
-    }),
+    }).map((skill) => ({ ...skill, source: "builtin" as const })),
     ...plugins
       .getSkills()
       .filter((skill) => pluginActiveInProject(skill.pluginId, projectPath))
@@ -1642,11 +1640,13 @@ async function resolveAgentRuntimeLaunch(
         id: skill.id,
         name: skill.name,
         description: skill.description,
+        source: "plugin" as const,
       })),
     ...userSkills.map((skill) => ({
       id: skill.id,
       name: skill.name,
       description: skill.description,
+      source: "user" as const,
     })),
   ];
   // Subagents (ADR 0062): definitions are re-read per launch so editing

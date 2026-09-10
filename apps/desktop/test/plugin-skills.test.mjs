@@ -67,9 +67,11 @@ test("a reloaded plugin re-indexes its skills, so an edit needs no restart", () 
   assert.match(runtimeSrc.slice(runtimeSrc.indexOf("loadSkillBody(")), /readFileSync\(skill\.path/);
 });
 
-test("main forwards the skill catalog and serves the Skill tool locally", () => {
+test("main marks user recipes separately from plugin guidance", () => {
   assert.match(mainSrc, /const pluginSkills = \[/);
   assert.match(mainSrc, /\.\.\.plugins\s*\n?\s*\.getSkills\(\)/);
+  assert.match(mainSrc, /source: "plugin" as const/);
+  assert.match(mainSrc, /source: "user" as const/);
   assert.match(mainSrc, /\n\s+pluginSkills,\n/);
   assert.match(mainSrc, /setLocalTool\("Skill"/);
   assert.match(mainSrc, /loadSkillBody\(id\)/);

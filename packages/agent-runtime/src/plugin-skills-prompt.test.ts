@@ -10,8 +10,9 @@ const skills: PluginSkillDef[] = [
     id: "demo.hello/release-notes",
     name: "Release notes",
     description: "Draft release notes from the changelog.",
+    source: "plugin",
   },
-  { id: "demo.hello/no-description", name: "Bare" },
+  { id: "demo.hello/no-description", name: "Bare", source: "plugin" },
 ];
 
 describe("pluginSkillsPrompt", () => {
@@ -19,15 +20,27 @@ describe("pluginSkillsPrompt", () => {
     expect(pluginSkillsPrompt([])).toBeUndefined();
   });
 
-  it("lists ids, names and descriptions and names the load tool", () => {
+  it("labels plugin documents as guidance rather than user Skills", () => {
     const prompt = pluginSkillsPrompt(skills) ?? "";
-    expect(prompt.startsWith("# Skills")).toBe(true);
+    expect(prompt.startsWith("# Plugin guidance")).toBe(true);
+    expect(prompt).toContain("not user Skills");
     expect(prompt).toContain(`\`${SKILL_TOOL_NAME}\` tool`);
     expect(prompt).toContain(
       "- `demo.hello/release-notes` — Release notes: Draft release notes from the changelog.",
     );
     // A skill without a description still has to be addressable.
     expect(prompt).toContain("- `demo.hello/no-description` — Bare");
+  });
+
+  it("makes user-owned recipes the unambiguous meaning of skill", () => {
+    const prompt = pluginSkillsPrompt([
+      { id: "create-skill", name: "Create skill", description: "Write a reusable recipe.", source: "user" },
+      ...skills,
+    ]) ?? "";
+    expect(prompt).toContain("# Skills");
+    expect(prompt).toContain("When the user says “list skills”");
+    expect(prompt).toContain("never plugin guidance");
+    expect(prompt.indexOf("# Skills")).toBeLessThan(prompt.indexOf("# Plugin guidance"));
   });
 
   it("keeps the document body out of the prompt", () => {

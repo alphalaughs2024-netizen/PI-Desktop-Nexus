@@ -205,11 +205,14 @@ deny-list remain enforced on registration and every subsequent read.
 Both surfaces let a plugin change what the agent knows or can do, so both are
 bounded before they reach the model:
 
-**Skills** (`agent.prompt.inject`) — the system prompt carries only the catalog
-(id, name, one-line description, capped at 240 chars); a body is read on demand
-through the built-in `Skill` tool. A plugin may teach at most 32 skills, each
-document at most 128KB. Without the permission the skills are simply skipped:
-the manifest still validates, nothing reaches the prompt.
+**Plugin guidance** (`contributes.skills` + `agent.prompt.inject`) — the system
+prompt carries only the catalog (id, name, one-line description, capped at 240
+chars); a body is read on demand through the built-in `Skill` tool. The
+manifest field is retained for compatibility, but these documents are separate
+from user-owned Skills and do not answer an unqualified request to list, load,
+or create a skill. A plugin may teach at most 32 guidance documents, each at
+most 128KB. Without the permission they are simply skipped: the manifest still
+validates, nothing reaches the prompt.
 
 **MCP tools** (`mcp.server.local` / `mcp.server.remote`) — discovered tools are
 registered under the same `plugin_*` namespace as hand-written plugin tools and

@@ -15,6 +15,11 @@ export type PluginSkillDef = {
   id: string;
   name: string;
   description?: string;
+  /**
+   * Who owns this instruction document. User-owned recipes are intentionally
+   * distinct from instruction documents shipped by plugins or PI-Desktop.
+   */
+  source?: "user" | "plugin" | "builtin";
 };
 
 /**
@@ -29,6 +34,6 @@ export type PluginSkillDef = {
 export function pluginSkillsDigest(skills?: PluginSkillDef[]): string {
   if (!skills?.length) return "";
   return skills
-    .map((skill) => `${skill.id}:${skill.name}:${skill.description ?? ""}`)
+    .map((skill) => `${skill.id}:${skill.name}:${skill.description ?? ""}:${skill.source ?? "plugin"}`)
     .join("|");
 }
