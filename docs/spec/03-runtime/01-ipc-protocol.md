@@ -1205,6 +1205,8 @@ or narrowing its project scope takes effect even for a session whose earlier
 catalog still named the document.
 Internally the aggregate is the **instruction catalog**, not “plugin skills”,
 because it carries user recipes, host guidance, and plugin guidance separately.
+The project-scoped plugin-guidance loader is a separate Electron main module so
+the catalog and on-demand load paths share one explicit scope boundary.
 
 ## 12c. Subagent API (D202)
 
