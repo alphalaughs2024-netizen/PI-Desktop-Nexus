@@ -1194,6 +1194,13 @@ Only the description enters the prompt, and the body is fetched when the model
 invokes `Skill` (D174). A missing file is removed from the list and its local
 state is pruned during the next scan.
 
+PI-Desktop may also catalog its own operational documents as **Plugin guidance**.
+They are host-owned, not user skills: unqualified requests to list, create, or
+load a skill always refer to the user-owned recipes above. The runtime sends a
+compact collaboration core on every request; its detailed searching, editing,
+preview, shell, and delegation playbook is the on-demand
+`pi-desktop/agent-operations` guidance document.
+
 ## 12c. Subagent API (D202)
 
 User-owned subagents are global-only Markdown documents under

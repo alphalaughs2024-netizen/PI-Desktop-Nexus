@@ -286,14 +286,12 @@ describe("DesktopAgentRuntime configuration matching", () => {
     await runtime.dispose();
   });
 
-  it("guides mutation tools away from patch repair loops", async () => {
+  it("keeps detailed operating guidance on demand", async () => {
     const runtime = createRuntime();
     const prompt = (runtime as any).agent.state.systemPrompt as string;
 
-    expect(prompt).toContain("do not create or hand-edit unified-diff files");
-    expect(prompt).toContain("Do not invoke shell apply_patch, git apply, or patch commands");
-    expect(prompt).toContain("Never issue concurrent Write/Edit calls for the same path");
-    expect(prompt).toContain("A path may have three counted failures per prompt");
+    expect(prompt).toContain("pi-desktop/agent-operations");
+    expect(prompt).not.toContain("do not create or hand-edit unified-diff files");
 
     const edit = (runtime as any).agent.state.tools.find(
       (tool: any) => tool.name === "Edit",
@@ -317,49 +315,24 @@ describe("DesktopAgentRuntime configuration matching", () => {
     await runtime.dispose();
   });
 
-  it("requires visible progress updates and the user's language", async () => {
+  it("keeps collaboration rules compact", async () => {
     const runtime = createRuntime();
     const prompt = (runtime as any).agent.state.systemPrompt as string;
 
-    expect(prompt).toContain("answer in the same language the user writes in");
-    expect(prompt).toContain(
-      "never leave the user with no new text for more than one tool batch or 60 seconds",
-    );
-    // The observed failure: a 2830-character conclusion written into thinking
-    // while the visible text stayed empty, twice in a row.
-    expect(prompt).toContain("must be answered in your visible text");
-    expect(prompt).toContain("Make the final message self-contained");
-    expect(prompt).toContain("Carry the work through end to end");
+    expect(prompt).toContain("answer in the user's language");
+    expect(prompt).toContain("give a self-contained final answer");
+    expect(prompt).toContain("Work through safe blockers");
 
     await runtime.dispose();
   });
 
-  it("steers search through the scopeable tools instead of shell pipelines", async () => {
+  it("does not include the full operating manual in every request", async () => {
     const runtime = createRuntime();
     const prompt = (runtime as any).agent.state.systemPrompt as string;
 
-    expect(prompt).toContain(
-      "prefer the Read, Grep, and Glob tools over shell",
-    );
-    expect(prompt).toContain("`outputMode`");
-    expect(prompt).toContain("always reports `totalLines`");
-    expect(prompt).toContain(
-      "paginates any supported text file however large",
-    );
-    expect(prompt).toContain(
-      "Read accepts only an existing regular text file, never a directory",
-    );
-    expect(prompt).toContain(
-      "in Agent mode, activate it with ToolSearch for the current prompt",
-    );
-    expect(prompt).toContain("Grep takes a file-or-directory `path`");
-    expect(prompt).toContain("Grep uses the system's `rg` when it is installed");
-    expect(prompt).toContain("Workspace-relative paths are portable");
-    expect(prompt).toContain(
-      "an explicit path outside the workspace and session scratch roots asks for permission",
-    );
-    expect(prompt).toContain("Do not re-run a search whose answer you already have");
-    expect(prompt).toContain("Never write a tool call as text");
+    expect(prompt).not.toContain("prefer the Read, Grep, and Glob tools over shell");
+    expect(prompt).not.toContain("Grep uses the system's `rg` when it is installed");
+    expect(prompt).toContain("Call tools through the native tool-call interface");
 
     await runtime.dispose();
   });

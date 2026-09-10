@@ -17,6 +17,10 @@ const skillDoc = readFileSync(
   join(desktopRoot, "resources/skills/plugin-development.md"),
   "utf8",
 );
+const operationsDoc = readFileSync(
+  join(desktopRoot, "resources/skills/agent-operations.md"),
+  "utf8",
+);
 const agentRuntimeSrc = readFileSync(
   join(repoRoot, "packages/agent-runtime/src/runtime.ts"),
   "utf8",
@@ -84,12 +88,20 @@ test("the agent runtime advertises skills and rebuilds when the catalog changes"
   assert.match(sidecarSrc, /pluginSkills/);
 });
 
-test("the built-in plugin skill only activates for plugin workspaces", () => {
+test("the operations guidance is always available while plugin guidance remains workspace-scoped", () => {
   assert.match(builtinSrc, /isPluginWorkspace/);
   assert.match(builtinSrc, /schemaVersion.*number/s);
   assert.match(builtinSrc, /pluginPaths\.some/);
-  assert.match(builtinSrc, /if \(!isPluginWorkspace\(input\.workspacePath, input\.pluginPaths\)\) return \[\]/);
+  assert.match(builtinSrc, /AGENT_OPERATIONS_SKILL_ID/);
+  assert.match(builtinSrc, /if \(!isPluginWorkspace\(input\.workspacePath, input\.pluginPaths\)\) return skills/);
   assert.match(mainSrc, /builtinSkills\(\{/);
+});
+
+test("the on-demand operations guide carries the detailed workflow", () => {
+  assert.match(operationsDoc, /^---\n/);
+  assert.match(operationsDoc, /Read.*Glob.*Grep/);
+  assert.match(operationsDoc, /BrowserPreview.*ToolSearch/);
+  assert.match(operationsDoc, /Task.*TaskWait/);
 });
 
 test("the built-in skill body loads through the same Skill tool", () => {

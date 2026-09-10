@@ -15,6 +15,8 @@ import type { PluginSkillDef } from "@pi-desktop/agent-runtime";
 /** Bundled skill teaching the plugin-development loop. */
 export const PLUGIN_DEV_SKILL_FILE = "plugin-development.md";
 export const PLUGIN_DEV_SKILL_ID = "pi-desktop/plugin-development";
+export const AGENT_OPERATIONS_SKILL_FILE = "agent-operations.md";
+export const AGENT_OPERATIONS_SKILL_ID = "pi-desktop/agent-operations";
 
 /** electron-builder copies `resources/skills` to `<resources>/skills`. */
 function resolveBuiltinSkillPath(fileName: string): string | null {
@@ -85,18 +87,29 @@ export type BuiltinSkillInput = {
  * fresh so a packaged update takes effect without a restart.
  */
 export function builtinSkills(input: BuiltinSkillInput): PluginSkillDef[] {
-  if (!isPluginWorkspace(input.workspacePath, input.pluginPaths)) return [];
+  const skills: PluginSkillDef[] = [];
+  const operations = readBuiltinSkill(AGENT_OPERATIONS_SKILL_FILE);
+  if (operations?.trim()) {
+    const parsed = parseSkillFrontmatter(operations);
+    if (parsed.body) {
+      skills.push({
+        id: AGENT_OPERATIONS_SKILL_ID,
+        name: parsed.name ?? "PI-Desktop agent operations",
+        description: parsed.description,
+      });
+    }
+  }
+  if (!isPluginWorkspace(input.workspacePath, input.pluginPaths)) return skills;
   const raw = readBuiltinSkill(PLUGIN_DEV_SKILL_FILE);
-  if (!raw?.trim()) return [];
+  if (!raw?.trim()) return skills;
   const parsed = parseSkillFrontmatter(raw);
-  if (!parsed.body) return [];
-  return [
-    {
-      id: PLUGIN_DEV_SKILL_ID,
-      name: parsed.name ?? "PI-Desktop plugin development",
-      description: parsed.description,
-    },
-  ];
+  if (!parsed.body) return skills;
+  skills.push({
+    id: PLUGIN_DEV_SKILL_ID,
+    name: parsed.name ?? "PI-Desktop plugin development",
+    description: parsed.description,
+  });
+  return skills;
 }
 
 /**
@@ -106,14 +119,21 @@ export function builtinSkills(input: BuiltinSkillInput): PluginSkillDef[] {
 export function loadBuiltinSkillBody(
   id: string,
 ): { id: string; name: string; body: string } | null {
-  if (id !== PLUGIN_DEV_SKILL_ID) return null;
-  const raw = readBuiltinSkill(PLUGIN_DEV_SKILL_FILE);
+  const fileName = id === AGENT_OPERATIONS_SKILL_ID
+    ? AGENT_OPERATIONS_SKILL_FILE
+    : id === PLUGIN_DEV_SKILL_ID
+      ? PLUGIN_DEV_SKILL_FILE
+      : null;
+  if (!fileName) return null;
+  const raw = readBuiltinSkill(fileName);
   if (!raw?.trim()) return null;
   const parsed = parseSkillFrontmatter(raw);
   if (!parsed.body) return null;
   return {
-    id: PLUGIN_DEV_SKILL_ID,
-    name: parsed.name ?? "PI-Desktop plugin development",
+    id,
+    name: parsed.name ?? (id === AGENT_OPERATIONS_SKILL_ID
+      ? "PI-Desktop agent operations"
+      : "PI-Desktop plugin development"),
     body: parsed.body,
   };
 }
