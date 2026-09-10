@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { parseSkillFrontmatter } from "@pi-desktop/plugin-sdk";
-import type { PluginSkillDef } from "@pi-desktop/agent-runtime";
+import type { InstructionDocumentDef } from "@pi-desktop/agent-runtime";
 
 /**
  * Skills PI-Desktop ships itself.
@@ -86,8 +86,8 @@ export type BuiltinSkillInput = {
  * Catalog entries for the built-in skills that apply to the given session, read
  * fresh so a packaged update takes effect without a restart.
  */
-export function builtinSkills(input: BuiltinSkillInput): PluginSkillDef[] {
-  const skills: PluginSkillDef[] = [];
+export function builtinSkills(input: BuiltinSkillInput): InstructionDocumentDef[] {
+  const skills: InstructionDocumentDef[] = [];
   const operations = readBuiltinSkill(AGENT_OPERATIONS_SKILL_FILE);
   if (operations?.trim()) {
     const parsed = parseSkillFrontmatter(operations);

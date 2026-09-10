@@ -72,20 +72,20 @@ test("a reloaded plugin re-indexes its skills, so an edit needs no restart", () 
 });
 
 test("main marks user recipes separately from plugin guidance", () => {
-  assert.match(mainSrc, /const pluginSkills = \[/);
+  assert.match(mainSrc, /const instructionCatalog = \[/);
   assert.match(mainSrc, /\.\.\.plugins\s*\n?\s*\.getSkills\(\)/);
   assert.match(mainSrc, /source: "plugin" as const/);
   assert.match(mainSrc, /source: "user" as const/);
-  assert.match(mainSrc, /\n\s+pluginSkills,\n/);
+  assert.match(mainSrc, /\n\s+instructionCatalog,\n/);
   assert.match(mainSrc, /setLocalTool\("Skill"/);
   assert.match(mainSrc, /loadSkillBody\(id\)/);
 });
 
 test("the agent runtime advertises skills and rebuilds when the catalog changes", () => {
-  assert.match(agentRuntimeSrc, /pluginSkillsPrompt/);
+  assert.match(agentRuntimeSrc, /instructionCatalogPrompt/);
   assert.match(agentRuntimeSrc, /SKILL_TOOL_NAME/);
-  assert.match(agentRuntimeSrc, /pluginSkillsDigest/);
-  assert.match(sidecarSrc, /pluginSkills/);
+  assert.match(agentRuntimeSrc, /instructionCatalogDigest/);
+  assert.match(sidecarSrc, /instructionCatalog/);
 });
 
 test("the operations guidance is always available while plugin guidance remains workspace-scoped", () => {

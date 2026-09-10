@@ -1,6 +1,7 @@
 /**
- * Plugin skills: instruction documents a plugin contributes to the agent
- * through `contributes.skills`.
+ * Instruction catalog: documents contributed by user recipes, plugins, or the
+ * PI-Desktop host. Plugin manifests still call their contribution `skills` for
+ * compatibility, but the aggregate is intentionally broader.
  *
  * Only the catalog — id, name, description — travels into the system prompt;
  * the model loads a body on demand with the `Skill` tool (D174). Reading the
@@ -10,7 +11,7 @@
  */
 
 /** One catalog entry as the model sees it in the system prompt. */
-export type PluginSkillDef = {
+export type InstructionDocumentDef = {
   /** `<pluginId>/<skillId>` — the exact id the `Skill` tool expects. */
   id: string;
   name: string;
@@ -31,9 +32,14 @@ export type PluginSkillDef = {
  * part of it: they never enter the prompt, and the `Skill` tool reads them
  * fresh from disk on every call.
  */
-export function pluginSkillsDigest(skills?: PluginSkillDef[]): string {
-  if (!skills?.length) return "";
-  return skills
+export function instructionCatalogDigest(documents?: InstructionDocumentDef[]): string {
+  if (!documents?.length) return "";
+  return documents
     .map((skill) => `${skill.id}:${skill.name}:${skill.description ?? ""}:${skill.source ?? "plugin"}`)
     .join("|");
 }
+
+/** @deprecated Internal callers should use InstructionDocumentDef. */
+export type PluginSkillDef = InstructionDocumentDef;
+/** @deprecated Internal callers should use instructionCatalogDigest. */
+export const pluginSkillsDigest = instructionCatalogDigest;

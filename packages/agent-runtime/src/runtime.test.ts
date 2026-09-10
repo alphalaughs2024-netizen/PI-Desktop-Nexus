@@ -143,7 +143,7 @@ function createRuntime(
     pluginTools: PluginToolDef[];
     subagents: SubagentDefinition[];
     subagentProviders: Record<string, RuntimeProviderConfig>;
-    pluginSkills: import("./plugin-skills-prompt.js").PluginSkillDef[];
+    instructionCatalog: import("./plugin-skills-prompt.js").InstructionDocumentDef[];
     commandShell: CommandShellOption;
     turnId: string;
     host: { call: ReturnType<typeof vi.fn>; onNotification?: ReturnType<typeof vi.fn> };
@@ -168,7 +168,7 @@ function createRuntime(
     subagents: overrides.subagents,
     subagentProviders: overrides.subagentProviders,
     projectInstructions: overrides.projectInstructions,
-    pluginSkills: overrides.pluginSkills,
+    instructionCatalog: overrides.instructionCatalog,
     onEvent: overrides.onEvent ?? vi.fn(),
   });
 }
@@ -206,7 +206,7 @@ function runtimeMatches(
     provider: (runtime as any).provider,
     thinkingLevel: (runtime as any).thinkingLevel,
     pluginTools: (runtime as any).pluginTools,
-    pluginSkills: (runtime as any).pluginSkills,
+    instructionCatalog: (runtime as any).instructionCatalog,
     projectInstructions: (runtime as any).baseProjectInstructions,
     projectPath: (runtime as any).projectPath,
     commandShell: (runtime as any).commandShell,
@@ -1472,7 +1472,7 @@ describe("DesktopAgentRuntime deferred tool catalog", () => {
           parameters: {},
         },
       ],
-      pluginSkills: [
+      instructionCatalog: [
         {
           id: "demo/release-notes",
           name: "Release notes",
@@ -1554,7 +1554,7 @@ describe("DesktopAgentRuntime deferred tool catalog", () => {
       pluginTools: [
         { name: "plugin_demo_run", description: "demo", parameters: {} },
       ],
-      pluginSkills: [{ id: "demo.skill", name: "Demo skill" }],
+      instructionCatalog: [{ id: "demo.skill", name: "Demo skill" }],
     });
     const names = (runtime as any).agent.state.tools.map(
       (tool: any) => tool.name,
@@ -1699,7 +1699,7 @@ describe("DesktopAgentRuntime deferred tool catalog", () => {
 
   it("pre-activates only deterministic capability matches before a request", async () => {
     const runtime = createRuntime({
-      pluginSkills: [{ id: "recipe", name: "Recipe" }],
+      instructionCatalog: [{ id: "recipe", name: "Recipe" }],
     });
     const agent = (runtime as any).agent;
 
@@ -5113,7 +5113,7 @@ describe("DesktopAgentRuntime inline context compaction", () => {
 });
 
 describe("DesktopAgentRuntime plugin skills (D174)", () => {
-  const pluginSkills = [
+  const instructionCatalog = [
     {
       id: "demo.hello/release-notes",
       name: "Release notes",
@@ -5123,7 +5123,7 @@ describe("DesktopAgentRuntime plugin skills (D174)", () => {
 
   it("advertises the catalog and loads the Skill tool on demand", async () => {
     const runtime = createRuntime({
-      pluginSkills,
+      instructionCatalog,
       projectInstructions: {
         entries: [{ source: "AGENTS.md", content: "Run unit tests." }],
       },
@@ -5166,7 +5166,7 @@ describe("DesktopAgentRuntime plugin skills (D174)", () => {
         entries: [{ source: "src/AGENTS.md", content: "Use tabs." }],
       }),
     };
-    const runtime = createRuntime({ pluginSkills, host });
+    const runtime = createRuntime({ instructionCatalog, host });
 
     await (runtime as any).loadPathInstructions("Read", { path: "src/a.ts" });
 
@@ -5178,20 +5178,20 @@ describe("DesktopAgentRuntime plugin skills (D174)", () => {
   });
 
   it("does not reuse a runtime whose skill catalog changed", async () => {
-    const runtime = createRuntime({ pluginSkills });
+    const runtime = createRuntime({ instructionCatalog });
 
-    expect(runtimeMatches(runtime, { pluginSkills })).toBe(true);
+    expect(runtimeMatches(runtime, { instructionCatalog })).toBe(true);
     // Revoking agent.prompt.inject empties the catalog.
-    expect(runtimeMatches(runtime, { pluginSkills: [] })).toBe(false);
+    expect(runtimeMatches(runtime, { instructionCatalog: [] })).toBe(false);
     expect(
       runtimeMatches(runtime, {
-        pluginSkills: [...pluginSkills, { id: "demo.hello/other", name: "Other" }],
+        instructionCatalog: [...instructionCatalog, { id: "demo.hello/other", name: "Other" }],
       }),
     ).toBe(false);
     // A renamed skill rewrites the catalog line the model reads.
     expect(
       runtimeMatches(runtime, {
-        pluginSkills: [{ ...pluginSkills[0], name: "Renamed" }],
+        instructionCatalog: [{ ...instructionCatalog[0], name: "Renamed" }],
       }),
     ).toBe(false);
 
@@ -5202,7 +5202,7 @@ describe("DesktopAgentRuntime plugin skills (D174)", () => {
     const host = {
       call: vi.fn().mockResolvedValue({ ok: true, content: "# Skill: Release notes" }),
     };
-    const runtime = createRuntime({ pluginSkills, host });
+    const runtime = createRuntime({ instructionCatalog, host });
     const search = (runtime as any).agent.state.tools.find(
       (entry: any) => entry.name === "ToolSearch",
     );

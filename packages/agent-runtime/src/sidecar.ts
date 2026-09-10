@@ -19,7 +19,7 @@ import {
   type RuntimePromptAttachment,
   type RuntimeProviderConfig,
 } from "./runtime.js";
-import type { PluginSkillDef } from "./plugin-skills-prompt.js";
+import type { InstructionDocumentDef } from "./plugin-skills-prompt.js";
 import type { TrustedExtensionSpec } from "@pi-desktop/shared";
 import type { ProjectInstructions } from "./project-instructions.js";
 import {
@@ -97,7 +97,7 @@ type RuntimeParams = {
   provider: RuntimeProviderConfig;
   commandShell: CommandShellOption;
   pluginTools?: PluginToolDef[];
-  pluginSkills?: PluginSkillDef[];
+  instructionCatalog?: InstructionDocumentDef[];
   /** Trusted extensions enabled for this session (D387). */
   trustedExtensions?: TrustedExtensionSpec[];
   /** Delegates this session may spawn through `Task` (ADR 0062). */
@@ -289,7 +289,7 @@ async function runtimeFor(
   });
   const thinkingLevel = normalizeThinkingLevel(params.thinkingLevel);
   const pluginTools = params.pluginTools ?? [];
-  const pluginSkills = params.pluginSkills ?? [];
+  const instructionCatalog = params.instructionCatalog ?? [];
   const trustedExtensions = params.trustedExtensions ?? [];
   const subagents = params.subagents ?? [];
   const subagentProviders = Object.fromEntries(
@@ -322,7 +322,7 @@ async function runtimeFor(
     provider,
     thinkingLevel,
     pluginTools,
-    pluginSkills,
+    instructionCatalog,
     trustedExtensions,
     subagents,
     subagentProviders,
@@ -378,7 +378,7 @@ async function runtimeFor(
     compaction,
     compactionSettings: params.compactionSettings,
     pluginTools,
-    pluginSkills,
+    instructionCatalog,
     trustedExtensions,
     subagents,
     subagentProviders,

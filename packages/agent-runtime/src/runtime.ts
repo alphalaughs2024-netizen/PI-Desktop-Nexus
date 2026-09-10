@@ -137,11 +137,11 @@ import { visionFromModelConfig } from "./model-capabilities.js";
 import type { ProjectInstructions } from "./project-instructions.js";
 import { projectInstructionsPrompt } from "./project-instructions-prompt.js";
 import {
-  pluginSkillsPrompt,
+  instructionCatalogPrompt,
   SKILL_TOOL_NAME,
-  type PluginSkillDef,
+  type InstructionDocumentDef,
 } from "./plugin-skills-prompt.js";
-import { pluginSkillsDigest } from "./plugin-skills.js";
+import { instructionCatalogDigest } from "./plugin-skills.js";
 import {
   openCodeEndpointFromProvider,
   withOpenCodeSessionHeaders,
@@ -727,7 +727,7 @@ export type AgentRuntimeOptions = {
   /** Plugin agent tools to expose to the model this session. */
   pluginTools?: PluginToolDef[];
   /** Plugin skills advertised in the system prompt and loaded via `Skill`. */
-  pluginSkills?: PluginSkillDef[];
+  instructionCatalog?: InstructionDocumentDef[];
   /** Trusted extensions enabled for this session (D387); loaded by
    * `loadTrustedExtensions()` before the first prompt. */
   trustedExtensions?: TrustedExtensionSpec[];
@@ -757,7 +757,7 @@ export type RuntimeMatchConfig = {
   provider: RuntimeProviderConfig;
   thinkingLevel: ThinkingLevel;
   pluginTools?: PluginToolDef[];
-  pluginSkills?: PluginSkillDef[];
+  instructionCatalog?: InstructionDocumentDef[];
   trustedExtensions?: TrustedExtensionSpec[];
   projectInstructions?: ProjectInstructions;
   projectPath?: string;
@@ -1319,7 +1319,7 @@ export class DesktopAgentRuntime {
   private pendingPlanId?: string;
   private currentAssistant?: UiMessage;
   private pluginTools: PluginToolDef[];
-  private pluginSkills: PluginSkillDef[];
+  private instructionCatalog: InstructionDocumentDef[];
   private trustedExtensionSpecs: TrustedExtensionSpec[];
   private extensionRunner?: TrustedExtensionRunner;
   private extensionSessionName?: string;
@@ -1463,7 +1463,7 @@ export class DesktopAgentRuntime {
     });
     this.onEvent = opts.onEvent;
     this.pluginTools = opts.pluginTools ?? [];
-    this.pluginSkills = opts.pluginSkills ?? [];
+    this.instructionCatalog = opts.instructionCatalog ?? [];
     this.trustedExtensionSpecs = opts.trustedExtensions ?? [];
     this.subagents = opts.subagents ?? [];
     this.subagentProviders = opts.subagentProviders ?? {};
@@ -1490,7 +1490,7 @@ export class DesktopAgentRuntime {
 
     this.fullEntries = this.historyToEntries(opts.history ?? []);
     this.activeCompaction = opts.compaction;
-    const skillsPrompt = pluginSkillsPrompt(this.pluginSkills);
+    const skillsPrompt = instructionCatalogPrompt(this.instructionCatalog);
     const defaultSystemPrompt = [
       DEFAULT_RUNTIME_SYSTEM_PROMPT,
       "Collaboration: answer in the user's language. Before tool work, briefly say what you are doing; give a self-contained final answer. Work through safe blockers instead of stopping early. Call tools through the native tool-call interface, never as prose. Load `pi-desktop/agent-operations` from Plugin guidance for detailed search, editing, preview, shell, or delegation workflow guidance.",
@@ -1840,7 +1840,7 @@ export class DesktopAgentRuntime {
   /** True when this runtime can be reused for a prompt with the given config. */
   matches(config: RuntimeMatchConfig): boolean {
     const requestedPluginTools = config.pluginTools ?? [];
-    const requestedPluginSkills = config.pluginSkills ?? [];
+    const requestedInstructions = config.instructionCatalog ?? [];
     const current = this.pluginTools.map((t) => t.name).sort().join(",");
     const next = requestedPluginTools.map((t) => t.name).sort().join(",");
     const currentThinkingLevels = [
@@ -1874,10 +1874,11 @@ export class DesktopAgentRuntime {
       safeJson(this.baseProjectInstructions ?? null) ===
         safeJson(config.projectInstructions ?? null) &&
       (this.projectPath ?? "") === (config.projectPath?.trim() ?? "") &&
-      // Enabling a plugin, revoking agent.prompt.inject or renaming a skill
+      // Enabling a source document or renaming an instruction
       // changes the catalog digest, which retires the runtime and its stale
       // prompt. Bodies are excluded: the Skill tool always reads them fresh.
-      pluginSkillsDigest(this.pluginSkills) === pluginSkillsDigest(requestedPluginSkills) &&
+      instructionCatalogDigest(this.instructionCatalog) ===
+        instructionCatalogDigest(requestedInstructions) &&
       // Editing `~/.agents/subagents/*.md` must reach the next prompt. Definition
       // bodies are part of the `Task` tool's behavior, so unlike skills they
       // are compared in full.
@@ -2763,10 +2764,10 @@ export class DesktopAgentRuntime {
         execute: exec(def.name).execute,
       };
     });
-    // Only offered when a plugin actually taught a skill; Electron main serves
-    // it locally (host-core never sees the skill documents).
+    // Only offered when an instruction document exists; Electron main serves
+    // it locally (host-core never sees the document bodies).
     const skillTools: AgentTool[] =
-      this.mode === "agent" && this.pluginSkills.length
+      this.mode === "agent" && this.instructionCatalog.length
       ? [
           {
             name: SKILL_TOOL_NAME,

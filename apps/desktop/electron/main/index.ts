@@ -1657,7 +1657,7 @@ async function resolveAgentRuntimeLaunch(
   // Instruction catalog (D174): only id/name/description/source cross to the
   // sidecar; the document body is fetched on demand through the local `Skill`
   // tool. User-owned Skills are recipes; plugin entries are separate guidance.
-  const pluginSkills = [
+  const instructionCatalog = [
     ...builtinSkills({
       workspacePath: projectPath,
       pluginPaths: plugins.listLoaded().map((loaded) => loaded.path),
@@ -1866,7 +1866,7 @@ async function resolveAgentRuntimeLaunch(
       ],
       // Plugin skills (D174): only the catalog crosses to the sidecar; the
       // document body is fetched on demand through the local `Skill` tool.
-      pluginSkills,
+      instructionCatalog,
       // Trusted extensions enabled for this project (spec 16 §3.2). The set
       // is part of the runtime match, so a toggle retires the runtime.
       trustedExtensions: plugins

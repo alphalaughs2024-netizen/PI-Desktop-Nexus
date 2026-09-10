@@ -1,6 +1,6 @@
-import type { PluginSkillDef } from "./plugin-skills.js";
+import type { InstructionDocumentDef } from "./plugin-skills.js";
 
-export type { PluginSkillDef };
+export type { InstructionDocumentDef };
 
 /** Tool the model calls to pull a skill document into context on demand. */
 export const SKILL_TOOL_NAME = "Skill";
@@ -11,14 +11,14 @@ export const SKILL_TOOL_NAME = "Skill";
  * through the `Skill` tool when the model decides a skill applies, so a long
  * document costs nothing until it is needed.
  */
-function catalogLines(skills: PluginSkillDef[]): string[] {
+function catalogLines(skills: InstructionDocumentDef[]): string[] {
   return skills.map((skill) => {
     const description = skill.description?.trim();
     return `- \`${skill.id}\` — ${skill.name}${description ? `: ${description}` : ""}`;
   });
 }
 
-export function pluginSkillsPrompt(skills: PluginSkillDef[]): string | undefined {
+export function instructionCatalogPrompt(skills: InstructionDocumentDef[]): string | undefined {
   if (!skills.length) return undefined;
   const userSkills = skills.filter((skill) => skill.source === "user");
   const pluginGuidance = skills.filter((skill) => skill.source !== "user");
@@ -47,3 +47,8 @@ export function pluginSkillsPrompt(skills: PluginSkillDef[]): string | undefined
   }
   return sections.join("\n\n");
 }
+
+/** @deprecated Internal callers should use instructionCatalogPrompt. */
+export const pluginSkillsPrompt = instructionCatalogPrompt;
+/** @deprecated Internal callers should use InstructionDocumentDef. */
+export type PluginSkillDef = InstructionDocumentDef;
