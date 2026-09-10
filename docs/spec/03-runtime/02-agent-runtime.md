@@ -649,7 +649,12 @@ core set rather than the on-demand catalog of §7.1:
 
 **Delegate loop.** A `SubagentRun` is a second pi `Agent` in the same sidecar
 process with the definition's system prompt, its (possibly pinned)
-provider/model, its declared tools, and the same host connection. A pinned or
+provider/model, its declared tools, and the same host connection. A user
+definition that declares exactly `tools: inherit` instead receives a launch-time
+snapshot of the parent's active safe tools; it never receives lifecycle,
+mode, question, context-reset, discovery, or merely deferred tools (ADR 0218).
+When that snapshot includes `Skill`, the parent's compact instruction catalog
+is included in the child prompt and instruction bodies remain on-demand. A pinned or
 explicitly selected delegation model uses the exact provider/model binding
 saved in Settings for its effective thinking capability; models.dev supplies
 the baseline only. It runs under

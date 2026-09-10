@@ -11,7 +11,8 @@
  *
  * Two defaults matter for safety:
  * - a delegate that does not declare `tools` is read-only, and
- * - a delegate never inherits mutation rights from the parent session.
+ * - a delegate never inherits mutation rights from the parent session unless a
+ *   user-owned definition explicitly opts into the parent's active tool set.
  */
 
 import {
@@ -38,6 +39,11 @@ export type SubagentDefinition = {
   description: string;
   /** Tools the delegate may call; read-only by default. */
   tools: string[];
+  /**
+   * A user-defined `tools: inherit` declaration. The runtime resolves it from
+   * the parent's active tools at delegation time; it is never a static grant.
+   */
+  inheritTools?: boolean;
   /** Provider/model this definition pins, when it pins one. */
   model?: SubagentModelPin;
   /**
@@ -299,7 +305,20 @@ export function parseSubagentDefinition(
 
   const declaredTools = asList(frontmatter.get("tools"));
   let tools: string[];
-  if (declaredTools.length === 0) {
+  const inheritTools =
+    declaredTools.length === 1 && declaredTools[0].trim().toLowerCase() === "inherit";
+  const mixesInheritTools =
+    declaredTools.length > 1 &&
+    declaredTools.some((tool) => tool.trim().toLowerCase() === "inherit");
+  if (inheritTools) {
+    if (options.source !== "user") {
+      errors.push("`tools: inherit` is available only to user subagent definitions");
+    }
+    tools = [];
+  } else if (mixesInheritTools) {
+    errors.push("`tools: inherit` cannot be combined with other tools");
+    tools = [...DEFAULT_SUBAGENT_TOOLS];
+  } else if (declaredTools.length === 0) {
     tools = [...DEFAULT_SUBAGENT_TOOLS];
   } else if (declaredTools.length === 1 && declaredTools[0] === "*") {
     tools = [...SUBAGENT_ASSIGNABLE_TOOLS];
@@ -383,6 +402,7 @@ export function parseSubagentDefinition(
       name,
       description,
       tools,
+      ...(inheritTools && options.source === "user" ? { inheritTools: true } : {}),
       ...(model ? { model } : {}),
       ...(thinkingLevel ? { thinkingLevel } : {}),
       ...(permission ? { permission } : {}),
