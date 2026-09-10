@@ -514,19 +514,31 @@ is guidance, not the security boundary.
 one subagent definition. Plan and Goal are read-only contract negotiations, so a
 delegate with `Bash`, `Edit` or `Write` would drive straight through them.
 
-A definition declares the tools its delegate may call, drawn only from the seven
-working tools `Read`, `Glob`, `Grep`, `BrowserPreview`, `Bash`, `Edit` and
-`Write`. A definition that declares none gets `Read`, `Glob`, `Grep`;
-`tools: "*"` means all seven working tools. An unrecognized name — including
-the withdrawn `A2A` and `Peer` tools (D326 / ADR 0165) — is dropped with a
-parse warning. Plugin tools, `Skill`, `ToolSearch`, `new_context`, the mode
-tools and `Task` itself are never assignable: a delegate is a bounded
-file/search/shell worker, not a second session.
+A static definition declares the tools its delegate may call, drawn only from
+the seven working tools `Read`, `Glob`, `Grep`, `BrowserPreview`, `Bash`,
+`Edit` and `Write`. A definition that declares none gets `Read`, `Glob`,
+`Grep`; `tools: "*"` means those same seven working tools. An unrecognized
+name — including the withdrawn `A2A` and `Peer` tools (D326 / ADR 0165) — is
+dropped with a parse warning. Static definitions cannot assign plugin tools,
+`Skill`, `ToolSearch`, `new_context`, the mode tools, or `Task` itself: a
+delegate remains a bounded worker, not a second session.
 
-A delegate's available tools are its definition's, never its session's. It
-cannot gain a tool because the parent has it, and a session cannot lend
-mutation rights to a read-only delegate. Delegate calls are built by the
-session runtime and go through the same `tools.execute` path, so path rules
+A **user-owned** definition may instead declare exactly `tools: inherit`
+(ADR 0218). At `Task` launch the runtime snapshots only the parent's currently
+active tools, then removes `Task`, `TaskWait`, `TaskList`, `TaskStop`,
+`EnterPlanMode`, `EnterGoalMode`, `SubmitPlan`, `SubmitGoal`, `new_context`,
+`asktool`, and `ToolSearch`. `ToolSearch` is excluded because it could activate
+a capability that was only installed or deferred, rather than active for the
+parent. Thus an inheriting delegate can use an active plugin/MCP capability or
+`Skill`, but never nested delegation, mode changes, user questions, or an
+inactive/deferred capability. The prompt receives the parent's compact Skill
+catalog only when `Skill` is inherited; recipe bodies still load only through a
+successful `Skill` call. `inherit` is a scalar opt-in: it cannot be mixed with
+static tools, and builtin definitions cannot declare it.
+
+Except for that explicit user opt-in, a delegate's available tools are its
+definition's, never its session's. Delegate calls are built by the session
+runtime and go through the same `tools.execute` path, so path rules
 (§4), Bash rules (§5), permission modes (§6), the operating-mode matrix (§10)
 and auditing (§9) apply unchanged — evaluated against the owning session.
 

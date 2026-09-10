@@ -7694,6 +7694,43 @@ This test plan spec is accepted when:
 - **Milestone**: M5
 - **Status**: Documented
 
+#### E2E-215: User subagents safely inherit active parent capabilities
+
+- **Preconditions**: An Agent-mode project session has a user-owned global
+  `~/.agents/subagents/session-worker.md` with exactly `tools: inherit`, an
+  active user Skill catalog, one active plugin or MCP tool, and a second plugin
+  or MCP tool that remains deferred. The catalog also contains builtins and a
+  user-defined static `tools: "*"` worker.
+- **Steps**:
+  1. Start the inheriting worker with `Task` after the parent has activated the
+     first plugin/MCP tool; inspect the child tool list and system prompt.
+  2. Have the worker load the listed Skill and use the active capability under
+     the normal permission policy.
+  3. Attempt from the child to call `Task`, `TaskWait`, `TaskList`, `TaskStop`,
+     `asktool`, a mode tool, `new_context`, `ToolSearch`, and the deferred
+     plugin/MCP capability.
+  4. Run the static wildcard worker in the same parent turn. Then change the
+     parent active-tool set and start a new inheriting worker.
+  5. Try `tools: [inherit, Read]` and a builtin `tools: inherit` definition;
+     reload the catalog and inspect diagnostics.
+- **Expected**: The inheriting worker receives exactly the parent tools active
+  when it starts, except all lifecycle, mode, question, context-reset, and
+  discovery tools; it cannot activate or see deferred capabilities, so it
+  cannot widen its scope or create nested subagents. Active plugin/MCP calls
+  retain the parent session's ordinary host permission and path checks. The
+  child prompt lists the same Skill identifiers but contains no Skill bodies;
+  `Skill` resolves through the parent's catalog. Static wildcard and builtin
+  workers retain their existing seven-tool-only behavior. A later parent tool
+  activation affects only a newly launched inheriting worker. Mixed and builtin
+  inherit declarations fail parsing with a localized launch diagnostic.
+- **Specs linked**: `03-runtime/02-agent-runtime.md` §5f,
+  `03-runtime/03-tools-and-permissions.md` §10.2, ADR 0218
+- **Acceptance**: C (conversation & stream), Security, Quality
+- **Milestone**: M6+
+- **Status**: Unit-covered (`packages/shared/src/subagent-definition.test.ts`,
+  `packages/agent-runtime/src/runtime.test.ts`); full provider/UI journey Draft
+  (do not run E2E locally unless explicitly requested)
+
 #### E2E-142: Background delegation converges through TaskWait and honors permission scopes
 
 - **Preconditions**: A project-bound Agent session whose permission mode can be

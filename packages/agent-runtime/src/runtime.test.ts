@@ -5291,6 +5291,91 @@ describe("DesktopAgentRuntime subagents", () => {
     await runtime.dispose();
   });
 
+  it("gives an inheriting user subagent only the parent's active safe tools and skill catalog", async () => {
+    const inheritor: SubagentDefinition = {
+      name: "session-worker",
+      description: "Uses the parent session's active capabilities.",
+      tools: [],
+      inheritTools: true,
+      prompt: "Use the available capabilities to complete the delegated task.",
+      source: "user",
+    };
+    const runtime = createRuntime({
+      subagents: [inheritor],
+      pluginTools: [
+        { name: "plugin_active", description: "Active plugin action.", parameters: {} },
+        { name: "plugin_deferred", description: "Deferred plugin action.", parameters: {} },
+      ],
+      instructionCatalog: [
+        {
+          id: "user/release-recipe",
+          name: "Release recipe",
+          description: "Prepare a release safely.",
+          source: "user",
+        },
+      ],
+    });
+    (runtime as any).activeDeferredToolNames.add("plugin_active");
+    (runtime as any).agent.state.tools = (runtime as any).activeTools();
+    subagentRuns.calls.length = 0;
+
+    await taskTool(runtime).execute("task-inherit", {
+      agent: "session-worker",
+      task: "Use the available tools and report the result.",
+    });
+
+    expect(subagentRuns.calls).toHaveLength(1);
+    const options = subagentRuns.calls[0];
+    const names = options.tools.map((tool: { name: string }) => tool.name);
+    expect(names).toContain("Read");
+    expect(names).toContain("Skill");
+    expect(names).toContain("plugin_active");
+    expect(names).not.toContain("plugin_deferred");
+    expect(names).not.toContain("ToolSearch");
+    expect(names).not.toContain("Task");
+    expect(names).not.toContain("TaskWait");
+    expect(names).not.toContain("TaskList");
+    expect(names).not.toContain("TaskStop");
+    expect(names).not.toContain("asktool");
+    expect(names).not.toContain("EnterPlanMode");
+    expect(names).not.toContain("EnterGoalMode");
+    expect(names).not.toContain("new_context");
+    expect(options.systemPrompt).toContain("# Skills");
+    expect(options.systemPrompt).toContain("`user/release-recipe`");
+    expect(options.systemPrompt).not.toContain("Skill: Release recipe");
+
+    await runtime.dispose();
+  });
+
+  it("keeps static wildcard delegates on the built-in worker tool allowlist", async () => {
+    const wildcard: SubagentDefinition = {
+      name: "static-worker",
+      description: "Uses every static worker tool.",
+      tools: ["Read", "Glob", "Grep", "BrowserPreview", "Bash", "Edit", "Write"],
+      prompt: "Work within the declared tool set.",
+      source: "user",
+    };
+    const runtime = createRuntime({
+      subagents: [wildcard],
+      pluginTools: [{ name: "plugin_active", description: "Active plugin action.", parameters: {} }],
+      instructionCatalog: [{ id: "user/recipe", name: "Recipe", source: "user" }],
+    });
+    (runtime as any).activeDeferredToolNames.add("plugin_active");
+    (runtime as any).agent.state.tools = (runtime as any).activeTools();
+    subagentRuns.calls.length = 0;
+
+    await taskTool(runtime).execute("task-static", {
+      agent: "static-worker",
+      task: "Work within the static tools.",
+    });
+
+    const names = subagentRuns.calls[0].tools.map((tool: { name: string }) => tool.name);
+    expect(names).toEqual(wildcard.tools);
+    expect(names).not.toContain("Skill");
+    expect(names).not.toContain("plugin_active");
+    await runtime.dispose();
+  });
+
   it("is the only tool allowed to run in parallel", async () => {
     const runtime = createRuntime({ subagents: [explorer] });
     const catalog = (runtime as any).toolCatalog as Map<string, any>;

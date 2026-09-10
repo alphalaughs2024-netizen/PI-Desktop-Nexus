@@ -195,6 +195,46 @@ Go.`);
     expect(result.definition.tools).not.toContain("Peer");
   });
 
+  it("lets only user definitions opt into the active parent tool set", () => {
+    const user = parse(`---
+description: Works with the parent session's active capabilities.
+tools: inherit
+---
+Use only the tools the parent has already made available.`);
+
+    expect(user.ok).toBe(true);
+    if (!user.ok) return;
+    expect(user.definition.tools).toEqual([]);
+    expect(user.definition.inheritTools).toBe(true);
+
+    const builtin = parseSubagentDefinition(
+      `---
+description: Cannot widen its own tool scope.
+tools: inherit
+---
+Do the work.`,
+      { source: "builtin", fallbackName: "builtin-worker" },
+    );
+    expect(builtin.ok).toBe(false);
+    if (!builtin.ok) {
+      expect(builtin.errors).toContain(
+        "`tools: inherit` is available only to user subagent definitions",
+      );
+    }
+
+    const mixed = parse(`---
+description: Cannot mix inherited and static tools.
+tools: [inherit, Read]
+---
+Do the work.`);
+    expect(mixed.ok).toBe(false);
+    if (!mixed.ok) {
+      expect(mixed.errors).toContain(
+        "`tools: inherit` cannot be combined with other tools",
+      );
+    }
+  });
+
   it("drops unknown tools with a warning instead of failing", () => {
     const result = parse(`---
 description: Reads code.

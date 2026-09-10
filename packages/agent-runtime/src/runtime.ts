@@ -270,6 +270,22 @@ function mutationTerminationAdvice(
 export const TOOL_SEARCH_NAME = "ToolSearch";
 export const ASK_TOOL_NAME = "asktool";
 
+/** A delegated worker cannot expand its own scope or create another worker. */
+const INHERITED_SUBAGENT_DENYLIST = new Set([
+  SUBAGENT_TOOL_NAME,
+  SUBAGENT_WAIT_TOOL_NAME,
+  SUBAGENT_LIST_TOOL_NAME,
+  SUBAGENT_STOP_TOOL_NAME,
+  "EnterPlanMode",
+  "EnterGoalMode",
+  "SubmitPlan",
+  "SubmitGoal",
+  "new_context",
+  ASK_TOOL_NAME,
+  // ToolSearch can activate capabilities the parent has not made active.
+  TOOL_SEARCH_NAME,
+]);
+
 /**
  * Delegation lifecycle (ADR 0089): `Task` starts a subagent in the background
  * and returns immediately; `TaskWait` converges on running delegations;
@@ -3192,7 +3208,31 @@ export class DesktopAgentRuntime {
     }
     const projectPrompt = projectInstructionsPrompt(this.projectInstructions);
     if (projectPrompt) blocks.push(projectPrompt);
+    if (definition.inheritTools && tools.has(SKILL_TOOL_NAME)) {
+      const catalog = instructionCatalogPrompt(this.instructionCatalog);
+      if (catalog) blocks.push(catalog);
+    }
     return blocks;
+  }
+
+  /** Resolve the actual worker tool set immediately before it is delegated. */
+  private resolveSubagentTools(definition: SubagentDefinition): {
+    definition: SubagentDefinition;
+    tools: AgentTool[];
+  } {
+    if (definition.source === "user" && definition.inheritTools) {
+      const tools = this.activeTools().filter(
+        (tool) => !INHERITED_SUBAGENT_DENYLIST.has(tool.name),
+      );
+      return {
+        definition: { ...definition, tools: tools.map((tool) => tool.name) },
+        tools,
+      };
+    }
+    const tools = definition.tools
+      .map((name) => this.toolCatalog.get(name))
+      .filter((tool): tool is AgentTool => tool !== undefined);
+    return { definition, tools };
   }
 
   /**
@@ -3224,7 +3264,7 @@ export class DesktopAgentRuntime {
     const catalog = this.subagents
       .map(
         (definition) =>
-          `- ${definition.name} (tools: ${definition.tools.join(", ")}): ${definition.description}`,
+          `- ${definition.name} (tools: ${definition.inheritTools ? "inherit" : definition.tools.join(", ")}): ${definition.description}`,
       )
       .join("\n");
     return {
@@ -3331,9 +3371,9 @@ export class DesktopAgentRuntime {
             );
           }
         }
-        const tools = definition.tools
-          .map((name) => this.toolCatalog.get(name))
-          .filter((tool): tool is AgentTool => tool !== undefined);
+        const resolved = this.resolveSubagentTools(definition);
+        const delegatedDefinition = resolved.definition;
+        const tools = resolved.tools;
         if (tools.length === 0) {
           return this.subagentToolError(
             toolCallId,
@@ -3386,9 +3426,9 @@ export class DesktopAgentRuntime {
           startedEpoch: this.turnEpoch,
         };
         this.delegations.set(delegationId, record);
-        const scopedTools = this.scopeDelegateTools(tools, definition);
+        const scopedTools = this.scopeDelegateTools(tools, delegatedDefinition);
         new SubagentRun({
-          definition,
+          definition: delegatedDefinition,
           sessionId: this.sessionId,
           turnId: this.turnId,
           parentToolCallId: toolCallId,
@@ -3396,8 +3436,8 @@ export class DesktopAgentRuntime {
           provider,
           thinkingLevel,
           systemPrompt: composeSubagentSystemPrompt({
-            definition,
-            guidance: this.subagentGuidance(definition),
+            definition: delegatedDefinition,
+            guidance: this.subagentGuidance(delegatedDefinition),
           }),
           tools: scopedTools,
           onEvent: (envelope) => {
