@@ -61,6 +61,13 @@ test("model options are visually nested under their provider heading", () => {
   );
 });
 
+test("model groups use the account-aware display name", () => {
+  assert.match(composerSource, /composerProviderDisplayName\(candidate\)/);
+  assert.match(composerSource, /composerProviderSearchText\(candidate\)/);
+  assert.match(composerSource, /aria-label=\{group\.providerDisplayName\}/);
+  assert.match(composerSource, /\{group\.providerDisplayName\}/);
+});
+
 test("provider headings establish a stronger type level than model rows", () => {
   assert.match(
     stylesSource,

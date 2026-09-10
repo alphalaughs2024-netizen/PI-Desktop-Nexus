@@ -2561,6 +2561,11 @@ there is no separate top-bar model selector.
   binding on both the initial and refreshed row. A non-empty OAuth account
   label is the visible provider heading and accessible group name; search
   indexes both that label and the vendor name.
+  second visible label. A configured model alias is applied from the persisted
+  binding on both the initial and refreshed row. For an OAuth provider, the
+  group heading uses its non-secret account label when present, so duplicate
+  vendor accounts remain distinguishable without appending the label to a
+  model row.
 
 ### 12.5 Accessibility
 

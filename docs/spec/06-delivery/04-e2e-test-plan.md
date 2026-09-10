@@ -6244,7 +6244,9 @@ Each scenario is documented in this format:
   fixed list is portaled above the dialog without changing dialog height or
   being clipped by the dialog's overflow. Confirm a custom model ID can still
   be entered. Press Test connection and confirm the result resolves the edited
-  account. 5) Resolve
+  account. Open the Composer model menu and confirm the edited account label is
+  used as the OAuth provider group heading, while the configured model alias is
+  shown on its model row. 5) Resolve
   and use each account separately, including model discovery and one streamed
   turn per account. 6) Start the device-code login on a second vendor, then
   press Cancel while the dialog is polling; confirm no row or credential is
