@@ -44,6 +44,7 @@ export function ActiveWorkflowCard({ sessionId }: { sessionId?: string | null })
       <div className="active-workflow-copy">
         <strong>{primary.name}</strong>
         <span>Stage: {primary.stage} · Activated: {primary.reasonCategory.replaceAll("_", " ")}</span>
+        {primary.nextAction ? <span>{primary.nextAction}</span> : null}
       </div>
       <div className="active-workflow-actions">
         <button type="button" onClick={() => void inspect()}>

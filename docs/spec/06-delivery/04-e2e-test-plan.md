@@ -2043,6 +2043,27 @@ Each scenario is documented in this format:
 - **Acceptance**: E (tools and permissions) + G (agent guidance)
 - **Status**: Unit/runtime covered; agent-facing scenario Draft
 
+#### E2E-024IC: Plan workflow approval and restart-safe execution (ADR 0222)
+
+- **Preconditions**: A Nexus workspace with a focused implementation fixture;
+  Plan mode is available and the host can be restarted during an execution.
+- **Steps**: 1) Switch a task to Plan mode and request an implementation plan.
+  2) Inspect the active workflow card and submit a plan. 3) Reject it, revise,
+  and submit a new snapshot. 4) Approve the new plan. 5) Observe queued then
+  running execution. 6) Complete the plan and inspect its card. 7) Repeat with
+  a host restart during execution.
+- **Expected**: Plan mode activates plan authoring and a host proposal moves it
+  to proposed design. Only explicit host approval starts plan execution; the
+  card transitions through approved plan, executing, and verified with a fixed
+  next action. The exact plan remains in the host-created artifact, not the
+  workflow record. A host restart reports paused/interrupted work and does not
+  replay it. Neither workflow changes tools, permissions, approval, or
+  confirmation behavior.
+- **Specs linked**: `03-runtime/01-ipc-protocol.md` §12b.1,
+  `03-runtime/06-host-rpc-protocol.md` §5.1, ADR 0222
+- **Acceptance**: E (tools and permissions) + G (agent guidance)
+- **Status**: Unit/runtime/source-contract covered; desktop journey Draft
+
 #### E2E-024J: Plugin theme applies and falls back when withdrawn
 
 - **Preconditions**: `examples/plugins/hello` enabled with `ui.theme` granted; a plugin whose CSS uses `@import` or a remote `url()` available for the rejection case.

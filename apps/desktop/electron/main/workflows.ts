@@ -13,7 +13,17 @@ export const WORKFLOW_CAPABILITIES = [
   "test-execution",
 ] as const;
 export type WorkflowCapability = (typeof WORKFLOW_CAPABILITIES)[number];
-export type WorkflowStage = "active" | "discovery" | "diagnosis" | "implementation" | "verification";
+export type WorkflowStage =
+  | "active"
+  | "discovery"
+  | "diagnosis"
+  | "implementation"
+  | "verification"
+  | "proposed_design"
+  | "approved_plan"
+  | "executing"
+  | "verified"
+  | "paused";
 export type WorkflowReasonCategory =
   | "core_operations"
   | "plugin_workspace"
@@ -23,6 +33,11 @@ export type WorkflowReasonCategory =
   | "reproducible_failure"
   | "diagnosed_fix"
   | "completion_verification"
+  | "plan_mode"
+  | "plan_proposed"
+  | "plan_approved"
+  | "plan_execution_completed"
+  | "plan_execution_paused"
   | "manual";
 export type WorkflowActivationSource = "automatic" | "manual";
 
@@ -49,6 +64,8 @@ export const BRAINSTORMING_WORKFLOW_ID = "nexus/quality/brainstorming";
 export const SYSTEMATIC_DEBUGGING_WORKFLOW_ID = "nexus/quality/systematic-debugging";
 export const TEST_DRIVEN_DEVELOPMENT_WORKFLOW_ID = "nexus/quality/test-driven-development";
 export const VERIFICATION_WORKFLOW_ID = "nexus/quality/verification-before-completion";
+export const WRITING_PLANS_WORKFLOW_ID = "nexus/planning/writing-plans";
+export const EXECUTING_PLANS_WORKFLOW_ID = "nexus/planning/executing-plans";
 
 export const WORKFLOW_MANIFESTS: readonly WorkflowManifest[] = [
   {
@@ -123,6 +140,30 @@ export const WORKFLOW_MANIFESTS: readonly WorkflowManifest[] = [
     defaultStage: "verification",
     fixtures: [{ positivePrompt: "Verify this fix before marking it complete.", negativePrompt: "Discuss verification strategies.", expectedStage: "verification" }],
   },
+  {
+    id: WRITING_PLANS_WORKFLOW_ID,
+    version: "1",
+    name: "Plan authoring",
+    description: "Inspect the workspace and submit a concrete implementation plan through Nexus Plan mode for explicit approval.",
+    skillFile: "writing-plans.md",
+    supportedModes: ["plan"],
+    requiredCapabilities: ["core-agent-tools", "skill-loader", "file-tools", "terminal-tools"],
+    priority: 95,
+    defaultStage: "proposed_design",
+    fixtures: [{ positivePrompt: "Create an implementation plan for the approved design.", negativePrompt: "What is an implementation plan?", expectedStage: "proposed_design" }],
+  },
+  {
+    id: EXECUTING_PLANS_WORKFLOW_ID,
+    version: "1",
+    name: "Plan execution",
+    description: "Carry out a host-approved plan, retain its current lifecycle stage, and verify the completed work.",
+    skillFile: "executing-plans.md",
+    supportedModes: ["agent"],
+    requiredCapabilities: ["core-agent-tools", "skill-loader", "file-tools", "terminal-tools", "test-execution"],
+    priority: 96,
+    defaultStage: "executing",
+    fixtures: [{ positivePrompt: "Execute the approved Nexus plan.", negativePrompt: "How does plan execution work?", expectedStage: "executing" }],
+  },
 ] as const;
 
 export type WorkflowSessionOverride = {
@@ -138,6 +179,8 @@ export type WorkflowSessionRecord = WorkflowSessionOverride & {
   reasonCategory?: WorkflowReasonCategory;
   activatedAt?: string;
   updatedAt?: string;
+  /** Small stable instruction derived from host lifecycle state, never plan text. */
+  nextAction?: string;
 };
 
 export type WorkflowResolutionInput = {
@@ -157,6 +200,7 @@ export type ResolvedWorkflow = {
   stage: WorkflowStage;
   source: WorkflowActivationSource;
   reasonCategory: WorkflowReasonCategory;
+  nextAction?: string;
 };
 
 export type WorkflowResolution = {
@@ -179,7 +223,10 @@ export function validateWorkflowManifest(value: unknown): { ok: boolean; error?:
   if (!Array.isArray(manifest.requiredCapabilities) || manifest.requiredCapabilities.some((capability) => !WORKFLOW_CAPABILITIES.includes(capability as WorkflowCapability))) {
     return { ok: false, error: "invalid requiredCapabilities" };
   }
-  if (!Number.isFinite(manifest.priority) || !["active", "discovery", "diagnosis", "implementation", "verification"].includes(manifest.defaultStage ?? "")) {
+  if (!Number.isFinite(manifest.priority) || ![
+    "active", "discovery", "diagnosis", "implementation", "verification",
+    "proposed_design", "approved_plan", "executing", "verified", "paused",
+  ].includes(manifest.defaultStage ?? "")) {
     return { ok: false, error: "invalid priority or stage" };
   }
   return { ok: true };
@@ -216,8 +263,70 @@ function automaticReason(manifest: WorkflowManifest, input: WorkflowResolutionIn
     if (input.session.primaryId === BRAINSTORMING_WORKFLOW_ID && input.session.stage === "discovery" && isApprovedImplementationRequest(input.prompt)) return "approved_implementation";
     if (input.session.primaryId === SYSTEMATIC_DEBUGGING_WORKFLOW_ID && input.session.stage === "diagnosis" && isFixRequest(input.prompt)) return "diagnosed_fix";
   }
+  if (
+    manifest.id === WRITING_PLANS_WORKFLOW_ID &&
+    input.mode === "plan" &&
+    !(input.session.primaryId === EXECUTING_PLANS_WORKFLOW_ID && input.session.stage === "paused") &&
+    input.session.primaryId !== WRITING_PLANS_WORKFLOW_ID
+  ) return "plan_mode";
+  // Approval switches the durable session to Agent before the runner starts.
+  // Select execution guidance for that handoff even if the asynchronous host
+  // notification has not arrived in Electron yet.
+  if (
+    manifest.id === EXECUTING_PLANS_WORKFLOW_ID &&
+    input.mode === "agent" &&
+    input.session.primaryId === WRITING_PLANS_WORKFLOW_ID &&
+    input.session.stage === "approved_plan"
+  ) return "plan_approved";
   if (manifest.id === VERIFICATION_WORKFLOW_ID && isCompletionVerificationRequest(input.prompt, input.session)) return "completion_verification";
   return undefined;
+}
+
+const PLAN_NEXT_ACTIONS: Record<Extract<WorkflowStage, "proposed_design" | "approved_plan" | "executing" | "verified" | "paused">, string> = {
+  proposed_design: "Inspect the workspace and submit a concrete plan proposal for approval.",
+  approved_plan: "The plan is approved; wait for Nexus to start its host-owned execution.",
+  executing: "Continue the approved plan and verify each completed task.",
+  verified: "Review the completed plan against its requested outcome and report the evidence.",
+  paused: "Review the interrupted execution and resume only through a new approved plan.",
+};
+
+/**
+ * Translate durable host-plan events into workflow state. Plan content is
+ * deliberately absent: the immutable host artifact remains the source of truth.
+ */
+export function transitionPlanWorkflowSession(
+  session: WorkflowSessionRecord,
+  event: "proposed" | "approved" | "executing" | "verified" | "paused",
+): WorkflowSessionRecord {
+  const now = new Date().toISOString();
+  const stageByEvent: Record<typeof event, WorkflowStage> = {
+    proposed: "proposed_design",
+    approved: "approved_plan",
+    executing: "executing",
+    verified: "verified",
+    paused: "paused",
+  };
+  const stage = stageByEvent[event];
+  const primaryId = event === "executing" || event === "verified" || event === "paused"
+    ? EXECUTING_PLANS_WORKFLOW_ID
+    : WRITING_PLANS_WORKFLOW_ID;
+  const reasonCategory: WorkflowReasonCategory = event === "proposed"
+    ? "plan_proposed"
+    : event === "approved" || event === "executing"
+      ? "plan_approved"
+      : event === "verified"
+        ? "plan_execution_completed"
+        : "plan_execution_paused";
+  return {
+    ...session,
+    primaryId,
+    stage,
+    source: "automatic",
+    reasonCategory,
+    nextAction: PLAN_NEXT_ACTIONS[stage as keyof typeof PLAN_NEXT_ACTIONS],
+    activatedAt: session.primaryId === primaryId ? session.activatedAt ?? now : now,
+    updatedAt: now,
+  };
 }
 
 function text(value: unknown): string {
@@ -275,10 +384,22 @@ export function resolveWorkflows(input: WorkflowResolutionInput): WorkflowResolu
     ? compatible.find((manifest) => manifest.id === input.session.manualActiveId)
     : undefined;
   const automaticCandidates = compatible.filter((manifest) => automaticReason(manifest, input));
-  const persisted = !manuallySelected && automaticCandidates.length === 0 && input.session.primaryId
+  // Operations is baseline supporting guidance, not a stage transition. It
+  // must not displace a persisted quality or plan lifecycle workflow on an
+  // ordinary follow-up prompt.
+  const triggeredCandidates = automaticCandidates.filter(
+    (manifest) => manifest.id !== AGENT_OPERATIONS_WORKFLOW_ID,
+  );
+  const persisted = !manuallySelected && triggeredCandidates.length === 0 && input.session.primaryId
     ? compatible.find((manifest) => manifest.id === input.session.primaryId)
     : undefined;
-  const candidates = (manuallySelected ? [manuallySelected] : automaticCandidates.length ? automaticCandidates : persisted ? [persisted] : [])
+  const candidates = (manuallySelected
+    ? [manuallySelected]
+    : triggeredCandidates.length
+      ? triggeredCandidates
+      : persisted
+        ? [persisted]
+        : automaticCandidates)
     .sort((left, right) => right.priority - left.priority || left.id.localeCompare(right.id));
   const primaryManifest = candidates[0];
   if (!primaryManifest) return { supportingIds: [], availableIds, unavailable };
@@ -292,6 +413,12 @@ export function resolveWorkflows(input: WorkflowResolutionInput): WorkflowResolu
     : persisted
       ? input.session.reasonCategory ?? "core_operations"
       : automaticReason(primaryManifest, input)!;
+  const stage = persisted ? input.session.stage ?? primaryManifest.defaultStage : primaryManifest.defaultStage;
+  const nextAction = persisted
+    ? input.session.nextAction
+    : primaryManifest.id === WRITING_PLANS_WORKFLOW_ID
+      ? PLAN_NEXT_ACTIONS.proposed_design
+      : undefined;
   const supportingIds = compatible
     .filter((manifest) => manifest.id !== primaryManifest.id && manifest.id === AGENT_OPERATIONS_WORKFLOW_ID)
     .map((manifest) => manifest.id);
@@ -300,9 +427,10 @@ export function resolveWorkflows(input: WorkflowResolutionInput): WorkflowResolu
       id: primaryManifest.id,
       name: primaryManifest.name,
       version: primaryManifest.version,
-      stage: persisted ? input.session.stage ?? primaryManifest.defaultStage : primaryManifest.defaultStage,
+      stage,
       source,
       reasonCategory,
+      ...(nextAction ? { nextAction } : {}),
     },
     supportingIds,
     availableIds,
@@ -368,6 +496,7 @@ export function loadWorkflowSession(dataDir: string, sessionId: string): Workflo
     ...(typeof raw.reasonCategory === "string" ? { reasonCategory: raw.reasonCategory as WorkflowReasonCategory } : {}),
     ...(typeof raw.activatedAt === "string" ? { activatedAt: raw.activatedAt } : {}),
     ...(typeof raw.updatedAt === "string" ? { updatedAt: raw.updatedAt } : {}),
+    ...(typeof raw.nextAction === "string" ? { nextAction: raw.nextAction } : {}),
   };
 }
 
@@ -380,6 +509,7 @@ export function saveWorkflowResolution(dataDir: string, sessionId: string, sessi
     ...(resolution.primary ? { primaryId: resolution.primary.id, stage: resolution.primary.stage, source: resolution.primary.source, reasonCategory: resolution.primary.reasonCategory } : {}),
     ...(resolution.supportingIds.length ? { supportingIds: resolution.supportingIds } : {}),
     ...(resolution.primary ? { activatedAt: previousPrimary === resolution.primary.id ? session.activatedAt ?? now : now } : {}),
+    ...(resolution.primary?.nextAction ? { nextAction: resolution.primary.nextAction } : {}),
     updatedAt: now,
   };
   writeJson(sessionPath(dataDir, sessionId), next);
