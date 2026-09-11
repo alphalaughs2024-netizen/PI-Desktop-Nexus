@@ -2024,6 +2024,25 @@ Each scenario is documented in this format:
 - **Acceptance**: E (tools and permissions) + G (agent guidance)
 - **Status**: Unit/runtime/source-contract covered; visual scenario Draft
 
+#### E2E-024IB: Core quality workflow transitions (ADR 0221)
+
+- **Preconditions**: An ordinary Nexus workspace with a focused test command;
+  a separate fixture containing a reproducible failure.
+- **Steps**: 1) Ask to add a named feature. 2) Approve its proposed design and
+  explicitly request implementation. 3) Trigger the reproducible fixture and
+  ask for a fix. 4) Ask to verify and mark the resulting work complete. 5) In
+  fresh sessions ask only what TDD or systematic debugging means.
+- **Expected**: Feature work activates discovery, approved implementation
+  advances to test-first implementation, a reproducible symptom activates
+  diagnosis, and a completion/evidence request advances to verification. The
+  card reports the current stage and reason. Casual discussion alone keeps the
+  normal operations workflow. Every active quality package exposes only
+  existing Nexus capabilities and never changes permission/confirmation
+  behavior.
+- **Specs linked**: `03-runtime/01-ipc-protocol.md` §12b.1, ADR 0221
+- **Acceptance**: E (tools and permissions) + G (agent guidance)
+- **Status**: Unit/runtime covered; agent-facing scenario Draft
+
 #### E2E-024J: Plugin theme applies and falls back when withdrawn
 
 - **Preconditions**: `examples/plugins/hello` enabled with `ui.theme` granted; a plugin whose CSS uses `@import` or a remote `url()` available for the rejection case.
