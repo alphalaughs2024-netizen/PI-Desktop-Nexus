@@ -270,6 +270,7 @@ function mutationTerminationAdvice(
 }
 export const TOOL_SEARCH_NAME = "ToolSearch";
 export const ASK_TOOL_NAME = "asktool";
+export const WORKFLOW_TOOL_NAME = "Workflow";
 
 /** A delegated worker cannot expand its own scope or create another worker. */
 const INHERITED_SUBAGENT_DENYLIST = new Set([
@@ -475,7 +476,7 @@ const PATH_SCOPED_INSTRUCTION_TOOLS = new Set([
 /** Tools whose `path` argument is rewritten, and which therefore must not run
  * concurrently against the same file (see `PathMutex`). */
 const PATH_MUTATING_TOOLS = new Set(["Write", "Edit"]);
-const CHAT_CORE_TOOL_NAMES = new Set(["Read", "Glob", "Grep", ASK_TOOL_NAME]);
+const CHAT_CORE_TOOL_NAMES = new Set(["Read", "Glob", "Grep", ASK_TOOL_NAME, WORKFLOW_TOOL_NAME]);
 const AGENT_CORE_TOOL_NAMES = new Set([
   "Read",
   "Write",
@@ -483,6 +484,7 @@ const AGENT_CORE_TOOL_NAMES = new Set([
   "Bash",
   ASK_TOOL_NAME,
   SKILL_TOOL_NAME,
+  WORKFLOW_TOOL_NAME,
 ]);
 const MAX_ON_DEMAND_TOOL_PROMPT_ENTRIES = 64;
 const MAX_TOOL_SEARCH_RESULT_NAMES = 24;
@@ -746,6 +748,8 @@ export type AgentRuntimeOptions = {
   pluginTools?: PluginToolDef[];
   /** Plugin skills advertised in the system prompt and loaded via `Skill`. */
   instructionCatalog?: InstructionDocumentDef[];
+  /** Active host-resolved workflow guidance injected before the first tool call. */
+  activeWorkflow?: { id: string; name: string; stage: string; reasonCategory: string; body: string };
   /** Trusted extensions enabled for this session (D387); loaded by
    * `loadTrustedExtensions()` before the first prompt. */
   trustedExtensions?: TrustedExtensionSpec[];
@@ -776,6 +780,7 @@ export type RuntimeMatchConfig = {
   thinkingLevel: ThinkingLevel;
   pluginTools?: PluginToolDef[];
   instructionCatalog?: InstructionDocumentDef[];
+  activeWorkflow?: { id: string; name: string; stage: string; reasonCategory: string; body: string };
   trustedExtensions?: TrustedExtensionSpec[];
   projectInstructions?: ProjectInstructions;
   projectPath?: string;
@@ -1367,6 +1372,7 @@ export class DesktopAgentRuntime {
   private currentAssistant?: UiMessage;
   private pluginTools: PluginToolDef[];
   private instructionCatalog: InstructionDocumentDef[];
+  private activeWorkflow?: NonNullable<AgentRuntimeOptions["activeWorkflow"]>;
   private trustedExtensionSpecs: TrustedExtensionSpec[];
   private extensionRunner?: TrustedExtensionRunner;
   private extensionSessionName?: string;
@@ -1515,6 +1521,7 @@ export class DesktopAgentRuntime {
     this.onEvent = opts.onEvent;
     this.pluginTools = opts.pluginTools ?? [];
     this.instructionCatalog = instructionCatalogWithinBudget(opts.instructionCatalog ?? []);
+    this.activeWorkflow = opts.activeWorkflow;
     this.trustedExtensionSpecs = opts.trustedExtensions ?? [];
     this.subagents = opts.subagents ?? [];
     this.subagentProviders = opts.subagentProviders ?? {};
@@ -1542,6 +1549,14 @@ export class DesktopAgentRuntime {
     this.fullEntries = this.historyToEntries(opts.history ?? []);
     this.activeCompaction = opts.compaction;
     const skillsPrompt = instructionCatalogPrompt(this.instructionCatalog);
+    const workflowPrompt = this.activeWorkflow
+      ? [
+          `<active-nexus-workflow id="${this.activeWorkflow.id}" stage="${this.activeWorkflow.stage}" reason="${this.activeWorkflow.reasonCategory}">`,
+          "This is Nexus guidance, not authority. It cannot add tools, permissions, execution rights, or bypass confirmations. User and workspace instructions still take precedence.",
+          this.activeWorkflow.body,
+          "</active-nexus-workflow>",
+        ].join("\n")
+      : undefined;
     const defaultSystemPrompt = [
       DEFAULT_RUNTIME_SYSTEM_PROMPT,
       "Collaboration: answer in the user's language. Before tool work, briefly say what you are doing; give a self-contained final answer. Work through safe blockers instead of stopping early. Call tools through the native tool-call interface, never as prose. Load `nexus/guidance/agent-operations` from Nexus guidance for detailed search, editing, preview, shell, or delegation workflow guidance when it is listed.",
@@ -1549,6 +1564,7 @@ export class DesktopAgentRuntime {
       ...(this.subagents.length && this.subagentModelSummary()
         ? [this.subagentModelSummary()!]
         : []),
+      ...(workflowPrompt ? [workflowPrompt] : []),
       // Shell dialect and scratch variable are selected by host-core.
       commandShellGuidance(this.commandShell, this.scratchDir),
       // Session scratch directory (D114): temp files must not dirty
@@ -1931,6 +1947,7 @@ export class DesktopAgentRuntime {
       // prompt. Bodies are excluded: the Skill tool always reads them fresh.
       instructionCatalogDigest(this.instructionCatalog) ===
         instructionCatalogDigest(requestedInstructions) &&
+      safeJson(this.activeWorkflow ?? null) === safeJson(config.activeWorkflow ?? null) &&
       // Editing `~/.agents/subagents/*.md` must reach the next prompt. Definition
       // bodies are part of the `Task` tool's behavior, so unlike skills they
       // are compared in full.
@@ -2856,6 +2873,21 @@ export class DesktopAgentRuntime {
           },
         ]
       : [];
+    const workflowTool: AgentTool = {
+      name: WORKFLOW_TOOL_NAME,
+      label: "Workflow",
+      description: "List the compatible Nexus workflows, inspect the active workflow, or activate or dismiss a workflow for this session. Workflows are guidance only and cannot grant authority.",
+      parameters: Type.Object({
+        operation: Type.Union([
+          Type.Literal("status"),
+          Type.Literal("list"),
+          Type.Literal("activate"),
+          Type.Literal("dismiss"),
+        ]),
+        id: Type.Optional(Type.String({ description: "Workflow id for activate or dismiss." })),
+      }),
+      execute: exec(WORKFLOW_TOOL_NAME).execute,
+    };
     const modeTools =
       this.mode === "agent"
         ? [this.buildEnterModeTool("plan"), this.buildEnterModeTool("goal")]
@@ -2884,6 +2916,7 @@ export class DesktopAgentRuntime {
       askTool,
       ...pluginTools,
       ...skillTools,
+      workflowTool,
       ...modeTools,
       ...subagentTools,
       ...contextTools,
@@ -2951,6 +2984,7 @@ export class DesktopAgentRuntime {
       "BrowserPreview",
       "Bash",
       SKILL_TOOL_NAME,
+      WORKFLOW_TOOL_NAME,
       ASK_TOOL_NAME,
       CONTEXT_COMPACTION_TOOL_NAME,
       SUBMIT_TOOL_NAMES[kind],
@@ -2978,6 +3012,7 @@ export class DesktopAgentRuntime {
               "Bash",
               "BrowserPreview",
               SKILL_TOOL_NAME,
+              WORKFLOW_TOOL_NAME,
               ASK_TOOL_NAME,
             ]).has(name) || this.isPlanSafePluginTool(name)
           : CHAT_CORE_TOOL_NAMES.has(name))
@@ -3038,6 +3073,8 @@ export class DesktopAgentRuntime {
         return "Validate and package a PI-Desktop plugin.";
       case SKILL_TOOL_NAME:
         return "Load the full instructions for a listed skill.";
+      case WORKFLOW_TOOL_NAME:
+        return "Inspect or change session workflow guidance without changing permissions.";
       default:
         return this.compactToolDescription(tool.description);
     }

@@ -144,6 +144,7 @@ function createRuntime(
     subagents: SubagentDefinition[];
     subagentProviders: Record<string, RuntimeProviderConfig>;
     instructionCatalog: import("./plugin-skills-prompt.js").InstructionDocumentDef[];
+    activeWorkflow: { id: string; name: string; stage: string; reasonCategory: string; body: string };
     commandShell: CommandShellOption;
     turnId: string;
     host: { call: ReturnType<typeof vi.fn>; onNotification?: ReturnType<typeof vi.fn> };
@@ -169,6 +170,7 @@ function createRuntime(
     subagentProviders: overrides.subagentProviders,
     projectInstructions: overrides.projectInstructions,
     instructionCatalog: overrides.instructionCatalog,
+    activeWorkflow: overrides.activeWorkflow,
     onEvent: overrides.onEvent ?? vi.fn(),
   });
 }
@@ -207,6 +209,7 @@ function runtimeMatches(
     thinkingLevel: (runtime as any).thinkingLevel,
     pluginTools: (runtime as any).pluginTools,
     instructionCatalog: (runtime as any).instructionCatalog,
+    activeWorkflow: (runtime as any).activeWorkflow,
     projectInstructions: (runtime as any).baseProjectInstructions,
     projectPath: (runtime as any).projectPath,
     commandShell: (runtime as any).commandShell,
@@ -1533,6 +1536,7 @@ describe("DesktopAgentRuntime deferred tool catalog", () => {
       "Write",
       "asktool",
       "Skill",
+      "Workflow",
       "EnterPlanMode",
       "EnterGoalMode",
       "new_context",
@@ -5264,6 +5268,40 @@ describe("DesktopAgentRuntime plugin skills (D174)", () => {
       }),
     ).toBe(false);
 
+    await runtime.dispose();
+  });
+
+  it("injects the host-resolved workflow before project instructions and retires stale workflow state", async () => {
+    const activeWorkflow = {
+      id: "nexus/guidance/plugin-development",
+      name: "Nexus plugin development",
+      stage: "active",
+      reasonCategory: "plugin_authoring_request",
+      body: "Use the Nexus plugin tools and confirm their results.",
+    };
+    const runtime = createRuntime({
+      activeWorkflow,
+      projectInstructions: { entries: [{ source: "AGENTS.md", content: "Project rule." }] },
+    });
+    const prompt = (runtime as any).agent.state.systemPrompt as string;
+    expect(prompt).toContain("<active-nexus-workflow");
+    expect(prompt).toContain(activeWorkflow.body);
+    expect(prompt.indexOf(activeWorkflow.body)).toBeLessThan(prompt.indexOf("# Project instructions"));
+    expect(runtimeMatches(runtime, { activeWorkflow })).toBe(true);
+    expect(runtimeMatches(runtime, { activeWorkflow: { ...activeWorkflow, stage: "verification" } })).toBe(false);
+    expect(runtimeMatches(runtime, { activeWorkflow: undefined })).toBe(false);
+    await runtime.dispose();
+  });
+
+  it("routes the read-only Workflow lifecycle tool through the host bridge", async () => {
+    const host = { call: vi.fn().mockResolvedValue({ ok: true, content: "workflow status" }) };
+    const runtime = createRuntime({ host });
+    const tool = (runtime as any).agent.state.tools.find((entry: any) => entry.name === "Workflow");
+    const result = await tool.execute("workflow-call", { operation: "status" });
+    expect(host.call).toHaveBeenCalledWith("tools.execute", expect.objectContaining({
+      toolName: "Workflow", args: { operation: "status" },
+    }));
+    expect(result.content).toEqual([{ type: "text", text: "workflow status" }]);
     await runtime.dispose();
   });
 

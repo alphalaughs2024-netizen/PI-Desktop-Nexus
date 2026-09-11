@@ -2,6 +2,7 @@ import type {
   ActivationScope,
   AgentCapabilityQuery,
   BuiltinSkillRecord,
+  WorkflowSessionStatus,
   AgentEventEnvelope,
   AgentCompactRequest,
   AgentCompactResponse,
@@ -687,6 +688,16 @@ export const api = {
     invoke<{ skill: BuiltinSkillRecord }>(IPC.invoke.builtinSkillSetEnabled, { id, enabled }),
   readBuiltinSkill: (id: string) =>
     invoke<{ skill: BuiltinSkillRecord; body: string }>(IPC.invoke.builtinSkillRead, { id }),
+  workflowStatus: (sessionId: string) =>
+    invoke<WorkflowSessionStatus & { projectPath?: string }>(IPC.invoke.workflowStatus, { sessionId }),
+  readWorkflow: (id: string) =>
+    invoke<{ workflow: unknown; body: string }>(IPC.invoke.workflowRead, { id }),
+  setProjectWorkflowEnabled: (projectPath: string, id: string, enabled: boolean | null) =>
+    invoke(IPC.invoke.workflowSetProjectEnabled, { projectPath, id, enabled }),
+  activateSessionWorkflow: (sessionId: string, id: string) =>
+    invoke<WorkflowSessionStatus>(IPC.invoke.workflowSessionActivate, { sessionId, id }),
+  dismissSessionWorkflow: (sessionId: string, id?: string) =>
+    invoke<WorkflowSessionStatus>(IPC.invoke.workflowSessionDismiss, { sessionId, id }),
 
   // --- Subagents the user owns ----------------------------------------------
   listUserSubagents: (query?: Pick<AgentCapabilityQuery, "level">) =>
@@ -1029,6 +1040,12 @@ export const api = {
     if (!window.piDesktop?.on) return () => undefined;
     return window.piDesktop.on(IPC.event.pluginChanged, (payload) =>
       listener((payload ?? {}) as { reason?: string; pluginId?: string }),
+    );
+  },
+  onWorkflowChanged: (listener: (event: { sessionId?: string; projectPath?: string }) => void) => {
+    if (!window.piDesktop?.on) return () => undefined;
+    return window.piDesktop.on(IPC.event.workflowChanged, (payload) =>
+      listener((payload ?? {}) as { sessionId?: string; projectPath?: string }),
     );
   },
   onPluginLauncherShown: (listener: () => void) => {

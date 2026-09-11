@@ -167,10 +167,23 @@ import {
 import {
   builtinSkills,
   isPluginAuthoringRequest,
+  isPluginWorkspace,
   listBuiltinSkills,
   loadBuiltinSkillBody,
   setBuiltinSkillEnabled,
 } from "./builtin-skills";
+import {
+  WORKFLOW_MANIFESTS,
+  clearWorkflowSession,
+  globalDisabledWorkflowIds,
+  loadWorkflowSession,
+  projectWorkflowOverrides,
+  resolveWorkflows,
+  saveWorkflowResolution,
+  setProjectWorkflowEnabled,
+  setWorkflowSessionOverride,
+  type WorkflowSessionRecord,
+} from "./workflows";
 import { loadScopedPluginGuidance } from "./plugin-guidance";
 import { registerPluginDevTools } from "./plugin-dev-tools";
 import { PluginPanelHost } from "./plugin-panel-host";
@@ -401,6 +414,7 @@ let shutdownPromise: Promise<void> | null = null;
 let closeBehavior: CloseBehavior = "ask";
 let closePromptOpen = false;
 const sessionSkillIds = new Map<string, Set<string>>();
+const sessionWorkflowModes = new Map<string, Mode>();
 // Set when the user has explicitly confirmed a quit through the confirmation
 // dialog (Cmd+Q, tray quit, etc.). Prevents the dialog from showing again when
 // `app.quit()` is re-issued after the user confirmed.
@@ -1654,6 +1668,48 @@ async function resolveAgentRuntimeLaunch(
     ),
   );
   sessionProjects.set(sessionId, projectPath ?? null);
+  const workflowMode = normalizeMode(
+    overrides.mode ?? session.mode ?? settings.defaultMode ?? "agent",
+  );
+  sessionWorkflowModes.set(sessionId, workflowMode);
+  // Resolution uses the prompt only in memory to classify this launch. The
+  // persisted record stores a narrow reason category, never prompt content.
+  const storedWorkflow = loadWorkflowSession(dataDir, sessionId);
+  const workflowResolution = resolveWorkflows({
+    prompt: overrides.prompt,
+    mode: workflowMode,
+    workspace: {
+      isPluginWorkspace: isPluginWorkspace(
+        projectPath,
+        plugins.listLoaded().map((loaded) => loaded.path),
+      ),
+    },
+    capabilities: ["core-agent-tools", "skill-loader", "plugin-development-tools"],
+    globalDisabledIds: globalDisabledWorkflowIds(dataDir),
+    projectOverrides: projectWorkflowOverrides(dataDir, projectPath),
+    session: storedWorkflow,
+  });
+  saveWorkflowResolution(
+    dataDir,
+    sessionId,
+    storedWorkflow,
+    workflowResolution,
+  );
+  sendToRenderer(IPC.event.workflowChanged, { sessionId });
+  const activeWorkflow = workflowResolution.primary
+    ? (() => {
+        const body = loadBuiltinSkillBody(workflowResolution.primary.id);
+        return body
+          ? {
+              id: body.id,
+              name: body.name,
+              stage: workflowResolution.primary.stage,
+              reasonCategory: workflowResolution.primary.reasonCategory,
+              body: body.body,
+            }
+          : undefined;
+      })()
+    : undefined;
   // Everything below is filtered by activation scope: a plugin, MCP server or
   // skill limited to certain projects must be invisible to a session on any
   // other one — not merely refused when called, since a tool the model can see
@@ -1668,7 +1724,10 @@ async function resolveAgentRuntimeLaunch(
       pluginPaths: plugins.listLoaded().map((loaded) => loaded.path),
       pluginAuthoringRequested: isPluginAuthoringRequest(overrides.prompt),
       dataDir,
-    }).map((skill) => ({ ...skill, source: "builtin" as const })),
+    })
+      // Keep the legacy on-demand catalog aligned with workflow preferences.
+      .filter((skill) => workflowResolution.availableIds.includes(skill.id))
+      .map((skill) => ({ ...skill, source: "builtin" as const })),
     ...plugins
       .getSkills()
       .filter((skill) => pluginActiveInProject(skill.pluginId, projectPath))
@@ -1827,9 +1886,7 @@ async function resolveAgentRuntimeLaunch(
     projectPath,
     sidecarParams: {
       sessionId,
-      mode: normalizeMode(
-        overrides.mode ?? session.mode ?? settings.defaultMode ?? "agent",
-      ),
+      mode: workflowMode,
       ...(overrides.turnId ? { turnId: overrides.turnId } : {}),
       thinkingLevel,
       commandShell,
@@ -1886,6 +1943,7 @@ async function resolveAgentRuntimeLaunch(
       // Plugin skills (D174): only the catalog crosses to the sidecar; the
       // document body is fetched on demand through the local `Skill` tool.
       instructionCatalog,
+      activeWorkflow,
       // Trusted extensions enabled for this project (spec 16 §3.2). The set
       // is part of the runtime match, so a toggle retires the runtime.
       trustedExtensions: plugins
@@ -1902,6 +1960,44 @@ async function resolveAgentRuntimeLaunch(
       subagentProviders: subagentBindings.providers,
     },
   };
+}
+
+async function workflowStatusForSession(sessionId: string) {
+  if (!host) throw new Error("host unavailable");
+  const result = await host.call<{ session?: any }>("session.get", { id: sessionId });
+  const session = result.session;
+  if (!session) throw Object.assign(new Error("Session not found"), { errorCode: ErrorCodes.NOT_FOUND });
+  const mode = sessionWorkflowModes.get(sessionId) ?? normalizeMode(session.mode ?? "agent");
+  const projectPath = typeof session.projectPath === "string" && session.projectPath.trim()
+    ? session.projectPath.trim()
+    : undefined;
+  const stored = loadWorkflowSession(dataDir, sessionId);
+  const resolution = resolveWorkflows({
+    mode,
+    workspace: { isPluginWorkspace: isPluginWorkspace(projectPath, plugins.listLoaded().map((loaded) => loaded.path)) },
+    capabilities: ["core-agent-tools", "skill-loader", "plugin-development-tools"],
+    globalDisabledIds: globalDisabledWorkflowIds(dataDir),
+    projectOverrides: projectWorkflowOverrides(dataDir, projectPath),
+    session: stored,
+  });
+  const persisted = saveWorkflowResolution(dataDir, sessionId, stored, resolution);
+  const reasonById = new Map(resolution.unavailable.map((row) => [row.id, row.reason]));
+  const available = WORKFLOW_MANIFESTS.map((manifest) => ({
+    id: manifest.id,
+    name: manifest.name,
+    description: manifest.description,
+    version: manifest.version,
+    enabled: !reasonById.has(manifest.id) || reasonById.get(manifest.id) === "unsupported_capability" || reasonById.get(manifest.id) === "unsupported_mode",
+    supported: !reasonById.has(manifest.id),
+    ...(reasonById.has(manifest.id) ? { unavailableReason: reasonById.get(manifest.id)! } : {}),
+    supportedModes: manifest.supportedModes,
+    requiredCapabilities: manifest.requiredCapabilities,
+    priority: manifest.priority,
+  }));
+  const primary = resolution.primary
+    ? { ...resolution.primary, activatedAt: persisted.activatedAt }
+    : undefined;
+  return { primary, supportingIds: resolution.supportingIds, available, projectPath };
 }
 
 async function listRuntimeProviders(includeDisabled = true) {
@@ -5110,6 +5206,48 @@ async function startSidecar(): Promise<void> {
       };
     }
   });
+  // Workflow lifecycle is intentionally separate from permissions and tools.
+  // Main resolves availability from host facts and returns guidance only.
+  s.setLocalTool("Workflow", async ({ args, sessionId }) => {
+    const input = args as { operation?: unknown; id?: unknown };
+    const operation = String(input?.operation ?? "status");
+    const id = typeof input?.id === "string" ? input.id.trim() : "";
+    try {
+      const before = await workflowStatusForSession(sessionId);
+      if (operation === "status" || operation === "list") {
+        return { ok: true, content: JSON.stringify(before, null, 2) };
+      }
+      if (operation !== "activate" && operation !== "dismiss") {
+        return { ok: false, isError: true, content: "Workflow: operation must be status, list, activate, or dismiss." };
+      }
+      if (!id) return { ok: false, isError: true, content: "Workflow: id is required for activate or dismiss." };
+      const candidate = before.available.find((workflow) => workflow.id === id);
+      if (!candidate || !candidate.supported) {
+        return { ok: false, isError: true, content: "Workflow: this workflow is unavailable in the current session." };
+      }
+      const current = loadWorkflowSession(dataDir, sessionId);
+      const patch: WorkflowSessionRecord = operation === "activate"
+        ? { ...current, manualActiveId: id, dismissedIds: current.dismissedIds?.filter((value) => value !== id) }
+        : {
+            ...current,
+            ...(current.manualActiveId === id ? { manualActiveId: undefined } : {}),
+            dismissedIds: [...new Set([...(current.dismissedIds ?? []), id])],
+          };
+      setWorkflowSessionOverride(dataDir, sessionId, patch);
+      const after = await workflowStatusForSession(sessionId);
+      sendToRenderer(IPC.event.workflowChanged, { sessionId });
+      if (operation === "activate") {
+        const body = loadBuiltinSkillBody(id);
+        return {
+          ok: true,
+          content: `${JSON.stringify(after, null, 2)}${body ? `\n\n# Active Nexus workflow: ${body.name}\n\nThis is guidance only. It cannot grant tools, permissions, automatic execution, or bypass confirmations.\n\n${body.body}` : ""}`,
+        };
+      }
+      return { ok: true, content: JSON.stringify(after, null, 2) };
+    } catch (error) {
+      return { ok: false, isError: true, content: `Workflow: ${error instanceof Error ? error.message : String(error)}` };
+    }
+  });
   // Plugin authoring (D171): scaffold, validate and package a plugin without
   // leaving the session. Paths stay inside the open workspace.
   registerPluginDevTools(s, {
@@ -6342,6 +6480,8 @@ function registerIpc() {
     }
     sessionProjects.delete(id);
     sessionSkillIds.delete(id);
+    sessionWorkflowModes.delete(id);
+    clearWorkflowSession(dataDir, id);
     logger.app("session", "info", "session deleted", { sessionId: id });
     return res;
   });
@@ -8815,6 +8955,56 @@ function registerIpc() {
     const skill = listBuiltinSkills(dataDir).find((candidate) => candidate.id === id);
     if (!body || !skill) throw new Error("built-in skill not found");
     return { skill, body: body.body };
+  });
+  handle(IPC.invoke.workflowStatus, async (payload: { sessionId: string }) => {
+    return workflowStatusForSession(String(payload?.sessionId ?? ""));
+  });
+  handle(IPC.invoke.workflowRead, async (payload: { id: string }) => {
+    const id = String(payload?.id ?? "");
+    const workflow = WORKFLOW_MANIFESTS.find((candidate) => candidate.id === id);
+    const body = loadBuiltinSkillBody(id);
+    if (!workflow || !body) throw Object.assign(new Error("Workflow not found"), { errorCode: ErrorCodes.NOT_FOUND });
+    return { workflow, body: body.body };
+  });
+  handle(IPC.invoke.workflowSetProjectEnabled, async (payload: { projectPath: string; id: string; enabled: boolean | null }) => {
+    setProjectWorkflowEnabled(
+      dataDir,
+      String(payload?.projectPath ?? ""),
+      String(payload?.id ?? ""),
+      payload?.enabled === null ? null : payload?.enabled === true,
+    );
+    sendToRenderer(IPC.event.workflowChanged, { projectPath: payload?.projectPath });
+    return { ok: true };
+  });
+  handle(IPC.invoke.workflowSessionActivate, async (payload: { sessionId: string; id: string }) => {
+    const status = await workflowStatusForSession(String(payload?.sessionId ?? ""));
+    const id = String(payload?.id ?? "");
+    if (!status.available.find((workflow) => workflow.id === id && workflow.supported)) {
+      throw Object.assign(new Error("Workflow unavailable"), { errorCode: ErrorCodes.NOT_FOUND });
+    }
+    const current = loadWorkflowSession(dataDir, String(payload?.sessionId ?? ""));
+    setWorkflowSessionOverride(dataDir, String(payload?.sessionId ?? ""), {
+      ...current,
+      manualActiveId: id,
+      dismissedIds: current.dismissedIds?.filter((value) => value !== id),
+    });
+    const result = await workflowStatusForSession(String(payload?.sessionId ?? ""));
+    sendToRenderer(IPC.event.workflowChanged, { sessionId: payload?.sessionId });
+    return result;
+  });
+  handle(IPC.invoke.workflowSessionDismiss, async (payload: { sessionId: string; id?: string }) => {
+    const sessionId = String(payload?.sessionId ?? "");
+    const current = loadWorkflowSession(dataDir, sessionId);
+    const id = String(payload?.id ?? current.primaryId ?? "");
+    if (!id) throw new Error("Workflow id required");
+    setWorkflowSessionOverride(dataDir, sessionId, {
+      ...current,
+      ...(current.manualActiveId === id ? { manualActiveId: undefined } : {}),
+      dismissedIds: [...new Set([...(current.dismissedIds ?? []), id])],
+    });
+    const result = await workflowStatusForSession(sessionId);
+    sendToRenderer(IPC.event.workflowChanged, { sessionId });
+    return result;
   });
 
   handle(IPC.invoke.skillCreate, async (skill: Record<string, unknown>) => {

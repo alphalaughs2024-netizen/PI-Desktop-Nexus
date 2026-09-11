@@ -3,6 +3,13 @@ import { join } from "node:path";
 import { parseSkillFrontmatter } from "@pi-desktop/plugin-sdk";
 import type { InstructionDocumentDef } from "@pi-desktop/agent-runtime";
 import type { BuiltinSkillRecord } from "@pi-desktop/shared";
+import {
+  AGENT_OPERATIONS_WORKFLOW_ID,
+  PLUGIN_DEVELOPMENT_WORKFLOW_ID,
+  WORKFLOW_MANIFESTS,
+  globalDisabledWorkflowIds,
+  isPluginAuthoringWorkflowRequest,
+} from "./workflows";
 
 /**
  * Skills Nexus ships itself.
@@ -14,10 +21,13 @@ import type { BuiltinSkillRecord } from "@pi-desktop/shared";
  */
 
 /** Bundled skill teaching the plugin-development loop. */
+// Canonical compatibility IDs: nexus/guidance/agent-operations and
+// nexus/guidance/plugin-development. Their definitions live in the workflow
+// package registry; legacy loader aliases remain below.
 export const PLUGIN_DEV_SKILL_FILE = "plugin-development.md";
-export const PLUGIN_DEV_SKILL_ID = "nexus/guidance/plugin-development";
+export const PLUGIN_DEV_SKILL_ID = PLUGIN_DEVELOPMENT_WORKFLOW_ID;
 export const AGENT_OPERATIONS_SKILL_FILE = "agent-operations.md";
-export const AGENT_OPERATIONS_SKILL_ID = "nexus/guidance/agent-operations";
+export const AGENT_OPERATIONS_SKILL_ID = AGENT_OPERATIONS_WORKFLOW_ID;
 const LEGACY_PLUGIN_DEV_SKILL_ID = "pi-desktop/plugin-development";
 const LEGACY_AGENT_OPERATIONS_SKILL_ID = "pi-desktop/agent-operations";
 const BUILTIN_SKILL_VERSION = "1";
@@ -75,10 +85,7 @@ export function isPluginWorkspace(
  * of ordinary projects while making it available before a new plugin exists.
  */
 export function isPluginAuthoringRequest(content: unknown): boolean {
-  if (typeof content !== "string") return false;
-  return /\b(?:create|scaffold|build|develop|debug|validate|check|package|pack)\b[\s\S]{0,64}\bplugins?\b/i.test(
-    content,
-  );
+  return isPluginAuthoringWorkflowRequest(content);
 }
 
 /** Front matter carries the skill's title and applicability line. */
@@ -104,25 +111,16 @@ export type BuiltinSkillInput = {
 const builtinSkillFile = (dataDir: string) => join(dataDir, "agent-capabilities", "builtin-skills.json");
 
 function disabledBuiltinSkillIds(dataDir?: string): Set<string> {
-  if (!dataDir) return new Set();
-  try {
-    const raw = JSON.parse(readFileSync(builtinSkillFile(dataDir), "utf8")) as { disabled?: unknown };
-    return new Set(Array.isArray(raw.disabled) ? raw.disabled.filter((id): id is string => typeof id === "string") : []);
-  } catch {
-    return new Set();
-  }
+  return new Set(dataDir ? globalDisabledWorkflowIds(dataDir) : []);
 }
 
 export function listBuiltinSkills(dataDir: string): BuiltinSkillRecord[] {
   const disabled = disabledBuiltinSkillIds(dataDir);
-  return [
-    { id: AGENT_OPERATIONS_SKILL_ID, fileName: AGENT_OPERATIONS_SKILL_FILE },
-    { id: PLUGIN_DEV_SKILL_ID, fileName: PLUGIN_DEV_SKILL_FILE },
-  ].flatMap(({ id, fileName }) => {
+  return WORKFLOW_MANIFESTS.flatMap(({ id, skillFile: fileName, version }) => {
     const raw = readBuiltinSkill(fileName);
     const parsed = raw ? parseSkillFrontmatter(raw) : null;
     if (!parsed?.body) return [];
-    return [{ id, name: parsed.name ?? id, description: parsed.description, enabled: !disabled.has(id), source: "nexus" as const, version: BUILTIN_SKILL_VERSION }];
+    return [{ id, name: parsed.name ?? id, description: parsed.description, enabled: !disabled.has(id), source: "nexus" as const, version: version || BUILTIN_SKILL_VERSION }];
   });
 }
 
