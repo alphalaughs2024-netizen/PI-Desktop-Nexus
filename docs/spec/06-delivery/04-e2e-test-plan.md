@@ -10004,14 +10004,16 @@ sample extensions under `apps/desktop/test/fixtures/pi-extensions/`.
   prompt. 2) Feed the Responses adapter a terminal event followed by an
   iterator that never closes. 3) On Windows run `Glob` and both `rg` and
   fallback `Grep` paths. 4) Inspect an active assistant message then let it
-  settle. 5) Open Context Vault empty, then while editing, at a 360px
-  work-panel width in English and Chinese.
+  settle. 5) Open Context Vault empty, use the category rail and its visible
+  claim/import actions, then edit a claim at a 360px work-panel width in
+  English and Chinese.
 - **Expected**: The Vision badge and transport follow the binding override;
   disabled image support follows the deliberate fallback. A terminal Responses
   event completes without an EOF. Workspace paths contain `/`. Active assistant
   controls are absent and return after completion. Context Vault has localized
-  titles and controls, a distinct wrapping action toolbar, a full-width empty
-  state, independently usable list/editor scroll areas, and no horizontal
+  titles and controls, a category rail whose counts and filtering are local to
+  the visible list, an intentional empty state with visible claim/import
+  actions, independently usable list/editor scroll areas, and no horizontal
   overflow.
 - **Status**: Unit/source-contract covered; desktop journey is Draft.
 ### E2E-179 — repeated identical tool-call safety

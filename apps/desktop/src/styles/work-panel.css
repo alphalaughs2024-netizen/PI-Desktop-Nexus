@@ -1202,6 +1202,19 @@
 }
 
 .context-vault-tab { height: 100%; display: flex; min-width: 0; flex-direction: column; gap: 10px; padding: 10px; overflow: hidden; }
+.context-vault-workspace { min-width: 0; min-height: 0; flex: 1; display: grid; grid-template-columns: minmax(124px, 0.32fr) minmax(0, 1fr); overflow: hidden; border: 1px solid var(--ds-border); border-radius: var(--radius-md); background: var(--ds-bg-primary); }
+.context-vault-rail { display: flex; min-width: 0; min-height: 0; flex-direction: column; gap: 3px; padding: 8px; border-right: 1px solid var(--ds-border); background: var(--ds-bg-secondary); overflow: auto; }
+.context-vault-category { display: flex; min-height: 30px; align-items: center; justify-content: space-between; gap: 6px; padding: 0 7px; border-radius: var(--radius-sm); color: var(--ds-text-secondary); font-size: var(--text-xs); text-align: left; }
+.context-vault-category span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.context-vault-category small { color: var(--ds-text-muted); font-size: var(--text-2xs); }
+.context-vault-category:hover, .context-vault-category.active { background: var(--ds-bg-hover); color: var(--ds-text-primary); }
+.context-vault-category.active { box-shadow: inset 2px 0 0 var(--ds-accent); }
+.context-vault-category-group { display: flex; flex-direction: column; gap: 2px; padding: 5px 0; border-top: 1px solid var(--ds-border-subtle); border-bottom: 1px solid var(--ds-border-subtle); }
+.context-vault-rail-health { margin: auto 3px 2px; color: var(--ds-text-muted); font-size: var(--text-2xs); line-height: var(--leading-body); overflow-wrap: anywhere; }
+.context-vault-main { display: flex; min-width: 0; min-height: 0; flex: 1; flex-direction: column; padding: 10px; overflow: hidden; }
+.context-vault-toolbar { display: flex; min-width: 0; flex: 0 0 auto; align-items: center; gap: 8px; }
+.context-vault-search-shell { display: flex; min-width: 0; flex: 1; align-items: center; gap: 7px; padding: 0 9px; border: 1px solid var(--ds-border); border-radius: var(--radius-sm); background: var(--ds-tile); color: var(--ds-text-muted); }
+.context-vault-search-shell:focus-within { border-color: var(--ds-focus); box-shadow: 0 0 0 2px color-mix(in oklab, var(--ds-focus) 20%, transparent); }
 .context-vault-header { display: flex; min-width: 0; flex: 0 0 auto; flex-direction: column; gap: 8px; }
 .context-vault-heading { min-width: 0; }
 .context-vault-header strong, .context-vault-header span { display: block; }
@@ -1210,22 +1223,43 @@
 .context-vault-heading span { margin-top: 2px; overflow-wrap: anywhere; }
 .context-vault-header button, .context-vault-editor button { margin-left: 0; }
 .context-vault-actions { display: flex; min-width: 0; flex-wrap: wrap; gap: 5px; padding-top: 8px; border-top: 1px solid var(--ds-border-subtle); }
+.context-vault-action { display: inline-flex; min-height: 30px; align-items: center; justify-content: center; padding: 0 10px; border: 1px solid var(--ds-border); border-radius: var(--radius-sm); background: var(--ds-tile); color: var(--ds-text-primary); font-size: var(--text-xs-plus); font-weight: var(--font-weight-medium); line-height: var(--leading-none); transition: background var(--motion-duration-fast) var(--motion-ease-out), border-color var(--motion-duration-fast) var(--motion-ease-out), color var(--motion-duration-fast) var(--motion-ease-out); }
+.context-vault-action:hover { border-color: var(--ds-border-default); background: var(--ds-bg-hover); }
+.context-vault-action-primary { border-color: var(--ds-accent); background: var(--ds-accent); color: var(--ds-bg-primary); }
+.context-vault-action-primary:hover { border-color: var(--ds-accent); background: color-mix(in oklab, var(--ds-accent) 84%, var(--ds-text-primary)); }
+.context-vault-action-danger { border-color: color-mix(in oklab, var(--ds-error) 45%, var(--ds-border)); color: var(--ds-error); }
+.context-vault-action-danger:hover { background: color-mix(in oklab, var(--ds-error) 12%, var(--ds-tile)); }
 .context-vault-actions button { flex: 0 0 auto; white-space: nowrap; }
-.context-vault-search, .context-vault-editor input, .context-vault-editor textarea, .context-vault-editor select { width: 100%; box-sizing: border-box; }
+.context-vault-search, .context-vault-editor input, .context-vault-editor textarea, .context-vault-editor select { width: 100%; box-sizing: border-box; border: 1px solid var(--ds-border); border-radius: var(--radius-sm); background: var(--ds-tile); color: var(--ds-text-primary); }
+.context-vault-search { min-height: 30px; padding: 0; border: 0; border-radius: 0; background: transparent; }
+.context-vault-editor input, .context-vault-editor select { min-height: 30px; padding: 0 8px; }
+.context-vault-editor textarea { padding: 7px 8px; }
+.context-vault-search:focus { outline: none; box-shadow: none; }
+.context-vault-editor input:focus, .context-vault-editor textarea:focus, .context-vault-editor select:focus { outline: none; border-color: var(--ds-focus); box-shadow: 0 0 0 2px color-mix(in oklab, var(--ds-focus) 20%, transparent); }
 .context-vault-grid { min-height: 0; flex: 1; display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
 .context-vault-grid.is-editing { grid-template-columns: minmax(150px, .8fr) minmax(220px, 1.2fr); }
 .context-vault-list, .context-vault-editor { min-width: 0; min-height: 0; overflow: auto; border: 1px solid var(--ds-border); border-radius: var(--radius-sm); padding: 6px; }
 .context-vault-list { display: flex; flex-direction: column; }
 .context-vault-list > .work-tab-empty { flex: 1; }
-.context-vault-list > button { width: 100%; display: block; text-align: left; padding: 7px; border: 0; border-radius: var(--radius-2xs); background: transparent; color: inherit; }
-.context-vault-list > button:hover, .context-vault-list > button.active { background: var(--ds-bg-hover); }
+.context-vault-claim { width: 100%; display: block; text-align: left; padding: 8px; border: 0; border-radius: var(--radius-2xs); background: transparent; color: inherit; }
+.context-vault-claim:hover, .context-vault-claim.active { background: var(--ds-bg-hover); }
 .context-vault-list b, .context-vault-list span, .context-vault-list small { display: block; }
 .context-vault-list span { overflow-wrap: anywhere; }
 .context-vault-list b { text-transform: capitalize; font-size: var(--text-2xs); color: var(--ds-accent); }
-.context-vault-editor label { display: block; margin-bottom: 7px; font-size: var(--text-xs); }
+.context-vault-editor label { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; color: var(--ds-text-secondary); font-size: var(--text-xs); font-weight: var(--font-weight-medium); }
 .context-vault-editor textarea { min-height: 48px; resize: vertical; }
 .context-vault-editor footer { display: flex; flex-wrap: wrap; gap: 4px; padding-top: 2px; }
 .context-vault-error { margin: 0; color: var(--ds-danger); font-size: var(--text-xs); }
+.context-vault-empty { display: flex; min-width: 0; min-height: 0; flex: 1; flex-direction: column; align-items: center; justify-content: center; gap: 9px; padding: 28px; text-align: center; }
+.context-vault-empty-icon { display: inline-flex; width: 76px; height: 76px; align-items: center; justify-content: center; border: 1px solid var(--ds-border); border-radius: var(--radius-md); background: radial-gradient(circle at 70% 22%, color-mix(in oklab, var(--ds-accent) 34%, transparent), transparent 38%), var(--ds-tile); color: var(--ds-text-secondary); box-shadow: var(--ds-shadow-sm); }
+.context-vault-empty h2 { margin: 8px 0 0; color: var(--ds-text-primary); font-size: var(--text-base-plus); font-weight: var(--font-weight-semibold); }
+.context-vault-empty p { max-width: 34ch; margin: 0; color: var(--ds-text-muted); font-size: var(--text-sm); line-height: var(--leading-body); }
+.context-vault-empty-action { min-width: 150px; margin-top: 5px; gap: 6px; }
+.context-vault-empty-tools { display: flex; flex-wrap: wrap; justify-content: center; gap: 5px; }
 @media (max-width: 720px) {
+  .context-vault-workspace { grid-template-columns: minmax(0, 1fr); }
+  .context-vault-rail { display: none; }
+  .context-vault-toolbar { align-items: stretch; flex-wrap: wrap; }
+  .context-vault-actions { margin-left: 0; }
   .context-vault-grid.is-editing { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(120px, .8fr) minmax(0, 1.2fr); }
 }

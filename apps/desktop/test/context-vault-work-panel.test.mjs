@@ -13,7 +13,9 @@ test("Context Vault has a localized native tab and visible controls", () => {
   assert.match(tab, /useTranslation/);
   assert.match(tab, /t\("panel\.tabs\.contextVault"\)/);
   assert.match(tab, /t\("contextVault\.evidencePath"\)/);
-  assert.match(tab, /t\(`contextVault\.categories\.\$\{category\}`\)/);
+  assert.match(tab, /t\(`contextVault\.categories\.\$\{item\}`\)/);
+  assert.match(tab, /context-vault-action context-vault-action-primary/);
+  assert.match(tab, /context-vault-action context-vault-action-secondary/);
 });
 
 test("Context Vault stacks and wraps instead of overflowing a narrow work panel", () => {
@@ -29,4 +31,20 @@ test("Context Vault gives its empty state the full panel and reserves a separate
   assert.match(styles, /\.context-vault-grid \{[\s\S]*?grid-template-columns: minmax\(0, 1fr\)/);
   assert.match(styles, /\.context-vault-actions \{[\s\S]*?flex-wrap: wrap/);
   assert.match(styles, /@media \(max-width: 720px\) \{[\s\S]*?\.context-vault-grid\.is-editing \{[\s\S]*?grid-template-columns: minmax\(0, 1fr\)/);
+});
+
+test("Context Vault gives buttons and form fields an explicit native surface", () => {
+  assert.match(styles, /\.context-vault-action \{[\s\S]*?min-height: 30px[\s\S]*?border: 1px solid var\(--ds-border\)[\s\S]*?background: var\(--ds-tile\)/);
+  assert.match(styles, /\.context-vault-action-primary \{[\s\S]*?background: var\(--ds-accent\)/);
+  assert.match(styles, /\.context-vault-search,[\s\S]*?background: var\(--ds-tile\)[\s\S]*?border: 1px solid var\(--ds-border\)/);
+  assert.match(styles, /\.context-vault-editor label \{[\s\S]*?gap: 4px/);
+});
+
+test("Context Vault has a native category rail and an intentional empty workspace", () => {
+  assert.match(tab, /context-vault-rail/);
+  assert.match(tab, /context-vault-category/);
+  assert.match(tab, /context-vault-empty-action/);
+  assert.match(tab, /IconPlus/);
+  assert.match(styles, /\.context-vault-workspace \{[\s\S]*?grid-template-columns: minmax\(124px, 0\.32fr\) minmax\(0, 1fr\)/);
+  assert.match(styles, /\.context-vault-empty \{[\s\S]*?align-items: center[\s\S]*?justify-content: center/);
 });

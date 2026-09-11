@@ -3109,7 +3109,9 @@ Sidebar footer                                        Popover (360px max)
 20. Assistant copy and completed-turn controls are not shown while that
     assistant turn is streaming, awaiting delegates, or otherwise active; they
     return once the turn settles.
-21. Context Vault is a localized native work-panel tab. Its heading and compact
-    action toolbar are separate, its empty state uses the full panel width, and
-    its list and editor scroll independently. When editing, widths below 720px
-    stack the list above the editor rather than allowing horizontal overflow.
+21. Context Vault is a localized native work-panel workspace. It has a category
+    rail with counts, a compact search/action toolbar, and a centered empty
+    state with visible claim and import entry points. The rail filters only the
+    displayed local claim list; it does not change stored claims. Its list and
+    editor scroll independently, and widths below 720px hide the rail and stack
+    the list above the editor rather than allowing horizontal overflow.
