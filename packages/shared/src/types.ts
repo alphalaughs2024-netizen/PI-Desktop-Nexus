@@ -1581,6 +1581,33 @@ export type BuiltinSkillRecord = {
   version: string;
 };
 
+/** A Nexus workflow package is model guidance only; it never grants authority. */
+export type WorkflowRecord = {
+  id: string;
+  name: string;
+  description: string;
+  version: string;
+  enabled: boolean;
+  supported: boolean;
+  unavailableReason?: "disabled" | "unsupported_capability" | "unsupported_mode" | "dismissed";
+  supportedModes: Mode[];
+  requiredCapabilities: string[];
+  priority: number;
+};
+
+export type WorkflowSessionStatus = {
+  primary?: {
+    id: string;
+    name: string;
+    stage: string;
+    source: "automatic" | "manual";
+    reasonCategory: string;
+    activatedAt?: string;
+  };
+  supportingIds: string[];
+  available: WorkflowRecord[];
+};
+
 /**
  * A global subagent definition the user owns, stored as `~/.agents/subagents/<id>.md`
  * (D202, ADR 0063). Project roots do not provide subagent definitions.

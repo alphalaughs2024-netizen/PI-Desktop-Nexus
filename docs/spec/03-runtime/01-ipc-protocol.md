@@ -1228,6 +1228,33 @@ The local channels `builtinSkillList`, `builtinSkillSetEnabled`, and
 resources are read-only; enablement is persisted under
 `<dataDir>/agent-capabilities/builtin-skills.json`.
 
+## 12b.1 Workflow package API (ADR 0221)
+
+Built-in Nexus workflows are versioned, capability-aware guidance packages.
+Electron main resolves the active workflow before a runtime starts using prompt
+intent in memory, workspace facts, mode, actual host capabilities, and scoped
+preferences. It persists only workflow ids, stage, source, reason category and
+timestamps under `<dataDir>/agent-capabilities/workflows/sessions`; raw prompts
+are never persisted for activation audit.
+
+- `workflow.status({ sessionId })` → active primary workflow, supporting ids,
+  and compatible/unavailable package records
+- `workflow.read({ id })` → packaged metadata and instruction body
+- `workflow.setProjectEnabled({ projectPath, id, enabled|null })` → explicit
+  project setting, or `null` to inherit the global setting
+- `workflow.sessionActivate({ sessionId, id })`
+- `workflow.sessionDismiss({ sessionId, id? })`
+- `workflowChanged` → session/project state has changed
+
+Session activation and dismissal override project configuration; project
+configuration overrides global enablement. A package whose required capabilities
+or mode are unavailable cannot activate. `Workflow` is a local Agent, Plan, and
+Goal tool with `status`, `list`, `activate`, and `dismiss` operations. It is
+guidance lifecycle only: neither its results nor a workflow body can expand
+authority or bypass confirmation. Active bodies are injected before the first
+model action; non-active guidance remains subject to the 8,000-character Skill
+catalog and session id gate.
+
 ## 12c. Subagent API (D202)
 
 User-owned subagents are global-only Markdown documents under

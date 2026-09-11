@@ -232,6 +232,21 @@ export function AgentSkillsPage() {
     }
   };
 
+  const setBuiltinProjectOverride = async (skill: BuiltinSkillRecord, enabled: boolean | null) => {
+    if (!selectedProjectPath) return;
+    const key = `project-workflow:${skill.id}`;
+    if (busyId === key) return;
+    setBusyId(key);
+    try {
+      await api.setProjectWorkflowEnabled(selectedProjectPath, skill.id, enabled);
+      showToast(enabled === null ? "Project workflow now follows the global setting." : `Project workflow ${enabled ? "enabled" : "disabled"}.`, { variant: "success" });
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : String(error), { variant: "error" });
+    } finally {
+      setBusyId(null);
+    }
+  };
+
   /** Where a new or imported skill lands: the filtered level, global when both. */
   const targetLevel: AgentCapabilityLevel = filter === "project" ? "project" : "global";
 
@@ -488,6 +503,18 @@ export function AgentSkillsPage() {
               label={t("settings.toggleCapability", { name: skill.name || skill.id })}
               onChange={() => void toggleBuiltin(skill)}
             />
+            {selectedProjectPath ? (
+              <CapabilityRowMenu
+                label="Project workflow setting"
+                open={menuFor === `project-workflow:${skill.id}`}
+                onOpenChange={(open) => setMenuFor(open ? `project-workflow:${skill.id}` : null)}
+                items={[
+                  { key: "enable", label: "Enable in this project", onSelect: () => void setBuiltinProjectOverride(skill, true) },
+                  { key: "disable", label: "Disable in this project", onSelect: () => void setBuiltinProjectOverride(skill, false) },
+                  { key: "inherit", label: "Use global setting", onSelect: () => void setBuiltinProjectOverride(skill, null) },
+                ]}
+              />
+            ) : null}
           </>
         }
       />

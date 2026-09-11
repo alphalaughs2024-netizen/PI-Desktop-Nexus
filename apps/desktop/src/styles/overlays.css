@@ -763,6 +763,24 @@
   animation: notice-in var(--motion-duration-normal) var(--motion-ease-out) both;
 }
 
+.active-workflow-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 10px 16px 0;
+  padding: 9px 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 12px;
+}
+.active-workflow-copy { display: grid; gap: 2px; min-width: 0; }
+.active-workflow-copy span { color: var(--text-secondary); text-transform: capitalize; }
+.active-workflow-actions { display: flex; gap: 6px; margin-left: auto; }
+.active-workflow-actions button { border: 0; background: transparent; color: var(--accent); cursor: pointer; font: inherit; }
+.active-workflow-body { grid-column: 1 / -1; max-height: 180px; overflow: auto; margin: 0; white-space: pre-wrap; color: var(--text-secondary); font: inherit; }
+
 .chat-error-notice > span {
   min-width: 0;
   flex: 1 1 240px;

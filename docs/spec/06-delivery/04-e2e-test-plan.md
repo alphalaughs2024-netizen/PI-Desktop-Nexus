@@ -2002,6 +2002,28 @@ Each scenario is documented in this format:
 - **Acceptance**: G (skill activation) + E (tools & permissions) + D (high-risk permission gating)
 - **Status**: Unit-covered (`plugin-skills.test.mjs`, agent-runtime prompt/digest tests); agent-facing scenario Draft
 
+#### E2E-024IA: Nexus workflow activation and session controls (ADR 0221)
+
+- **Preconditions**: A clean Nexus profile, an ordinary workspace, and a plugin
+  workspace or an explicit “create a Nexus plugin” first prompt.
+- **Steps**: 1) Start a session in the ordinary workspace. 2) Start a fresh
+  session with the explicit plugin-authoring prompt. 3) Inspect its workflow
+  card, dismiss it, and send another turn. 4) Use the Skills settings page to
+  disable the plugin workflow globally, then add a project enable override.
+  5) Open a session in an unsupported mode/capability fixture.
+- **Expected**: The visible card gives the active name, stage, narrow reason,
+  inspect, dismiss, and Settings controls. Plugin development is primary for
+  the authoring case and operations is supporting; a generic plugin question
+  does not select it. Session dismissal wins for that session only; project
+  setting wins over global. Unsupported packages stay visible with their reason
+  and cannot be activated. The injected active body reaches the model before
+  its first relevant action, but it neither changes tools nor bypasses
+  confirmations. Session workflow records contain no raw prompt and are removed
+  when the session is deleted.
+- **Specs linked**: `03-runtime/01-ipc-protocol.md` §12b.1, ADR 0221, ADR 0220
+- **Acceptance**: E (tools and permissions) + G (agent guidance)
+- **Status**: Unit/runtime/source-contract covered; visual scenario Draft
+
 #### E2E-024J: Plugin theme applies and falls back when withdrawn
 
 - **Preconditions**: `examples/plugins/hello` enabled with `ui.theme` granted; a plugin whose CSS uses `@import` or a remote `url()` available for the rejection case.

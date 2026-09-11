@@ -98,6 +98,7 @@ type RuntimeParams = {
   commandShell: CommandShellOption;
   pluginTools?: PluginToolDef[];
   instructionCatalog?: InstructionDocumentDef[];
+  activeWorkflow?: { id: string; name: string; stage: string; reasonCategory: string; body: string };
   /** Trusted extensions enabled for this session (D387). */
   trustedExtensions?: TrustedExtensionSpec[];
   /** Delegates this session may spawn through `Task` (ADR 0062). */
@@ -290,6 +291,7 @@ async function runtimeFor(
   const thinkingLevel = normalizeThinkingLevel(params.thinkingLevel);
   const pluginTools = params.pluginTools ?? [];
   const instructionCatalog = params.instructionCatalog ?? [];
+  const activeWorkflow = params.activeWorkflow;
   const trustedExtensions = params.trustedExtensions ?? [];
   const subagents = params.subagents ?? [];
   const subagentProviders = Object.fromEntries(
@@ -323,6 +325,7 @@ async function runtimeFor(
     thinkingLevel,
     pluginTools,
     instructionCatalog,
+    activeWorkflow,
     trustedExtensions,
     subagents,
     subagentProviders,
@@ -379,6 +382,7 @@ async function runtimeFor(
     compactionSettings: params.compactionSettings,
     pluginTools,
     instructionCatalog,
+    activeWorkflow,
     trustedExtensions,
     subagents,
     subagentProviders,
