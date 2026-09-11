@@ -2064,6 +2064,30 @@ Each scenario is documented in this format:
 - **Acceptance**: E (tools and permissions) + G (agent guidance)
 - **Status**: Unit/runtime/source-contract covered; desktop journey Draft
 
+#### E2E-024ID: Managed Git and review workflow lifecycle (ADR 0223)
+
+- **Preconditions**: A clean Nexus fork workspace under a Git repository; a
+  separate checkout whose root is named `PI-Desktop` is available as the
+  protected upstream case.
+- **Steps**: 1) Ask for an isolated Nexus worktree. 2) Inspect the active
+  workflow and invoke `GitWorktree` status/create with `nexus/e2e-git-flow`.
+  3) Cancel the native confirmation, then repeat and accept it. 4) Make and
+  validate a focused local change in the returned worktree. 5) Request review,
+  inspect bounded evidence, and exercise accepted/declined review feedback.
+  6) Attempt cleanup before merge. 7) Merge after confirmation, then clean up
+  after confirmation. 8) Try the same creation against the upstream checkout.
+- **Expected**: Only the deterministic sibling `.nexus-worktrees/e2e-git-flow`
+  path and `nexus/e2e-git-flow` branch are offered. Cancellation changes
+  nothing. Creation, merge, and cleanup never push. Cleanup refuses before
+  merge or while dirty, then removes only the recorded clean merged worktree
+  and local branch. Review shows current scope and validation evidence without
+  creating a second review store or granting authority. The upstream checkout
+  is refused.
+- **Specs linked**: `03-runtime/01-ipc-protocol.md` §12b.1,
+  `03-runtime/03-tools-and-permissions.md` §5a, ADR 0223
+- **Acceptance**: E (permissions and Git isolation) + G (workflow guidance)
+- **Status**: Unit/source-contract covered; desktop journey Draft
+
 #### E2E-024J: Plugin theme applies and falls back when withdrawn
 
 - **Preconditions**: `examples/plugins/hello` enabled with `ui.theme` granted; a plugin whose CSS uses `@import` or a remote `url()` available for the rejection case.

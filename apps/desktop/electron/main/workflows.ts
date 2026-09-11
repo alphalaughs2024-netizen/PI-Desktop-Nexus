@@ -11,6 +11,7 @@ export const WORKFLOW_CAPABILITIES = [
   "file-tools",
   "terminal-tools",
   "test-execution",
+  "git-worktree-operations",
 ] as const;
 export type WorkflowCapability = (typeof WORKFLOW_CAPABILITIES)[number];
 export type WorkflowStage =
@@ -23,7 +24,11 @@ export type WorkflowStage =
   | "approved_plan"
   | "executing"
   | "verified"
-  | "paused";
+  | "paused"
+  | "isolation"
+  | "integration"
+  | "review_requested"
+  | "review_feedback";
 export type WorkflowReasonCategory =
   | "core_operations"
   | "plugin_workspace"
@@ -38,6 +43,10 @@ export type WorkflowReasonCategory =
   | "plan_approved"
   | "plan_execution_completed"
   | "plan_execution_paused"
+  | "git_isolation"
+  | "branch_completion"
+  | "review_request"
+  | "review_feedback"
   | "manual";
 export type WorkflowActivationSource = "automatic" | "manual";
 
@@ -66,6 +75,10 @@ export const TEST_DRIVEN_DEVELOPMENT_WORKFLOW_ID = "nexus/quality/test-driven-de
 export const VERIFICATION_WORKFLOW_ID = "nexus/quality/verification-before-completion";
 export const WRITING_PLANS_WORKFLOW_ID = "nexus/planning/writing-plans";
 export const EXECUTING_PLANS_WORKFLOW_ID = "nexus/planning/executing-plans";
+export const USING_GIT_WORKTREES_WORKFLOW_ID = "nexus/git/using-git-worktrees";
+export const FINISHING_DEVELOPMENT_BRANCH_WORKFLOW_ID = "nexus/git/finishing-development-branch";
+export const REQUESTING_CODE_REVIEW_WORKFLOW_ID = "nexus/review/requesting-code-review";
+export const RECEIVING_CODE_REVIEW_WORKFLOW_ID = "nexus/review/receiving-code-review";
 
 export const WORKFLOW_MANIFESTS: readonly WorkflowManifest[] = [
   {
@@ -164,6 +177,54 @@ export const WORKFLOW_MANIFESTS: readonly WorkflowManifest[] = [
     defaultStage: "executing",
     fixtures: [{ positivePrompt: "Execute the approved Nexus plan.", negativePrompt: "How does plan execution work?", expectedStage: "executing" }],
   },
+  {
+    id: USING_GIT_WORKTREES_WORKFLOW_ID,
+    version: "1",
+    name: "Managed Git isolation",
+    description: "Create and inspect a Nexus-managed local Git worktree with guarded paths, branch ownership, and explicit confirmation.",
+    skillFile: "using-git-worktrees.md",
+    supportedModes: ["agent"],
+    requiredCapabilities: ["core-agent-tools", "skill-loader", "git-worktree-operations"],
+    priority: 92,
+    defaultStage: "isolation",
+    fixtures: [{ positivePrompt: "Create an isolated Nexus worktree for this feature.", negativePrompt: "What is a git worktree?", expectedStage: "isolation" }],
+  },
+  {
+    id: FINISHING_DEVELOPMENT_BRANCH_WORKFLOW_ID,
+    version: "1",
+    name: "Development branch completion",
+    description: "Validate a completed local development branch, merge only after explicit confirmation, and clean it up only after merge verification.",
+    skillFile: "finishing-a-development-branch.md",
+    supportedModes: ["agent"],
+    requiredCapabilities: ["core-agent-tools", "skill-loader", "git-worktree-operations", "terminal-tools", "test-execution"],
+    priority: 94,
+    defaultStage: "integration",
+    fixtures: [{ positivePrompt: "The implementation is complete; finish this development branch.", negativePrompt: "How do branches work?", expectedStage: "integration" }],
+  },
+  {
+    id: REQUESTING_CODE_REVIEW_WORKFLOW_ID,
+    version: "1",
+    name: "Code review request",
+    description: "Prepare a bounded local review scope with fresh validation evidence before asking for review.",
+    skillFile: "requesting-code-review.md",
+    supportedModes: ["agent", "plan", "goal"],
+    requiredCapabilities: ["core-agent-tools", "skill-loader", "file-tools", "terminal-tools", "test-execution"],
+    priority: 93,
+    defaultStage: "review_requested",
+    fixtures: [{ positivePrompt: "Please request a code review for this completed change.", negativePrompt: "Explain code review best practices.", expectedStage: "review_requested" }],
+  },
+  {
+    id: RECEIVING_CODE_REVIEW_WORKFLOW_ID,
+    version: "1",
+    name: "Code review reception",
+    description: "Evaluate review findings against the workspace, apply only sound changes, and verify each accepted fix.",
+    skillFile: "receiving-code-review.md",
+    supportedModes: ["agent"],
+    requiredCapabilities: ["core-agent-tools", "skill-loader", "file-tools", "terminal-tools", "test-execution"],
+    priority: 97,
+    defaultStage: "review_feedback",
+    fixtures: [{ positivePrompt: "Apply the code review feedback after checking each finding.", negativePrompt: "What is code review feedback?", expectedStage: "review_feedback" }],
+  },
 ] as const;
 
 export type WorkflowSessionOverride = {
@@ -226,6 +287,7 @@ export function validateWorkflowManifest(value: unknown): { ok: boolean; error?:
   if (!Number.isFinite(manifest.priority) || ![
     "active", "discovery", "diagnosis", "implementation", "verification",
     "proposed_design", "approved_plan", "executing", "verified", "paused",
+    "isolation", "integration", "review_requested", "review_feedback",
   ].includes(manifest.defaultStage ?? "")) {
     return { ok: false, error: "invalid priority or stage" };
   }
@@ -278,6 +340,10 @@ function automaticReason(manifest: WorkflowManifest, input: WorkflowResolutionIn
     input.session.primaryId === WRITING_PLANS_WORKFLOW_ID &&
     input.session.stage === "approved_plan"
   ) return "plan_approved";
+  if (manifest.id === USING_GIT_WORKTREES_WORKFLOW_ID && isManagedGitIsolationRequest(input.prompt)) return "git_isolation";
+  if (manifest.id === FINISHING_DEVELOPMENT_BRANCH_WORKFLOW_ID && isBranchCompletionRequest(input.prompt)) return "branch_completion";
+  if (manifest.id === REQUESTING_CODE_REVIEW_WORKFLOW_ID && isCodeReviewRequest(input.prompt)) return "review_request";
+  if (manifest.id === RECEIVING_CODE_REVIEW_WORKFLOW_ID && isReviewFeedbackRequest(input.prompt)) return "review_feedback";
   if (manifest.id === VERIFICATION_WORKFLOW_ID && isCompletionVerificationRequest(input.prompt, input.session)) return "completion_verification";
   return undefined;
 }
@@ -358,6 +424,31 @@ function isApprovedImplementationRequest(value: unknown): boolean {
 
 function isFixRequest(value: unknown): boolean {
   return /\b(?:fix|implement|apply|make the change|go ahead|proceed)\b/.test(text(value));
+}
+
+function isManagedGitIsolationRequest(value: unknown): boolean {
+  const prompt = text(value);
+  return /\b(?:create|set up|make|start|use)\b/.test(prompt) &&
+    /\b(?:isolated|dedicated|separate|nexus-managed)\b/.test(prompt) &&
+    /\b(?:git )?worktree\b/.test(prompt);
+}
+
+function isBranchCompletionRequest(value: unknown): boolean {
+  const prompt = text(value);
+  return /\b(?:finish|complete|integrate|merge|clean up)\b/.test(prompt) &&
+    /\b(?:development )?branch\b/.test(prompt) &&
+    /\b(?:complete|completed|implementation|development|merge|finish)\b/.test(prompt);
+}
+
+function isCodeReviewRequest(value: unknown): boolean {
+  const prompt = text(value);
+  return /\b(?:request|ask for|prepare|send for)\b/.test(prompt) && /\b(?:code )?review\b/.test(prompt);
+}
+
+function isReviewFeedbackRequest(value: unknown): boolean {
+  const prompt = text(value);
+  return /\b(?:apply|address|fix|implement|check|evaluate)\b/.test(prompt) &&
+    /\b(?:code )?review (?:feedback|comments?|findings?)\b/.test(prompt);
 }
 
 function isCompletionVerificationRequest(value: unknown, session: WorkflowSessionRecord): boolean {

@@ -185,6 +185,7 @@ import {
   transitionPlanWorkflowSession,
   type WorkflowSessionRecord,
 } from "./workflows";
+import { runGitWorktreeOperation } from "./git-worktrees";
 import { loadScopedPluginGuidance } from "./plugin-guidance";
 import { registerPluginDevTools } from "./plugin-dev-tools";
 import { PluginPanelHost } from "./plugin-panel-host";
@@ -1685,7 +1686,7 @@ async function resolveAgentRuntimeLaunch(
         plugins.listLoaded().map((loaded) => loaded.path),
       ),
     },
-    capabilities: ["core-agent-tools", "skill-loader", "plugin-development-tools", "file-tools", "terminal-tools", "test-execution"],
+    capabilities: ["core-agent-tools", "skill-loader", "plugin-development-tools", "file-tools", "terminal-tools", "test-execution", "git-worktree-operations"],
     globalDisabledIds: globalDisabledWorkflowIds(dataDir),
     projectOverrides: projectWorkflowOverrides(dataDir, projectPath),
     session: storedWorkflow,
@@ -1986,7 +1987,7 @@ async function workflowStatusForSession(sessionId: string) {
   const resolution = resolveWorkflows({
     mode,
     workspace: { isPluginWorkspace: isPluginWorkspace(projectPath, plugins.listLoaded().map((loaded) => loaded.path)) },
-    capabilities: ["core-agent-tools", "skill-loader", "plugin-development-tools", "file-tools", "terminal-tools", "test-execution"],
+    capabilities: ["core-agent-tools", "skill-loader", "plugin-development-tools", "file-tools", "terminal-tools", "test-execution", "git-worktree-operations"],
     globalDisabledIds: globalDisabledWorkflowIds(dataDir),
     projectOverrides: projectWorkflowOverrides(dataDir, projectPath),
     session: stored,
@@ -5299,6 +5300,55 @@ async function startSidecar(): Promise<void> {
       return { ok: true, content: JSON.stringify(after, null, 2) };
     } catch (error) {
       return { ok: false, isError: true, content: `Workflow: ${error instanceof Error ? error.message : String(error)}` };
+    }
+  });
+  // Git lifecycle actions have a deliberately smaller surface than Bash: only
+  // Nexus-owned branches and deterministic sibling worktree paths are admitted,
+  // each state-changing operation uses a native confirmation, and no operation
+  // can push a remote or touch an unrelated checkout.
+  s.setLocalTool("GitWorktree", async ({ args, sessionId }) => {
+    try {
+      const input = args as { operation?: unknown; branch?: unknown };
+      return {
+        ok: true,
+        content: await runGitWorktreeOperation(
+          {
+            dataDir,
+            resolveWorkspace: async (id) => {
+              try {
+                const result = await host?.call<{ session?: { projectPath?: string } }>("session.get", { id });
+                return result?.session?.projectPath?.trim() || null;
+              } catch {
+                return null;
+              }
+            },
+            confirm: async (title, detail) => {
+              const options = {
+                type: "warning" as const,
+                title,
+                message: title,
+                detail,
+                buttons: ["Cancel", "Continue"],
+                defaultId: 0,
+                cancelId: 0,
+                noLink: true,
+              };
+              const result = mainWindow
+                ? await dialog.showMessageBox(mainWindow, options)
+                : await dialog.showMessageBox(options);
+              return result.response === 1;
+            },
+          },
+          sessionId,
+          input,
+        ),
+      };
+    } catch (error) {
+      return {
+        ok: false,
+        isError: true,
+        content: `GitWorktree: ${error instanceof Error ? error.message.replace(/^GitWorktree: /, "") : String(error)}`,
+      };
     }
   });
   // Plugin authoring (D171): scaffold, validate and package a plugin without

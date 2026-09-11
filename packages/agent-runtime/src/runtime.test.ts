@@ -1534,6 +1534,7 @@ describe("DesktopAgentRuntime deferred tool catalog", () => {
       "Bash",
       "Edit",
       "Write",
+      "GitWorktree",
       "asktool",
       "Skill",
       "Workflow",
