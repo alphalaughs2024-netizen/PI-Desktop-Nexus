@@ -10013,3 +10013,10 @@ sample extensions under `apps/desktop/test/fixtures/pi-extensions/`.
   titles and controls, wrapping actions, independently usable list/editor
   scroll areas, and no horizontal overflow.
 - **Status**: Unit/source-contract covered; desktop journey is Draft.
+### E2E-179 — repeated identical tool-call safety
+
+With a deterministic agent fixture, three identical `Read` calls execute and a
+fourth is rejected before host dispatch with `TOOL_REPEAT_LIMIT_EXCEEDED` and a
+visible retriable error row. Reordered argument keys compare identically;
+changed arguments, intervening calls, and a new prompt reset the streak. The
+existing three-failed-`Edit` recovery scenario remains unchanged.

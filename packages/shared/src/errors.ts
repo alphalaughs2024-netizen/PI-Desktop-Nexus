@@ -65,6 +65,12 @@ export const ErrorCodes = {
   TOOL_TIMEOUT: "TOOL_TIMEOUT",
   TOOL_FAILED: "TOOL_FAILED",
   /**
+   * The runtime stopped a prompt after four consecutive model-requested calls
+   * with the same tool and canonical arguments. Retriable: the user may
+   * continue with a different approach.
+   */
+  TOOL_REPEAT_LIMIT_EXCEEDED: "TOOL_REPEAT_LIMIT_EXCEEDED",
+  /**
    * The mutation recovery guard stopped the turn after repeated same-path Edit
    * or patch-command failures (spec 18-line-anchored-edit-contract §9.3). Retriable: the user may continue.
    */

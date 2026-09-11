@@ -4461,3 +4461,4 @@ D193, and D194.
   `03-runtime/06-host-rpc-protocol.md` §4, `03-runtime/01-ipc-protocol.md`,
   and E2E-246.
 
+| D179 | Consecutive identical tool-call guard | **AgentRuntime keeps a per-prompt canonical tool-call streak and rejects the fourth exact repeat before host dispatch with retriable `TOOL_REPEAT_LIMIT_EXCEEDED`; changed arguments, intervening calls, and new prompts reset it. `Edit` and patch-style `Bash` remain under the specialized mutation guard.** | Small models can burn a turn repeating unchanged calls; a bounded runtime guard is safer and more consistent than an optional plugin. |
