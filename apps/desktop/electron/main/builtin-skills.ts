@@ -41,8 +41,8 @@ function resolveBuiltinSkillPath(fileName: string): string | null {
  *
  * The gate matters. A plugin-authoring primer in every session would burn
  * context for the vast majority of sessions that never write a plugin; the
- * three plugin tools stay registered regardless, and calling one puts a
- * manifest in the workspace, which activates the skill on the next prompt.
+ * three plugin tools stay registered regardless. An explicit authoring request
+ * also activates the guide before scaffolding creates the first manifest.
  */
 export function isPluginWorkspace(
   workspacePath: string | null | undefined,
@@ -69,6 +69,18 @@ export function isPluginWorkspace(
   return pluginPaths.some((path) => path === workspacePath || path.startsWith(prefix));
 }
 
+/**
+ * True only for a user request to author a plugin, rather than a generic
+ * question that happens to mention plugins. This keeps the authoring guide out
+ * of ordinary projects while making it available before a new plugin exists.
+ */
+export function isPluginAuthoringRequest(content: unknown): boolean {
+  if (typeof content !== "string") return false;
+  return /\b(?:create|scaffold|build|develop|debug|validate|check|package|pack)\b[\s\S]{0,64}\bplugins?\b/i.test(
+    content,
+  );
+}
+
 /** Front matter carries the skill's title and applicability line. */
 function readBuiltinSkill(fileName: string): string | null {
   const path = resolveBuiltinSkillPath(fileName);
@@ -84,6 +96,8 @@ export type BuiltinSkillInput = {
   workspacePath?: string | null;
   /** Directories of currently loaded plugins, used to detect a dev workspace. */
   pluginPaths?: string[];
+  /** The current user prompt explicitly asks to author a plugin. */
+  pluginAuthoringRequested?: boolean;
   dataDir?: string;
 };
 
@@ -143,7 +157,9 @@ export function builtinSkills(input: BuiltinSkillInput): InstructionDocumentDef[
       });
     }
   }
-  if (!isPluginWorkspace(input.workspacePath, input.pluginPaths)) return skills;
+  if (!input.pluginAuthoringRequested && !isPluginWorkspace(input.workspacePath, input.pluginPaths)) {
+    return skills;
+  }
   if (disabled.has(PLUGIN_DEV_SKILL_ID)) return skills;
   const raw = readBuiltinSkill(PLUGIN_DEV_SKILL_FILE);
   if (!raw?.trim()) return skills;

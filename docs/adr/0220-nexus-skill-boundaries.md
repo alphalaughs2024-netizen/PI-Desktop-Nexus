@@ -39,6 +39,13 @@ compatibility. Settings lists shipped documents separately, allows inspection
 and enablement, and persists only enablement beneath the Nexus profile; it
 never edits packaged Markdown resources.
 
+The plugin-development guide is normally workspace-scoped, but an explicit
+current-turn request to create, scaffold, build, develop, debug, validate,
+check, package, or pack a plugin also admits it before a workspace contains a
+manifest. Generic plugin questions do not meet that activation gate. This
+keeps ordinary sessions lean while allowing first-turn plugin creation without
+requiring the model to discover the workflow after it has already acted.
+
 ## Consequences
 
 Nexus skill data no longer leaks into or out of the upstream application by

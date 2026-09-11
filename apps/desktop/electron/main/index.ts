@@ -119,8 +119,8 @@ import {
   globalInstructionPath,
   loadInstructionChain,
   loadSubagentDefinitions,
-  instructionCatalogWithinBudget,
   resolveSubagentProviders,
+  instructionCatalogWithinBudget,
   mergeProviderHeaders,
   optionalProviderHeaders,
   type ComposerTemplate,
@@ -164,7 +164,13 @@ import {
   MCP_CONNECT_TIMEOUT_MS,
   McpServerClient,
 } from "./plugin-mcp";
-import { builtinSkills, listBuiltinSkills, loadBuiltinSkillBody, setBuiltinSkillEnabled } from "./builtin-skills";
+import {
+  builtinSkills,
+  isPluginAuthoringRequest,
+  listBuiltinSkills,
+  loadBuiltinSkillBody,
+  setBuiltinSkillEnabled,
+} from "./builtin-skills";
 import { loadScopedPluginGuidance } from "./plugin-guidance";
 import { registerPluginDevTools } from "./plugin-dev-tools";
 import { PluginPanelHost } from "./plugin-panel-host";
@@ -1543,6 +1549,8 @@ async function resolveAgentRuntimeLaunch(
     providerId?: string;
     modelId?: string;
     thinkingLevel?: ThinkingLevel;
+    /** Current user content, used only to activate first-turn guidance. */
+    prompt?: string;
   } = {},
 ) {
   if (!host) throw new Error("host unavailable");
@@ -1658,6 +1666,7 @@ async function resolveAgentRuntimeLaunch(
     ...builtinSkills({
       workspacePath: projectPath,
       pluginPaths: plugins.listLoaded().map((loaded) => loaded.path),
+      pluginAuthoringRequested: isPluginAuthoringRequest(overrides.prompt),
       dataDir,
     }).map((skill) => ({ ...skill, source: "builtin" as const })),
     ...plugins
@@ -8081,6 +8090,7 @@ function registerIpc() {
       req.sessionId,
       session,
       settings,
+      { prompt: req.content },
     );
     sidecar.setProjectInstructionRoot(req.sessionId, launch.projectPath);
 

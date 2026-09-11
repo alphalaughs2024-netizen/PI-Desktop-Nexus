@@ -3,6 +3,7 @@ import test from "node:test";
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { createRequire } from "node:module";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const desktopRoot = join(here, "..");
@@ -26,6 +27,11 @@ const agentRuntimeSrc = readFileSync(
   "utf8",
 );
 const sidecarSrc = readFileSync(join(repoRoot, "packages/agent-runtime/src/sidecar.ts"), "utf8");
+const requireFromRuntime = createRequire(join(repoRoot, "packages/agent-runtime/package.json"));
+const loadTypeScript = requireFromRuntime("jiti")(join(repoRoot, "packages/agent-runtime/jiti-runner.cjs"));
+const { isPluginAuthoringRequest } = loadTypeScript(
+  join(desktopRoot, "electron/main/builtin-skills.ts"),
+);
 
 test("the plugin runtime indexes contributed skills under caps", () => {
   assert.match(runtimeSrc, /registerSkills/);
@@ -104,13 +110,26 @@ test("the agent runtime advertises skills and rebuilds when the catalog changes"
   assert.match(sidecarSrc, /instructionCatalog/);
 });
 
-test("the operations guidance is always available while plugin guidance remains workspace-scoped", () => {
+test("explicit plugin authoring requests activate the first-turn guidance without generic false positives", () => {
+  // A missing authoring verb or missing plugin target must keep the guide out
+  // of an ordinary project's first-turn catalog.
+  assert.equal(isPluginAuthoringRequest("Create a Nexus plugin"), true);
+  assert.equal(isPluginAuthoringRequest("Please scaffold a plugin"), true);
+  assert.equal(isPluginAuthoringRequest("What are Nexus plugins?"), false);
+  assert.equal(isPluginAuthoringRequest("Build this application"), false);
+});
+
+test("the operations guidance is always available while plugin guidance is scoped to a workspace or explicit authoring request", () => {
   assert.match(builtinSrc, /isPluginWorkspace/);
+  assert.match(builtinSrc, /export function isPluginAuthoringRequest/);
   assert.match(builtinSrc, /schemaVersion.*number/s);
   assert.match(builtinSrc, /pluginPaths\.some/);
   assert.match(builtinSrc, /AGENT_OPERATIONS_SKILL_ID/);
-  assert.match(builtinSrc, /if \(!isPluginWorkspace\(input\.workspacePath, input\.pluginPaths\)\) return skills/);
+  assert.match(builtinSrc, /pluginAuthoringRequested/);
+  assert.match(builtinSrc, /!input\.pluginAuthoringRequested && !isPluginWorkspace\(input\.workspacePath, input\.pluginPaths\)/);
   assert.match(mainSrc, /builtinSkills\(\{/);
+  assert.match(mainSrc, /pluginAuthoringRequested: isPluginAuthoringRequest\(overrides\.prompt\)/);
+  assert.match(mainSrc, /prompt: req\.content/);
 });
 
 test("the on-demand operations guide carries the detailed workflow", () => {

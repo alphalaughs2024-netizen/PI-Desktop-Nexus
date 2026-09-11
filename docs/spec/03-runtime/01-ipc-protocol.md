@@ -1202,6 +1202,11 @@ preview, shell, and delegation playbook is the on-demand
 `nexus/guidance/agent-operations` guidance document. The legacy
 `pi-desktop/*` ids remain load-only aliases for existing transcripts and are
 never advertised.
+The bundled `nexus/guidance/plugin-development` document is catalogued when
+the workspace is already a plugin workspace, or when the current user prompt
+explicitly asks to create, scaffold, build, develop, debug, validate, check,
+package, or pack a plugin. The latter makes the guide available on the first
+turn in an empty project; generic plugin discussion does not activate it.
 Plugin guidance is scope-checked again when it is loaded, so disabling a plugin
 or narrowing its project scope takes effect even for a session whose earlier
 catalog still named the document.
