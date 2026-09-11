@@ -156,6 +156,12 @@ export const ErrorCodes = {
   SESSION_NOT_FOUND: "SESSION_NOT_FOUND",
   HOST_SHUTTING_DOWN: "HOST_SHUTTING_DOWN",
   LIMIT_EXCEEDED: "LIMIT_EXCEEDED",
+  /** Context Vault rejected a malformed claim, evidence record, or import pack. */
+  CONTEXT_VAULT_INVALID: "CONTEXT_VAULT_INVALID",
+  /** The requested Context Vault claim does not exist in the active project. */
+  CONTEXT_VAULT_NOT_FOUND: "CONTEXT_VAULT_NOT_FOUND",
+  /** Context Vault needs an active project before it can access project-owned data. */
+  PROJECT_UNAVAILABLE: "PROJECT_UNAVAILABLE",
   PLUGIN_NOT_FOUND: "PLUGIN_NOT_FOUND",
   PLUGIN_PERMISSION_DENIED: "PLUGIN_PERMISSION_DENIED",
   PLUGIN_INTEGRITY: "PLUGIN_INTEGRITY",

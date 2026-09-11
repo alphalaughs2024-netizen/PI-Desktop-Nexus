@@ -1,4 +1,8 @@
-import { en, type EnglishCatalog } from "../en/index.js";
+import type { EnglishCatalog } from "../en/index.js";
+
+const contextVaultFallback: EnglishCatalog["contextVault"] = {
+  noProject: "Open a project to use its private vault.", health: "{{reviewed}} reviewed architecture · {{decisions}} user decisions · {{stale}} possibly stale", newClaim: "New claim", userDecision: "User decision", export: "Export", import: "Import", allEntries: "All entries", categoriesLabel: "Categories", tags: "Tags", tagsPlaceholder: "api, workflow", search: "Search durable project knowledge", emptyTitle: "No durable knowledge yet", emptyBody: "Claims stay private to this project. Save only decisions and facts worth reusing.", addFirst: "Add your first claim", purposeArchitecture: "Architecture", purposeDecisions: "Decisions", purposeGotchas: "Gotchas", claim: "Claim", category: "Category", impact: "Impact", scope: "Scope", recheckGuidance: "Re-check guidance", evidencePath: "Evidence path", evidenceExcerpt: "Literal evidence excerpt", evidence: "Evidence", addEvidence: "Add evidence", removeEvidence: "Remove evidence", evidenceHint: "Repository claims need exact, current workspace evidence.", userDecisionHint: "User decisions are kept without repository evidence and remain unverified.", relationship: "Relationships", addRelationship: "Add relationship", removeRelationship: "Remove relationship", relationshipType: "Type", relationshipTarget: "Target", relatedTo: "Related to", supersedes: "Supersedes", none: "None", reviewLabel: "Review", reviewState: "State", reviewNote: "Review note", applyReview: "Apply review", editClaim: "Edit claim", closeEditor: "Close editor", save: "Save", saving: "Saving…", saved: "Claim saved", saveResult: "Existing claim: {{status}}", cancel: "Cancel", recheck: "Re-check evidence", rechecked: "Evidence re-checked", reviewed: "Review updated", markReviewed: "Mark reviewed", delete: "Delete", deleted: "Claim deleted", deleteTitle: "Delete this claim?", deleteBody: "This permanently removes the selected claim from this project.", exported: "Knowledge pack exported", importPreview: "Review import", importPreviewBody: "Choose the valid claims to add to this project. Existing claims are never overwritten.", closeImport: "Close import preview", importSelected: "Import {{count}} selected", imported: "Imported {{imported}} · skipped {{skipped}}", invalidClaim: "Invalid claim", claimList: "Vault claims", noMatchingClaims: "No matching claims", importStatus: { selectable: "Ready to import", duplicate: "Already in this vault", overlap: "Possible overlap", invalid: "Invalid", incompatible: "Incompatible" }, categories: { architecture: "Architecture", decisions: "Decisions", conventions: "Conventions", gotchas: "Gotchas", notes: "Notes" }, freshness: { fresh: "Fresh", possibly_stale: "Possibly stale", stale: "Stale", unavailable: "Unavailable", unverified: "Unverified" }, review: { reviewed: "Reviewed", conflicted: "Conflicted", superseded: "Superseded", pending: "Pending" },
+};
 
 export const tr = {
   app: {
@@ -1336,7 +1340,7 @@ export const tr = {
       tooLarge: "Dosya önizlemek için çok büyük",
     },
   },
-  contextVault: { ...en.contextVault },
+  contextVault: contextVaultFallback,
   palette: {
     placeholder: "Komut ara…",
     empty: "Komut bulunamadı",

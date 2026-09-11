@@ -1,7 +1,7 @@
 # 08. Error Codes
 
 > Source of truth: `packages/shared/src/errors.ts` (`ErrorCodes`). Codes in
-> §3.7 are reserved (documented ahead of emission); everything else is live.
+> §3.8 are reserved (documented ahead of emission); everything else is live.
 
 ## 1. Goal
 
@@ -35,7 +35,7 @@ Rules:
 The desktop test suite (`apps/desktop/test/error-code-registry.test.mjs`) verifies
 that every `ErrorCodes` entry appears in this document and that every
 `errorCode` host-core emits from its RPC dispatcher and native tools is
-registered; reserved codes in §3.7 remain intentionally absent from
+registered; reserved codes in §3.8 remain intentionally absent from
 `ErrorCodes` until an implementation emits them.
 
 ## 3. Code registry
@@ -69,6 +69,7 @@ registered; reserved codes in §3.7 remain intentionally absent from
 | `HOST_SHUTTING_DOWN` | yes | the host received EOF and is draining; the call was refused rather than started |
 | `RATE_LIMITED` | yes | a per-caller host budget (plugin session import, batch operations) was exceeded inside its window |
 | `LIMIT_EXCEEDED` | no | a payload exceeded a fixed host bound (item count, byte size, or a 64 MiB NDJSON request line) and was refused |
+| `PROJECT_UNAVAILABLE` | no | a project-owned capability was requested before a project was opened |
 
 
 `HOST_UNAVAILABLE` is reserved for a missing or broken host process/transport,
@@ -238,7 +239,14 @@ malformed.
 | `PLUGIN_CRASHED` | yes | plugin runtime crashed (reserved) |
 | `PLUGIN_CONTRACT_MISMATCH` | no | unsupported manifest/api version (reserved) |
 
-### 3.7 Reserved detail codes (not yet emitted)
+### 3.7 Context Vault
+
+| code | retriable | meaning |
+|---|---|---|
+| `CONTEXT_VAULT_INVALID` | no | a Context Vault claim, evidence reference, relationship, or portable knowledge pack failed validation |
+| `CONTEXT_VAULT_NOT_FOUND` | no | the requested Context Vault claim is absent from the active project |
+
+### 3.8 Reserved detail codes (not yet emitted)
 
 Finer-grained provider/tool distinctions documented for future mapping.
 Until emitted, implementations use the canonical parent code shown.
