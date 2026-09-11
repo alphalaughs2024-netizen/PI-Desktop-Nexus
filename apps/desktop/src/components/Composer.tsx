@@ -470,8 +470,19 @@ function clipboardFiles(data: DataTransfer): File[] {
   return files;
 }
 
+function isFileTransfer(data: DataTransfer): boolean {
+  // Some desktop/web drag sources expose a File object without advertising
+  // the `Files` type until the drop event. Inspect all three representations so
+  // mixed file + text drags are always treated as attachment drops.
+  return (
+    Array.from(data.types).includes("Files") ||
+    data.files.length > 0 ||
+    Array.from(data.items).some((item) => item.kind === "file")
+  );
+}
+
 function hasFileTransfer(data: DataTransfer): boolean {
-  return Array.from(data.types).includes("Files");
+  return isFileTransfer(data);
 }
 
 /**
@@ -1988,6 +1999,15 @@ export function Composer({
     if (!inputBlocked) setIsFileDropActive(true);
   };
 
+  const preventFileDropTextInsertion = (event: DragEvent<HTMLDivElement>) => {
+    if (!isFileTransfer(event.dataTransfer)) return;
+    // File drags from browsers and desktop apps commonly carry a second
+    // text/plain payload (for example the source page's visible metadata).
+    // Cancel the native editable drop during capture, before that payload can
+    // be inserted. `dropFiles` still runs in the bubble phase to import bytes.
+    event.preventDefault();
+  };
+
   const leaveFileDrop = (event: DragEvent<HTMLDivElement>) => {
     if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
       setIsFileDropActive(false);
@@ -2149,6 +2169,7 @@ export function Composer({
         ) : null}
         <div
           className={`composer-shell${inputBlocked ? " is-gated" : ""}${isFileDropActive ? " is-file-drop-active" : ""}`}
+          onDropCapture={preventFileDropTextInsertion}
           onDragOver={allowFileDrop}
           onDragLeave={leaveFileDrop}
           onDrop={dropFiles}

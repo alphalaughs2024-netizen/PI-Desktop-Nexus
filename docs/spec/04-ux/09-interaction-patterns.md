@@ -995,6 +995,11 @@ When drag/drop is implemented, these patterns should apply:
   above the threshold is intercepted and converted into a temporary session
   file reference. Text and URL drops remain browser-native rather than being
   treated as attachments.
+- File drops are prevented during the capture phase as well as in the import
+  handler. This blocks mixed drag payloads' unrelated `text/plain` metadata
+  from being inserted into the editable while preserving the file attachment
+  flow; the drop handler still imports the files through the bounded session
+  scratch bridge.
 - Dragging files over the Composer highlights its existing shell with an accent
   outline. The cue clears on leave or drop; it does not alter the layout or
   intercept drops anywhere outside the Composer.

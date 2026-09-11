@@ -27,12 +27,22 @@ test("composer imports dropped files through the existing session-owned paste pa
   assert.match(composer, /await api\.pasteFiles\(sessionId, payload\)/);
   assert.match(composer, /onDragOver=\{allowFileDrop\}/);
   assert.match(composer, /onDragLeave=\{leaveFileDrop\}/);
+  assert.match(composer, /onDropCapture=\{preventFileDropTextInsertion\}/);
   assert.match(composer, /onDrop=\{dropFiles\}/);
   assert.match(composer, /isFileDropActive \? " is-file-drop-active" : ""/);
   assert.match(composerCss, /\.composer-shell\.is-file-drop-active/);
   // Dragging text or a URL stays a browser-native action: only a real file
   // drop gets prevented and imported.
   assert.match(composer, /if \(!files\.length\) return;/);
+});
+
+test("file drops cancel browser text insertion before the editable receives mixed drag data", () => {
+  assert.match(
+    composer,
+    /const preventFileDropTextInsertion = \(event: DragEvent<HTMLDivElement>\) => \{[\s\S]*?if \(!isFileTransfer\(event\.dataTransfer\)\) return;[\s\S]*?event\.preventDefault\(\);[\s\S]*?\};/,
+  );
+  assert.match(composer, /function isFileTransfer\(data: DataTransfer\): boolean/);
+  assert.match(composer, /onDropCapture=\{preventFileDropTextInsertion\}/);
 });
 
 test("composer converts oversized text paste and materializes clipboard files", () => {

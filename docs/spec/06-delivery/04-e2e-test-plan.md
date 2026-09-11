@@ -5480,9 +5480,11 @@ Each scenario is documented in this format:
 - **Expected**: A file drop follows the same bounded `composer/pasteFiles`
   route as a clipboard file: session materialization, scratch copies,
   MIME/image classification, structured attachment metadata, and a clean
-  workspace. The drop outline clears after leave/drop. Non-file drops keep
-  native browser behavior, and no area outside the Composer becomes a file
-  drop target.
+  workspace. The capture-phase guard prevents a mixed drag source's unrelated
+  `text/plain` metadata from appearing in the editable alongside the
+  attachment chip. The drop outline clears after leave/drop. Non-file drops
+  keep native browser behavior, and no area outside the Composer becomes a
+  file drop target.
 - **Specs linked**: `04-ux/09-interaction-patterns.md` §8a.2,
   `03-runtime/01-ipc-protocol.md` §13c
 - **Acceptance**: C (conversation & stream), F (persistence), Quality
