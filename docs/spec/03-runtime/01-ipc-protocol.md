@@ -1169,8 +1169,8 @@ bridge's `plugin_` namespace (D015).
 
 ## 12b. User skill API (D194)
 
-User skills are Markdown documents scanned from `~/.agents/skills` and
-`<project>/.agents/skills`. Both direct Markdown files and the conventional
+User skills are Markdown documents scanned from the active Nexus data profile's
+`<dataDir>/agents/skills` and `<project>/.agents/skills`. Both direct Markdown files and the conventional
 `<skill>/SKILL.md` shape are accepted. Enablement is stored in
 `<data>/agent-capabilities/skills.json`, never in the document. Catalog ids
 are ASCII slugs: the frontmatter `name` when it slugifies, otherwise the
@@ -1194,12 +1194,14 @@ Only the description enters the prompt, and the body is fetched when the model
 invokes `Skill` (D174). A missing file is removed from the list and its local
 state is pruned during the next scan.
 
-PI-Desktop may also catalog its own operational documents as **Plugin guidance**.
+Nexus may also catalog its own operational documents as **Nexus guidance**.
 They are host-owned, not user skills: unqualified requests to list, create, or
 load a skill always refer to the user-owned recipes above. The runtime sends a
 compact collaboration core on every request; its detailed searching, editing,
 preview, shell, and delegation playbook is the on-demand
-`pi-desktop/agent-operations` guidance document.
+`nexus/guidance/agent-operations` guidance document. The legacy
+`pi-desktop/*` ids remain load-only aliases for existing transcripts and are
+never advertised.
 Plugin guidance is scope-checked again when it is loaded, so disabling a plugin
 or narrowing its project scope takes effect even for a session whose earlier
 catalog still named the document.
@@ -1207,6 +1209,19 @@ Internally the aggregate is the **instruction catalog**, not “plugin skills”
 because it carries user recipes, host guidance, and plugin guidance separately.
 The project-scoped plugin-guidance loader is a separate Electron main module so
 the catalog and on-demand load paths share one explicit scope boundary.
+
+The runtime's aggregate instruction catalog is sorted by source (Nexus, user,
+plugin) and then name/id, and complete metadata entries are selected under an
+8,000-character total prompt budget. A session records the ids it advertised;
+`Skill` rejects an id outside that set. Loaded bodies are read-only guidance and
+cannot grant tools, permissions, filesystem or network access, automatic
+execution, or bypass confirmation policy. The `Skill` loader is available in
+Agent, Plan, and Goal; Plan/Goal continue to deny mutation and plugin tools.
+
+The local channels `builtinSkillList`, `builtinSkillSetEnabled`, and
+`builtinSkillRead` expose Nexus-shipped guidance in Settings. Their Markdown
+resources are read-only; enablement is persisted under
+`<dataDir>/agent-capabilities/builtin-skills.json`.
 
 ## 12c. Subagent API (D202)
 

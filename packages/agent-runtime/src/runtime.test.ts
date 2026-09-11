@@ -290,7 +290,7 @@ describe("DesktopAgentRuntime configuration matching", () => {
     const runtime = createRuntime();
     const prompt = (runtime as any).agent.state.systemPrompt as string;
 
-    expect(prompt).toContain("pi-desktop/agent-operations");
+    expect(prompt).toContain("nexus/guidance/agent-operations");
     expect(prompt).not.toContain("do not create or hand-edit unified-diff files");
 
     const edit = (runtime as any).agent.state.tools.find(
@@ -1598,7 +1598,7 @@ describe("DesktopAgentRuntime deferred tool catalog", () => {
       pluginTools: [
         { name: "plugin_demo_run", description: "demo", parameters: {} },
       ],
-      instructionCatalog: [{ id: "demo.skill", name: "Demo skill" }],
+      instructionCatalog: [{ id: "demo.skill", name: "Demo skill", source: "user" }],
     });
     const names = (runtime as any).agent.state.tools.map(
       (tool: any) => tool.name,
@@ -1616,7 +1616,7 @@ describe("DesktopAgentRuntime deferred tool catalog", () => {
     );
     expect(names).not.toContain("Write");
     expect(names).not.toContain("Edit");
-    expect(names).not.toContain("Skill");
+    expect(names).toContain("Skill");
     expect(names).not.toContain("PluginCheck");
     expect(names).not.toContain("plugin_demo_run");
     expect(names).not.toContain("PluginScaffold");
@@ -5288,6 +5288,17 @@ describe("DesktopAgentRuntime plugin skills (D174)", () => {
     expect(result.content).toEqual([
       { type: "text", text: "# Skill: Release notes" },
     ]);
+
+    await runtime.dispose();
+  });
+
+  it.each(["plan", "goal"] as const)("makes Skill available in %s mode without admitting writes", async (mode) => {
+    const runtime = createRuntime({ mode, instructionCatalog });
+    const names = (runtime as any).agent.state.tools.map((tool: any) => tool.name);
+
+    expect(names).toContain("Skill");
+    expect(names).not.toContain("Write");
+    expect(names).not.toContain("Edit");
 
     await runtime.dispose();
   });

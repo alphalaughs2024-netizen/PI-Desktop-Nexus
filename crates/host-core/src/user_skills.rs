@@ -1,6 +1,6 @@
 use crate::activation::ActivationScope;
 use crate::agent_capabilities::{
-    capability_dir, capability_id, file_timestamp, normalize_project_path, parse_front_matter,
+    capability_id, file_timestamp, normalize_project_path, parse_front_matter,
     path_stem_for_id, slugify, sorted_files, valid_capability_id, CapabilityLevel, CapabilityState,
 };
 use anyhow::{bail, Context, Result};
@@ -55,6 +55,7 @@ pub struct UserSkillInput {
 
 pub struct UserSkillRegistry {
     state: CapabilityState,
+    global_dir: PathBuf,
 }
 
 fn clip(value: &str, max_chars: usize) -> String {
@@ -128,6 +129,20 @@ impl UserSkillRegistry {
     pub fn new(data_dir: &Path) -> Self {
         Self {
             state: CapabilityState::new(data_dir, SKILL_KIND),
+            global_dir: data_dir.join("agents").join(SKILL_KIND),
+        }
+    }
+
+    fn directory(&self, level: CapabilityLevel, project_path: Option<&str>) -> Result<PathBuf> {
+        match level {
+            CapabilityLevel::Global => Ok(self.global_dir.clone()),
+            CapabilityLevel::Project => {
+                let path = project_path
+                    .map(str::trim)
+                    .filter(|value| !value.is_empty())
+                    .ok_or_else(|| anyhow::anyhow!("CAPABILITY_INVALID: projectPath is required"))?;
+                Ok(PathBuf::from(path).join(".agents").join(SKILL_KIND))
+            }
         }
     }
 
@@ -137,7 +152,7 @@ impl UserSkillRegistry {
         project_path: Option<&str>,
         effective_project: Option<&str>,
     ) -> Result<Vec<UserSkillRecord>> {
-        let directory = capability_dir(level, project_path, "skills")?;
+        let directory = self.directory(level, project_path)?;
         let mut paths = sorted_files(&directory, "md");
         // Support the conventional `<skill>/SKILL.md` shape without making a
         // directory import necessary. Direct markdown files remain the shape
@@ -269,7 +284,7 @@ impl UserSkillRegistry {
 
     pub fn create(&mut self, input: UserSkillInput) -> Result<UserSkillRecord> {
         let (level, project_path) = level_and_project(&input)?;
-        let directory = capability_dir(level, project_path.as_deref(), "skills")?;
+        let directory = self.directory(level, project_path.as_deref())?;
         let name = clip(input.name.as_deref().unwrap_or_default(), MAX_NAME_CHARS);
         if name.is_empty() {
             bail!("SKILL_INVALID: name is required");
@@ -358,7 +373,7 @@ impl UserSkillRegistry {
         {
             bail!("SKILL_INVALID: a skill with this name already exists at this level");
         }
-        let directory = capability_dir(level, project_path.as_deref(), "skills")?;
+        let directory = self.directory(level, project_path.as_deref())?;
         fs::create_dir_all(&directory)?;
         let target = directory.join(format!("{id}.md"));
         fs::copy(&source_path, &target)
@@ -538,9 +553,9 @@ mod tests {
                 input("Ignored", "project", Some(app.path().to_str().unwrap())),
             )
             .unwrap();
-        let target = app.path().join(".agents/skills/review.md");
+        let target = app.path().join(".agents").join("skills").join("review.md");
         assert_eq!(record.level.as_deref(), Some("project"));
-        assert_eq!(record.path, target.to_string_lossy());
+        assert_eq!(fs::canonicalize(&record.path).unwrap(), fs::canonicalize(&target).unwrap());
         assert_eq!(fs::read_to_string(target).unwrap(), raw);
         assert!(source.is_file());
     }
@@ -567,6 +582,16 @@ mod tests {
         );
         assert_eq!(fields.get("name").map(String::as_str), Some("Review"));
         assert_eq!(body, "Project");
+    }
+
+    #[test]
+    fn global_skills_live_under_the_nexus_data_directory() {
+        let app = tempdir().unwrap();
+        let mut registry = UserSkillRegistry::new(app.path());
+        let record = registry.create(input("Review", "global", None)).unwrap();
+        let target = app.path().join("agents").join("skills").join("review.md");
+        assert_eq!(fs::canonicalize(&record.path).unwrap(), fs::canonicalize(target).unwrap());
+        assert!(!app.path().join(".agents/skills/review.md").exists());
     }
 
     #[test]

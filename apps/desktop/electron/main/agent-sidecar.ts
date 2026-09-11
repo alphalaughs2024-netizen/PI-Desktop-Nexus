@@ -426,7 +426,6 @@ export class AgentSidecar {
         const params = (msg.params?.params ?? {}) as Record<string, unknown>;
         const requestedToolName = String(params.toolName ?? "");
         const planLocalTool =
-          requestedToolName === "Skill" ||
           requestedToolName === "PluginCheck" ||
           requestedToolName === "PluginScaffold" ||
           requestedToolName === "PluginPack" ||

@@ -214,6 +214,14 @@ or create a skill. A plugin may teach at most 32 guidance documents, each at
 most 128KB. Without the permission they are simply skipped: the manifest still
 validates, nothing reaches the prompt.
 
+The aggregate instruction catalog has a deterministic 8,000-character ceiling;
+whole entries are selected in Nexus/user/plugin source order. Each session
+advertises the ids it selected, and the host rejects guessed or omitted ids at
+load time. Every loaded body is guidance only: it cannot grant tools,
+permissions, filesystem/network access, automatic execution, or bypass a host
+confirmation. The read-only `Skill` tool is available in Agent, Plan, and Goal;
+Plan and Goal still reject mutation and plugin tools.
+
 **MCP tools** (`mcp.server.local` / `mcp.server.remote`) — discovered tools are
 registered under the same `plugin_*` namespace as hand-written plugin tools and
 therefore inherit the tool timeout, the audit trail, and the per-plugin disable

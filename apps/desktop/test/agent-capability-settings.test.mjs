@@ -84,6 +84,17 @@ test("skills keep the MCP-shaped toolbar and scope import actions in group heade
   assert.match(layout, /action\?: ReactNode/);
 });
 
+test("shipped Nexus guidance is a separate read-only managed section", () => {
+  assert.match(skills, /listBuiltinSkills/);
+  assert.match(skills, /setBuiltinSkillEnabled/);
+  assert.match(skills, /readBuiltinSkill/);
+  assert.match(skills, /BuiltinSkillViewer/);
+  assert.match(skills, /settings\.nexusWorkflowSkills/);
+  assert.match(skills, /settings\.inspectNexusSkill/);
+  assert.match(electron, /listBuiltinSkills\(dataDir\)\.find\(\(candidate\) => candidate\.id === id\)/);
+  assert.doesNotMatch(skills, /removeBuiltinSkill|updateBuiltinSkill|createBuiltinSkill/);
+});
+
 test("capability lists flow at natural height with skeleton loading", () => {
   assert.doesNotMatch(styles, /\.agent-capability-list\s*\{[^}]*?height:\s*\d+px/);
   assert.match(styles, /\.agent-capability-list\s*\{[\s\S]*?flex-direction:\s*column/);

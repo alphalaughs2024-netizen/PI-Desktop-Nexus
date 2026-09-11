@@ -1571,6 +1571,16 @@ export type UserSkillInput = {
   scope?: ActivationScope;
 };
 
+/** A reviewed, read-only skill bundled with the Nexus application. */
+export type BuiltinSkillRecord = {
+  id: string;
+  name: string;
+  description?: string;
+  enabled: boolean;
+  source: "nexus";
+  version: string;
+};
+
 /**
  * A global subagent definition the user owns, stored as `~/.agents/subagents/<id>.md`
  * (D202, ADR 0063). Project roots do not provide subagent definitions.

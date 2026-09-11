@@ -4408,6 +4408,21 @@ D193, and D194.
 - Existing timing files are historical local data and are not deleted or
   migrated automatically.
 
+## 2026-09-11 — Nexus-owned skill boundaries (D391)
+
+- Nexus skill state must not default to PI-Desktop's generic profile paths.
+  Electron plugin state, global user skills, and first-party skill enablement
+  now derive from the active Nexus data directory; project skills remain
+  portable `<project>/.agents/skills` documents.
+- Decision D391 / ADR 0220: the aggregate instruction catalog is bounded to
+  8,000 characters, source ordered (Nexus, user, plugin), and records only its
+  advertised ids per session. `Skill` is a read-only loader in Agent, Plan, and
+  Goal, and loaded text cannot confer tools, permissions, automatic execution,
+  filesystem/network access, or confirmation bypasses. Shipped guidance moves
+  to `nexus/guidance/*`, retaining non-advertised PI-Desktop aliases for old
+  transcripts, and Settings exposes those resources as inspectable,
+  enablement-only rows. See E2E-024I and E2E-103.
+
 ## 2026-09-11 — Agent extensions are a plugin contribution (D388)
 
 - D387 shipped ExtensionAPI modules as a second surface with its own

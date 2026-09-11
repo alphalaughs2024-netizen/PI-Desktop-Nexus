@@ -1,10 +1,11 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { parseSkillFrontmatter } from "@pi-desktop/plugin-sdk";
 import type { InstructionDocumentDef } from "@pi-desktop/agent-runtime";
+import type { BuiltinSkillRecord } from "@pi-desktop/shared";
 
 /**
- * Skills PI-Desktop ships itself.
+ * Skills Nexus ships itself.
  *
  * These ride the same catalog-plus-`Skill`-tool path as plugin-contributed
  * skills (D174), so a first-party skill and a third-party one are
@@ -14,9 +15,12 @@ import type { InstructionDocumentDef } from "@pi-desktop/agent-runtime";
 
 /** Bundled skill teaching the plugin-development loop. */
 export const PLUGIN_DEV_SKILL_FILE = "plugin-development.md";
-export const PLUGIN_DEV_SKILL_ID = "pi-desktop/plugin-development";
+export const PLUGIN_DEV_SKILL_ID = "nexus/guidance/plugin-development";
 export const AGENT_OPERATIONS_SKILL_FILE = "agent-operations.md";
-export const AGENT_OPERATIONS_SKILL_ID = "pi-desktop/agent-operations";
+export const AGENT_OPERATIONS_SKILL_ID = "nexus/guidance/agent-operations";
+const LEGACY_PLUGIN_DEV_SKILL_ID = "pi-desktop/plugin-development";
+const LEGACY_AGENT_OPERATIONS_SKILL_ID = "pi-desktop/agent-operations";
+const BUILTIN_SKILL_VERSION = "1";
 
 /** electron-builder copies `resources/skills` to `<resources>/skills`. */
 function resolveBuiltinSkillPath(fileName: string): string | null {
@@ -80,7 +84,45 @@ export type BuiltinSkillInput = {
   workspacePath?: string | null;
   /** Directories of currently loaded plugins, used to detect a dev workspace. */
   pluginPaths?: string[];
+  dataDir?: string;
 };
+
+const builtinSkillFile = (dataDir: string) => join(dataDir, "agent-capabilities", "builtin-skills.json");
+
+function disabledBuiltinSkillIds(dataDir?: string): Set<string> {
+  if (!dataDir) return new Set();
+  try {
+    const raw = JSON.parse(readFileSync(builtinSkillFile(dataDir), "utf8")) as { disabled?: unknown };
+    return new Set(Array.isArray(raw.disabled) ? raw.disabled.filter((id): id is string => typeof id === "string") : []);
+  } catch {
+    return new Set();
+  }
+}
+
+export function listBuiltinSkills(dataDir: string): BuiltinSkillRecord[] {
+  const disabled = disabledBuiltinSkillIds(dataDir);
+  return [
+    { id: AGENT_OPERATIONS_SKILL_ID, fileName: AGENT_OPERATIONS_SKILL_FILE },
+    { id: PLUGIN_DEV_SKILL_ID, fileName: PLUGIN_DEV_SKILL_FILE },
+  ].flatMap(({ id, fileName }) => {
+    const raw = readBuiltinSkill(fileName);
+    const parsed = raw ? parseSkillFrontmatter(raw) : null;
+    if (!parsed?.body) return [];
+    return [{ id, name: parsed.name ?? id, description: parsed.description, enabled: !disabled.has(id), source: "nexus" as const, version: BUILTIN_SKILL_VERSION }];
+  });
+}
+
+export function setBuiltinSkillEnabled(dataDir: string, id: string, enabled: boolean): BuiltinSkillRecord | null {
+  const records = listBuiltinSkills(dataDir);
+  const record = records.find((candidate) => candidate.id === id);
+  if (!record) return null;
+  const disabled = disabledBuiltinSkillIds(dataDir);
+  if (enabled) disabled.delete(id); else disabled.add(id);
+  const path = builtinSkillFile(dataDir);
+  mkdirSync(join(dataDir, "agent-capabilities"), { recursive: true });
+  writeFileSync(path, JSON.stringify({ disabled: [...disabled].sort() }, null, 2), "utf8");
+  return { ...record, enabled };
+}
 
 /**
  * Catalog entries for the built-in skills that apply to the given session, read
@@ -88,26 +130,30 @@ export type BuiltinSkillInput = {
  */
 export function builtinSkills(input: BuiltinSkillInput): InstructionDocumentDef[] {
   const skills: InstructionDocumentDef[] = [];
+  const disabled = disabledBuiltinSkillIds(input.dataDir);
   const operations = readBuiltinSkill(AGENT_OPERATIONS_SKILL_FILE);
-  if (operations?.trim()) {
+  if (!disabled.has(AGENT_OPERATIONS_SKILL_ID) && operations?.trim()) {
     const parsed = parseSkillFrontmatter(operations);
     if (parsed.body) {
       skills.push({
         id: AGENT_OPERATIONS_SKILL_ID,
-        name: parsed.name ?? "PI-Desktop agent operations",
+        name: parsed.name ?? "Nexus agent operations",
         description: parsed.description,
+        source: "builtin",
       });
     }
   }
   if (!isPluginWorkspace(input.workspacePath, input.pluginPaths)) return skills;
+  if (disabled.has(PLUGIN_DEV_SKILL_ID)) return skills;
   const raw = readBuiltinSkill(PLUGIN_DEV_SKILL_FILE);
   if (!raw?.trim()) return skills;
   const parsed = parseSkillFrontmatter(raw);
   if (!parsed.body) return skills;
   skills.push({
     id: PLUGIN_DEV_SKILL_ID,
-    name: parsed.name ?? "PI-Desktop plugin development",
+    name: parsed.name ?? "Nexus plugin development",
     description: parsed.description,
+    source: "builtin",
   });
   return skills;
 }
@@ -119,9 +165,14 @@ export function builtinSkills(input: BuiltinSkillInput): InstructionDocumentDef[
 export function loadBuiltinSkillBody(
   id: string,
 ): { id: string; name: string; body: string } | null {
-  const fileName = id === AGENT_OPERATIONS_SKILL_ID
+  const canonicalId = id === LEGACY_AGENT_OPERATIONS_SKILL_ID
+    ? AGENT_OPERATIONS_SKILL_ID
+    : id === LEGACY_PLUGIN_DEV_SKILL_ID
+      ? PLUGIN_DEV_SKILL_ID
+      : id;
+  const fileName = id === AGENT_OPERATIONS_SKILL_ID || id === LEGACY_AGENT_OPERATIONS_SKILL_ID
     ? AGENT_OPERATIONS_SKILL_FILE
-    : id === PLUGIN_DEV_SKILL_ID
+    : id === PLUGIN_DEV_SKILL_ID || id === LEGACY_PLUGIN_DEV_SKILL_ID
       ? PLUGIN_DEV_SKILL_FILE
       : null;
   if (!fileName) return null;
@@ -130,10 +181,10 @@ export function loadBuiltinSkillBody(
   const parsed = parseSkillFrontmatter(raw);
   if (!parsed.body) return null;
   return {
-    id,
-    name: parsed.name ?? (id === AGENT_OPERATIONS_SKILL_ID
-      ? "PI-Desktop agent operations"
-      : "PI-Desktop plugin development"),
+    id: canonicalId,
+    name: parsed.name ?? (canonicalId === AGENT_OPERATIONS_SKILL_ID
+      ? "Nexus agent operations"
+      : "Nexus plugin development"),
     body: parsed.body,
   };
 }

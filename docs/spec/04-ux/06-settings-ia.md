@@ -309,6 +309,13 @@ Skills, MCP servers, and user-owned Subagents remain three independent
 destinations under the Agent group. They share a capability-management visual
 system while preserving their different data ownership:
 
+The Skills destination also shows a separate **Nexus workflow skills** group.
+These app-shipped documents expose source/version metadata, a read-only inspect
+viewer, and an enablement switch. They cannot be edited, deleted, or replaced;
+their enablement is stored in the active Nexus data profile. User-owned global
+skills are shown beneath the profile's `agents/skills` directory, while project
+skills remain portable under `<project>/.agents/skills`.
+
 - Each capability page starts with a quiet, page-specific description and a
   short scope note on one shared line rather than a decorative hero or alert.
   Light and dark themes use the shared Settings surface, typography, borders,

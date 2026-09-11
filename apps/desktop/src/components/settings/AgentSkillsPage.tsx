@@ -1,8 +1,10 @@
 import { useCallback, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import {
   GLOBAL_SCOPE,
   type AgentCapabilityLevel,
+  type BuiltinSkillRecord,
   type UserSkillRecord,
 } from "@pi-desktop/shared";
 import { api } from "../../lib/api";
@@ -34,15 +36,17 @@ import {
 } from "./SkillEditorSheet";
 import {
   IconBookOpen,
+  IconClose,
   IconDownload,
+  IconFileText,
   IconFolderOpen,
   IconPencil,
   IconPlus,
   IconTrash,
 } from "../icons";
 
-import { TooltipButton } from "../ui";
-const GLOBAL_SKILLS_PATH = "~/.agents/skills";
+import { Button, TooltipButton } from "../ui";
+const GLOBAL_SKILLS_PATH = "~/.pi-desktop-nexus/agents/skills";
 
 function projectSkillsPath(projectPath: string | null): string {
   return projectPath ? `${projectPath}/.agents/skills` : "<project-root>/.agents/skills";
@@ -54,19 +58,71 @@ type SkillEditorState = {
   level: AgentCapabilityLevel;
 };
 
+type BuiltinSkillViewerState = {
+  skill: BuiltinSkillRecord;
+  body: string;
+};
+
+function BuiltinSkillViewer({
+  skill,
+  body,
+  onClose,
+}: BuiltinSkillViewerState & { onClose: () => void }) {
+  const { t } = useTranslation();
+  const dialog = (
+    <div
+      className="overlay ext-sheet-overlay"
+      role="presentation"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+    >
+      <div className="dialog ext-sheet" role="dialog" aria-modal aria-labelledby="builtin-skill-viewer-title">
+        <div className="ext-sheet-head">
+          <div>
+            <h3 id="builtin-skill-viewer-title" className="ext-sheet-title">{skill.name || skill.id}</h3>
+            <p className="ext-sheet-sub">{t("settings.nexusSkillReadOnly")}</p>
+          </div>
+          <TooltipButton
+            type="button"
+            className="ext-sheet-close"
+            ariaLabel={t("common.close")}
+            tooltip={t("common.close")}
+            onClick={onClose}
+          >
+            <IconClose size={14} />
+          </TooltipButton>
+        </div>
+        <div className="ext-sheet-body">
+          <pre className="ext-skill-body" aria-label={t("settings.inspectNexusSkill", { name: skill.name || skill.id })}>{body}</pre>
+        </div>
+        <div className="ext-sheet-actions">
+          <span className="ext-sheet-note">{t("settings.nexusSkillReadOnly")}</span>
+          <div className="ext-sheet-actions-end">
+            <Button variant="primary" onClick={onClose}>{t("common.close")}</Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  return typeof document === "undefined" ? dialog : createPortal(dialog, document.body);
+}
+
 type SkillCollection = {
+  builtin: BuiltinSkillRecord[];
   global: UserSkillRecord[];
   project: UserSkillRecord[];
 };
 
-const EMPTY_SKILL_COLLECTION: SkillCollection = { global: [], project: [] };
+const EMPTY_SKILL_COLLECTION: SkillCollection = { builtin: [], global: [], project: [] };
 
 export function AgentSkillsPage() {
   const { t } = useTranslation();
   const showToast = useAppStore((state) => state.showToast);
   const { selectedProjectPath, setSelectedProjectPath, options } = useAgentProjects();
   const fetchSkills = useCallback(async (): Promise<SkillCollection> => {
-    const [global, project] = await Promise.all([
+    const [global, project, builtin] = await Promise.all([
       api.listUserSkills({
         level: "global",
         ...(selectedProjectPath ? { projectPath: selectedProjectPath } : {}),
@@ -74,11 +130,12 @@ export function AgentSkillsPage() {
       selectedProjectPath
         ? api.listUserSkills({ level: "project", projectPath: selectedProjectPath })
         : Promise.resolve({ skills: [] as UserSkillRecord[] }),
+      api.listBuiltinSkills(),
     ]);
-    return { global: global.skills ?? [], project: project.skills ?? [] };
+    return { builtin: builtin.skills ?? [], global: global.skills ?? [], project: project.skills ?? [] };
   }, [selectedProjectPath]);
   const {
-    data: { global: globalSkills, project: projectSkills },
+    data: { builtin: builtinSkills, global: globalSkills, project: projectSkills },
     setData: setSkills,
     loading,
     refreshing,
@@ -91,6 +148,7 @@ export function AgentSkillsPage() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [menuFor, setMenuFor] = useState<string | null>(null);
   const [editor, setEditor] = useState<SkillEditorState | null>(null);
+  const [builtinViewer, setBuiltinViewer] = useState<BuiltinSkillViewerState | null>(null);
   const [saving, setSaving] = useState(false);
   const { armed, setArmed } = useArmedDelete();
 
@@ -132,6 +190,42 @@ export function AgentSkillsPage() {
       );
     } catch (error) {
       patchRow(level, skill.id, { enabled: skill.enabled });
+      showToast(error instanceof Error ? error.message : String(error), { variant: "error" });
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const toggleBuiltin = async (skill: BuiltinSkillRecord) => {
+    const key = `builtin:${skill.id}`;
+    if (busyId === key) return;
+    const next = !skill.enabled;
+    setBusyId(key);
+    setSkills((current) => ({
+      ...current,
+      builtin: current.builtin.map((row) => row.id === skill.id ? { ...row, enabled: next } : row),
+    }));
+    try {
+      await api.setBuiltinSkillEnabled(skill.id, next);
+    } catch (error) {
+      setSkills((current) => ({
+        ...current,
+        builtin: current.builtin.map((row) => row.id === skill.id ? { ...row, enabled: skill.enabled } : row),
+      }));
+      showToast(error instanceof Error ? error.message : String(error), { variant: "error" });
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const inspectBuiltin = async (skill: BuiltinSkillRecord) => {
+    const key = `builtin:${skill.id}`;
+    if (busyId === key) return;
+    setBusyId(key);
+    try {
+      const result = await api.readBuiltinSkill(skill.id);
+      setBuiltinViewer({ skill: result.skill ?? skill, body: result.body ?? "" });
+    } catch (error) {
       showToast(error instanceof Error ? error.message : String(error), { variant: "error" });
     } finally {
       setBusyId(null);
@@ -260,16 +354,17 @@ export function AgentSkillsPage() {
   };
 
   const visible = useMemo(() => {
-    const match = (skill: UserSkillRecord) =>
+    const match = (skill: Pick<UserSkillRecord, "name" | "id" | "description">) =>
       matchesCapabilitySearch(search, skill.name, skill.id, skill.description);
     return {
+      builtin: builtinSkills.filter(match),
       global: globalSkills.filter(match),
       project: projectSkills.filter(match),
     };
-  }, [globalSkills, projectSkills, search]);
+  }, [builtinSkills, globalSkills, projectSkills, search]);
 
   const counts = {
-    all: visible.global.length + visible.project.length,
+    all: visible.builtin.length + visible.global.length + visible.project.length,
     global: visible.global.length,
     project: visible.project.length,
   };
@@ -365,6 +460,40 @@ export function AgentSkillsPage() {
     );
   };
 
+  const renderBuiltinRow = (skill: BuiltinSkillRecord) => {
+    const key = `builtin:${skill.id}`;
+    return (
+      <CapabilityRow
+        key={key}
+        glyph={<IconBookOpen size={16} />}
+        name={skill.name || skill.id}
+        off={!skill.enabled}
+        badges={<span className="agent-capability-badge">{t("settings.nexusSkillVersion", { version: skill.version })}</span>}
+        description={skill.description || t("settings.noCapabilityDescription")}
+        actions={
+          <>
+            <TooltipButton
+              type="button"
+              className="settings-icon-button"
+              ariaLabel={t("settings.inspectNexusSkill", { name: skill.name || skill.id })}
+              tooltip={t("settings.inspectNexusSkill", { name: skill.name || skill.id })}
+              disabled={busyId === key}
+              onClick={() => void inspectBuiltin(skill)}
+            >
+              <IconFileText size={15} />
+            </TooltipButton>
+            <CapabilityToggle
+              checked={skill.enabled}
+              busy={busyId === key}
+              label={t("settings.toggleCapability", { name: skill.name || skill.id })}
+              onChange={() => void toggleBuiltin(skill)}
+            />
+          </>
+        }
+      />
+    );
+  };
+
   const showGlobal = filter !== "project";
   const showProject = filter !== "global";
   const newSkillTitle =
@@ -428,6 +557,16 @@ export function AgentSkillsPage() {
           />
         ) : (
           <>
+            {filter !== "project" ? (
+              <>
+                <CapabilityGroupHeader
+                  label={t("settings.nexusWorkflowSkills")}
+                  path={t("settings.nexusWorkflowSkillsPath")}
+                  count={visible.builtin.length}
+                />
+                {visible.builtin.map(renderBuiltinRow)}
+              </>
+            ) : null}
             {showGlobal ? (
               <>
                 <CapabilityGroupHeader
@@ -493,6 +632,12 @@ export function AgentSkillsPage() {
               ? () => void reveal(editor.editing!, editor.level)
               : undefined
           }
+        />
+      ) : null}
+      {builtinViewer ? (
+        <BuiltinSkillViewer
+          {...builtinViewer}
+          onClose={() => setBuiltinViewer(null)}
         />
       ) : null}
     </AgentCapabilityPage>

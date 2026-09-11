@@ -236,3 +236,4 @@ Each ADR includes:
 | 0216 | Truncate regenerates under the RPC lock | Accepted (amends 0060 / 0127; issue #211) |
 | 0217 | Native Context Vault owns durable project knowledge | Accepted |
 | 0218 | User subagent inherits only active parent capabilities | Accepted |
+| 0220 | Nexus-owned skill boundaries and safe on-demand loading | Accepted |

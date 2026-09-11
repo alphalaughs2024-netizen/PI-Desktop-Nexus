@@ -1997,7 +1997,7 @@ Each scenario is documented in this format:
 
 - **Preconditions**: `examples/plugins/hello` enabled with `agent.prompt.inject` granted; a second copy of the manifest without that permission available; one workspace that is a plugin directory and one that is not.
 - **Steps**: 1) Start a session and ask the agent what skills it has. 2) Ask it to follow the Hello demo skill so it calls the `Skill` tool. 3) Edit the skill document and repeat step 2. 4) Disable the plugin and start a new turn. 5) Load the variant without `agent.prompt.inject` and repeat step 1. 6) Declare a document larger than the per-skill cap. 7) Open each of the two workspaces in turn.
-- **Expected**: The catalog lists the skill id, name, and trimmed description but no body, after the built-in guidance and before the project instruction chain; the `Skill` schema is callable in the first Agent request while its body remains id-loaded on demand and reads the edited file without a restart; disabling the plugin rebuilds the runtime so the skill disappears from the next turn; the variant without the permission loads normally and contributes no skills; the oversized document is skipped with an audit line rather than clamped into the prompt; the built-in `pi-desktop/agent-operations` guidance is always catalogued and provides the detailed agent workflow on demand, while `plugin-development` is catalogued in the plugin workspace and absent in the other, and `PluginCheck` is listed in the bounded on-demand tool catalog in both. Installing workspace dependencies alone does not run Electron native dependency setup; `dev`, packaging, and distribution commands explicitly run `prepare:native` first.
+- **Expected**: The catalog lists the skill id, name, and trimmed description but no body, after Nexus guidance and before the project instruction chain; the `Skill` schema is callable in the first Agent, Plan, and Goal request while its body remains id-loaded on demand and reads the edited file without a restart; disabling the plugin rebuilds the runtime so the skill disappears from the next turn; the variant without the permission loads normally and contributes no skills; the oversized document is skipped with an audit line rather than clamped into the prompt; all selected metadata fits the aggregate 8,000-character budget in Nexus/user/plugin order, and a guessed id omitted by that budget is refused. Loaded text cannot grant permissions or bypass confirmation. The built-in `nexus/guidance/agent-operations` guidance is always catalogued and provides the detailed agent workflow on demand, while `nexus/guidance/plugin-development` is catalogued in the plugin workspace and absent in the other, and `PluginCheck` is listed in the bounded on-demand tool catalog in both. Installing workspace dependencies alone does not run Electron native dependency setup; `dev`, packaging, and distribution commands explicitly run `prepare:native` first.
 - **Specs linked**: `07-plugins/02-plugin-manifest-schema.md`, `07-plugins/04-plugin-security.md` §7.1, `07-plugins/10-plugin-devex.md`, ADR 0039, ADR 0037, D174
 - **Acceptance**: G (skill activation) + E (tools & permissions) + D (high-risk permission gating)
 - **Status**: Unit-covered (`plugin-skills.test.mjs`, agent-runtime prompt/digest tests); agent-facing scenario Draft
@@ -5741,7 +5741,8 @@ Each scenario is documented in this format:
      independent navigation destinations. Open Extensions and verify that only
      Installed and Marketplace tabs are present.
   2. Open Skills. Confirm one toolbar sits above one panel, the panel shows a
-     global group header rooted at `~/.agents/skills` and a project group header
+     separate read-only Nexus workflow-skills group, a global group header rooted at
+     the active Nexus profile's `agents/skills` directory, and a project group header
      rooted at project A's `.agents/skills`, both flow in one column at natural
      page height, and the project picker changes the selected project. Confirm
      the Skills toolbar has the same single primary action shape as MCP, with
@@ -5763,7 +5764,7 @@ Each scenario is documented in this format:
      host rejection and confirm the switch returns to its previous position.
   5. Create a skill from the page. With the filter on Global confirm the primary
      action names the global destination and the new document lands in
-     `~/.agents/skills`; with the filter on Project confirm it names the project
+    the active Nexus profile's `agents/skills` directory; with the filter on Project confirm it names the project
      and lands in project A. With Project selected and no project chosen,
      confirm the attempt reports it instead of failing silently. Edit the new
      skill, save, and confirm the body round-trips.
@@ -5809,6 +5810,8 @@ Each scenario is documented in this format:
       left-aligned, group headers drop the resolved path, and the page gains no
       horizontal overflow. With a pointer that cannot hover, confirm the row's
       edit and overflow controls are visible without hovering.
+  13. Inspect a Nexus workflow skill and confirm its body opens read-only; toggle
+      it off, start a new session, and confirm it is absent from that catalog.
 - **Expected**:
   - The three Settings pages use no tabs for switching capabilities, flow at
     natural page height for empty and populated states, support dark and light
@@ -5827,6 +5830,9 @@ Each scenario is documented in this format:
     counts are exposed to assistive technology. Empty states stay centered
     inside the panel without a decorative frame and offer the page's primary
     action, and no capability-specific color system is introduced.
+  - Nexus workflow skills are visibly separate from user-owned records, are
+    inspectable and enable/disable-able, and cannot be edited or deleted. Their
+    state is profile-local and does not modify packaged application resources.
   - Create, edit, and delete are available for all three capabilities without
     leaving Settings. New capabilities land at the level the filter points at,
     destructive actions require two presses of the same relabelled menu item,

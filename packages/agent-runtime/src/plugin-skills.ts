@@ -23,6 +23,31 @@ export type InstructionDocumentDef = {
   source?: "user" | "plugin" | "builtin";
 };
 
+/** Fixed provider-neutral ceiling for skill metadata in a system prompt. */
+export const MAX_INSTRUCTION_CATALOG_CHARS = 8_000;
+
+function sourcePriority(source: InstructionDocumentDef["source"]): number {
+  switch (source) {
+    case "builtin":
+      return 0;
+    case "user":
+      return 1;
+    default:
+      return 2;
+  }
+}
+
+/** Stable source-first ordering before prompt-budget selection. */
+export function sortInstructionCatalog(
+  documents: InstructionDocumentDef[],
+): InstructionDocumentDef[] {
+  return [...documents].sort((a, b) =>
+    sourcePriority(a.source) - sourcePriority(b.source) ||
+    a.name.localeCompare(b.name, undefined, { sensitivity: "base" }) ||
+    a.id.localeCompare(b.id),
+  );
+}
+
 /**
  * Stable fingerprint of a skill catalog.
  *

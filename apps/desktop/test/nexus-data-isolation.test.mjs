@@ -18,8 +18,17 @@ test("Nexus defaults its host state to a separate data directory", () => {
     main,
     /getScratchDir:[\s\S]*?join\(homedir\(\), DEFAULT_DATA_DIR_NAME\)/,
   );
+  assert.match(
+    main,
+    /new PluginRuntime\([\s\S]*?\}, undefined, dataDir\);/,
+  );
   assert.doesNotMatch(
     main,
     /\.pi-desktop"/,
   );
+});
+
+test("per-session advertised skill ids are discarded with the session", () => {
+  const deletion = main.slice(main.indexOf("handle(IPC.invoke.sessionDelete"));
+  assert.match(deletion, /sessionProjects\.delete\(id\);\s*sessionSkillIds\.delete\(id\);/);
 });

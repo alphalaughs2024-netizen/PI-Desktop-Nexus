@@ -64,6 +64,22 @@ test("loading a skill body strips front matter and re-checks the cap", () => {
   assert.match(load, /plugin\.skill\.load/);
 });
 
+test("bundled skill compatibility uses Nexus ids while retaining legacy loader aliases", () => {
+  assert.match(builtinSrc, /nexus\/guidance\/agent-operations/);
+  assert.match(builtinSrc, /nexus\/guidance\/plugin-development/);
+  assert.match(builtinSrc, /LEGACY_AGENT_OPERATIONS_SKILL_ID/);
+  assert.match(builtinSrc, /LEGACY_PLUGIN_DEV_SKILL_ID/);
+  assert.match(operationsDoc, /name: Nexus agent operations/);
+  assert.match(skillDoc, /name: Nexus plugin development/);
+  assert.match(agentRuntimeSrc, /nexus\/guidance\/agent-operations/);
+  assert.match(builtinSrc, /source: "builtin"/);
+});
+
+test("session Skill loading is restricted to the bounded advertised catalog", () => {
+  assert.match(mainSrc, /instructionCatalogWithinBudget\(instructionCatalog\)/);
+  assert.match(mainSrc, /sessionSkillIds\.get\(sessionId\)\?\.has\(id\)/);
+});
+
 test("a reloaded plugin re-indexes its skills, so an edit needs no restart", () => {
   // Hot reload runs unload/load; the catalog must be rebuilt from disk there,
   // and the body is read on every Skill call regardless.
@@ -114,6 +130,16 @@ test("the built-in skill body loads through the same Skill tool", () => {
     /loadBuiltinSkillBody\(id\) \?\?\s*\(await loadUserSkillBody\(id, projectPath\)\) \?\?\s*loadScopedPluginGuidance\(/,
   );
   assert.match(mainSrc, /const userIds = \(await activeUserSkills/);
+});
+
+test("Skill is read-only guidance in Agent, Plan, and Goal modes", () => {
+  assert.match(agentRuntimeSrc, /this\.instructionCatalog\.length/);
+  assert.doesNotMatch(
+    agentRuntimeSrc.slice(agentRuntimeSrc.indexOf("const skillTools"), agentRuntimeSrc.indexOf("const modeTools")),
+    /this\.mode === "agent"/,
+  );
+  const planProxy = mainSrc.slice(mainSrc.indexOf("const planLocalTool"), mainSrc.indexOf("if (method === \"project.instructions.resolve\")"));
+  assert.doesNotMatch(planProxy, /requestedToolName === "Skill"/);
 });
 
 test("plugin guidance is scope-checked again when loaded on demand", () => {

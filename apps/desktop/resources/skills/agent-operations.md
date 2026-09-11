@@ -1,6 +1,6 @@
 ---
-name: PI-Desktop agent operations
-description: use for detailed PI-Desktop searching, editing, preview, shell, or delegation workflows
+name: Nexus agent operations
+description: use for detailed Nexus searching, editing, preview, shell, or delegation workflows
 ---
 
 Use `Read`, `Glob`, and `Grep` before shell commands; scope every search and do not repeat one whose answer is already available. Use `Edit` for a small anchored change and `Write` for a coherent rewrite; re-read a file after a failed edit and run focused verification.

@@ -1,6 +1,7 @@
 import type {
   ActivationScope,
   AgentCapabilityQuery,
+  BuiltinSkillRecord,
   AgentEventEnvelope,
   AgentCompactRequest,
   AgentCompactResponse,
@@ -680,6 +681,12 @@ export const api = {
    */
   revealUserSkill: (id: string, query?: Partial<AgentCapabilityQuery>) =>
     invoke(IPC.invoke.skillReveal, { id, ...query }),
+  listBuiltinSkills: () =>
+    invoke<{ skills: BuiltinSkillRecord[] }>(IPC.invoke.builtinSkillList),
+  setBuiltinSkillEnabled: (id: string, enabled: boolean) =>
+    invoke<{ skill: BuiltinSkillRecord }>(IPC.invoke.builtinSkillSetEnabled, { id, enabled }),
+  readBuiltinSkill: (id: string) =>
+    invoke<{ skill: BuiltinSkillRecord; body: string }>(IPC.invoke.builtinSkillRead, { id }),
 
   // --- Subagents the user owns ----------------------------------------------
   listUserSubagents: (query?: Pick<AgentCapabilityQuery, "level">) =>

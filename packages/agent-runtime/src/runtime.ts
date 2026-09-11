@@ -138,6 +138,7 @@ import type { ProjectInstructions } from "./project-instructions.js";
 import { projectInstructionsPrompt } from "./project-instructions-prompt.js";
 import {
   instructionCatalogPrompt,
+  instructionCatalogWithinBudget,
   SKILL_TOOL_NAME,
   type InstructionDocumentDef,
 } from "./plugin-skills-prompt.js";
@@ -1513,7 +1514,7 @@ export class DesktopAgentRuntime {
     });
     this.onEvent = opts.onEvent;
     this.pluginTools = opts.pluginTools ?? [];
-    this.instructionCatalog = opts.instructionCatalog ?? [];
+    this.instructionCatalog = instructionCatalogWithinBudget(opts.instructionCatalog ?? []);
     this.trustedExtensionSpecs = opts.trustedExtensions ?? [];
     this.subagents = opts.subagents ?? [];
     this.subagentProviders = opts.subagentProviders ?? {};
@@ -1543,7 +1544,7 @@ export class DesktopAgentRuntime {
     const skillsPrompt = instructionCatalogPrompt(this.instructionCatalog);
     const defaultSystemPrompt = [
       DEFAULT_RUNTIME_SYSTEM_PROMPT,
-      "Collaboration: answer in the user's language. Before tool work, briefly say what you are doing; give a self-contained final answer. Work through safe blockers instead of stopping early. Call tools through the native tool-call interface, never as prose. Load `pi-desktop/agent-operations` from Plugin guidance for detailed search, editing, preview, shell, or delegation workflow guidance.",
+      "Collaboration: answer in the user's language. Before tool work, briefly say what you are doing; give a self-contained final answer. Work through safe blockers instead of stopping early. Call tools through the native tool-call interface, never as prose. Load `nexus/guidance/agent-operations` from Nexus guidance for detailed search, editing, preview, shell, or delegation workflow guidance when it is listed.",
       "Context Vault is durable project knowledge, not a transcript, repository index, or unquestioned truth. Use its native context_search or context_brief tools selectively for resumed work, unfamiliar architecture, conventions, recurring gotchas, or non-trivial work that depends on prior decisions. Never require a brief for ordinary work. Save at most one claim only when it is verified, non-obvious, durable, likely to prevent a future mistake, and backed by exact current workspace evidence. Never save task summaries, routine edits, trivial facts, guesses, temporary debugging, secrets, credentials, personal data, or an every-run note. At completion, silently consider whether one qualifying claim exists; do nothing when it does not.",
       ...(this.subagents.length && this.subagentModelSummary()
         ? [this.subagentModelSummary()!]
@@ -1891,7 +1892,7 @@ export class DesktopAgentRuntime {
   /** True when this runtime can be reused for a prompt with the given config. */
   matches(config: RuntimeMatchConfig): boolean {
     const requestedPluginTools = config.pluginTools ?? [];
-    const requestedInstructions = config.instructionCatalog ?? [];
+    const requestedInstructions = instructionCatalogWithinBudget(config.instructionCatalog ?? []);
     const current = this.pluginTools.map((t) => t.name).sort().join(",");
     const next = requestedPluginTools.map((t) => t.name).sort().join(",");
     const currentThinkingLevels = [
@@ -2839,7 +2840,7 @@ export class DesktopAgentRuntime {
     // Only offered when an instruction document exists; Electron main serves
     // it locally (host-core never sees the document bodies).
     const skillTools: AgentTool[] =
-      this.mode === "agent" && this.instructionCatalog.length
+      this.instructionCatalog.length
       ? [
           {
             name: SKILL_TOOL_NAME,
@@ -2949,6 +2950,7 @@ export class DesktopAgentRuntime {
       "Grep",
       "BrowserPreview",
       "Bash",
+      SKILL_TOOL_NAME,
       ASK_TOOL_NAME,
       CONTEXT_COMPACTION_TOOL_NAME,
       SUBMIT_TOOL_NAMES[kind],
@@ -2975,6 +2977,7 @@ export class DesktopAgentRuntime {
               "Grep",
               "Bash",
               "BrowserPreview",
+              SKILL_TOOL_NAME,
               ASK_TOOL_NAME,
             ]).has(name) || this.isPlanSafePluginTool(name)
           : CHAT_CORE_TOOL_NAMES.has(name))
