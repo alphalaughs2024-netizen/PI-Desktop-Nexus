@@ -1303,6 +1303,17 @@ checkout. Review packages reuse bounded diff and host-owned message review
 evidence; they neither grant authority nor create a parallel review store. See
 ADR 0223.
 
+Phase 5 adds `nexus/coordination/dispatching-parallel-agents` and
+`nexus/coordination/subagent-driven-development`. They build on the existing
+Agent-mode `Task`, `TaskWait`, `TaskList`, and `TaskStop` lifecycle; they do not
+introduce a parallel task store. A `Task` may include advisory ownership
+metadata (`read` or `write` plus workspace-relative paths), which is visible in
+lifecycle results but never expands host authority. When either coordination
+workflow is active, a second write-capable delegate in the same session is
+refused: one session owns one workspace, and path metadata is not worktree
+isolation. Read-only delegates may run concurrently. Concurrent mutation work
+requires distinct Nexus-managed worktrees in separate tasks. See ADR 0224.
+
 ## 12c. Subagent API (D202)
 
 User-owned subagents are global-only Markdown documents under

@@ -22,6 +22,8 @@ const {
   FINISHING_DEVELOPMENT_BRANCH_WORKFLOW_ID,
   REQUESTING_CODE_REVIEW_WORKFLOW_ID,
   RECEIVING_CODE_REVIEW_WORKFLOW_ID,
+  DISPATCHING_PARALLEL_AGENTS_WORKFLOW_ID,
+  SUBAGENT_DRIVEN_DEVELOPMENT_WORKFLOW_ID,
   WORKFLOW_MANIFESTS,
   PLUGIN_DEVELOPMENT_WORKFLOW_ID,
   resolveWorkflows,
@@ -40,6 +42,7 @@ const capabilities = [
   "terminal-tools",
   "test-execution",
   "git-worktree-operations",
+  "subagent-orchestration",
 ];
 
 function resolve(overrides = {}) {
@@ -311,4 +314,32 @@ test("ships Nexus-native Git and review guidance without granting authority", ()
   assert.match(runtimeSource, /GitWorktree/);
   assert.match(runtimeSource, /AGENT_CORE_TOOL_NAMES[\s\S]*"GitWorktree"/);
   assert.match(mainSource, /s\.setLocalTool\("GitWorktree"/);
+});
+
+test("activates delegation workflows only for concrete bounded work", () => {
+  const parallel = resolve({ prompt: "Investigate these three independent read-only areas in parallel and report the results." });
+  assert.equal(parallel.primary?.id, DISPATCHING_PARALLEL_AGENTS_WORKFLOW_ID);
+  assert.equal(parallel.primary?.stage, "parallelizing");
+
+  const execution = resolve({ prompt: "Use subagents to execute the approved implementation plan with bounded tasks." });
+  assert.equal(execution.primary?.id, SUBAGENT_DRIVEN_DEVELOPMENT_WORKFLOW_ID);
+  assert.equal(execution.primary?.stage, "delegated_execution");
+
+  assert.equal(resolve({ prompt: "What are parallel agents?" }).primary?.id, AGENT_OPERATIONS_WORKFLOW_ID);
+  assert.equal(resolve({ prompt: "Explain how subagents work." }).primary?.id, AGENT_OPERATIONS_WORKFLOW_ID);
+});
+
+test("ships Nexus-native delegation guidance with isolation and ownership boundaries", () => {
+  const resources = [
+    ["dispatching-parallel-agents.md", "Nexus parallel task coordination", "read-only"],
+    ["subagent-driven-development.md", "Nexus subagent-driven development", "GitWorktree"],
+  ];
+  for (const [file, name, phrase] of resources) {
+    const body = readFileSync(join(desktopRoot, "resources/skills", file), "utf8");
+    assert.match(body, new RegExp(`name: ${name}`));
+    assert.ok(body.includes(phrase), `${file} must carry the Nexus contract`);
+    assert.ok(!body.includes("Codex"), `${file} must not carry Codex instructions`);
+  }
+  assert.match(runtimeSource, /ownership/);
+  assert.match(runtimeSource, /concurrent mutation work is refused/);
 });

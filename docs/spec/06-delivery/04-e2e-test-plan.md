@@ -2088,6 +2088,32 @@ Each scenario is documented in this format:
 - **Acceptance**: E (permissions and Git isolation) + G (workflow guidance)
 - **Status**: Unit/source-contract covered; desktop journey Draft
 
+#### E2E-024IE: Parallel task workflow isolation and aggregation (ADR 0224)
+
+- **Preconditions**: A project-bound Agent session with the built-in subagent
+  catalog and a clean Nexus workspace; the parallel coordination workflows are
+  enabled.
+- **Steps**: 1) Ask to investigate three independent read-only workspace areas
+  in parallel and inspect the active workflow. 2) Start multiple `Task` calls
+  with `read` ownership, use `TaskList`, then aggregate through `TaskWait`.
+  3) Ask a casual question about parallel agents. 4) In a coordination session,
+  start a write-capable delegate, then attempt a second write-capable delegate
+  with a different path label. 5) Complete the first delegate and retry the
+  second. 6) Create two managed worktrees in separate tasks and perform the
+  equivalent isolated mutation work.
+- **Expected**: Only concrete bounded parallel work activates coordination;
+  discussion stays on baseline operations guidance. Read-only tasks run and
+  report concurrently. Lifecycle results retain ownership metadata but it does
+  not grant tools or permissions. The second shared-workspace mutation is
+  refused regardless of path labels; sequential retry works. Separate managed
+  worktrees provide the required isolation for concurrent mutation work. The
+  parent evaluates reports and performs verification; no task pushes or changes
+  the upstream PI Desktop checkout.
+- **Specs linked**: `03-runtime/01-ipc-protocol.md` §12b.1,
+  `03-runtime/03-tools-and-permissions.md` §5b, ADR 0224
+- **Acceptance**: E (Task isolation) + G (workflow activation and guidance)
+- **Status**: Unit/runtime/source-contract covered; desktop journey Draft
+
 #### E2E-024J: Plugin theme applies and falls back when withdrawn
 
 - **Preconditions**: `examples/plugins/hello` enabled with `ui.theme` granted; a plugin whose CSS uses `@import` or a remote `url()` available for the rejection case.

@@ -237,3 +237,7 @@ Each ADR includes:
 | 0217 | Native Context Vault owns durable project knowledge | Accepted |
 | 0218 | User subagent inherits only active parent capabilities | Accepted |
 | 0220 | Nexus-owned skill boundaries and safe on-demand loading | Accepted |
+| 0221 | Nexus workflow packages | Accepted |
+| 0222 | Nexus Plan workflow lifecycle | Accepted |
+| 0223 | Nexus-managed Git and review workflow boundaries | Accepted |
+| 0224 | Nexus parallel task workflow boundaries | Accepted |
