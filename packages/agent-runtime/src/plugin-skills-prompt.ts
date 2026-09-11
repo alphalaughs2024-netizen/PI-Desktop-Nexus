@@ -50,5 +50,3 @@ export function instructionCatalogPrompt(skills: InstructionDocumentDef[]): stri
 
 /** @deprecated Internal callers should use instructionCatalogPrompt. */
 export const pluginSkillsPrompt = instructionCatalogPrompt;
-/** @deprecated Internal callers should use InstructionDocumentDef. */
-export type PluginSkillDef = InstructionDocumentDef;
