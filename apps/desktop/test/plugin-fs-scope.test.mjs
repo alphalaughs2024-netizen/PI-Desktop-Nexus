@@ -320,8 +320,17 @@ test("a symlink inside the workspace cannot carry a read out of it", async (t) =
   const outside = mkdtempSync(join(tmpdir(), "pi-fs-scope-outside-"));
   writeFileSync(join(outside, "id_rsa"), "PRIVATE KEY", "utf8");
   const ws = makeWorkspace();
-  symlinkSync(join(outside, "id_rsa"), join(ws, "innocent.txt"));
-  symlinkSync(outside, join(ws, "elsewhere"));
+  const escapedDirectory = join(ws, "elsewhere");
+  const escapedPaths = ["elsewhere/id_rsa"];
+  if (process.platform === "win32") {
+    // File symlinks require elevation or Developer Mode on Windows. A junction
+    // carries the same directory-escape threat without either requirement.
+    symlinkSync(outside, escapedDirectory, "junction");
+  } else {
+    symlinkSync(join(outside, "id_rsa"), join(ws, "innocent.txt"));
+    symlinkSync(outside, escapedDirectory);
+    escapedPaths.unshift("innocent.txt");
+  }
 
   const { runtime } = await harness(t, {
     id: "fs.read.symlink",
@@ -332,7 +341,7 @@ test("a symlink inside the workspace cannot carry a read out of it", async (t) =
 
   // The old lexical containment check accepted both of these: the string stayed
   // under the workspace even though the file never was.
-  for (const path of ["innocent.txt", "elsewhere/id_rsa"]) {
+  for (const path of escapedPaths) {
     await refused(
       t,
       runtime.invokePanelBridge("fs.read.symlink", "fs.readText", { path }),
@@ -626,7 +635,10 @@ test("the write ledger lets a plugin delete its own output without a prompt", as
   });
   assert.equal(mine.ok, true);
   assert.equal(consents.length, 0, "removing your own output asks nobody");
-  assert.deepEqual(trashed.map((p) => p.endsWith("out/report.md")), [true]);
+  assert.deepEqual(
+    trashed.map((p) => p.replaceAll("\\", "/").endsWith("out/report.md")),
+    [true],
+  );
 
   // A file the plugin never wrote is somebody else's, ledger or not.
   const theirs = await runtime.invokePanelBridge("fs.delete.own", "try.remove", {

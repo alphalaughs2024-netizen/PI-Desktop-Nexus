@@ -19,7 +19,7 @@ const [store, sidebar, chatSurface, pane, panes, transcript, api, main, styles] 
   ]);
 
 test("session reads use a bounded tail and load older pages on demand", () => {
-  assert.match(store, /SESSION_TRANSCRIPT_PAGE_SIZE = 100/);
+  assert.match(store, /SESSION_TRANSCRIPT_PAGE_SIZE = 1_000/);
   assert.match(store, /SESSION_TRANSCRIPT_CONTENT_LIMIT = 64 \* 1024/);
   assert.match(store, /loadOlderMessages: async/);
   assert.match(store, /messageBefore: before/);

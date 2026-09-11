@@ -105,14 +105,12 @@ test("agent runtime exposes BrowserPreview in every mode and prompts for it", ()
     runtimeSource,
     /BrowserPreview: \{\s*path: pathParam\([^)]*\),\s*file_path: aliasParam\("path"\),\s*\}/,
   );
-  // Default system prompt limits preview calls to user-visible HTML work and
-  // reuses the live-reloading surface while the page is being refined.
-  assert.match(runtimeSource, /user-visible HTML pages/);
-  assert.match(runtimeSource, /first meaningful visual edit/);
-  assert.match(runtimeSource, /Reuse that preview while iterating/);
+  // The runtime describes the host-owned browser surface and directs the model
+  // to reuse one preview while it iterates, rather than opening duplicate tabs.
   assert.match(
     runtimeSource,
-    /Skip generated, test-only, and non-visual HTML files/,
+    /Open a workspace HTML file in PI-Desktop's built-in browser panel/,
   );
+  assert.match(runtimeSource, /so call once per page/);
   assert.match(runtimeSource, /live-reloads/);
 });

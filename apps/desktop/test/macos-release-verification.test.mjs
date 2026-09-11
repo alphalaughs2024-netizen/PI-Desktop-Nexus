@@ -14,7 +14,7 @@ const stapleScript = new URL(
   import.meta.url,
 );
 
-test("macOS release finalization staples the generated DMG", async (t) => {
+test("macOS release finalization staples the generated DMG", { skip: process.platform !== "darwin" }, async (t) => {
   const root = await mkdtemp(join(tmpdir(), "pi-desktop-macos-staple-"));
   t.after(() => rm(root, { recursive: true, force: true }));
 
@@ -43,7 +43,7 @@ test("macOS release finalization staples the generated DMG", async (t) => {
   );
 });
 
-test("macOS release verification requires a notarized Developer ID app and DMG", async (t) => {
+test("macOS release verification requires a notarized Developer ID app and DMG", { skip: process.platform !== "darwin" }, async (t) => {
   const root = await mkdtemp(join(tmpdir(), "pi-desktop-macos-release-"));
   t.after(() => rm(root, { recursive: true, force: true }));
 
@@ -89,7 +89,7 @@ test("macOS release verification requires a notarized Developer ID app and DMG",
   );
 });
 
-test("macOS release verification rejects a Developer ID app without notarization", async (t) => {
+test("macOS release verification rejects a Developer ID app without notarization", { skip: process.platform !== "darwin" }, async (t) => {
   const root = await mkdtemp(join(tmpdir(), "pi-desktop-macos-unnotarized-"));
   t.after(() => rm(root, { recursive: true, force: true }));
 

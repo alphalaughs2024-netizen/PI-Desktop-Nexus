@@ -411,13 +411,13 @@ test("regenerate rewrites the current turn instead of appending", async () => {
   assert.match(mainSource, /session\.replaceMessages/);
   assert.match(mainSource, /agent\.disposeSession/);
   assert.match(mainSource, /truncateFromMessageId/);
-  // The host resolves the boundary against its own transcript, and an
-  // unresolvable boundary fails instead of truncating at a guessed position.
+  // The host now owns the cut, so the kept prefix never crosses the JSON-RPC
+  // boundary; unresolvable message IDs fail rather than truncating by guess.
   assert.match(
     mainSource,
-    /resolveTranscriptTruncation\(allMessages,\s*req\)/,
+    /host\.call<[\s\S]*?>\("session\.truncateFrom", \{[\s\S]*?fromMessageId: truncateFromMessageId/,
   );
-  assert.match(mainSource, /truncation\.kind === "unknown-message"/);
+  assert.match(mainSource, /truncate regenerate transcript failed[\s\S]*?throw error;/);
   assert.match(protocolSource, /sessionReplaceMessages/);
 });
 
@@ -505,11 +505,16 @@ test("regenerate history pager and stable revision family are wired", async () =
   assert.match(storeSource, /activateSessionRevision/);
   assert.match(mainSource, /session\.saveRevision/);
   assert.match(mainSource, /revisionRootId/);
-  assert.match(mainSource, /revisionCount: count \+ 1/);
-  assert.match(
-    mainSource,
-    /save regenerate revision failed[\s\S]*?throw error;[\s\S]*?session\.replaceMessages/,
+  assert.match(sharedSource, /revisionCount\?: number/);
+  const hostSessionsSource = await readFile(
+    new URL("../../../crates/host-core/src/sessions.rs", import.meta.url),
+    "utf8",
   );
+  assert.match(hostSessionsSource, /revision_count: count \+ 1,/);
+  // Revision archival follows the same host-owned truncate transaction; Electron
+  // does not serialize a discarded branch back through session.replaceMessages.
+  assert.match(mainSource, /host\.call<[\s\S]*?>\("session\.truncateFrom"/);
+  assert.doesNotMatch(mainSource, /save regenerate revision failed/);
   assert.match(sharedSource, /revisionRootId\?: string/);
   assert.match(sharedSource, /MessageRevisionSummary/);
 });

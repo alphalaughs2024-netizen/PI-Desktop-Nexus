@@ -245,7 +245,9 @@ test("macOS installers include trusted-source first-launch guidance", () => {
   ]);
   assert.equal(dmgBackgroundRetina.readUInt32BE(16), 1440);
   assert.equal(dmgBackgroundRetina.readUInt32BE(20), 1000);
-  assert.ok(macOpenScriptStat.mode & 0o111, "opening helper must be executable");
+  if (process.platform !== "win32") {
+    assert.ok(macOpenScriptStat.mode & 0o111, "opening helper must be executable");
+  }
   assert.match(macOpenFixNote, /Open PI-Desktop\.command/);
   assert.match(
     macOpenFixNote,
