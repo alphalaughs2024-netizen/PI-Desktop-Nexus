@@ -582,6 +582,49 @@ describe("DesktopAgentRuntime configuration matching", () => {
     await runtime.dispose();
   });
 
+  it("terminates a fourth consecutive canonical-equivalent tool call before host execution", async () => {
+    const host = {
+      call: vi.fn(async (method: string) => {
+        if (method !== "tools.execute") return undefined;
+        return { ok: true, isError: false, content: { text: "source" } };
+      }),
+    };
+    const runtime = createRuntime({ host });
+    const read = (runtime as any).agent.state.tools.find((tool: any) => tool.name === "Read");
+
+    for (let attempt = 1; attempt <= 3; attempt += 1) {
+      const result = await read.execute(`read-${attempt}`, { limit: 20, path: "src/a.ts" });
+      expect(result.terminate).toBeUndefined();
+    }
+    const blocked = await read.execute("read-4", { path: "src/a.ts", limit: 20 });
+
+    expect(host.call.mock.calls.filter(([method]: [string]) => method === "tools.execute")).toHaveLength(3);
+    expect(blocked).toMatchObject({ isError: true, terminate: true });
+    expect(blocked.content[0].text).toContain("TOOL_REPEAT_LIMIT_EXCEEDED");
+    await runtime.dispose();
+  });
+
+  it("resets the repeat-call streak when a tool argument changes or a prompt starts", async () => {
+    const host = {
+      call: vi.fn(async (method: string) => {
+        if (method !== "tools.execute") return undefined;
+        return { ok: true, isError: false, content: { text: "source" } };
+      }),
+    };
+    const runtime = createRuntime({ host });
+    const read = (runtime as any).agent.state.tools.find((tool: any) => tool.name === "Read");
+    for (let attempt = 1; attempt <= 3; attempt += 1) {
+      await read.execute(`same-${attempt}`, { path: "src/a.ts", limit: 20 });
+    }
+    expect((await read.execute("changed", { path: "src/a.ts", limit: 40 })).terminate).toBeUndefined();
+    for (let attempt = 1; attempt <= 3; attempt += 1) {
+      await read.execute(`again-${attempt}`, { path: "src/a.ts", limit: 20 });
+    }
+    (runtime as any).resetRunRecoveryState();
+    expect((await read.execute("new-prompt", { path: "src/a.ts", limit: 20 })).terminate).toBeUndefined();
+    await runtime.dispose();
+  });
+
   it("reports a visible error row when the mutation guard ends the turn", async () => {
     const onEvent = vi.fn();
     const host = {

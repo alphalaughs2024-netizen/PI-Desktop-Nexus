@@ -838,6 +838,27 @@ function mutationFailureKey(path: unknown): string {
   return String(path).replaceAll("\\", "/").replace(/^\.\//, "");
 }
 
+/** JSON canonicalization for an in-memory repeat-call fingerprint. It never
+ * leaves the runtime, and we retain only its bounded digest rather than args. */
+function canonicalToolCallFingerprint(toolName: string, params: unknown): string {
+  const canonicalize = (value: unknown): unknown => {
+    if (Array.isArray(value)) return value.map(canonicalize);
+    if (!isRecord(value)) return value;
+    return Object.fromEntries(
+      Object.keys(value)
+        .sort()
+        .map((key) => [key, canonicalize(value[key])]),
+    );
+  };
+  const source = `${toolName}\u0000${JSON.stringify(canonicalize(params))}`;
+  let hash = 2166136261;
+  for (let index = 0; index < source.length; index += 1) {
+    hash ^= source.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return `${toolName}:${(hash >>> 0).toString(16)}`;
+}
+
 function isPatchCommand(command: unknown): boolean {
   if (typeof command !== "string") return false;
   return (
@@ -849,6 +870,14 @@ function isPatchCommand(command: unknown): boolean {
       command,
     )
   );
+}
+
+function participatesInRepeatGuard(toolName: string, params: unknown): boolean {
+  if (toolName === "Edit") return false;
+  if (toolName === "Bash" && isRecord(params) && isPatchCommand(params.command)) {
+    return false;
+  }
+  return true;
 }
 
 type CheckpointPersistResult = "persisted" | "oversized" | "failed";
@@ -1439,6 +1468,10 @@ export class DesktopAgentRuntime {
     target: string;
     lastErrorCode?: string;
   };
+  /** Per-prompt streak; only the hash and count are retained in memory. */
+  private repeatedToolCall?: { fingerprint: string; toolName: string; count: number };
+  /** Why the identical-call guard ended the turn, pending one visible error row. */
+  private pendingRepeatedToolTermination?: { toolName: string; count: number };
   private terminatingToolCalls = new Set<string>();
   private fullEntries: MessageEntry[];
   private activeCompaction?: ContextCompactionRecord;
@@ -2386,6 +2419,27 @@ export class DesktopAgentRuntime {
         signal,
         onUpdate,
       ) => {
+        if (participatesInRepeatGuard(toolName, params)) {
+          const fingerprint = canonicalToolCallFingerprint(toolName, params);
+          const previous = this.repeatedToolCall;
+          const count = previous?.fingerprint === fingerprint ? previous.count + 1 : 1;
+          this.repeatedToolCall = { fingerprint, toolName, count };
+          if (count >= 4) {
+            this.terminatingToolCalls.add(toolCallId);
+            this.pendingRepeatedToolTermination = { toolName, count };
+            return {
+              content: [
+                {
+                  type: "text",
+                  text: `TOOL_REPEAT_LIMIT_EXCEEDED: Stopped ${toolName} after ${count} consecutive identical calls. Try different arguments, inspect the prior result, or explain the blocker.`,
+                },
+              ],
+              details: { toolName, repeatCount: count },
+              isError: true,
+              terminate: true,
+            };
+          }
+        }
         await this.loadPathInstructions(toolName, params);
         const isBash = toolName === "Bash";
         const timeoutMs = isBash ? commandTimeoutMs(params) : undefined;
@@ -4480,6 +4534,8 @@ export class DesktopAgentRuntime {
     this.mutationFailureCounts.clear();
     this.mutationRecoveryGraces.clear();
     this.pendingMutationTermination = undefined;
+    this.repeatedToolCall = undefined;
+    this.pendingRepeatedToolTermination = undefined;
     this.terminatingToolCalls.clear();
     this.turnHadError = false;
   }
@@ -6025,6 +6081,7 @@ export class DesktopAgentRuntime {
         this.autonomousExecution = false;
         this.clearAgentActivity();
         this.reportMutationTermination();
+        this.reportRepeatedToolTermination();
         this.emit({
           type: "agent_end",
           messageIds: [],
@@ -6068,6 +6125,21 @@ export class DesktopAgentRuntime {
           : {}),
         recovery,
       },
+    };
+    this.terminateParentTurn();
+    this.finalizeCurrentAssistant("error", error);
+    this.emit({ type: "error", error });
+  }
+
+  private reportRepeatedToolTermination(): void {
+    const termination = this.pendingRepeatedToolTermination;
+    if (!termination) return;
+    this.pendingRepeatedToolTermination = undefined;
+    const error = {
+      code: "TOOL_REPEAT_LIMIT_EXCEEDED",
+      message: `Stopped ${termination.toolName} after ${termination.count} consecutive identical calls. Try different arguments, inspect the prior result, or explain the blocker.`,
+      retriable: true,
+      details: { toolName: termination.toolName, repeatCount: termination.count },
     };
     this.terminateParentTurn();
     this.finalizeCurrentAssistant("error", error);
@@ -6468,6 +6540,8 @@ export class DesktopAgentRuntime {
     this.mutationFailureCounts.clear();
     this.mutationRecoveryGraces.clear();
     this.pendingMutationTermination = undefined;
+    this.repeatedToolCall = undefined;
+    this.pendingRepeatedToolTermination = undefined;
     this.terminatingToolCalls.clear();
     this.gracefulStopRequested = false;
     this.hostCloseUnsubscribe?.();

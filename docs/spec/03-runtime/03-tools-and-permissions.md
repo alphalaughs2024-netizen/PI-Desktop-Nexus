@@ -596,3 +596,8 @@ Naming:
 - command allowlist / denylist
 - dry-run mode
 - apply patches after preview
+The runtime also bounds exact repeated model tool calls: the fourth consecutive
+canonical-equivalent call is terminated before dispatch, with a visible,
+retriable `TOOL_REPEAT_LIMIT_EXCEEDED` error. This generic bound excludes
+`Edit` and patch-style `Bash`, whose three-failure recovery contract remains
+authoritative.

@@ -1100,3 +1100,11 @@ normalization and error-mapping source.
 
 Tracked gaps (post-MVP backlog): richer system prompt composition (§7) and
 provider/model catalog discovery beyond the currently wired paths.
+### Consecutive identical tool-call guard
+
+Each prompt has an in-memory consecutive-call streak keyed by a canonical,
+recursively key-sorted JSON fingerprint of tool name and arguments. The fourth
+identical call is rejected before host execution with retriable
+`TOOL_REPEAT_LIMIT_EXCEEDED`; changed arguments, an intervening call, and a new
+prompt reset the streak. `Edit` and patch-style `Bash` remain governed by their
+specialized mutation recovery budget.

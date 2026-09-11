@@ -113,6 +113,7 @@ does not turn temporary thread pressure into a host process exit.
 | `TOOL_FAILED` | maybe | tool executed but failed |
 | `TOOL_ABORTED` | no | the tool was cancelled by a user stop or a turn abort before it finished |
 | `MUTATION_RETRY_BUDGET_EXHAUSTED` | yes | the repeat guard ended the turn after same-path `Edit` or shell patch failures; carries `details.kind` (`edit` or `patch-command`), the last tool error code, and a class-specific `details.recovery` hint |
+| `TOOL_REPEAT_LIMIT_EXCEEDED` | yes | the runtime ended the turn before the fourth consecutive identical model-requested tool call could execute; carries only the tool name and repeat count |
 | `PROCESS_RESOURCE_EXHAUSTED` | yes | shell process could not start because the OS temporarily exhausted process resources |
 | `SHELL_NOT_FOUND` | no | no effective platform shell is available after catalog fallback; message carries guidance |
 | `COMMAND_SHELL_CHANGED` | no | pinned shell ID or dialect changed before execution |
