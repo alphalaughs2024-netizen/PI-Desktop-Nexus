@@ -390,6 +390,23 @@ host permission boundary for ordinary file or shell work.
 - Workflows remain guidance only. They do not suppress the confirmation or
   cause a Git action to happen automatically.
 
+### 5b. Parallel Task coordination (ADR 0224)
+
+`Task` remains the existing Agent-mode subagent lifecycle. The Phase 5
+coordination workflows add advisory ownership metadata to a Task call:
+`access: read | write` and workspace-relative `paths`. It is audit metadata,
+not a capability grant, path allowlist, or substitute for host authorization.
+
+- Read-only delegates may run concurrently and may have overlapping scopes.
+- While an active coordination workflow is driving the session, Nexus refuses
+  a second write-capable delegate. Path labels cannot isolate simultaneous
+  edits, shell commands, generated files, or Git state in one checkout.
+- Concurrent mutation is allowed only after the parent establishes separate
+  Nexus-managed worktrees in separate tasks. Otherwise it must be sequential.
+- The parent remains responsible for report evaluation, integration, and
+  validation. `TaskWait` reports do not approve a plan, merge changes, or
+  bypass any permission or confirmation.
+
 ### Risk Levels
 
 | risk | Example | Default policy |

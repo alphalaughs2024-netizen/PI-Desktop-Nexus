@@ -1686,7 +1686,7 @@ async function resolveAgentRuntimeLaunch(
         plugins.listLoaded().map((loaded) => loaded.path),
       ),
     },
-    capabilities: ["core-agent-tools", "skill-loader", "plugin-development-tools", "file-tools", "terminal-tools", "test-execution", "git-worktree-operations"],
+    capabilities: ["core-agent-tools", "skill-loader", "plugin-development-tools", "file-tools", "terminal-tools", "test-execution", "git-worktree-operations", "subagent-orchestration"],
     globalDisabledIds: globalDisabledWorkflowIds(dataDir),
     projectOverrides: projectWorkflowOverrides(dataDir, projectPath),
     session: storedWorkflow,
@@ -1987,7 +1987,7 @@ async function workflowStatusForSession(sessionId: string) {
   const resolution = resolveWorkflows({
     mode,
     workspace: { isPluginWorkspace: isPluginWorkspace(projectPath, plugins.listLoaded().map((loaded) => loaded.path)) },
-    capabilities: ["core-agent-tools", "skill-loader", "plugin-development-tools", "file-tools", "terminal-tools", "test-execution", "git-worktree-operations"],
+    capabilities: ["core-agent-tools", "skill-loader", "plugin-development-tools", "file-tools", "terminal-tools", "test-execution", "git-worktree-operations", "subagent-orchestration"],
     globalDisabledIds: globalDisabledWorkflowIds(dataDir),
     projectOverrides: projectWorkflowOverrides(dataDir, projectPath),
     session: stored,

@@ -12,6 +12,7 @@ export const WORKFLOW_CAPABILITIES = [
   "terminal-tools",
   "test-execution",
   "git-worktree-operations",
+  "subagent-orchestration",
 ] as const;
 export type WorkflowCapability = (typeof WORKFLOW_CAPABILITIES)[number];
 export type WorkflowStage =
@@ -28,7 +29,9 @@ export type WorkflowStage =
   | "isolation"
   | "integration"
   | "review_requested"
-  | "review_feedback";
+  | "review_feedback"
+  | "parallelizing"
+  | "delegated_execution";
 export type WorkflowReasonCategory =
   | "core_operations"
   | "plugin_workspace"
@@ -47,6 +50,8 @@ export type WorkflowReasonCategory =
   | "branch_completion"
   | "review_request"
   | "review_feedback"
+  | "parallel_investigation"
+  | "delegated_plan_execution"
   | "manual";
 export type WorkflowActivationSource = "automatic" | "manual";
 
@@ -79,6 +84,8 @@ export const USING_GIT_WORKTREES_WORKFLOW_ID = "nexus/git/using-git-worktrees";
 export const FINISHING_DEVELOPMENT_BRANCH_WORKFLOW_ID = "nexus/git/finishing-development-branch";
 export const REQUESTING_CODE_REVIEW_WORKFLOW_ID = "nexus/review/requesting-code-review";
 export const RECEIVING_CODE_REVIEW_WORKFLOW_ID = "nexus/review/receiving-code-review";
+export const DISPATCHING_PARALLEL_AGENTS_WORKFLOW_ID = "nexus/coordination/dispatching-parallel-agents";
+export const SUBAGENT_DRIVEN_DEVELOPMENT_WORKFLOW_ID = "nexus/coordination/subagent-driven-development";
 
 export const WORKFLOW_MANIFESTS: readonly WorkflowManifest[] = [
   {
@@ -225,6 +232,30 @@ export const WORKFLOW_MANIFESTS: readonly WorkflowManifest[] = [
     defaultStage: "review_feedback",
     fixtures: [{ positivePrompt: "Apply the code review feedback after checking each finding.", negativePrompt: "What is code review feedback?", expectedStage: "review_feedback" }],
   },
+  {
+    id: DISPATCHING_PARALLEL_AGENTS_WORKFLOW_ID,
+    version: "1",
+    name: "Parallel task coordination",
+    description: "Split independent bounded investigation into accountable Nexus tasks and aggregate their reports before deciding the next action.",
+    skillFile: "dispatching-parallel-agents.md",
+    supportedModes: ["agent"],
+    requiredCapabilities: ["core-agent-tools", "skill-loader", "subagent-orchestration"],
+    priority: 91,
+    defaultStage: "parallelizing",
+    fixtures: [{ positivePrompt: "Investigate these three independent read-only areas in parallel and report the results.", negativePrompt: "What are parallel agents?", expectedStage: "parallelizing" }],
+  },
+  {
+    id: SUBAGENT_DRIVEN_DEVELOPMENT_WORKFLOW_ID,
+    version: "1",
+    name: "Subagent-driven development",
+    description: "Coordinate bounded implementation tasks through Nexus subagents while preserving isolated ownership and parent verification.",
+    skillFile: "subagent-driven-development.md",
+    supportedModes: ["agent"],
+    requiredCapabilities: ["core-agent-tools", "skill-loader", "subagent-orchestration", "git-worktree-operations", "test-execution"],
+    priority: 98,
+    defaultStage: "delegated_execution",
+    fixtures: [{ positivePrompt: "Use subagents to execute the approved implementation plan with bounded tasks.", negativePrompt: "Explain how subagents work.", expectedStage: "delegated_execution" }],
+  },
 ] as const;
 
 export type WorkflowSessionOverride = {
@@ -287,7 +318,7 @@ export function validateWorkflowManifest(value: unknown): { ok: boolean; error?:
   if (!Number.isFinite(manifest.priority) || ![
     "active", "discovery", "diagnosis", "implementation", "verification",
     "proposed_design", "approved_plan", "executing", "verified", "paused",
-    "isolation", "integration", "review_requested", "review_feedback",
+    "isolation", "integration", "review_requested", "review_feedback", "parallelizing", "delegated_execution",
   ].includes(manifest.defaultStage ?? "")) {
     return { ok: false, error: "invalid priority or stage" };
   }
@@ -344,6 +375,8 @@ function automaticReason(manifest: WorkflowManifest, input: WorkflowResolutionIn
   if (manifest.id === FINISHING_DEVELOPMENT_BRANCH_WORKFLOW_ID && isBranchCompletionRequest(input.prompt)) return "branch_completion";
   if (manifest.id === REQUESTING_CODE_REVIEW_WORKFLOW_ID && isCodeReviewRequest(input.prompt)) return "review_request";
   if (manifest.id === RECEIVING_CODE_REVIEW_WORKFLOW_ID && isReviewFeedbackRequest(input.prompt)) return "review_feedback";
+  if (manifest.id === DISPATCHING_PARALLEL_AGENTS_WORKFLOW_ID && isParallelInvestigationRequest(input.prompt)) return "parallel_investigation";
+  if (manifest.id === SUBAGENT_DRIVEN_DEVELOPMENT_WORKFLOW_ID && isSubagentPlanExecutionRequest(input.prompt)) return "delegated_plan_execution";
   if (manifest.id === VERIFICATION_WORKFLOW_ID && isCompletionVerificationRequest(input.prompt, input.session)) return "completion_verification";
   return undefined;
 }
@@ -449,6 +482,22 @@ function isReviewFeedbackRequest(value: unknown): boolean {
   const prompt = text(value);
   return /\b(?:apply|address|fix|implement|check|evaluate)\b/.test(prompt) &&
     /\b(?:code )?review (?:feedback|comments?|findings?)\b/.test(prompt);
+}
+
+function isParallelInvestigationRequest(value: unknown): boolean {
+  const prompt = text(value);
+  if (!prompt || /\b(?:what is|explain|discuss|tutorial)\b/.test(prompt)) return false;
+  return /\b(?:parallel|concurrently|at the same time)\b/.test(prompt) &&
+    /\b(?:investigate|inspect|analyze|research|review|search)\b/.test(prompt) &&
+    /\b(?:independent|separate|read-only|areas|tasks|parts)\b/.test(prompt);
+}
+
+function isSubagentPlanExecutionRequest(value: unknown): boolean {
+  const prompt = text(value);
+  if (!prompt || /\b(?:what is|explain|discuss|tutorial)\b/.test(prompt)) return false;
+  return /\b(?:subagents?|delegates?)\b/.test(prompt) &&
+    /\b(?:execute|implement|carry out|work through)\b/.test(prompt) &&
+    /\b(?:approved )?(?:implementation )?plan\b/.test(prompt);
 }
 
 function isCompletionVerificationRequest(value: unknown, session: WorkflowSessionRecord): boolean {

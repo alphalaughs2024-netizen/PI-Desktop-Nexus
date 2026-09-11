@@ -5955,6 +5955,47 @@ describe("DesktopAgentRuntime subagents", () => {
     await runtime.dispose();
   });
 
+  it("refuses concurrent mutation only while a coordination workflow is active", async () => {
+    const fixer = { ...explorer, name: "fixer", tools: ["Read", "Edit"] };
+    const runtime = createRuntime({
+      subagents: [fixer, explorer],
+      activeWorkflow: {
+        id: "nexus/coordination/subagent-driven-development",
+        name: "Subagent-driven development",
+        stage: "delegated_execution",
+        reasonCategory: "delegated_plan_execution",
+        body: "Coordinate bounded work.",
+      },
+    });
+    subagentRuns.calls.length = 0;
+    subagentRuns.instances.length = 0;
+    subagentRuns.deferred = true;
+    subagentRuns.resolveRun = undefined;
+    const task = taskTool(runtime);
+    const first = await task.execute("task-write-1", {
+      agent: "fixer",
+      task: "Edit src/a.ts.",
+      ownership: { access: "write", paths: ["src/a.ts"] },
+    });
+    expect((first.details as any).ownership).toEqual({ access: "write", paths: ["src/a.ts"] });
+    const second = await task.execute("task-write-2", {
+      agent: "fixer",
+      task: "Edit docs/a.md.",
+      ownership: { access: "write", paths: ["docs/a.md"] },
+    });
+    expect(second.content[0].text).toContain("concurrent mutation work is refused");
+    const reader = await task.execute("task-read", {
+      agent: "explorer",
+      task: "Inspect src/a.ts and report only.",
+      ownership: { access: "read", paths: ["src/a.ts"] },
+    });
+    expect((reader.details as any).delegationId).toBeDefined();
+    const stop = (runtime as any).agent.state.tools.find((tool: any) => tool.name === "TaskStop");
+    await stop.execute("stop-coordinated", {});
+    subagentRuns.deferred = false;
+    await runtime.dispose();
+  });
+
   it("keeps running delegates after the parent run ends", async () => {
     const runtime = createRuntime({ subagents: [explorer] });
     subagentRuns.calls.length = 0;

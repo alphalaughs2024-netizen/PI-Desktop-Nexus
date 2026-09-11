@@ -119,6 +119,7 @@ import {
   type RuntimeProviderConfig,
 } from "./provider-binding.js";
 import { PathMutex } from "./path-lock.js";
+import { concurrentMutationConflict, normalizeDelegationOwnership, type DelegationOwnership } from "./task-coordination.js";
 import {
   composeSubagentSystemPrompt,
   SubagentRun,
@@ -343,6 +344,8 @@ export type DelegationRecord = {
   /** `prompt()` / `executeApprovedPlan()` generation that started this run.
    * Resume-after-idle only waits for the current turn's delegates (D352). */
   startedEpoch: number;
+  /** Parent-declared task ownership, used only to prevent unsafe concurrent writes. */
+  ownership: DelegationOwnership;
 };
 
 function delegationSummary(record: DelegationRecord): Record<string, unknown> {
@@ -358,6 +361,7 @@ function delegationSummary(record: DelegationRecord): Record<string, unknown> {
     ...(record.lastToolName ? { lastToolName: record.lastToolName } : {}),
     ...(record.completedAt ? { completedAt: record.completedAt } : {}),
     ...(record.result?.error ? { error: record.result.error } : {}),
+    ownership: record.ownership,
   };
 }
 
@@ -3389,7 +3393,7 @@ export class DesktopAgentRuntime {
               "No delegation model overrides are configured. Omit `model` so the subagent inherits the parent conversation's selected model; never invent a provider/model key.",
             ]),
         "`task` is the delegate's only instruction. It cannot see this conversation, and you cannot correct it while it runs, so state the goal, the paths and facts it cannot infer, and exactly what to report back.",
-        "To run delegates concurrently, emit several Task calls in one assistant message. A message that mixes Task with any other tool runs one call at a time. You may keep working or talk to the user while they run; the runtime delivers their reports when they finish. Call TaskStop only to cancel.",
+        "To run delegates concurrently, emit several Task calls in one assistant message. Give every Task an ownership scope: read-only tasks may overlap. All session tasks share one workspace, so the runtime refuses concurrent mutation work even with disjoint paths; use separate Nexus-managed worktrees in separate tasks, wait, or keep the parallel tasks read-only. A message that mixes Task with any other tool runs one call at a time. You may keep working while they run; the runtime delivers their reports when they finish. Call TaskStop only to cancel.",
         `Available subagents:\n${catalog}`,
       ].join("\n\n"),
       parameters: Type.Object({
@@ -3400,6 +3404,14 @@ export class DesktopAgentRuntime {
           description:
             "The complete brief: goal, context the delegate cannot infer, and the exact report you want back.",
         }),
+        ownership: Type.Optional(
+          Type.Object({
+            access: Type.Union([Type.Literal("read"), Type.Literal("write")]),
+            paths: Type.Array(Type.String(), { description: "Workspace-relative paths or directory globs this task owns." }),
+          }, {
+            description: "Task ownership for coordination. Read-only tasks may overlap. Write tasks must name a disjoint scope; omitted write scope means the whole workspace.",
+          }),
+        ),
         description: Type.Optional(
           Type.String({
             description:
@@ -3487,6 +3499,26 @@ export class DesktopAgentRuntime {
             `The ${definition.name} subagent declares no tool available in this session.`,
           );
         }
+        const mutating = delegatedDefinition.inheritTools ||
+          delegatedDefinition.tools.some((name) => PATH_MUTATING_TOOLS.has(name)) ||
+          delegatedDefinition.tools.includes("Bash");
+        const ownership = normalizeDelegationOwnership(
+          isRecord(params) ? params.ownership : undefined,
+          mutating,
+        );
+        const coordinatedDelegation = this.activeWorkflow?.id === "nexus/coordination/dispatching-parallel-agents" ||
+          this.activeWorkflow?.id === "nexus/coordination/subagent-driven-development";
+        const conflicting = coordinatedDelegation
+          ? this.runningDelegations().find((record) =>
+              concurrentMutationConflict(record.ownership, ownership),
+            )
+          : undefined;
+        if (conflicting) {
+          return this.subagentToolError(
+            toolCallId,
+            `concurrent mutation work is refused: this session's tasks share one workspace with ${conflicting.agentName} (${conflicting.delegationId}). Use a separate Nexus-managed worktree in another task, wait for that task, or delegate read-only investigation instead.`,
+          );
+        }
         const startedAt = Date.now();
         const running = this.runningDelegations().length;
         if (running >= MAX_SUBAGENT_CONCURRENCY) {
@@ -3531,6 +3563,7 @@ export class DesktopAgentRuntime {
           lastActivityAt: startedAt,
           lastPhase: "waiting-model",
           startedEpoch: this.turnEpoch,
+          ownership,
         };
         this.delegations.set(delegationId, record);
         const scopedTools = this.scopeDelegateTools(tools, delegatedDefinition);
@@ -3598,6 +3631,7 @@ export class DesktopAgentRuntime {
             startedAt,
             modelId: provider.modelId,
             thinkingLevel,
+            ownership,
           },
         };
       },
