@@ -17,8 +17,16 @@ test("Context Vault has a localized native tab and visible controls", () => {
 });
 
 test("Context Vault stacks and wraps instead of overflowing a narrow work panel", () => {
-  assert.match(styles, /\.context-vault-header \{[\s\S]*?flex-wrap: wrap/);
-  assert.match(styles, /\.context-vault-header > div:last-child \{[\s\S]*?flex-wrap: wrap/);
-  assert.match(styles, /@media \(max-width: 560px\) \{[\s\S]*?\.context-vault-grid \{[\s\S]*?grid-template-columns: minmax\(0, 1fr\)/);
+  assert.match(styles, /\.context-vault-actions \{[\s\S]*?flex-wrap: wrap/);
+  assert.match(styles, /@media \(max-width: 720px\) \{[\s\S]*?\.context-vault-grid\.is-editing \{[\s\S]*?grid-template-columns: minmax\(0, 1fr\)/);
   assert.match(styles, /\.context-vault-list,\s*\.context-vault-editor \{[\s\S]*?min-width: 0/);
+});
+
+test("Context Vault gives its empty state the full panel and reserves a separate action toolbar", () => {
+  assert.match(tab, /context-vault-actions/);
+  assert.match(tab, /const isEditing = creating \|\| selected !== null/);
+  assert.match(tab, /context-vault-grid\$\{isEditing \? " is-editing" : ""\}/);
+  assert.match(styles, /\.context-vault-grid \{[\s\S]*?grid-template-columns: minmax\(0, 1fr\)/);
+  assert.match(styles, /\.context-vault-actions \{[\s\S]*?flex-wrap: wrap/);
+  assert.match(styles, /@media \(max-width: 720px\) \{[\s\S]*?\.context-vault-grid\.is-editing \{[\s\S]*?grid-template-columns: minmax\(0, 1fr\)/);
 });

@@ -1201,24 +1201,31 @@
   border-radius: var(--radius-sm);
 }
 
-.context-vault-tab { height: 100%; display: flex; flex-direction: column; gap: 8px; padding: 10px; overflow: hidden; }
-.context-vault-header { display: flex; justify-content: space-between; gap: 8px; align-items: flex-start; flex-wrap: wrap; }
+.context-vault-tab { height: 100%; display: flex; min-width: 0; flex-direction: column; gap: 10px; padding: 10px; overflow: hidden; }
+.context-vault-header { display: flex; min-width: 0; flex: 0 0 auto; flex-direction: column; gap: 8px; }
+.context-vault-heading { min-width: 0; }
 .context-vault-header strong, .context-vault-header span { display: block; }
+.context-vault-header strong { color: var(--ds-text-primary); font-size: var(--text-base-plus); font-weight: var(--font-weight-semibold); }
 .context-vault-header span, .context-vault-list small { color: var(--ds-text-muted); font-size: var(--text-2xs); }
+.context-vault-heading span { margin-top: 2px; overflow-wrap: anywhere; }
 .context-vault-header button, .context-vault-editor button { margin-left: 0; }
-.context-vault-header > div:last-child { display: flex; flex-wrap: wrap; gap: 4px; }
+.context-vault-actions { display: flex; min-width: 0; flex-wrap: wrap; gap: 5px; padding-top: 8px; border-top: 1px solid var(--ds-border-subtle); }
+.context-vault-actions button { flex: 0 0 auto; white-space: nowrap; }
 .context-vault-search, .context-vault-editor input, .context-vault-editor textarea, .context-vault-editor select { width: 100%; box-sizing: border-box; }
-.context-vault-grid { min-height: 0; flex: 1; display: grid; grid-template-columns: minmax(130px, .8fr) minmax(190px, 1.2fr); gap: 8px; }
-.context-vault-list, .context-vault-editor { min-height: 0; overflow: auto; border: 1px solid var(--ds-border); border-radius: var(--radius-sm); padding: 6px; }
-.context-vault-list > button { width: 100%; display: block; text-align: left; padding: 7px; border: 0; background: transparent; color: inherit; }
-.context-vault-list > button.active { background: var(--ds-bg-hover); }
+.context-vault-grid { min-height: 0; flex: 1; display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
+.context-vault-grid.is-editing { grid-template-columns: minmax(150px, .8fr) minmax(220px, 1.2fr); }
+.context-vault-list, .context-vault-editor { min-width: 0; min-height: 0; overflow: auto; border: 1px solid var(--ds-border); border-radius: var(--radius-sm); padding: 6px; }
+.context-vault-list { display: flex; flex-direction: column; }
+.context-vault-list > .work-tab-empty { flex: 1; }
+.context-vault-list > button { width: 100%; display: block; text-align: left; padding: 7px; border: 0; border-radius: var(--radius-2xs); background: transparent; color: inherit; }
+.context-vault-list > button:hover, .context-vault-list > button.active { background: var(--ds-bg-hover); }
 .context-vault-list b, .context-vault-list span, .context-vault-list small { display: block; }
+.context-vault-list span { overflow-wrap: anywhere; }
 .context-vault-list b { text-transform: capitalize; font-size: var(--text-2xs); color: var(--ds-accent); }
 .context-vault-editor label { display: block; margin-bottom: 7px; font-size: var(--text-xs); }
 .context-vault-editor textarea { min-height: 48px; resize: vertical; }
-.context-vault-editor footer { display: flex; flex-wrap: wrap; gap: 4px; }
+.context-vault-editor footer { display: flex; flex-wrap: wrap; gap: 4px; padding-top: 2px; }
 .context-vault-error { margin: 0; color: var(--ds-danger); font-size: var(--text-xs); }
-@media (max-width: 560px) {
-  .context-vault-grid { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(120px, .8fr) minmax(0, 1.2fr); }
-  .context-vault-list, .context-vault-editor { min-width: 0; }
+@media (max-width: 720px) {
+  .context-vault-grid.is-editing { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(120px, .8fr) minmax(0, 1.2fr); }
 }
