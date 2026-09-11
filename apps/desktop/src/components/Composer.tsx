@@ -5,6 +5,7 @@ import {
   useRef,
   useState,
   type ClipboardEvent,
+  type DragEvent,
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
 import { useTranslation } from "react-i18next";
@@ -469,6 +470,10 @@ function clipboardFiles(data: DataTransfer): File[] {
   return files;
 }
 
+function hasFileTransfer(data: DataTransfer): boolean {
+  return Array.from(data.types).includes("Files");
+}
+
 /**
  * Keep the display order in sync with the runtime's extended thinking
  * levels. Providers decide which of these entries are actually rendered.
@@ -690,6 +695,7 @@ export function Composer({
   const modelListRef = useRef<HTMLDivElement>(null);
   const thinkingListRef = useRef<HTMLDivElement>(null);
   const [pasting, setPasting] = useState(false);
+  const [isFileDropActive, setIsFileDropActive] = useState(false);
   const [enhancingPrompt, setEnhancingPrompt] = useState(false);
   const [enhancementUndoText, setEnhancementUndoText] = useState<string | null>(null);
   const [enhancementError, setEnhancementError] =
@@ -1832,10 +1838,13 @@ export function Composer({
     }
   };
 
-  const pasteClipboardFiles = async (event: ClipboardEvent<HTMLDivElement>) => {
+  const pasteClipboardFiles = async (
+    event: ClipboardEvent<HTMLDivElement> | DragEvent<HTMLDivElement>,
+  ) => {
     if (inputBlocked) return;
-    const files = clipboardFiles(event.clipboardData);
-    const text = event.clipboardData.getData("text/plain");
+    const dataTransfer = "clipboardData" in event ? event.clipboardData : event.dataTransfer;
+    const files = clipboardFiles(dataTransfer);
+    const text = dataTransfer.getData("text/plain");
     const textLength = Array.from(text).length;
     const isLargeTextPaste = !files.length && textLength > largePasteThreshold;
     if (isLargeTextPaste || files.length) {
@@ -1971,6 +1980,30 @@ export function Composer({
       setValue(nextValue);
       updateCursor(start);
     }
+  };
+
+  const allowFileDrop = (event: DragEvent<HTMLDivElement>) => {
+    if (!hasFileTransfer(event.dataTransfer)) return;
+    event.preventDefault();
+    if (!inputBlocked) setIsFileDropActive(true);
+  };
+
+  const leaveFileDrop = (event: DragEvent<HTMLDivElement>) => {
+    if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+      setIsFileDropActive(false);
+    }
+  };
+
+  const dropFiles = async (event: DragEvent<HTMLDivElement>) => {
+    const files = clipboardFiles(event.dataTransfer);
+    setIsFileDropActive(false);
+    // Do not intercept text or URL drops; only files belong to the attachment
+    // flow. File drops use the exact same bounded session-scratch importer as
+    // clipboard files, including draft materialization and image classification.
+    if (!files.length) return;
+    event.preventDefault();
+    if (inputBlocked) return;
+    await pasteClipboardFiles(event);
   };
 
   const composerAc = useComposerAutocomplete({
@@ -2114,7 +2147,12 @@ export function Composer({
             </TooltipButton>
           </div>
         ) : null}
-        <div className={`composer-shell${inputBlocked ? " is-gated" : ""}`}>
+        <div
+          className={`composer-shell${inputBlocked ? " is-gated" : ""}${isFileDropActive ? " is-file-drop-active" : ""}`}
+          onDragOver={allowFileDrop}
+          onDragLeave={leaveFileDrop}
+          onDrop={dropFiles}
+        >
           {inputFocused ? (
             <ComposerAutocomplete ac={composerAc} onAccept={acceptCompletion} />
           ) : null}

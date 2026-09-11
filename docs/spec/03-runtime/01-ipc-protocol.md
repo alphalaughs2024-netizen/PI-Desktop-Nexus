@@ -1467,7 +1467,8 @@ Electron-only channels backing composer autocomplete and file references.
 returns a one-shot token; the legacy `composer/pickPhotos` channel remains
 available for compatibility but is not exposed by the Composer UI.
 `composer/importFiles` and `composer/pasteFiles` write only to the originating
-session's Electron-owned scratch directory. None adds a host RPC method or
+session's Electron-owned scratch directory. Clipboard files and browser
+drag-and-drop files both use `composer/pasteFiles`; none adds a host RPC method or
 changes the host protocol version. Renderer-supplied absolute source paths are
 never accepted by the picker import channel (ADR 0181).
 
@@ -1570,7 +1571,9 @@ renderer-provided directory components, and writes unique names below
 `<data_dir>/scratch/<sessionId>/pasted/` with exclusive-create semantics. The
 renderer holds returned paths and kind metadata in transient reference state,
 displays `name`, and submits them through `AgentPromptRequest.attachments`.
-Main persists image bytes by SHA-256 and adds a path fallback only when the
+The browser renderer uses this bridge for clipboard files and user-dropped
+files, so both inputs have identical bounds, session ownership, and attachment
+handling. Main persists image bytes by SHA-256 and adds a path fallback only when the
 selected model cannot receive that image as a visual block. Clipboard bytes
 never enter the persisted prompt or host agent message as base64.
 Invalid sessions and malformed/oversized payloads fail with an IPC error, and

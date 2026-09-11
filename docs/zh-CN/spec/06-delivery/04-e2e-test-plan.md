@@ -4205,6 +4205,16 @@ IPC 请求无法关闭。
 - **状态**：单位覆盖（`apps/desktop/test/composer-paste-files.test.mjs`）；
   完整的 UI 旅程草案（除非明确要求，否则不要在本地运行 E2E）
 
+#### E2E-102i：Composer 文件拖放使用有界附件桥
+
+- **先决条件**：应用正在运行并显示 home 或 Agent Composer。活动工作区外有文本和图片夹具，另有 URL 或纯文本拖放来源用于负例。
+- **步骤**：1) 将两个文件拖到 Composer 上方，确认 Composer 外壳显示文件拖放轮廓。2) 将它们放入 Composer，检查叶名芯片并发送提示。3) 拖放纯文本或 URL，确认应用不会将其变成附件。4) 在 home Composer 重复，并检查新建会话的暂存根。
+- **预期**：文件拖放遵循与剪贴板文件相同的有界 `composer/pasteFiles` 路线：会话物化、暂存副本、MIME/图片分类、结构化附件元数据，以及干净的工作区。离开或放下后轮廓清除。非文件拖放保持浏览器原生行为，Composer 外没有文件拖放目标。
+- **链接规格**：`04-ux/09-interaction-patterns.md` §8a.2，`03-runtime/01-ipc-protocol.md` §13c
+- **验收**：C（对话和流）、F（持久化）、质量
+- **里程碑**：M5
+- **状态**：单位覆盖（`apps/desktop/test/composer-paste-files.test.mjs`）；完整 UI 旅程草案（除非明确要求，否则不要在本地运行 E2E）
+
 #### E2E-102a：Composer 文件引用结果使用紧凑的叶名称
 
 - **先决条件**：应用程序正在工作区中使用 Agent 会话运行
@@ -6461,4 +6471,3 @@ IPC 请求无法关闭。
 - **验收**：C（对话）、F（持久化）、Quality
 - **里程碑**：M6
 - **状态**：由 host-core 单元测试覆盖（2026-09-10）：`truncate_from_drops_the_tail_and_archives_the_discarded_branch`、`truncate_from_rejects_an_unknown_message`、`truncate_from_refreshes_the_stamped_revision`、`truncate_from_rpc_cuts_without_shipping_the_kept_prefix`。桌面行程仍为草稿。
-
