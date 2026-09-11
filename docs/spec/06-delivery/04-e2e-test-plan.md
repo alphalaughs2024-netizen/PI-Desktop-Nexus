@@ -9968,9 +9968,13 @@ sample extensions under `apps/desktop/test/fixtures/pi-extensions/`.
   inspect the JSON, then import it into project B through preview.
 - **Expected**: Legacy settings are untouched and not shown. No claim leaks to
   project B. The ordinary task gets no brief or forced save; the matching task
-  sees availability metadata only and may explicitly brief. The pack contains
-  no secrets, sessions, absolute paths, mtimes, or workspace contents; preview
-  labels duplicates/overlaps/invalid items and only chosen valid claims merge.
+  sees availability metadata only and may explicitly brief. Native
+  `context_search`, `context_brief`, `context_save`, and `context_review` calls
+  are forwarded to the Nexus Context Vault executor for the active session,
+  including when third-party plugins are disabled; none fail as an unknown
+  tool. The pack contains no secrets, sessions, absolute paths, mtimes, or
+  workspace contents; preview labels duplicates/overlaps/invalid items and only
+  chosen valid claims merge.
 - **Specs linked**: ADR 0217, runtime and storage specifications.
 - **Status**: Draft.
 

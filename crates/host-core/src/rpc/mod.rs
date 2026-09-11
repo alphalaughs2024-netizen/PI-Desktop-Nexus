@@ -809,8 +809,9 @@ async fn cancel_pending_permission(state: &Arc<Mutex<AppState>>, p: &ToolsExecut
     st.cancel_pending_permission(&p.session_id, &p.tool_call_id)
 }
 
-/// Dispatch a `plugin_*` tool to the desktop runner (Electron main), which
-/// executes the plugin JS and answers via `plugins.resolveExecution`.
+/// Dispatch a desktop-owned tool to Electron main, which executes either a
+/// plugin/MCP tool or the native Context Vault handler and answers via
+/// `plugins.resolveExecution`.
 async fn execute_plugin_tool(
     state: &Arc<Mutex<AppState>>,
     tx: &mpsc::UnboundedSender<String>,
@@ -3026,7 +3027,7 @@ async fn handle_request(
                 }
 
                 let mut result = if tools::is_desktop_dispatched(&p.tool_name) {
-                    // Plugin dispatch keeps its existing bounded default timeout;
+                    // Desktop dispatch keeps its existing bounded default timeout;
                     // command-shell timeout semantics apply only to Bash.
                     execute_plugin_tool(&state, &tx, &p, p.timeout_ms.unwrap_or(60_000), &durable_mode).await
                 } else {

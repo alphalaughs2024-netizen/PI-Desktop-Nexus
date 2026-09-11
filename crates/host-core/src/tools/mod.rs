@@ -946,15 +946,20 @@ fn count_lines_fast(path: &Path) -> std::io::Result<usize> {
     }
 }
 
-/// Tools host-core gates but does not run itself: the plugin bridge and the
-/// user's MCP servers both live in Electron main, so both are forwarded over
-/// `plugins.execute` instead of being executed here.
+/// Tools host-core gates but does not run itself: plugin and MCP tools, plus
+/// the native Context Vault executor, live in Electron main and are forwarded
+/// over `plugins.execute` instead of being executed here.
 ///
 /// `mcp_` is treated exactly like `plugin_` for risk and read-only-mode
 /// purposes: the user typed the command or URL into the MCP editor themselves,
 /// which is at least as deliberate as accepting a plugin's manifest.
 pub fn is_desktop_dispatched(tool_name: &str) -> bool {
-    tool_name.starts_with("plugin_") || tool_name.starts_with("mcp_")
+    tool_name.starts_with("plugin_")
+        || tool_name.starts_with("mcp_")
+        || matches!(
+            tool_name,
+            "context_search" | "context_brief" | "context_save" | "context_review"
+        )
 }
 
 #[cfg(test)]
@@ -2771,6 +2776,22 @@ mod tests {
 
     fn plain_read(content: &str) -> String {
         hashline::strip_write_markup(content)
+    }
+
+    #[test]
+    fn native_context_vault_tools_are_dispatched_to_desktop() {
+        for tool_name in [
+            "context_search",
+            "context_brief",
+            "context_save",
+            "context_review",
+        ] {
+            assert!(
+                is_desktop_dispatched(tool_name),
+                "{tool_name} must reach the native desktop Context Vault handler"
+            );
+        }
+        assert!(!is_desktop_dispatched("context_unknown"));
     }
 
     #[test]
