@@ -3871,7 +3871,9 @@ Each scenario is documented in this format:
   appearing as a fully visible tooltip 8px above the chip on hover and on
   keyboard focus (#74); the tooltip remains fully painted when it overlaps the
   sidebar edge and is never occluded by the sidebar background; no chip renders
-  caption text. While an assistant response is streaming, its toolbar omits
+  caption text. Clicking an action dismisses its tooltip immediately; it does not
+  remain visible while the action retains focus. While an assistant response is
+  streaming, its toolbar omits
   Copy; after the response settles, the assistant toolbar offers Copy, Fork,
   Regenerate. The user toolbar offers the pager (when variants exist), Copy,
   Edit, Delete. Edit replaces the prompt bubble with a wider inline

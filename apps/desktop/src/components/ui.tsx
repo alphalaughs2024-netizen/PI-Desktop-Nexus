@@ -48,6 +48,10 @@ function useTooltip<T extends HTMLElement>(
     visibleRef.current = next;
     setVisible(next);
   };
+  const dismiss = () => {
+    setDismissed(true);
+    if (visibleRef.current) setTooltipVisible(false);
+  };
 
   const dismiss = () => {
     setDismissed(true);
