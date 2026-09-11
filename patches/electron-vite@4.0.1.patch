@@ -1,0 +1,20 @@
+diff --git a/dist/chunks/lib-ClgyQuZx.js b/dist/chunks/lib-ClgyQuZx.js
+index 06042708fbd9671daab7fdb52867a9fba2ababb4..b4a01c4e5304c21760ebd6fd8e2f696459642d7e 100644
+--- a/dist/chunks/lib-ClgyQuZx.js
++++ b/dist/chunks/lib-ClgyQuZx.js	
+@@ -851,10 +851,12 @@ function esmShimPlugin() {
+                 if (code.includes(CJSShim) || !CJSyntaxRe.test(code)) {
+                     return null;
+                 }
+-                const lastESMImport = findStaticImports(code).pop();
+-                const indexToAppend = lastESMImport ? lastESMImport.end : 0;
+                 const s = new MagicString(code);
+-                s.appendRight(indexToAppend, CJSShim);
++                // A regex cannot safely distinguish ESM imports from text embedded
++                // in a bundled JavaScript string. Prepend the shim instead: ESM
++                // imports are valid at the start of a module and need no ordering
++                // relative to other import declarations.
++                s.prepend(CJSShim);
+                 return {
+                     code: s.toString(),
+                     map: sourcemap ? s.generateMap({ hires: 'boundary' }) : null

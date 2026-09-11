@@ -40,6 +40,7 @@ overrides:
 # release includes the same early return.
 patchedDependencies:
   '@earendil-works/pi-ai@0.85.1': patches/@earendil-works__pi-ai@0.85.1.patch
+  electron-vite@4.0.1: patches/electron-vite@4.0.1.patch
 # Drop this list once the pinned @earendil-works packages are older than
 # pnpm's supply-chain age gate (packages published within the last day).
 minimumReleaseAgeExclude:

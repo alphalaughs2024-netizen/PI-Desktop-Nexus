@@ -16,6 +16,7 @@ overrides:
 
 patchedDependencies:
   '@earendil-works/pi-ai@0.85.1': 26724c58ca1d577301544a2113855fde883b085302e5a07c624793cc10b35fd0
+  electron-vite@4.0.1: 8f31df3d906fc713dfc180e80de876103f34a8456d180f2f19946230070494ab
 
 importers:
 
@@ -75,7 +76,7 @@ importers:
         version: 26.15.3(electron-builder-squirrel-windows@26.15.3)(supports-color@7.2.0)
       electron-vite:
         specifier: ^4.0.0
-        version: 4.0.1(supports-color@7.2.0)(vite@7.3.6(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.32.0)(yaml@2.9.0))
+        version: 4.0.1(patch_hash=8f31df3d906fc713dfc180e80de876103f34a8456d180f2f19946230070494ab)(supports-color@7.2.0)(vite@7.3.6(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.32.0)(yaml@2.9.0))
       i18next:
         specifier: ^26.3.6
         version: 26.3.6(typescript@5.9.3)
@@ -6342,7 +6343,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  electron-vite@4.0.1(supports-color@7.2.0)(vite@7.3.6(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.32.0)(yaml@2.9.0)):
+  electron-vite@4.0.1(patch_hash=8f31df3d906fc713dfc180e80de876103f34a8456d180f2f19946230070494ab)(supports-color@7.2.0)(vite@7.3.6(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.32.0)(yaml@2.9.0)):
     dependencies:
       '@babel/core': 7.29.7(supports-color@7.2.0)
       '@babel/plugin-transform-arrow-functions': 7.29.7(@babel/core@7.29.7(supports-color@7.2.0))
