@@ -48,3 +48,24 @@ are deleted with their session. Project overrides are profile metadata keyed by
 a one-way path digest; neither store affects the real upstream Pi Desktop
 checkout. Future phases can add packages and stages without replacing the
 existing Plan, Goal, permission, or Skill systems.
+
+Phase 6 adds a distinct author-owned package format without promoting ordinary
+user Markdown skills into workflows. A global package lives under
+`<dataDir>/agents/workflows/<slug>/`; a project package lives under
+`<project>/.agents/workflows/<slug>/`. Each package contains a fixed
+`workflow.json` manifest and `WORKFLOW.md` body. The manifest uses a
+host-assigned `user/` or `project/` id, a semantic package version, a format
+version, supported modes, required existing Nexus capabilities, a priority,
+stage, literal activation terms, and positive/negative fixtures. `nexus/` is
+reserved and cannot be overridden.
+
+The Settings page can scaffold, reveal, enable, preview, and run fixtures for
+these packages. Preview prompt text is evaluated in memory and is not retained
+in package state or the workflow activation audit. Fixture prompts are explicit
+package test data; they never enter the activation audit. Only compatible,
+enabled packages enter the catalog or resolver. Automatic activation is limited
+to host-validated literal terms; packages cannot provide regular expressions,
+code, hooks, tools, permissions, or permission-policy changes. Incompatible
+format versions remain visible with an upgrade reason and cannot load or
+activate. This keeps packages model-neutral and host ownership of authority
+unchanged.

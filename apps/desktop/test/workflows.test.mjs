@@ -24,6 +24,7 @@ const {
   RECEIVING_CODE_REVIEW_WORKFLOW_ID,
   DISPATCHING_PARALLEL_AGENTS_WORKFLOW_ID,
   SUBAGENT_DRIVEN_DEVELOPMENT_WORKFLOW_ID,
+  WRITING_SKILLS_WORKFLOW_ID,
   WORKFLOW_MANIFESTS,
   PLUGIN_DEVELOPMENT_WORKFLOW_ID,
   resolveWorkflows,
@@ -342,4 +343,14 @@ test("ships Nexus-native delegation guidance with isolation and ownership bounda
   }
   assert.match(runtimeSource, /ownership/);
   assert.match(runtimeSource, /concurrent mutation work is refused/);
+});
+
+test("ships Nexus workflow-package authoring guidance and activates it only for a concrete authoring request", () => {
+  const authoring = resolve({ prompt: "Create a Nexus workflow package." });
+  assert.equal(authoring.primary?.id, WRITING_SKILLS_WORKFLOW_ID);
+  assert.equal(resolve({ prompt: "What is a workflow package?" }).primary?.id, AGENT_OPERATIONS_WORKFLOW_ID);
+  const body = readFileSync(join(desktopRoot, "resources/skills/writing-workflows.md"), "utf8");
+  assert.match(body, /Nexus workflow package authoring/);
+  assert.match(body, /never creates tools, permissions/);
+  assert.ok(!body.includes("Codex"));
 });

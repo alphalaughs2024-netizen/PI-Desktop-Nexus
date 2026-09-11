@@ -2114,6 +2114,33 @@ Each scenario is documented in this format:
 - **Acceptance**: E (Task isolation) + G (workflow activation and guidance)
 - **Status**: Unit/runtime/source-contract covered; desktop journey Draft
 
+#### E2E-024IF: Workflow package authoring, preview, and compatibility (ADR 0225)
+
+- **Preconditions**: A clean Nexus profile, an ordinary project, and a project
+  where `.agents/workflows` is writable.
+- **Steps**: 1) Open Skills settings and create one global and one project
+  workflow package. 2) Inspect each generated `workflow.json` and
+  `WORKFLOW.md`, then edit the guidance, semantic version, literal activation
+  terms, and positive/negative fixture. 3) Run preview and fixtures. 4) Start
+  a session matching the explicit terms; then repeat with the negative fixture.
+  5) Disable the package, then try to select it by id. 6) Change its format
+  version to an unsupported value and inspect Settings and the session catalog.
+  7) Attempt reserved `nexus/`, unknown capability, regular-expression term,
+  and tool/permission-shaped manifest data.
+- **Expected**: Package creation produces a separate versioned package rather
+  than converting a normal Markdown Skill. Positive preview/fixture activation
+  is visible with its expected stage; negative text does not activate it. A
+  disabled, incompatible, malformed, unsupported-capability, or guessed id
+  cannot load or activate. Settings shows version, scope, compatibility, and
+  enablement, and can reveal the package. Preview text is not persisted; fixture
+  text remains explicit package test data and never enters activation audit.
+  The package never adds a tool, permission, execution right, Plan approval,
+  Git action, or confirmation bypass.
+- **Specs linked**: `03-runtime/01-ipc-protocol.md` §12b.1,
+  `03-runtime/03-tools-and-permissions.md` §5c, ADR 0225
+- **Acceptance**: E (tools and permissions) + G (workflow guidance)
+- **Status**: Unit/source-contract covered; desktop journey Draft
+
 #### E2E-024J: Plugin theme applies and falls back when withdrawn
 
 - **Preconditions**: `examples/plugins/hello` enabled with `ui.theme` granted; a plugin whose CSS uses `@import` or a remote `url()` available for the rejection case.

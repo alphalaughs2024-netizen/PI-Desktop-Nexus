@@ -1314,6 +1314,33 @@ refused: one session owns one workspace, and path metadata is not worktree
 isolation. Read-only delegates may run concurrently. Concurrent mutation work
 requires distinct Nexus-managed worktrees in separate tasks. See ADR 0224.
 
+Phase 6 adds `nexus/authoring/writing-workflows` and a separate author-owned
+workflow-package API. Ordinary user Markdown Skills remain recipes and never
+become a workflow package implicitly. A package is a `workflow.json` manifest
+plus `WORKFLOW.md` under `<dataDir>/agents/workflows/<slug>/` or
+`<project>/.agents/workflows/<slug>/`; its id must use host-reserved `user/` or
+`project/` namespaces and cannot replace `nexus/` guidance.
+
+- `workflowPackage.list({ projectPath? })` → global and effective project
+  package inventory with version and compatibility status
+- `workflowPackage.create(workflow)` / `workflowPackage.update({ id, ...workflow })`
+  → host-validated manifest/body scaffolding or update
+- `workflowPackage.read({ id, projectPath? })`, `workflowPackage.remove(...)`,
+  `workflowPackage.setEnabled(...)`, and `workflowPackage.reveal(...)`
+- `workflowPackage.preview({ id, prompt, mode, projectPath? })` → in-memory
+  activation result only
+- `workflowPackage.fixtures({ id, projectPath? })` → fixture pass/fail records
+  without returning or persisting fixture prompt text
+
+Nexus validates semantic and format versions, modes, existing capability names,
+priority, stage, literal activation terms, and positive/negative fixtures.
+Only compatible, enabled packages are catalogued or resolved. Required
+capabilities are compatibility declarations—not permission/tool grants. Package
+metadata cannot contain code, regular expressions, executable hooks, tool
+definitions, permission changes, or confirmation bypasses. An incompatible
+package remains visible with an upgrade reason but cannot load or activate. See
+ADR 0225.
+
 ## 12c. Subagent API (D202)
 
 User-owned subagents are global-only Markdown documents under
