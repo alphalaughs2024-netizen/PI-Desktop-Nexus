@@ -3,7 +3,14 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 const desktopPackageUrl = new URL("../package.json", import.meta.url);
-const dependencyBuild = "pnpm --filter '@pi-desktop/desktop^...' build";
+const dependencyPackages = [
+  "@pi-desktop/shared",
+  "@pi-desktop/i18n",
+  "@pi-desktop/plugin-sdk",
+  "@pi-desktop/plugin-devkit",
+  "@pi-desktop/agent-runtime",
+  "@pi-desktop/agent-host",
+];
 const depsScript = "pnpm run build:deps";
 
 const readScripts = async () => {
@@ -14,9 +21,28 @@ const readScripts = async () => {
 test("build:deps rebuilds every workspace dependency consumed by Electron", async () => {
   const scripts = await readScripts();
 
-  assert.ok(
-    (scripts["build:deps"] ?? "").includes(dependencyBuild),
-    "build:deps must rebuild every workspace dependency consumed by Electron",
+  const buildDeps = scripts["build:deps"] ?? "";
+  for (const packageName of dependencyPackages) {
+    assert.match(
+      buildDeps,
+      new RegExp(`--filter ${packageName}`),
+      `build:deps must rebuild ${packageName} for Electron`,
+    );
+  }
+});
+
+test("build:deps remains rooted when pnpm runs the desktop lifecycle from the workspace root", async () => {
+  const scripts = await readScripts();
+
+  assert.match(
+    scripts["build:deps"] ?? "",
+    /pnpm -C \.\.\/\.\. --filter @pi-desktop\/shared/,
+    "build:deps must return pnpm to the workspace root before selecting dependencies",
+  );
+  assert.match(
+    scripts["build:deps"] ?? "",
+    /--fail-if-no-match/,
+    "build:deps must fail rather than silently skip dependencies",
   );
 });
 

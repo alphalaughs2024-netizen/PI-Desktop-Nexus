@@ -174,9 +174,9 @@ inputs are prepared.
 
 On every platform, the release preparation step starts the locked Rust host
 build in parallel with pnpm installation and native dependency rebuilding. It
-then builds only the workspace dependencies selected by
-`@pi-desktop/desktop^...`, failing if that dependency selection is unexpectedly
-empty. The platform `dist:*` command remains responsible for bundling the agent
+then builds the six workspace packages consumed by Electron (`shared`, `i18n`,
+`plugin-sdk`, `plugin-devkit`, `agent-runtime`, and `agent-host`), failing if
+that dependency selection is unexpectedly empty. The platform `dist:*` command remains responsible for bundling the agent
 runtime, verifying the host build, building the Desktop application once, and
 invoking electron-builder. This avoids a redundant Desktop build without
 changing the package scripts or release artifacts.
