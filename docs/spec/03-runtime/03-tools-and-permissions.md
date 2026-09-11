@@ -407,6 +407,21 @@ not a capability grant, path allowlist, or substitute for host authorization.
   validation. `TaskWait` reports do not approve a plan, merge changes, or
   bypass any permission or confirmation.
 
+### 5c. Author-owned workflow packages (ADR 0225)
+
+Author-owned workflow packages are versioned guidance data, not an extension
+runtime. The host accepts only a fixed manifest plus Markdown body in the
+global/project workflow roots, reserves `nexus/` for shipped packages, and
+requires an existing capability name for each declaration. A package does not
+gain the declared capability, a tool, filesystem/network access, permission,
+Plan approval, Git action, or confirmation bypass.
+
+Package preview evaluates supplied prompt text in memory. Fixture prompts are
+explicit package test data, never activation-audit data. Only compatible,
+enabled packages with satisfied host capabilities can appear in the session
+catalog, load through `Skill`, or become active through automatic literal-term
+matching or explicit Workflow activation.
+
 ### Risk Levels
 
 | risk | Example | Default policy |

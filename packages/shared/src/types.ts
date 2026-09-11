@@ -1610,6 +1610,42 @@ export type WorkflowSessionStatus = {
   available: WorkflowRecord[];
 };
 
+/** User/project workflow package metadata. Its declared capabilities are host
+ * facts for compatibility only and never grant tools or permissions. */
+export type WorkflowPackageRecord = {
+  id: string;
+  name: string;
+  description: string;
+  version: string;
+  enabled: boolean;
+  level: AgentCapabilityLevel;
+  projectPath?: string;
+  path: string;
+  supportedModes: Mode[];
+  requiredCapabilities: string[];
+  priority: number;
+  defaultStage: string;
+  compatibility: { status: "compatible" | "upgrade_required" | "unsupported"; message: string };
+};
+
+export type WorkflowPackageInput = {
+  id?: string;
+  name: string;
+  description: string;
+  version: string;
+  body: string;
+  level?: AgentCapabilityLevel;
+  projectPath?: string;
+  supportedModes: Mode[];
+  requiredCapabilities: string[];
+  priority: number;
+  defaultStage: string;
+  automatic: boolean;
+  activationTerms: string[];
+  fixtures: Array<{ positivePrompt: string; negativePrompt: string; expectedStage: string }>;
+  enabled?: boolean;
+};
+
 /**
  * A global subagent definition the user owns, stored as `~/.agents/subagents/<id>.md`
  * (D202, ADR 0063). Project roots do not provide subagent definitions.

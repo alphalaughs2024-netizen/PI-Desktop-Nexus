@@ -6,6 +6,8 @@ import {
   type AgentCapabilityLevel,
   type BuiltinSkillRecord,
   type UserSkillRecord,
+  type WorkflowPackageRecord,
+  type WorkflowPackageInput,
 } from "@pi-desktop/shared";
 import { api } from "../../lib/api";
 import { useAppStore } from "../../stores/app-store";
@@ -113,16 +115,17 @@ type SkillCollection = {
   builtin: BuiltinSkillRecord[];
   global: UserSkillRecord[];
   project: UserSkillRecord[];
+  workflows: WorkflowPackageRecord[];
 };
 
-const EMPTY_SKILL_COLLECTION: SkillCollection = { builtin: [], global: [], project: [] };
+const EMPTY_SKILL_COLLECTION: SkillCollection = { builtin: [], global: [], project: [], workflows: [] };
 
 export function AgentSkillsPage() {
   const { t } = useTranslation();
   const showToast = useAppStore((state) => state.showToast);
   const { selectedProjectPath, setSelectedProjectPath, options } = useAgentProjects();
   const fetchSkills = useCallback(async (): Promise<SkillCollection> => {
-    const [global, project, builtin] = await Promise.all([
+    const [global, project, builtin, workflows] = await Promise.all([
       api.listUserSkills({
         level: "global",
         ...(selectedProjectPath ? { projectPath: selectedProjectPath } : {}),
@@ -131,11 +134,12 @@ export function AgentSkillsPage() {
         ? api.listUserSkills({ level: "project", projectPath: selectedProjectPath })
         : Promise.resolve({ skills: [] as UserSkillRecord[] }),
       api.listBuiltinSkills(),
+      api.listWorkflowPackages(selectedProjectPath ?? undefined),
     ]);
-    return { builtin: builtin.skills ?? [], global: global.skills ?? [], project: project.skills ?? [] };
+    return { builtin: builtin.skills ?? [], global: global.skills ?? [], project: project.skills ?? [], workflows: workflows.workflows ?? [] };
   }, [selectedProjectPath]);
   const {
-    data: { builtin: builtinSkills, global: globalSkills, project: projectSkills },
+    data: { builtin: builtinSkills, global: globalSkills, project: projectSkills, workflows: workflowPackages },
     setData: setSkills,
     loading,
     refreshing,
@@ -150,6 +154,7 @@ export function AgentSkillsPage() {
   const [editor, setEditor] = useState<SkillEditorState | null>(null);
   const [builtinViewer, setBuiltinViewer] = useState<BuiltinSkillViewerState | null>(null);
   const [saving, setSaving] = useState(false);
+  const [workflowBusyId, setWorkflowBusyId] = useState<string | null>(null);
   const { armed, setArmed } = useArmedDelete();
 
   const rowKey = (level: AgentCapabilityLevel, id: string) => `${level}:${id}`;
@@ -368,6 +373,56 @@ export function AgentSkillsPage() {
     }
   };
 
+  const createWorkflow = async () => {
+    const level = targetLevel;
+    if (level === "project" && !selectedProjectPath) {
+      showToast(t("settings.selectProjectFirst"), { variant: "error" });
+      return;
+    }
+    const draft: WorkflowPackageInput = {
+      name: "New workflow",
+      description: "Describe when this workflow helps.",
+      version: "1.0.0",
+      body: "# New workflow\n\nWrite Nexus-native guidance here. This package cannot grant tools or permissions.\n",
+      level,
+      ...(level === "project" ? { projectPath: selectedProjectPath! } : {}),
+      supportedModes: ["agent"],
+      requiredCapabilities: ["core-agent-tools", "skill-loader"],
+      priority: 50,
+      defaultStage: "active",
+      automatic: true,
+      activationTerms: ["use", "workflow"],
+      fixtures: [{ positivePrompt: "Use this workflow.", negativePrompt: "What is a workflow?", expectedStage: "active" }],
+    };
+    setWorkflowBusyId("create");
+    try {
+      const result = await api.createWorkflowPackage(draft);
+      await load();
+      showToast(`Workflow package ${result.workflow.name} created. Edit workflow.json and WORKFLOW.md in its package folder.`, { variant: "success" });
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : String(error), { variant: "error" });
+    } finally { setWorkflowBusyId(null); }
+  };
+
+  const toggleWorkflow = async (workflow: WorkflowPackageRecord) => {
+    const key = `workflow:${workflow.id}`;
+    setWorkflowBusyId(key);
+    try { await api.setWorkflowPackageEnabled(workflow.id, !workflow.enabled, workflow.projectPath); await load(); }
+    catch (error) { showToast(error instanceof Error ? error.message : String(error), { variant: "error" }); }
+    finally { setWorkflowBusyId(null); }
+  };
+
+  const previewWorkflow = async (workflow: WorkflowPackageRecord) => {
+    const key = `preview:${workflow.id}`;
+    setWorkflowBusyId(key);
+    try {
+      const fixtures = await api.runWorkflowPackageFixtures(workflow.id, workflow.projectPath);
+      const passed = fixtures.result.fixtures.every((fixture) => fixture.passed);
+      showToast(passed ? `Workflow fixtures passed for ${workflow.name}.` : `Workflow fixtures need attention for ${workflow.name}.`, { variant: passed ? "success" : "error" });
+    } catch (error) { showToast(error instanceof Error ? error.message : String(error), { variant: "error" }); }
+    finally { setWorkflowBusyId(null); }
+  };
+
   const visible = useMemo(() => {
     const match = (skill: Pick<UserSkillRecord, "name" | "id" | "description">) =>
       matchesCapabilitySearch(search, skill.name, skill.id, skill.description);
@@ -375,11 +430,12 @@ export function AgentSkillsPage() {
       builtin: builtinSkills.filter(match),
       global: globalSkills.filter(match),
       project: projectSkills.filter(match),
+      workflows: workflowPackages.filter(match),
     };
   }, [builtinSkills, globalSkills, projectSkills, search]);
 
   const counts = {
-    all: visible.builtin.length + visible.global.length + visible.project.length,
+    all: visible.builtin.length + visible.global.length + visible.project.length + visible.workflows.length,
     global: visible.global.length,
     project: visible.project.length,
   };
@@ -521,6 +577,22 @@ export function AgentSkillsPage() {
     );
   };
 
+  const renderWorkflowRow = (workflow: WorkflowPackageRecord) => (
+    <CapabilityRow
+      key={`workflow:${workflow.id}`}
+      glyph={<IconBookOpen size={16} />}
+      name={workflow.name}
+      off={!workflow.enabled || workflow.compatibility.status !== "compatible"}
+      badges={<><span className="agent-capability-badge">v{workflow.version}</span><span className="agent-capability-badge">{workflow.level}</span><span className="agent-capability-badge">{workflow.compatibility.status.replace("_", " ")}</span></>}
+      description={workflow.description}
+      actions={<>
+        <TooltipButton type="button" className="settings-icon-button" ariaLabel={`Run fixtures for ${workflow.name}`} tooltip="Run activation fixtures" disabled={workflowBusyId !== null} onClick={() => void previewWorkflow(workflow)}><IconFileText size={15} /></TooltipButton>
+        <TooltipButton type="button" className="settings-icon-button" ariaLabel={`Reveal ${workflow.name}`} tooltip="Reveal workflow package" disabled={workflowBusyId !== null} onClick={() => void api.revealWorkflowPackage(workflow.id, workflow.projectPath)}><IconFolderOpen size={15} /></TooltipButton>
+        <CapabilityToggle checked={workflow.enabled} busy={workflowBusyId === `workflow:${workflow.id}`} label={t("settings.toggleCapability", { name: workflow.name })} onChange={() => void toggleWorkflow(workflow)} />
+      </>}
+    />
+  );
+
   const showGlobal = filter !== "project";
   const showProject = filter !== "global";
   const newSkillTitle =
@@ -563,10 +635,16 @@ export function AgentSkillsPage() {
             />
           }
           actions={
-            <CapabilityButton variant="primary" title={newSkillTitle} onClick={openCreate}>
-              <IconPlus size={14} />
-              {t("settings.newSkill")}
-            </CapabilityButton>
+            <>
+              <CapabilityButton variant="primary" title={newSkillTitle} onClick={openCreate}>
+                <IconPlus size={14} />
+                {t("settings.newSkill")}
+              </CapabilityButton>
+              <CapabilityButton title="Create a workflow package" busy={workflowBusyId === "create"} onClick={() => void createWorkflow()}>
+                <IconPlus size={14} />
+                New workflow
+              </CapabilityButton>
+            </>
           }
         />
       }
@@ -592,6 +670,18 @@ export function AgentSkillsPage() {
                   count={visible.builtin.length}
                 />
                 {visible.builtin.map(renderBuiltinRow)}
+              </>
+            ) : null}
+            {showGlobal ? (
+              <>
+                <CapabilityGroupHeader label="Workflow packages" path="~/.pi-desktop-nexus/agents/workflows" count={visible.workflows.filter((workflow) => workflow.level === "global").length} />
+                {visible.workflows.filter((workflow) => workflow.level === "global").map(renderWorkflowRow)}
+              </>
+            ) : null}
+            {showProject && selectedProjectPath ? (
+              <>
+                <CapabilityGroupHeader label="Project workflow packages" path={`${selectedProjectPath}/.agents/workflows`} count={visible.workflows.filter((workflow) => workflow.level === "project").length} />
+                {visible.workflows.filter((workflow) => workflow.level === "project").map(renderWorkflowRow)}
               </>
             ) : null}
             {showGlobal ? (

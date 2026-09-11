@@ -241,3 +241,4 @@ Each ADR includes:
 | 0222 | Nexus Plan workflow lifecycle | Accepted |
 | 0223 | Nexus-managed Git and review workflow boundaries | Accepted |
 | 0224 | Nexus parallel task workflow boundaries | Accepted |
+| 0225 | Author-owned workflow packages remain guidance only | Accepted |

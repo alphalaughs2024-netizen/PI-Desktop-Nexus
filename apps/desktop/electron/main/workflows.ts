@@ -52,6 +52,7 @@ export type WorkflowReasonCategory =
   | "review_feedback"
   | "parallel_investigation"
   | "delegated_plan_execution"
+  | "package_terms"
   | "manual";
 export type WorkflowActivationSource = "automatic" | "manual";
 
@@ -70,6 +71,8 @@ export type WorkflowManifest = {
     negativePrompt: string;
     expectedStage: WorkflowStage;
   }[];
+  /** Host-validated literal terms for a user-authored package. */
+  activationTerms?: readonly string[];
 };
 
 export const AGENT_OPERATIONS_WORKFLOW_ID = "nexus/guidance/agent-operations";
@@ -86,8 +89,21 @@ export const REQUESTING_CODE_REVIEW_WORKFLOW_ID = "nexus/review/requesting-code-
 export const RECEIVING_CODE_REVIEW_WORKFLOW_ID = "nexus/review/receiving-code-review";
 export const DISPATCHING_PARALLEL_AGENTS_WORKFLOW_ID = "nexus/coordination/dispatching-parallel-agents";
 export const SUBAGENT_DRIVEN_DEVELOPMENT_WORKFLOW_ID = "nexus/coordination/subagent-driven-development";
+export const WRITING_SKILLS_WORKFLOW_ID = "nexus/authoring/writing-workflows";
 
 export const WORKFLOW_MANIFESTS: readonly WorkflowManifest[] = [
+  {
+    id: WRITING_SKILLS_WORKFLOW_ID,
+    version: "1",
+    name: "Workflow package authoring",
+    description: "Scaffold, validate, preview, fixture-test, and version Nexus-native workflow packages without expanding authority.",
+    skillFile: "writing-workflows.md",
+    supportedModes: ["agent", "plan"],
+    requiredCapabilities: ["core-agent-tools", "skill-loader", "file-tools", "terminal-tools", "test-execution"],
+    priority: 99,
+    defaultStage: "active",
+    fixtures: [{ positivePrompt: "Create a Nexus workflow package.", negativePrompt: "What is a workflow package?", expectedStage: "active" }],
+  },
   {
     id: AGENT_OPERATIONS_WORKFLOW_ID,
     version: "1",
@@ -283,6 +299,8 @@ export type WorkflowResolutionInput = {
   globalDisabledIds: readonly string[];
   projectOverrides: Record<string, boolean>;
   session: WorkflowSessionRecord;
+  /** Reviewed built-ins plus host-validated user/project package manifests. */
+  manifests?: readonly WorkflowManifest[];
 };
 
 export type ResolvedWorkflow = {
@@ -346,6 +364,7 @@ function unavailableReason(manifest: WorkflowManifest, input: WorkflowResolution
 
 function automaticReason(manifest: WorkflowManifest, input: WorkflowResolutionInput): WorkflowReasonCategory | undefined {
   if (manifest.id === AGENT_OPERATIONS_WORKFLOW_ID) return "core_operations";
+  if (manifest.id === WRITING_SKILLS_WORKFLOW_ID && isWorkflowAuthoringRequest(input.prompt)) return "manual";
   if (manifest.id === PLUGIN_DEVELOPMENT_WORKFLOW_ID) {
     if (input.workspace.isPluginWorkspace) return "plugin_workspace";
     if (isPluginAuthoringWorkflowRequest(input.prompt)) return "plugin_authoring_request";
@@ -378,6 +397,7 @@ function automaticReason(manifest: WorkflowManifest, input: WorkflowResolutionIn
   if (manifest.id === DISPATCHING_PARALLEL_AGENTS_WORKFLOW_ID && isParallelInvestigationRequest(input.prompt)) return "parallel_investigation";
   if (manifest.id === SUBAGENT_DRIVEN_DEVELOPMENT_WORKFLOW_ID && isSubagentPlanExecutionRequest(input.prompt)) return "delegated_plan_execution";
   if (manifest.id === VERIFICATION_WORKFLOW_ID && isCompletionVerificationRequest(input.prompt, input.session)) return "completion_verification";
+  if (manifest.activationTerms?.length && manifest.activationTerms.every((term) => text(input.prompt).includes(term))) return "package_terms";
   return undefined;
 }
 
@@ -500,6 +520,13 @@ function isSubagentPlanExecutionRequest(value: unknown): boolean {
     /\b(?:approved )?(?:implementation )?plan\b/.test(prompt);
 }
 
+function isWorkflowAuthoringRequest(value: unknown): boolean {
+  const prompt = text(value);
+  if (!prompt || /\b(?:what is|explain|discuss|tutorial)\b/.test(prompt)) return false;
+  return /\b(?:create|scaffold|build|author|write|validate|preview|test)\b/.test(prompt) &&
+    /\b(?:nexus )?(?:workflow|skill) package\b/.test(prompt);
+}
+
 function isCompletionVerificationRequest(value: unknown, session: WorkflowSessionRecord): boolean {
   const prompt = text(value);
   if (!prompt || /\b(?:what is|explain|discuss)\b/.test(prompt)) return false;
@@ -511,7 +538,7 @@ function isCompletionVerificationRequest(value: unknown, session: WorkflowSessio
 
 export function resolveWorkflows(input: WorkflowResolutionInput): WorkflowResolution {
   const unavailable: WorkflowResolution["unavailable"] = [];
-  const compatible = WORKFLOW_MANIFESTS.filter((manifest) => {
+  const compatible = (input.manifests ?? WORKFLOW_MANIFESTS).filter((manifest) => {
     const reason = unavailableReason(manifest, input);
     if (reason) {
       unavailable.push({ id: manifest.id, reason });

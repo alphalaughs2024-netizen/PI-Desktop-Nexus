@@ -3,6 +3,8 @@ import type {
   AgentCapabilityQuery,
   BuiltinSkillRecord,
   WorkflowSessionStatus,
+  WorkflowPackageInput,
+  WorkflowPackageRecord,
   AgentEventEnvelope,
   AgentCompactRequest,
   AgentCompactResponse,
@@ -68,6 +70,7 @@ import type {
   UserSkillRecord,
   UserSubagentInput,
   UserSubagentRecord,
+  Mode,
   SubagentDefinition,
   WorkspaceDiff,
   AppMenuCommand,
@@ -698,6 +701,24 @@ export const api = {
     invoke<WorkflowSessionStatus>(IPC.invoke.workflowSessionActivate, { sessionId, id }),
   dismissSessionWorkflow: (sessionId: string, id?: string) =>
     invoke<WorkflowSessionStatus>(IPC.invoke.workflowSessionDismiss, { sessionId, id }),
+  listWorkflowPackages: (projectPath?: string) =>
+    invoke<{ workflows: WorkflowPackageRecord[] }>(IPC.invoke.workflowPackageList, { projectPath }),
+  createWorkflowPackage: (workflow: WorkflowPackageInput) =>
+    invoke<{ workflow: WorkflowPackageRecord }>(IPC.invoke.workflowPackageCreate, workflow),
+  updateWorkflowPackage: (id: string, workflow: WorkflowPackageInput) =>
+    invoke<{ workflow: WorkflowPackageRecord }>(IPC.invoke.workflowPackageUpdate, { id, ...workflow }),
+  readWorkflowPackage: (id: string, projectPath?: string) =>
+    invoke<{ workflow: unknown; body: string; record: WorkflowPackageRecord }>(IPC.invoke.workflowPackageRead, { id, projectPath }),
+  removeWorkflowPackage: (id: string, projectPath?: string) =>
+    invoke(IPC.invoke.workflowPackageRemove, { id, projectPath }),
+  setWorkflowPackageEnabled: (id: string, enabled: boolean, projectPath?: string) =>
+    invoke<{ workflow: WorkflowPackageRecord }>(IPC.invoke.workflowPackageSetEnabled, { id, enabled, projectPath }),
+  previewWorkflowPackage: (id: string, prompt: string, mode: Mode, projectPath?: string) =>
+    invoke<{ preview: { wouldActivate: boolean; stage?: string; reason: string } }>(IPC.invoke.workflowPackagePreview, { id, prompt, mode, projectPath }),
+  runWorkflowPackageFixtures: (id: string, projectPath?: string) =>
+    invoke<{ result: { fixtures: Array<{ expectedStage: string; passed: boolean }> } }>(IPC.invoke.workflowPackageFixtures, { id, projectPath }),
+  revealWorkflowPackage: (id: string, projectPath?: string) =>
+    invoke(IPC.invoke.workflowPackageReveal, { id, projectPath }),
 
   // --- Subagents the user owns ----------------------------------------------
   listUserSubagents: (query?: Pick<AgentCapabilityQuery, "level">) =>
