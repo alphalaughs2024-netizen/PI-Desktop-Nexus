@@ -1852,6 +1852,7 @@ export function Composer({
 
   const pasteClipboardFiles = async (
     event: ClipboardEvent<HTMLDivElement> | DragEvent<HTMLDivElement>,
+    editorOverride: HTMLElement | null = event.currentTarget,
   ) => {
     if (inputBlocked) return;
     const dataTransfer = "clipboardData" in event ? event.clipboardData : event.dataTransfer;
@@ -1861,7 +1862,8 @@ export function Composer({
     const isLargeTextPaste = !files.length && textLength > largePasteThreshold;
     if (isLargeTextPaste || files.length) {
       event.preventDefault();
-      const editor = event.currentTarget;
+      const editor = editorOverride;
+      if (!editor) return;
       const { start: selectionStart, end: selectionEnd } = editorSelectionRange(editor);
       const sourceValue = readEditorValue(editor);
       const sourceSessionId = activeSessionId;
@@ -2028,7 +2030,7 @@ export function Composer({
     if (!files.length) return;
     event.preventDefault();
     if (inputBlocked) return;
-    await pasteClipboardFiles(event);
+    await pasteClipboardFiles(event, ref.current);
   };
 
   const composerAc = useComposerAutocomplete({

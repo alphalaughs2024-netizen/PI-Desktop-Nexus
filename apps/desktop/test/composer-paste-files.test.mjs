@@ -36,6 +36,19 @@ test("composer imports dropped files through the existing session-owned paste pa
   assert.match(composer, /if \(!files\.length\) return;/);
 });
 
+test("file drops read only the contenteditable draft, never the Composer shell", () => {
+  assert.match(
+    composer,
+    /const dropFiles = async \(event: DragEvent<HTMLDivElement>\) => \{[\s\S]*?await pasteClipboardFiles\(event, ref\.current\);/,
+    "the shell drop handler must pass the contenteditable instead of its own wrapper",
+  );
+  assert.match(
+    composer,
+    /editorOverride: HTMLElement \| null = event\.currentTarget,[\s\S]*?const editor = editorOverride;[\s\S]*?if \(!editor\) return;[\s\S]*?editorSelectionRange\(editor\)/,
+    "the importer must derive the draft snapshot from its explicit editor boundary",
+  );
+});
+
 test("file drops cancel browser text insertion before the editable receives mixed drag data", () => {
   assert.match(
     composer,
