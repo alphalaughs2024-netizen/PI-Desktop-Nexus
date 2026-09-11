@@ -1273,6 +1273,19 @@ or confirmation policy. Each quality workflow declares the real file, terminal,
 and test-execution capabilities it needs; a missing capability leaves it
 unavailable rather than asking a model to call a nonexistent tool.
 
+Phase 3 adds `nexus/planning/writing-plans` in Plan mode and
+`nexus/planning/executing-plans` after host approval returns the session to
+Agent mode. These packages use the existing `SubmitPlan`, immutable
+`.pi/plan/*.md` artifact, and explicit approve/reject contracts; they do not
+create a second plan store or authorization path. Electron maps durable host
+`plans.changed` state to workflow stages: `proposed_design`, `approved_plan`,
+`executing`, `verified`, and `paused`. The workflow session record retains only
+the package id, stage, reason, timestamps, and a fixed next action; plan
+Markdown, title, question, artifact data, and raw prompts are never copied into
+that record. An interrupted execution is paused and never replayed by a
+workflow. The active card may show the fixed next action, while the immutable
+host artifact remains the plan source of truth. See ADR 0222.
+
 ## 12c. Subagent API (D202)
 
 User-owned subagents are global-only Markdown documents under

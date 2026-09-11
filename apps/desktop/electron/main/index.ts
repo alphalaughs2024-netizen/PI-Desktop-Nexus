@@ -182,6 +182,7 @@ import {
   saveWorkflowResolution,
   setProjectWorkflowEnabled,
   setWorkflowSessionOverride,
+  transitionPlanWorkflowSession,
   type WorkflowSessionRecord,
 } from "./workflows";
 import { loadScopedPluginGuidance } from "./plugin-guidance";
@@ -1971,7 +1972,17 @@ async function workflowStatusForSession(sessionId: string) {
   const projectPath = typeof session.projectPath === "string" && session.projectPath.trim()
     ? session.projectPath.trim()
     : undefined;
-  const stored = loadWorkflowSession(dataDir, sessionId);
+  let stored = loadWorkflowSession(dataDir, sessionId);
+  // Host-core never replays approved executions after a restart. A workflow
+  // record outlives its sidecar, so convert any in-flight/proposed lifecycle
+  // stage to a safe paused state before exposing it to a newly restored task.
+  if (
+    !sessionWorkflowModes.has(sessionId) &&
+    ["proposed_design", "approved_plan", "executing"].includes(stored.stage ?? "")
+  ) {
+    stored = transitionPlanWorkflowSession(stored, "paused");
+    setWorkflowSessionOverride(dataDir, sessionId, stored);
+  }
   const resolution = resolveWorkflows({
     mode,
     workspace: { isPluginWorkspace: isPluginWorkspace(projectPath, plugins.listLoaded().map((loaded) => loaded.path)) },
@@ -4836,6 +4847,48 @@ function wireHost(h: HostProcess) {
         }),
       );
     } else if (method === "plans.changed") {
+      const event = params as {
+        sessionId?: unknown;
+        state?: unknown;
+        proposal?: { status?: unknown } | null;
+        action?: unknown;
+        executionState?: unknown;
+        execution?: { state?: unknown } | null;
+      };
+      const sessionId = typeof event.sessionId === "string" ? event.sessionId.trim() : "";
+      const executionState = event.execution?.state ?? event.executionState;
+      const lifecycle = event.proposal?.status === "interrupted"
+        ? "paused"
+        : event.proposal?.status === "pending" || event.state === "awaiting_approval"
+        ? "proposed"
+        : executionState === "queued"
+          ? "approved"
+          : executionState === "running"
+            ? "executing"
+            : executionState === "completed"
+              ? "verified"
+              : executionState === "interrupted"
+                ? "paused"
+                : undefined;
+      if (sessionId && lifecycle) {
+        const current = loadWorkflowSession(dataDir, sessionId);
+        const next = transitionPlanWorkflowSession(current, lifecycle);
+        saveWorkflowResolution(dataDir, sessionId, next, {
+          primary: {
+            id: next.primaryId!,
+            name: WORKFLOW_MANIFESTS.find((manifest) => manifest.id === next.primaryId)?.name ?? "Plan workflow",
+            version: WORKFLOW_MANIFESTS.find((manifest) => manifest.id === next.primaryId)?.version ?? "1",
+            stage: next.stage!,
+            source: next.source ?? "automatic",
+            reasonCategory: next.reasonCategory!,
+            ...(next.nextAction ? { nextAction: next.nextAction } : {}),
+          },
+          supportingIds: [],
+          availableIds: WORKFLOW_MANIFESTS.map((manifest) => manifest.id),
+          unavailable: [],
+        });
+        sendToRenderer(IPC.event.workflowChanged, { sessionId });
+      }
       sendToRenderer(IPC.event.plansChanged, params);
     }
   });

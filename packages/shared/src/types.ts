@@ -1603,6 +1603,8 @@ export type WorkflowSessionStatus = {
     source: "automatic" | "manual";
     reasonCategory: string;
     activatedAt?: string;
+    /** Host-derived next step for lifecycle workflows; never plan text. */
+    nextAction?: string;
   };
   supportingIds: string[];
   available: WorkflowRecord[];

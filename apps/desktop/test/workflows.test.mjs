@@ -16,9 +16,12 @@ const {
   SYSTEMATIC_DEBUGGING_WORKFLOW_ID,
   TEST_DRIVEN_DEVELOPMENT_WORKFLOW_ID,
   VERIFICATION_WORKFLOW_ID,
+  WRITING_PLANS_WORKFLOW_ID,
+  EXECUTING_PLANS_WORKFLOW_ID,
   WORKFLOW_MANIFESTS,
   PLUGIN_DEVELOPMENT_WORKFLOW_ID,
   resolveWorkflows,
+  transitionPlanWorkflowSession,
   validateWorkflowManifest,
 } = loadTypeScript(join(desktopRoot, "electron/main/workflows.ts"));
 const runtimeSource = readFileSync(join(repoRoot, "packages/agent-runtime/src/runtime.ts"), "utf8");
@@ -191,4 +194,77 @@ test("declares a positive and negative activation fixture for every quality work
     assert.ok(manifest?.fixtures.length, `${id} needs workflow fixtures`);
     assert.ok(manifest?.fixtures.every((fixture) => fixture.positivePrompt && fixture.negativePrompt));
   }
+});
+
+test("activates Nexus plan authoring from Plan mode without treating plan discussion as execution", () => {
+  const planMode = resolve({
+    mode: "plan",
+    prompt: "Design a safe migration plan for the session store.",
+  });
+  assert.equal(planMode.primary?.id, WRITING_PLANS_WORKFLOW_ID);
+  assert.equal(planMode.primary?.stage, "proposed_design");
+  assert.equal(planMode.primary?.reasonCategory, "plan_mode");
+  assert.match(planMode.primary?.nextAction ?? "", /proposal/i);
+
+  const discussion = resolve({ prompt: "What is an implementation plan?" });
+  assert.equal(discussion.primary?.id, AGENT_OPERATIONS_WORKFLOW_ID);
+});
+
+test("tracks the host-owned plan lifecycle without persisting plan content", () => {
+  const proposed = transitionPlanWorkflowSession({}, "proposed");
+  assert.deepEqual(
+    { id: proposed.primaryId, stage: proposed.stage, reason: proposed.reasonCategory },
+    { id: WRITING_PLANS_WORKFLOW_ID, stage: "proposed_design", reason: "plan_proposed" },
+  );
+  const approved = transitionPlanWorkflowSession(proposed, "approved");
+  assert.equal(approved.stage, "approved_plan");
+  const executing = transitionPlanWorkflowSession(approved, "executing");
+  assert.equal(executing.primaryId, EXECUTING_PLANS_WORKFLOW_ID);
+  assert.equal(executing.stage, "executing");
+  assert.equal(executing.reasonCategory, "plan_approved");
+  const verified = transitionPlanWorkflowSession(executing, "verified");
+  assert.equal(verified.stage, "verified");
+  assert.match(JSON.stringify(verified), /^(?!.*Approved plan body).*$/);
+  const paused = transitionPlanWorkflowSession(executing, "paused");
+  assert.equal(paused.stage, "paused");
+  assert.equal(paused.reasonCategory, "plan_execution_paused");
+});
+
+test("keeps paused plan execution visible after restart instead of replaying it", () => {
+  const paused = transitionPlanWorkflowSession({}, "paused");
+  const resolution = resolve({ mode: "agent", session: paused });
+  assert.equal(resolution.primary?.id, EXECUTING_PLANS_WORKFLOW_ID);
+  assert.equal(resolution.primary?.stage, "paused");
+  assert.match(resolution.primary?.nextAction ?? "", /new approved plan/i);
+  assert.match(mainSource, /Host-core never replays approved executions after a restart/);
+});
+
+test("keeps an active workflow stage through ordinary operations follow-up prompts", () => {
+  const active = resolve({
+    prompt: "Continue with the next task.",
+    session: {
+      primaryId: TEST_DRIVEN_DEVELOPMENT_WORKFLOW_ID,
+      stage: "implementation",
+      reasonCategory: "approved_implementation",
+    },
+  });
+  assert.equal(active.primary?.id, TEST_DRIVEN_DEVELOPMENT_WORKFLOW_ID);
+  assert.equal(active.primary?.stage, "implementation");
+});
+
+test("ships Nexus-native plan authoring and execution guidance with host approval boundaries", () => {
+  const resources = [
+    ["writing-plans.md", "Nexus plan authoring", "SubmitPlan"],
+    ["executing-plans.md", "Nexus plan execution", "host-created plan artifact"],
+  ];
+  for (const [file, name, phrase] of resources) {
+    const body = readFileSync(join(desktopRoot, "resources/skills", file), "utf8");
+    assert.match(body, new RegExp(`name: ${name}`));
+    assert.ok(body.includes(phrase), `${file} must use the existing Nexus plan flow`);
+    assert.ok(!body.includes("Codex"), `${file} must not carry Codex instructions`);
+  }
+  assert.match(mainSource, /transitionPlanWorkflowSession/);
+  assert.match(mainSource, /executionState === "completed"/);
+  assert.match(mainSource, /executionState === "interrupted"/);
+  assert.match(mainSource, /event\.proposal\?\.status === "interrupted"/);
 });
