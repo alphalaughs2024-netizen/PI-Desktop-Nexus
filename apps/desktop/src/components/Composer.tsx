@@ -778,6 +778,8 @@ export function Composer({
   const referenceByTokenRef = useRef(referenceByToken);
   referenceByTokenRef.current = referenceByToken;
   const removeChipByTokenRef = useRef<(token: string) => void>(() => {});
+  const pendingFileDropInputRef = useRef(false);
+  const pendingFileDropResetRef = useRef<number | null>(null);
 
   const liveDraftText = () =>
     ref.current ? readEditorValue(ref.current) : valueRef.current;
@@ -2006,6 +2008,17 @@ export function Composer({
     // Cancel the native editable drop during capture, before that payload can
     // be inserted. `dropFiles` still runs in the bubble phase to import bytes.
     event.preventDefault();
+    // Chromium can follow a canceled native drop with a separate
+    // `beforeinput`/`input` pair. Keep the attachment classification through
+    // that pair so composer controls never become draft text.
+    pendingFileDropInputRef.current = true;
+    if (pendingFileDropResetRef.current !== null) {
+      window.clearTimeout(pendingFileDropResetRef.current);
+    }
+    pendingFileDropResetRef.current = window.setTimeout(() => {
+      pendingFileDropInputRef.current = false;
+      pendingFileDropResetRef.current = null;
+    }, 0);
   };
 
   const leaveFileDrop = (event: DragEvent<HTMLDivElement>) => {
@@ -2201,6 +2214,18 @@ export function Composer({
                   // Normalize Enter into a plain "\n" text node so the draft
                   // string round-trips without block wrappers.
                   const native = e.nativeEvent as InputEvent;
+                  if (
+                    native.inputType === "insertFromDrop" &&
+                    pendingFileDropInputRef.current
+                  ) {
+                    e.preventDefault();
+                    pendingFileDropInputRef.current = false;
+                    if (pendingFileDropResetRef.current !== null) {
+                      window.clearTimeout(pendingFileDropResetRef.current);
+                      pendingFileDropResetRef.current = null;
+                    }
+                    return;
+                  }
                   if (
                     native.inputType === "insertParagraph" ||
                     native.inputType === "insertLineBreak"

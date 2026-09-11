@@ -997,9 +997,11 @@ When drag/drop is implemented, these patterns should apply:
   treated as attachments.
 - File drops are prevented during the capture phase as well as in the import
   handler. This blocks mixed drag payloads' unrelated `text/plain` metadata
-  from being inserted into the editable while preserving the file attachment
-  flow; the drop handler still imports the files through the bounded session
-  scratch bridge.
+  and Chromium's following `beforeinput` `insertFromDrop` insertion from being
+  inserted into the editable while preserving the file attachment flow; the
+  drop handler still imports the files through the bounded session scratch
+  bridge. Existing draft text remains unchanged and Composer controls never
+  become part of the draft.
 - Dragging files over the Composer highlights its existing shell with an accent
   outline. The cue clears on leave or drop; it does not alter the layout or
   intercept drops anywhere outside the Composer.

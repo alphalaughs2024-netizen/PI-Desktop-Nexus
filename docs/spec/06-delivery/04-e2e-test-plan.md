@@ -5473,18 +5473,22 @@ Each scenario is documented in this format:
   fixture and image fixture exist outside the active workspace, plus a URL or
   plain-text draggable source for the negative case.
 - **Steps**: 1) Drag the two files over the Composer and confirm the Composer
-  shell shows its file-drop outline. 2) Drop them into the Composer, inspect
-  the leaf-name chips, and send a prompt. 3) Drag plain text or a URL over and
-  drop it; confirm the app does not turn it into an attachment. 4) Repeat from
-  the home composer and inspect the newly materialized session's scratch root.
+  shell shows its file-drop outline. 2) With a known draft and the permission,
+  context-usage, and model/reasoning controls visible, drop the image fixture
+  from File Explorer into the Composer; inspect the leaf-name chip and send a
+  prompt. 3) Drag plain text or a URL over and drop it; confirm the app does
+  not turn it into an attachment. 4) Repeat from the home composer and inspect
+  the newly materialized session's scratch root.
 - **Expected**: A file drop follows the same bounded `composer/pasteFiles`
   route as a clipboard file: session materialization, scratch copies,
   MIME/image classification, structured attachment metadata, and a clean
   workspace. The capture-phase guard prevents a mixed drag source's unrelated
-  `text/plain` metadata from appearing in the editable alongside the
-  attachment chip. The drop outline clears after leave/drop. Non-file drops
-  keep native browser behavior, and no area outside the Composer becomes a
-  file drop target.
+  `text/plain` metadata or Chromium's subsequent `insertFromDrop` event from
+  appearing in the editable alongside the attachment chip. The known draft is
+  otherwise unchanged: permission, context-usage, and model/reasoning control
+  text never appears in it. The drop outline clears after leave/drop. Non-file
+  drops keep native browser behavior, and no area outside the Composer becomes
+  a file drop target.
 - **Specs linked**: `04-ux/09-interaction-patterns.md` §8a.2,
   `03-runtime/01-ipc-protocol.md` §13c
 - **Acceptance**: C (conversation & stream), F (persistence), Quality

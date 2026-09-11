@@ -45,6 +45,14 @@ test("file drops cancel browser text insertion before the editable receives mixe
   assert.match(composer, /onDropCapture=\{preventFileDropTextInsertion\}/);
 });
 
+test("native image drops reject Chromium's follow-up editor insertion", () => {
+  assert.match(
+    composer,
+    /native\.inputType === "insertFromDrop"[\s\S]*?e\.preventDefault\(\);/,
+    "the contenteditable must reject the post-drop beforeinput event that can inject composer control text",
+  );
+});
+
 test("composer converts oversized text paste and materializes clipboard files", () => {
   assert.match(composer, /onPaste=\{pasteClipboardFiles\}/);
   assert.match(composer, /const text = dataTransfer\.getData\("text\/plain"\)/);
