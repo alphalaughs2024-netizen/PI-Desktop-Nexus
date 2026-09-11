@@ -423,8 +423,9 @@ const DELEGATION_RESUME_PROMPT =
 function formatDelegationResults(
   results: Array<{ delegationId: string; agent: string; status: string; report: string }>,
   note?: string,
-): string {
+): { text: string; includedDelegationIds: Set<string> } {
   const parts: string[] = [];
+  const includedDelegationIds = new Set<string>();
   let total = 0;
   let omitted = 0;
   for (const result of results) {
@@ -434,6 +435,7 @@ function formatDelegationResults(
       continue;
     }
     parts.push(block);
+    includedDelegationIds.add(result.delegationId);
     total += block.length + 2;
   }
   if (omitted > 0) {
@@ -441,7 +443,10 @@ function formatDelegationResults(
       `[${omitted} more result${omitted === 1 ? "" : "s"} omitted to protect this context; call TaskWait with their delegationIds to re-read one.]`,
     );
   }
-  return [note, ...parts].filter((part) => part?.trim()).join("\n\n");
+  return {
+    text: [note, ...parts].filter((part) => part?.trim()).join("\n\n"),
+    includedDelegationIds,
+  };
 }
 /**
  * Tokens held back from the context window for the summary prompt and the
@@ -3881,9 +3886,15 @@ export class DesktopAgentRuntime {
         still.length > 0
           ? `Still running:\n${still.map(formatDelegationHeartbeat).join("\n")}`
           : "";
+      const formatted = formatDelegationResults(results);
+      for (const record of settled) {
+        if (formatted.includedDelegationIds.has(record.delegationId)) {
+          record.reportDelivered = true;
+        }
+      }
       const text = [
         DELEGATION_RESUME_PROMPT,
-        formatDelegationResults(results),
+        formatted.text,
         heartbeat,
       ]
         .filter((part) => part.trim())
@@ -3983,6 +3994,11 @@ export class DesktopAgentRuntime {
         } finally {
           this.endDelegationWait();
         }
+        // A settled report included in this bounded result reached the parent;
+        // the idle resume must not deliver it a second time. Omitted reports
+        // stay pending so the idle resume can deliver them later. Running
+        // delegates keep their shot: a timeout or early `any` convergence has
+        // not consumed it.
         const results = targets.map((record) => ({
           delegationId: record.delegationId,
           agent: record.agentName,
@@ -4009,11 +4025,23 @@ export class DesktopAgentRuntime {
           unknownIds.length > 0
             ? `Unknown delegation ids (not found in this session): ${unknownIds.join(", ")}.`
             : undefined;
+        const formatted = formatDelegationResults(
+          results,
+          [note, unknownNote].filter(Boolean).join("\n") || undefined,
+        );
+        for (const record of targets) {
+          if (
+            record.status !== "running" &&
+            formatted.includedDelegationIds.has(record.delegationId)
+          ) {
+            record.reportDelivered = true;
+          }
+        }
         return {
           content: [
             {
               type: "text",
-              text: formatDelegationResults(results, [note, unknownNote].filter(Boolean).join("\n") || undefined),
+              text: formatted.text,
             },
           ],
           details: {

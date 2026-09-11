@@ -8215,7 +8215,9 @@ This test plan spec is accepted when:
   Continue; confirm leftover delegates abort, the session is idle, Continue
   is accepted, and the failed assistant error surface stays visible. 8) Define
   a delegate with an explicit `maxTokens` and one without, run both, and read
-  the two outgoing provider requests.
+  the two outgoing provider requests. 9) Start enough delegates for their
+  combined reports to exceed the bounded `TaskWait` result, then let the parent
+  idle.
 - **Expected**: Idle and duration watchdogs never fire. Parent idle does not
   abort delegates. Completion reports are delivered into the same durable
   turn. `TaskWait` expiry reports “Still running after Ns”, includes a
@@ -8227,7 +8229,9 @@ This test plan spec is accepted when:
   capped delegate's request carries the declared output limit and the uncapped
   one carries the model's published limit, so the cap overrides the derived
   `max_tokens` / `max_completion_tokens` / `max_output_tokens` without
-  disturbing the session's own requests (D383).
+  disturbing the session's own requests (D383). In step 9, the reports omitted
+  from the bounded `TaskWait` content are delivered once by the idle resume and
+  are not replayed after they reach the parent.
 - **Specs linked**: `03-runtime/02-agent-runtime.md` §5f,
   `03-runtime/08-error-codes.md`, `03-runtime/09-logging-and-observability.md`,
   ADR 0166, ADR 0189, decisions-log D328 / D352 / D383

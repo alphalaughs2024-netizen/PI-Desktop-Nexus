@@ -637,7 +637,9 @@ core set rather than the on-demand catalog of §7.1:
   on running delegations (defaults to all of them) and returns their reports;
   `mode: "any"` with `minCompleted` converges as soon as the first N settle.
   Settled delegations return immediately, so re-reading a report by id is
-  cheap. The joined result is bounded to `MAX_TASKWAIT_RESULT_CHARS` (50k).
+  cheap. The joined result is bounded to `MAX_TASKWAIT_RESULT_CHARS` (50k); if
+  the bound omits finished reports, those reports remain undelivered and the
+  runtime sends them on the idle resume (or they can be re-read by id).
   `timeoutSeconds` defaults to 600 and is clamped to 900: the wait blocks the
   turn, so the ceiling is what bounds how long a session can look hung. Expiry
   is not a failure and does not stop the delegates (D328) — the wait returns a

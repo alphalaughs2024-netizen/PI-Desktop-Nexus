@@ -6154,6 +6154,157 @@ describe("DesktopAgentRuntime subagents", () => {
     await runtime.dispose();
   });
 
+  it("feeds a report that settled before the parent idled (#226)", async () => {
+    const runtime = createRuntime({ subagents: [explorer] });
+    subagentRuns.calls.length = 0;
+    subagentRuns.instances.length = 0;
+    subagentRuns.deferred = true;
+    subagentRuns.resolveRun = undefined;
+    const tool = taskTool(runtime);
+    const prompt = vi.fn(async () => undefined);
+    (runtime as any).agent.prompt = prompt;
+    (runtime as any).agent.waitForIdle = vi.fn(async () => undefined);
+
+    const started = await tool.execute("task-1", {
+      agent: "explorer",
+      task: "Find it.",
+    });
+    const delegationId = (started.details as any).delegationId as string;
+
+    // The explorer finishes while the parent is still on its own line of work…
+    subagentRuns.resolveRun!({
+      agentName: "explorer",
+      status: "completed",
+      report: "src/app.ts:12 misses the null check.",
+      turns: 1,
+      toolCalls: 1,
+    });
+    await vi.waitFor(() => {
+      expect((runtime as any).delegations.get(delegationId).status).toBe(
+        "completed",
+      );
+    });
+    expect((runtime as any).keepTurnOpenForDelegates()).toBe(true);
+
+    // …and the parent then idles without a TaskWait. The settled report is
+    // "done and unpublished", not "unfinished": it must still reach the parent.
+    await (runtime as any).resumeAfterDelegations();
+
+    expect(prompt).toHaveBeenCalledTimes(1);
+    const delivered = String(
+      (prompt.mock.calls as unknown as unknown[][])[0]?.[0] ?? "",
+    );
+    expect(delivered).toContain("src/app.ts:12 misses the null check.");
+    expect((runtime as any).keepTurnOpenForDelegates()).toBe(false);
+
+    // Single shot: a later idle does not replay it.
+    await (runtime as any).resumeAfterDelegations();
+    expect(prompt).toHaveBeenCalledTimes(1);
+
+    subagentRuns.deferred = false;
+    await runtime.dispose();
+  });
+
+  it("does not replay a report that TaskWait already returned", async () => {
+    const runtime = createRuntime({ subagents: [explorer] });
+    subagentRuns.calls.length = 0;
+    subagentRuns.instances.length = 0;
+    subagentRuns.deferred = true;
+    subagentRuns.resolveRun = undefined;
+    const tool = taskTool(runtime);
+    const wait = (runtime as any).agent.state.tools.find(
+      (entry: any) => entry.name === "TaskWait",
+    );
+    const prompt = vi.fn(async () => undefined);
+    (runtime as any).agent.prompt = prompt;
+    (runtime as any).agent.waitForIdle = vi.fn(async () => undefined);
+
+    const started = await tool.execute("task-1", {
+      agent: "explorer",
+      task: "Find it.",
+    });
+    const delegationId = (started.details as any).delegationId as string;
+    subagentRuns.resolveRun!({
+      agentName: "explorer",
+      status: "completed",
+      report: "src/app.ts:12 misses the null check.",
+      turns: 1,
+      toolCalls: 1,
+    });
+    await vi.waitFor(() => {
+      expect((runtime as any).delegations.get(delegationId).status).toBe(
+        "completed",
+      );
+    });
+
+    const result = await wait.execute("wait-1", { delegationIds: [delegationId] });
+    expect(result.content[0].text).toContain("src/app.ts:12 misses the null check.");
+    expect((runtime as any).keepTurnOpenForDelegates()).toBe(false);
+
+    await (runtime as any).resumeAfterDelegations();
+    expect(prompt).not.toHaveBeenCalled();
+
+    subagentRuns.deferred = false;
+    await runtime.dispose();
+  });
+
+  it("auto-delivers TaskWait reports omitted by the bounded result", async () => {
+    const runtime = createRuntime({ subagents: [explorer] });
+    subagentRuns.calls.length = 0;
+    subagentRuns.instances.length = 0;
+    subagentRuns.deferred = true;
+    subagentRuns.resolveRun = undefined;
+    const task = taskTool(runtime);
+    const wait = (runtime as any).agent.state.tools.find(
+      (entry: any) => entry.name === "TaskWait",
+    );
+    const prompt = vi.fn(async () => undefined);
+    (runtime as any).agent.prompt = prompt;
+    (runtime as any).agent.waitForIdle = vi.fn(async () => undefined);
+
+    const ids: string[] = [];
+    for (let index = 0; index < 5; index += 1) {
+      const started = await task.execute(`task-${index}`, {
+        agent: "explorer",
+        task: "Find it.",
+      });
+      ids.push((started.details as any).delegationId as string);
+    }
+    for (let index = 0; index < 5; index += 1) {
+      subagentRuns.resolveRun!({
+        agentName: "explorer",
+        status: "completed",
+        report: `report-${index}-${"x".repeat(12_000)}`,
+        turns: 1,
+        toolCalls: 1,
+      });
+      await vi.waitFor(() => {
+        expect((runtime as any).delegations.get(ids[index]).status).toBe(
+          "completed",
+        );
+      });
+    }
+
+    const result = await wait.execute("wait-1", { delegationIds: ids });
+    expect(result.content[0].text).toContain("more result");
+    expect((runtime as any).delegations.get(ids[0]).reportDelivered).toBe(true);
+    expect((runtime as any).delegations.get(ids[4]).reportDelivered).toBe(false);
+    expect((runtime as any).keepTurnOpenForDelegates()).toBe(true);
+
+    await (runtime as any).resumeAfterDelegations();
+
+    expect(prompt).toHaveBeenCalledTimes(1);
+    const delivered = String(
+      (prompt.mock.calls as unknown as unknown[][])[0]?.[0] ?? "",
+    );
+    expect(delivered).toContain("report-4-");
+    expect((runtime as any).delegations.get(ids[4]).reportDelivered).toBe(true);
+    expect((runtime as any).keepTurnOpenForDelegates()).toBe(false);
+
+    subagentRuns.deferred = false;
+    await runtime.dispose();
+  });
+
   it("lists a heartbeat for a running delegate", async () => {
     const runtime = createRuntime({ subagents: [explorer] });
     subagentRuns.calls.length = 0;
