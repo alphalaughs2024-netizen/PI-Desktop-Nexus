@@ -126,7 +126,10 @@ test("the operations guidance is always available while plugin guidance is scope
   assert.match(builtinSrc, /pluginPaths\.some/);
   assert.match(builtinSrc, /AGENT_OPERATIONS_SKILL_ID/);
   assert.match(builtinSrc, /pluginAuthoringRequested/);
-  assert.match(builtinSrc, /!input\.pluginAuthoringRequested && !isPluginWorkspace\(input\.workspacePath, input\.pluginPaths\)/);
+  assert.match(builtinSrc, /for \(const manifest of WORKFLOW_MANIFESTS\)/);
+  assert.match(builtinSrc, /manifest\.id === PLUGIN_DEV_SKILL_ID/);
+  assert.match(builtinSrc, /!input\.pluginAuthoringRequested/);
+  assert.match(builtinSrc, /!isPluginWorkspace\(input\.workspacePath, input\.pluginPaths\)/);
   assert.match(mainSrc, /builtinSkills\(\{/);
   assert.match(mainSrc, /pluginAuthoringRequested: isPluginAuthoringRequest\(overrides\.prompt\)/);
   assert.match(mainSrc, /prompt: req\.content/);

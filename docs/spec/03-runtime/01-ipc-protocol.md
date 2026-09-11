@@ -1255,6 +1255,24 @@ authority or bypass confirmation. Active bodies are injected before the first
 model action; non-active guidance remains subject to the 8,000-character Skill
 catalog and session id gate.
 
+Phase 2 packages add four quality workflows with deterministic, high-confidence
+activation. A request to add, create, build, implement, introduce, redesign, or
+change a named product behavior enters **discovery** through
+`nexus/quality/brainstorming`. A reproducible observed test, build, plugin,
+application, or request failure enters **diagnosis** through
+`nexus/quality/systematic-debugging`. An explicit implementation request after
+discovery, or a focused fix after diagnosis, advances to
+`nexus/quality/test-driven-development` in Agent mode. A request to verify,
+validate, finish, or mark already-implemented work complete advances to
+`nexus/quality/verification-before-completion`.
+
+The resolver deliberately does not select these workflows for questions about
+TDD or debugging, tutorials, or other casual discussion. Workflow transition is
+guidance-only: it does not change the tool catalog, permissions, plan approval,
+or confirmation policy. Each quality workflow declares the real file, terminal,
+and test-execution capabilities it needs; a missing capability leaves it
+unavailable rather than asking a model to call a nonexistent tool.
+
 ## 12c. Subagent API (D202)
 
 User-owned subagents are global-only Markdown documents under

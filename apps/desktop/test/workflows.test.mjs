@@ -12,6 +12,11 @@ const requireFromRuntime = createRequire(join(repoRoot, "packages/agent-runtime/
 const loadTypeScript = requireFromRuntime("jiti")(join(repoRoot, "packages/agent-runtime/jiti-runner.cjs"));
 const {
   AGENT_OPERATIONS_WORKFLOW_ID,
+  BRAINSTORMING_WORKFLOW_ID,
+  SYSTEMATIC_DEBUGGING_WORKFLOW_ID,
+  TEST_DRIVEN_DEVELOPMENT_WORKFLOW_ID,
+  VERIFICATION_WORKFLOW_ID,
+  WORKFLOW_MANIFESTS,
   PLUGIN_DEVELOPMENT_WORKFLOW_ID,
   resolveWorkflows,
   validateWorkflowManifest,
@@ -20,7 +25,14 @@ const runtimeSource = readFileSync(join(repoRoot, "packages/agent-runtime/src/ru
 const mainSource = readFileSync(join(desktopRoot, "electron/main/index.ts"), "utf8");
 const surfaceSource = readFileSync(join(desktopRoot, "src/components/ChatSurface.tsx"), "utf8");
 
-const capabilities = ["core-agent-tools", "skill-loader", "plugin-development-tools"];
+const capabilities = [
+  "core-agent-tools",
+  "skill-loader",
+  "plugin-development-tools",
+  "file-tools",
+  "terminal-tools",
+  "test-execution",
+];
 
 function resolve(overrides = {}) {
   return resolveWorkflows({
@@ -48,6 +60,7 @@ test("validates versioned Nexus workflow manifests", () => {
       priority: 1,
       defaultStage: "active",
       skillFile: "test.md",
+      fixtures: [{ positivePrompt: "Use it", negativePrompt: "Discuss it", expectedStage: "active" }],
     }).ok,
     true,
   );
@@ -117,4 +130,65 @@ test("injects only active guidance, keeps Workflow guidance-only, and exposes tr
   assert.match(mainSource, /s\.setLocalTool\("Workflow"/);
   assert.match(mainSource, /clearWorkflowSession\(dataDir, id\)/);
   assert.match(surfaceSource, /<ActiveWorkflowCard sessionId=\{activeSessionId\} \/>/);
+});
+
+test("starts feature work in discovery and advances an approved discovery to test-first implementation", () => {
+  const discovery = resolve({ prompt: "Add a shareable project activity feed." });
+  assert.equal(discovery.primary?.id, BRAINSTORMING_WORKFLOW_ID);
+  assert.equal(discovery.primary?.stage, "discovery");
+  assert.equal(discovery.primary?.reasonCategory, "feature_request");
+
+  const implementation = resolve({
+    prompt: "Yes, implement the approved design now.",
+    session: { primaryId: BRAINSTORMING_WORKFLOW_ID, stage: "discovery" },
+  });
+  assert.equal(implementation.primary?.id, TEST_DRIVEN_DEVELOPMENT_WORKFLOW_ID);
+  assert.equal(implementation.primary?.stage, "implementation");
+  assert.equal(implementation.primary?.reasonCategory, "approved_implementation");
+});
+
+test("selects diagnosis for reproducible failures and verification for completion checks", () => {
+  const diagnosis = resolve({ prompt: "The plugin test fails every time with ECONNREFUSED; find and fix it." });
+  assert.equal(diagnosis.primary?.id, SYSTEMATIC_DEBUGGING_WORKFLOW_ID);
+  assert.equal(diagnosis.primary?.stage, "diagnosis");
+  const verification = resolve({
+    prompt: "Before you mark this complete, run the focused checks and verify the fix.",
+    session: { primaryId: TEST_DRIVEN_DEVELOPMENT_WORKFLOW_ID, stage: "implementation" },
+  });
+  assert.equal(verification.primary?.id, VERIFICATION_WORKFLOW_ID);
+  assert.equal(verification.primary?.stage, "verification");
+});
+
+test("does not force quality workflows for casual discussion", () => {
+  assert.equal(resolve({ prompt: "What is test-driven development?" }).primary?.id, AGENT_OPERATIONS_WORKFLOW_ID);
+  assert.equal(resolve({ prompt: "Can we discuss systematic debugging techniques?" }).primary?.id, AGENT_OPERATIONS_WORKFLOW_ID);
+  assert.equal(resolve({ prompt: "Tell me whether TDD is useful." }).primary?.id, AGENT_OPERATIONS_WORKFLOW_ID);
+});
+
+test("ships every Phase 2 workflow as rewritten Nexus guidance", () => {
+  const resources = [
+    ["brainstorming.md", "Nexus discovery and design", "Nexus Plan mode"],
+    ["systematic-debugging.md", "Nexus systematic debugging", "root-cause hypothesis"],
+    ["test-driven-development.md", "Nexus test-first implementation", "focused failing test"],
+    ["verification-before-completion.md", "Nexus verification before completion", "fresh evidence"],
+  ];
+  for (const [file, name, phrase] of resources) {
+    const body = readFileSync(join(desktopRoot, "resources/skills", file), "utf8");
+    assert.match(body, new RegExp(`name: ${name}`));
+    assert.ok(body.includes(phrase), `${file} must contain Nexus-native guidance`);
+    assert.ok(!body.includes("Codex"), `${file} must not carry Codex instructions`);
+  }
+});
+
+test("declares a positive and negative activation fixture for every quality workflow", () => {
+  for (const id of [
+    BRAINSTORMING_WORKFLOW_ID,
+    SYSTEMATIC_DEBUGGING_WORKFLOW_ID,
+    TEST_DRIVEN_DEVELOPMENT_WORKFLOW_ID,
+    VERIFICATION_WORKFLOW_ID,
+  ]) {
+    const manifest = WORKFLOW_MANIFESTS.find((candidate) => candidate.id === id);
+    assert.ok(manifest?.fixtures.length, `${id} needs workflow fixtures`);
+    assert.ok(manifest?.fixtures.every((fixture) => fixture.positivePrompt && fixture.negativePrompt));
+  }
 });

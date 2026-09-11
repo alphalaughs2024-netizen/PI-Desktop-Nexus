@@ -8,6 +8,9 @@ export const WORKFLOW_CAPABILITIES = [
   "core-agent-tools",
   "skill-loader",
   "plugin-development-tools",
+  "file-tools",
+  "terminal-tools",
+  "test-execution",
 ] as const;
 export type WorkflowCapability = (typeof WORKFLOW_CAPABILITIES)[number];
 export type WorkflowStage = "active" | "discovery" | "diagnosis" | "implementation" | "verification";
@@ -15,6 +18,11 @@ export type WorkflowReasonCategory =
   | "core_operations"
   | "plugin_workspace"
   | "plugin_authoring_request"
+  | "feature_request"
+  | "approved_implementation"
+  | "reproducible_failure"
+  | "diagnosed_fix"
+  | "completion_verification"
   | "manual";
 export type WorkflowActivationSource = "automatic" | "manual";
 
@@ -28,10 +36,19 @@ export type WorkflowManifest = {
   requiredCapabilities: WorkflowCapability[];
   priority: number;
   defaultStage: WorkflowStage;
+  fixtures: readonly {
+    positivePrompt: string;
+    negativePrompt: string;
+    expectedStage: WorkflowStage;
+  }[];
 };
 
 export const AGENT_OPERATIONS_WORKFLOW_ID = "nexus/guidance/agent-operations";
 export const PLUGIN_DEVELOPMENT_WORKFLOW_ID = "nexus/guidance/plugin-development";
+export const BRAINSTORMING_WORKFLOW_ID = "nexus/quality/brainstorming";
+export const SYSTEMATIC_DEBUGGING_WORKFLOW_ID = "nexus/quality/systematic-debugging";
+export const TEST_DRIVEN_DEVELOPMENT_WORKFLOW_ID = "nexus/quality/test-driven-development";
+export const VERIFICATION_WORKFLOW_ID = "nexus/quality/verification-before-completion";
 
 export const WORKFLOW_MANIFESTS: readonly WorkflowManifest[] = [
   {
@@ -44,6 +61,7 @@ export const WORKFLOW_MANIFESTS: readonly WorkflowManifest[] = [
     requiredCapabilities: ["core-agent-tools", "skill-loader"],
     priority: 10,
     defaultStage: "active",
+    fixtures: [{ positivePrompt: "Inspect this workspace safely.", negativePrompt: "What are Nexus operations?", expectedStage: "active" }],
   },
   {
     id: PLUGIN_DEVELOPMENT_WORKFLOW_ID,
@@ -55,6 +73,55 @@ export const WORKFLOW_MANIFESTS: readonly WorkflowManifest[] = [
     requiredCapabilities: ["core-agent-tools", "skill-loader", "plugin-development-tools"],
     priority: 100,
     defaultStage: "active",
+    fixtures: [{ positivePrompt: "Create a Nexus plugin.", negativePrompt: "What are Nexus plugins?", expectedStage: "active" }],
+  },
+  {
+    id: BRAINSTORMING_WORKFLOW_ID,
+    version: "1",
+    name: "Discovery and design",
+    description: "Clarify a requested feature, inspect the relevant workspace, and present a bounded design before implementation.",
+    skillFile: "brainstorming.md",
+    supportedModes: ["agent", "plan", "goal"],
+    requiredCapabilities: ["core-agent-tools", "skill-loader", "file-tools"],
+    priority: 80,
+    defaultStage: "discovery",
+    fixtures: [{ positivePrompt: "Add a project activity feed.", negativePrompt: "What is product discovery?", expectedStage: "discovery" }],
+  },
+  {
+    id: SYSTEMATIC_DEBUGGING_WORKFLOW_ID,
+    version: "1",
+    name: "Systematic debugging",
+    description: "Reproduce an observed failure, gather evidence, isolate root cause, and then test one focused fix.",
+    skillFile: "systematic-debugging.md",
+    supportedModes: ["agent", "plan", "goal"],
+    requiredCapabilities: ["core-agent-tools", "skill-loader", "file-tools", "terminal-tools"],
+    priority: 90,
+    defaultStage: "diagnosis",
+    fixtures: [{ positivePrompt: "This test fails every time with ECONNREFUSED.", negativePrompt: "Explain debugging techniques.", expectedStage: "diagnosis" }],
+  },
+  {
+    id: TEST_DRIVEN_DEVELOPMENT_WORKFLOW_ID,
+    version: "1",
+    name: "Test-first implementation",
+    description: "Express the intended change with a focused failing test before making the smallest implementation change.",
+    skillFile: "test-driven-development.md",
+    supportedModes: ["agent"],
+    requiredCapabilities: ["core-agent-tools", "skill-loader", "file-tools", "terminal-tools", "test-execution"],
+    priority: 85,
+    defaultStage: "implementation",
+    fixtures: [{ positivePrompt: "Implement the approved design now.", negativePrompt: "What is test-driven development?", expectedStage: "implementation" }],
+  },
+  {
+    id: VERIFICATION_WORKFLOW_ID,
+    version: "1",
+    name: "Verification before completion",
+    description: "Select and run fresh, relevant checks before claiming a change is fixed, complete, or passing.",
+    skillFile: "verification-before-completion.md",
+    supportedModes: ["agent", "plan", "goal"],
+    requiredCapabilities: ["core-agent-tools", "skill-loader", "terminal-tools", "test-execution"],
+    priority: 95,
+    defaultStage: "verification",
+    fixtures: [{ positivePrompt: "Verify this fix before marking it complete.", negativePrompt: "Discuss verification strategies.", expectedStage: "verification" }],
   },
 ] as const;
 
@@ -80,7 +147,7 @@ export type WorkflowResolutionInput = {
   capabilities: readonly string[];
   globalDisabledIds: readonly string[];
   projectOverrides: Record<string, boolean>;
-  session: WorkflowSessionOverride;
+  session: WorkflowSessionRecord;
 };
 
 export type ResolvedWorkflow = {
@@ -103,7 +170,7 @@ export function validateWorkflowManifest(value: unknown): { ok: boolean; error?:
   if (!value || typeof value !== "object") return { ok: false, error: "manifest must be an object" };
   const manifest = value as Partial<WorkflowManifest>;
   if (!/^nexus\/[a-z0-9][a-z0-9/_-]*$/i.test(manifest.id ?? "")) return { ok: false, error: "invalid id" };
-  if (!manifest.version?.trim() || !manifest.name?.trim() || !manifest.description?.trim() || !manifest.skillFile?.trim()) {
+  if (!manifest.version?.trim() || !manifest.name?.trim() || !manifest.description?.trim() || !manifest.skillFile?.trim() || !Array.isArray(manifest.fixtures) || manifest.fixtures.length === 0) {
     return { ok: false, error: "missing required metadata" };
   }
   if (!Array.isArray(manifest.supportedModes) || manifest.supportedModes.length === 0 || manifest.supportedModes.some((mode) => !["agent", "plan", "goal"].includes(mode))) {
@@ -143,7 +210,54 @@ function automaticReason(manifest: WorkflowManifest, input: WorkflowResolutionIn
     if (input.workspace.isPluginWorkspace) return "plugin_workspace";
     if (isPluginAuthoringWorkflowRequest(input.prompt)) return "plugin_authoring_request";
   }
+  if (manifest.id === BRAINSTORMING_WORKFLOW_ID && isFeatureRequest(input.prompt)) return "feature_request";
+  if (manifest.id === SYSTEMATIC_DEBUGGING_WORKFLOW_ID && isReproducibleFailure(input.prompt)) return "reproducible_failure";
+  if (manifest.id === TEST_DRIVEN_DEVELOPMENT_WORKFLOW_ID) {
+    if (input.session.primaryId === BRAINSTORMING_WORKFLOW_ID && input.session.stage === "discovery" && isApprovedImplementationRequest(input.prompt)) return "approved_implementation";
+    if (input.session.primaryId === SYSTEMATIC_DEBUGGING_WORKFLOW_ID && input.session.stage === "diagnosis" && isFixRequest(input.prompt)) return "diagnosed_fix";
+  }
+  if (manifest.id === VERIFICATION_WORKFLOW_ID && isCompletionVerificationRequest(input.prompt, input.session)) return "completion_verification";
   return undefined;
+}
+
+function text(value: unknown): string {
+  return typeof value === "string" ? value.trim().toLowerCase() : "";
+}
+
+/** A feature request names a prospective change; generic explanations do not. */
+export function isFeatureRequest(value: unknown): boolean {
+  const prompt = text(value);
+  if (!prompt || /\b(?:what is|explain|discuss|tell me about|should we use)\b/.test(prompt)) return false;
+  return /\b(?:add|create|build|implement|introduce|redesign|change)\b/.test(prompt) &&
+    /\b(?:feature|screen|page|panel|workflow|button|setting|support|integration|ability|feed|endpoint|command|ui|system)\b/.test(prompt) &&
+    !isPluginAuthoringWorkflowRequest(prompt);
+}
+
+/** Require an actual observed failure, not a request to explain debugging. */
+export function isReproducibleFailure(value: unknown): boolean {
+  const prompt = text(value);
+  if (!prompt || /\b(?:what is|explain|discuss|technique|tutorial)\b/.test(prompt)) return false;
+  return /\b(?:fails?|failing|failed|error|exception|crash(?:es|ed)?|broken|regression|does not work|won't start|cannot connect|refused)\b/.test(prompt) &&
+    /\b(?:test|app|build|plugin|screen|request|command|every time|reproduc|error|exception|crash|bug)\b/.test(prompt);
+}
+
+function isApprovedImplementationRequest(value: unknown): boolean {
+  const prompt = text(value);
+  return /\b(?:yes|approved|go ahead|proceed|implement|build|start)\b/.test(prompt) &&
+    /\b(?:implement|build|start|approved|design|plan|it|this)\b/.test(prompt);
+}
+
+function isFixRequest(value: unknown): boolean {
+  return /\b(?:fix|implement|apply|make the change|go ahead|proceed)\b/.test(text(value));
+}
+
+function isCompletionVerificationRequest(value: unknown, session: WorkflowSessionRecord): boolean {
+  const prompt = text(value);
+  if (!prompt || /\b(?:what is|explain|discuss)\b/.test(prompt)) return false;
+  const hasCompletionIntent = /\b(?:complete|completion|finish|finished|done|ship|ready|mark (?:it )?complete)\b/.test(prompt);
+  const asksForEvidence = /\b(?:verify|verification|test|check|validate|confirm)\b/.test(prompt);
+  return (hasCompletionIntent || asksForEvidence) &&
+    [TEST_DRIVEN_DEVELOPMENT_WORKFLOW_ID, SYSTEMATIC_DEBUGGING_WORKFLOW_ID, PLUGIN_DEVELOPMENT_WORKFLOW_ID].includes(session.primaryId ?? "");
 }
 
 export function resolveWorkflows(input: WorkflowResolutionInput): WorkflowResolution {
@@ -160,12 +274,24 @@ export function resolveWorkflows(input: WorkflowResolutionInput): WorkflowResolu
   const manuallySelected = input.session.manualActiveId
     ? compatible.find((manifest) => manifest.id === input.session.manualActiveId)
     : undefined;
-  const candidates = (manuallySelected ? [manuallySelected] : compatible.filter((manifest) => automaticReason(manifest, input)))
+  const automaticCandidates = compatible.filter((manifest) => automaticReason(manifest, input));
+  const persisted = !manuallySelected && automaticCandidates.length === 0 && input.session.primaryId
+    ? compatible.find((manifest) => manifest.id === input.session.primaryId)
+    : undefined;
+  const candidates = (manuallySelected ? [manuallySelected] : automaticCandidates.length ? automaticCandidates : persisted ? [persisted] : [])
     .sort((left, right) => right.priority - left.priority || left.id.localeCompare(right.id));
   const primaryManifest = candidates[0];
   if (!primaryManifest) return { supportingIds: [], availableIds, unavailable };
-  const source: WorkflowActivationSource = manuallySelected ? "manual" : "automatic";
-  const reasonCategory = manuallySelected ? "manual" : automaticReason(primaryManifest, input)!;
+  const source: WorkflowActivationSource = manuallySelected
+    ? "manual"
+    : persisted
+      ? input.session.source ?? "automatic"
+      : "automatic";
+  const reasonCategory = manuallySelected
+    ? "manual"
+    : persisted
+      ? input.session.reasonCategory ?? "core_operations"
+      : automaticReason(primaryManifest, input)!;
   const supportingIds = compatible
     .filter((manifest) => manifest.id !== primaryManifest.id && manifest.id === AGENT_OPERATIONS_WORKFLOW_ID)
     .map((manifest) => manifest.id);
@@ -174,7 +300,7 @@ export function resolveWorkflows(input: WorkflowResolutionInput): WorkflowResolu
       id: primaryManifest.id,
       name: primaryManifest.name,
       version: primaryManifest.version,
-      stage: primaryManifest.defaultStage,
+      stage: persisted ? input.session.stage ?? primaryManifest.defaultStage : primaryManifest.defaultStage,
       source,
       reasonCategory,
     },

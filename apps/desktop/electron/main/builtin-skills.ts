@@ -143,32 +143,23 @@ export function setBuiltinSkillEnabled(dataDir: string, id: string, enabled: boo
 export function builtinSkills(input: BuiltinSkillInput): InstructionDocumentDef[] {
   const skills: InstructionDocumentDef[] = [];
   const disabled = disabledBuiltinSkillIds(input.dataDir);
-  const operations = readBuiltinSkill(AGENT_OPERATIONS_SKILL_FILE);
-  if (!disabled.has(AGENT_OPERATIONS_SKILL_ID) && operations?.trim()) {
-    const parsed = parseSkillFrontmatter(operations);
-    if (parsed.body) {
-      skills.push({
-        id: AGENT_OPERATIONS_SKILL_ID,
-        name: parsed.name ?? "Nexus agent operations",
-        description: parsed.description,
-        source: "builtin",
-      });
-    }
+  for (const manifest of WORKFLOW_MANIFESTS) {
+    if (disabled.has(manifest.id)) continue;
+    if (
+      manifest.id === PLUGIN_DEV_SKILL_ID &&
+      !input.pluginAuthoringRequested &&
+      !isPluginWorkspace(input.workspacePath, input.pluginPaths)
+    ) continue;
+    const raw = readBuiltinSkill(manifest.skillFile);
+    const parsed = raw ? parseSkillFrontmatter(raw) : null;
+    if (!parsed?.body) continue;
+    skills.push({
+      id: manifest.id,
+      name: parsed.name ?? manifest.name,
+      description: parsed.description,
+      source: "builtin",
+    });
   }
-  if (!input.pluginAuthoringRequested && !isPluginWorkspace(input.workspacePath, input.pluginPaths)) {
-    return skills;
-  }
-  if (disabled.has(PLUGIN_DEV_SKILL_ID)) return skills;
-  const raw = readBuiltinSkill(PLUGIN_DEV_SKILL_FILE);
-  if (!raw?.trim()) return skills;
-  const parsed = parseSkillFrontmatter(raw);
-  if (!parsed.body) return skills;
-  skills.push({
-    id: PLUGIN_DEV_SKILL_ID,
-    name: parsed.name ?? "Nexus plugin development",
-    description: parsed.description,
-    source: "builtin",
-  });
   return skills;
 }
 
@@ -184,21 +175,16 @@ export function loadBuiltinSkillBody(
     : id === LEGACY_PLUGIN_DEV_SKILL_ID
       ? PLUGIN_DEV_SKILL_ID
       : id;
-  const fileName = id === AGENT_OPERATIONS_SKILL_ID || id === LEGACY_AGENT_OPERATIONS_SKILL_ID
-    ? AGENT_OPERATIONS_SKILL_FILE
-    : id === PLUGIN_DEV_SKILL_ID || id === LEGACY_PLUGIN_DEV_SKILL_ID
-      ? PLUGIN_DEV_SKILL_FILE
-      : null;
-  if (!fileName) return null;
+  const manifest = WORKFLOW_MANIFESTS.find((candidate) => candidate.id === canonicalId);
+  if (!manifest) return null;
+  const fileName = manifest.skillFile;
   const raw = readBuiltinSkill(fileName);
   if (!raw?.trim()) return null;
   const parsed = parseSkillFrontmatter(raw);
   if (!parsed.body) return null;
   return {
     id: canonicalId,
-    name: parsed.name ?? (canonicalId === AGENT_OPERATIONS_SKILL_ID
-      ? "Nexus agent operations"
-      : "Nexus plugin development"),
+    name: parsed.name ?? manifest.name,
     body: parsed.body,
   };
 }
