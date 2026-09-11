@@ -18,6 +18,10 @@ const {
   VERIFICATION_WORKFLOW_ID,
   WRITING_PLANS_WORKFLOW_ID,
   EXECUTING_PLANS_WORKFLOW_ID,
+  USING_GIT_WORKTREES_WORKFLOW_ID,
+  FINISHING_DEVELOPMENT_BRANCH_WORKFLOW_ID,
+  REQUESTING_CODE_REVIEW_WORKFLOW_ID,
+  RECEIVING_CODE_REVIEW_WORKFLOW_ID,
   WORKFLOW_MANIFESTS,
   PLUGIN_DEVELOPMENT_WORKFLOW_ID,
   resolveWorkflows,
@@ -35,6 +39,7 @@ const capabilities = [
   "file-tools",
   "terminal-tools",
   "test-execution",
+  "git-worktree-operations",
 ];
 
 function resolve(overrides = {}) {
@@ -267,4 +272,43 @@ test("ships Nexus-native plan authoring and execution guidance with host approva
   assert.match(mainSource, /executionState === "completed"/);
   assert.match(mainSource, /executionState === "interrupted"/);
   assert.match(mainSource, /event\.proposal\?\.status === "interrupted"/);
+});
+
+test("activates managed Git and review workflows only for concrete lifecycle requests", () => {
+  const isolation = resolve({ prompt: "Create an isolated Nexus worktree for this feature." });
+  assert.equal(isolation.primary?.id, USING_GIT_WORKTREES_WORKFLOW_ID);
+  assert.equal(isolation.primary?.stage, "isolation");
+
+  const finishing = resolve({ prompt: "The implementation is complete; finish this development branch." });
+  assert.equal(finishing.primary?.id, FINISHING_DEVELOPMENT_BRANCH_WORKFLOW_ID);
+  assert.equal(finishing.primary?.stage, "integration");
+
+  const review = resolve({ prompt: "Please request a code review for this completed change." });
+  assert.equal(review.primary?.id, REQUESTING_CODE_REVIEW_WORKFLOW_ID);
+  assert.equal(review.primary?.stage, "review_requested");
+
+  const feedback = resolve({ prompt: "Apply the code review feedback after checking each finding." });
+  assert.equal(feedback.primary?.id, RECEIVING_CODE_REVIEW_WORKFLOW_ID);
+  assert.equal(feedback.primary?.stage, "review_feedback");
+
+  assert.equal(resolve({ prompt: "What is a git worktree?" }).primary?.id, AGENT_OPERATIONS_WORKFLOW_ID);
+  assert.equal(resolve({ prompt: "Explain code review best practices." }).primary?.id, AGENT_OPERATIONS_WORKFLOW_ID);
+});
+
+test("ships Nexus-native Git and review guidance without granting authority", () => {
+  const resources = [
+    ["using-git-worktrees.md", "Nexus managed Git worktrees", "GitWorktree"],
+    ["finishing-a-development-branch.md", "Nexus development branch completion", "no-push-by-default"],
+    ["requesting-code-review.md", "Nexus code review request", "Review evidence"],
+    ["receiving-code-review.md", "Nexus code review reception", "Verify each finding"],
+  ];
+  for (const [file, name, phrase] of resources) {
+    const body = readFileSync(join(desktopRoot, "resources/skills", file), "utf8");
+    assert.match(body, new RegExp(`name: ${name}`));
+    assert.ok(body.includes(phrase), `${file} must carry the Nexus contract`);
+    assert.ok(!body.includes("Codex"), `${file} must not carry Codex instructions`);
+  }
+  assert.match(runtimeSource, /GitWorktree/);
+  assert.match(runtimeSource, /AGENT_CORE_TOOL_NAMES[\s\S]*"GitWorktree"/);
+  assert.match(mainSource, /s\.setLocalTool\("GitWorktree"/);
 });

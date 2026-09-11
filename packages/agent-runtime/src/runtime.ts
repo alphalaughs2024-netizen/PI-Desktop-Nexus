@@ -482,6 +482,7 @@ const AGENT_CORE_TOOL_NAMES = new Set([
   "Write",
   "Edit",
   "Bash",
+  "GitWorktree",
   ASK_TOOL_NAME,
   SKILL_TOOL_NAME,
   WORKFLOW_TOOL_NAME,
@@ -2331,6 +2332,8 @@ export class DesktopAgentRuntime {
           return "Validate a PI-Desktop plugin directory against every rule the installer enforces (manifest, entry file, panel, skills, permissions, package limits). `directory` is workspace-relative. Run this before packaging.";
         case "PluginPack":
           return "Package a PI-Desktop plugin directory into an installable dist/<id>-<version>.piplug. `directory` is workspace-relative. Runs the same validation as PluginCheck first and refuses to package a plugin with errors. Never build a .piplug with shell tools — the installer only accepts uncompressed archives.";
+        case "GitWorktree":
+          return "Inspect or manage one Nexus-owned local Git worktree. `branch` must be nexus/<short-name>. status is read-only. create, merge, and cleanup each show an explicit native confirmation; create uses a deterministic sibling .nexus-worktrees path, merge verifies containment, cleanup requires a clean merged branch. This tool never pushes or operates on non-Nexus branches.";
         default:
           return `${toolName} tool via PI-Desktop host-core`;
       }
@@ -2429,6 +2432,15 @@ export class DesktopAgentRuntime {
       },
       PluginCheck: { directory: Type.String() },
       PluginPack: { directory: Type.String() },
+      GitWorktree: {
+        operation: Type.Union([
+          Type.Literal("status"),
+          Type.Literal("create"),
+          Type.Literal("merge"),
+          Type.Literal("cleanup"),
+        ]),
+        branch: Type.String({ description: "Nexus-owned local branch name: nexus/<short-name>." }),
+      },
     };
     const exec = (toolName: string): AgentTool => {
       const run: AgentTool["execute"] = async (
@@ -2815,6 +2827,7 @@ export class DesktopAgentRuntime {
             "Grep",
             "BrowserPreview",
             "PluginCheck",
+            "GitWorktree",
           ]
         : ["Read", "Glob", "Grep", "BrowserPreview", "Bash"];
     if (this.mode === "agent") {

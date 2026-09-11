@@ -367,6 +367,29 @@ Initial denylist (extensible):
 
 ## 6. Permission Model
 
+### 5a. Managed Git worktree lifecycle (ADR 0223)
+
+`GitWorktree` is an Agent-mode Electron-local tool for a narrow local Git
+lifecycle. It is not a general Git command executor and does not replace the
+host permission boundary for ordinary file or shell work.
+
+- The only accepted branch shape is `nexus/<short-name>`; a user or model
+  cannot choose another namespace.
+- The only destination is derived from the Git root:
+  `<repository-parent>/.nexus-worktrees/<short-name>`. The operation records
+  the exact repository, branch, and destination before later lifecycle steps
+  can act on it.
+- `create`, `merge`, and `cleanup` each show a native confirmation containing
+  the exact local target. `status` is read-only.
+- Creation and merge refuse a dirty source checkout. Cleanup refuses a dirty
+  worktree or a branch that is not an ancestor of the current local `HEAD`.
+- The tool has no push, remote, reset, rebase, force-delete, arbitrary path,
+  or arbitrary branch action. It rejects the separately checked-out upstream
+  `PI-Desktop` repository root; the Nexus fork and other user projects remain
+  eligible.
+- Workflows remain guidance only. They do not suppress the confirmation or
+  cause a Git action to happen automatically.
+
 ### Risk Levels
 
 | risk | Example | Default policy |

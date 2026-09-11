@@ -1286,6 +1286,23 @@ that record. An interrupted execution is paused and never replayed by a
 workflow. The active card may show the fixed next action, while the immutable
 host artifact remains the plan source of truth. See ADR 0222.
 
+Phase 4 adds capability-aware local Git and review workflow packages:
+`nexus/git/using-git-worktrees`,
+`nexus/git/finishing-development-branch`,
+`nexus/review/requesting-code-review`, and
+`nexus/review/receiving-code-review`. The Agent-only `GitWorktree` local tool
+is deliberately narrower than a shell wrapper: it accepts only a
+`nexus/<short-name>` branch, derives the sibling
+`<repository-parent>/.nexus-worktrees/<short-name>` path, records that exact
+ownership tuple under the Nexus profile, and requires native confirmation for
+create, local merge, and cleanup. Cleanup additionally requires both a clean
+recorded worktree and proof that its branch is an ancestor of current `HEAD`.
+It has no remote/push, reset, rebase, force-delete, arbitrary path, or
+arbitrary branch operation, and rejects the protected upstream `PI-Desktop`
+checkout. Review packages reuse bounded diff and host-owned message review
+evidence; they neither grant authority nor create a parallel review store. See
+ADR 0223.
+
 ## 12c. Subagent API (D202)
 
 User-owned subagents are global-only Markdown documents under
