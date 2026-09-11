@@ -51,6 +51,11 @@ test("native image drops reject Chromium's follow-up editor insertion", () => {
     /native\.inputType === "insertFromDrop"[\s\S]*?e\.preventDefault\(\);/,
     "the contenteditable must reject the post-drop beforeinput event that can inject composer control text",
   );
+  assert.doesNotMatch(
+    composer,
+    /pendingFileDropResetRef|setTimeout\(\(\) => \{[\s\S]*?pendingFileDropInputRef\.current = false/,
+    "the file-drop suppression marker must not expire before Chromium delivers its follow-up event",
+  );
 });
 
 test("composer converts oversized text paste and materializes clipboard files", () => {

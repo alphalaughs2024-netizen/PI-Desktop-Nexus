@@ -779,7 +779,6 @@ export function Composer({
   referenceByTokenRef.current = referenceByToken;
   const removeChipByTokenRef = useRef<(token: string) => void>(() => {});
   const pendingFileDropInputRef = useRef(false);
-  const pendingFileDropResetRef = useRef<number | null>(null);
 
   const liveDraftText = () =>
     ref.current ? readEditorValue(ref.current) : valueRef.current;
@@ -2012,13 +2011,6 @@ export function Composer({
     // `beforeinput`/`input` pair. Keep the attachment classification through
     // that pair so composer controls never become draft text.
     pendingFileDropInputRef.current = true;
-    if (pendingFileDropResetRef.current !== null) {
-      window.clearTimeout(pendingFileDropResetRef.current);
-    }
-    pendingFileDropResetRef.current = window.setTimeout(() => {
-      pendingFileDropInputRef.current = false;
-      pendingFileDropResetRef.current = null;
-    }, 0);
   };
 
   const leaveFileDrop = (event: DragEvent<HTMLDivElement>) => {
@@ -2220,11 +2212,13 @@ export function Composer({
                   ) {
                     e.preventDefault();
                     pendingFileDropInputRef.current = false;
-                    if (pendingFileDropResetRef.current !== null) {
-                      window.clearTimeout(pendingFileDropResetRef.current);
-                      pendingFileDropResetRef.current = null;
-                    }
                     return;
+                  }
+                  if (pendingFileDropInputRef.current) {
+                    // A file drop may not produce a follow-up event in every
+                    // browser. Any other edit establishes that the pending
+                    // drop sequence has ended, so do not suppress later text.
+                    pendingFileDropInputRef.current = false;
                   }
                   if (
                     native.inputType === "insertParagraph" ||
