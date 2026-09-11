@@ -1285,10 +1285,10 @@ Electron 报告的右侧角）改变的是面板目标。Main 通过
 
 ## 13c. Composer 输入 API（D123/D124/D197、ADR 0024/0059）
 
-仅电子通道支持输入框自动完成和剪贴板文件
+仅电子通道支持输入框自动完成以及剪贴板/拖放文件
 参考。 `composer/commands` 和 `fs/index` 是只读且软故障；
 `composer/pasteFiles` 仅写入原始会话的 Electron 拥有的
-暂存目录。 None 添加主机 RPC 方法或更改主机协议
+暂存目录。剪贴板文件和浏览器拖放文件都使用 `composer/pasteFiles`。None 添加主机 RPC 方法或更改主机协议
 版本。
 
 ### composer/commands
@@ -1384,7 +1384,7 @@ type ComposerPastedFile = {
 Electron main 验证 `sessionId` 是否解析为持久主机会话，将请求限制为 20 个文件、每个文件
 64 MiB、总共 128 MiB，剥离渲染器提供的目录组件，并在具有独占创建语义的
 `<data_dir>/scratch/<sessionId>/pasted/` 下写入唯一名称。渲染器只保存返回的路径和元数据，
-显示 `name`，并通过 `AgentPromptRequest.attachments` 提交它们。剪贴板字节不会以 base64
+显示 `name`，并通过 `AgentPromptRequest.attachments` 提交它们。渲染器对剪贴板文件和用户拖放文件使用同一桥接，因此两者具有相同的大小限制、会话所有权和附件处理。剪贴板字节不会以 base64
 进入持久提示或主机代理。无效会话以及格式错误或超限负载会失败并返回 IPC 错误，操作不能
 写入工作区。
 

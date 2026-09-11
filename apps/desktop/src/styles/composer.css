@@ -144,6 +144,15 @@
   box-shadow: 0 7px 24px color-mix(in oklab, var(--ds-text-primary) 9%, transparent);
 }
 
+/* A file drop is an attachment operation, not a text drop. Keep the cue on
+   the existing shell so it remains visible around the rich editable and its
+   controls without changing the layout. */
+.composer-shell.is-file-drop-active {
+  box-shadow:
+    0 0 0 2px color-mix(in oklab, var(--ds-accent) 70%, transparent),
+    var(--ds-shadow-composer);
+}
+
 .composer-input-wrap {
   position: relative;
   display: flex;

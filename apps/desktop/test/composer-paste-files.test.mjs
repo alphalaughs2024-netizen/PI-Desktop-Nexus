@@ -6,7 +6,7 @@ import test from "node:test";
 
 const read = (path) => readFile(new URL(path, import.meta.url), "utf8");
 
-const [composer, api, main, attachments, saver, protocol, sidecar, picker] = await Promise.all([
+const [composer, api, main, attachments, saver, protocol, sidecar, picker, composerCss] = await Promise.all([
   read("../src/components/Composer.tsx"),
   read("../src/lib/api.ts"),
   read("../electron/main/index.ts"),
@@ -15,11 +15,29 @@ const [composer, api, main, attachments, saver, protocol, sidecar, picker] = awa
   read("../../../packages/shared/src/protocol.ts"),
   read("../../../packages/agent-runtime/src/sidecar.ts"),
   read("../electron/main/composer-picker.ts"),
+  read("../src/styles/composer.css"),
 ]);
+
+test("composer imports dropped files through the existing session-owned paste path", () => {
+  assert.match(composer, /const dropFiles = async \(event: DragEvent<HTMLDivElement>\) =>/);
+  assert.match(composer, /const files = clipboardFiles\(event\.dataTransfer\)/);
+  assert.match(composer, /if \(!files\.length\) return;/);
+  assert.match(composer, /if \(inputBlocked\) return;/);
+  assert.match(composer, /event\.preventDefault\(\);/);
+  assert.match(composer, /await api\.pasteFiles\(sessionId, payload\)/);
+  assert.match(composer, /onDragOver=\{allowFileDrop\}/);
+  assert.match(composer, /onDragLeave=\{leaveFileDrop\}/);
+  assert.match(composer, /onDrop=\{dropFiles\}/);
+  assert.match(composer, /isFileDropActive \? " is-file-drop-active" : ""/);
+  assert.match(composerCss, /\.composer-shell\.is-file-drop-active/);
+  // Dragging text or a URL stays a browser-native action: only a real file
+  // drop gets prevented and imported.
+  assert.match(composer, /if \(!files\.length\) return;/);
+});
 
 test("composer converts oversized text paste and materializes clipboard files", () => {
   assert.match(composer, /onPaste=\{pasteClipboardFiles\}/);
-  assert.match(composer, /const text = event\.clipboardData\.getData\("text\/plain"\)/);
+  assert.match(composer, /const text = dataTransfer\.getData\("text\/plain"\)/);
   assert.match(composer, /const textLength = Array\.from\(text\)\.length/);
   assert.match(composer, /!files\.length && textLength > largePasteThreshold/);
   assert.match(composer, /pasted-text-\$\{crypto\.randomUUID\(\)\.slice\(0, 8\)\}\.txt/);

@@ -3757,4 +3757,3 @@ D193 和 D194。
 - 现在由 `session.truncateFrom` 在主机锁内完成截断、中止残留 running 回合并归档被丢弃的尾巴。`agent/prompt` 只为启动配置做有界 `session.get`。
 - 超长控制管道行以 `LIMIT_EXCEEDED` 应答，不再结束 stdin 读取器。
 - 决策 D390 与 ADR 0216。见 E2E-246。
-

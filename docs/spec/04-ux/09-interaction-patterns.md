@@ -955,8 +955,6 @@ Sidebar width resizing is also implemented in MVP:
 The following gestures remain reserved for future milestones:
 
 - Drag project/session items to assign manual order
-- File drag into the composer remains unhandled; clipboard file/image paste
-  uses the session-scratch reference flow below
 
 ### 8.2 Spec reservation
 
@@ -989,16 +987,20 @@ When drag/drop is implemented, these patterns should apply:
   Accepting a directory keeps the full literal path in the draft so deeper
   completion can continue.
 
-### 8a.2 Reference chips and clipboard files
+### 8a.2 Reference chips, paste, and file drop
 
-- A paste containing one or more OS `File` objects is intercepted in the
-  textarea. Text-only paste stays native when its character count is at or
+- A paste or a drop containing one or more OS `File` objects is intercepted in
+  the Composer. Text-only paste stays native when its character count is at or
   below the persisted `largePasteThreshold` (default 600); text-only paste
   above the threshold is intercepted and converted into a temporary session
-  file reference.
+  file reference. Text and URL drops remain browser-native rather than being
+  treated as attachments.
+- Dragging files over the Composer highlights its existing shell with an accent
+  outline. The cue clears on leave or drop; it does not alter the layout or
+  intercept drops anywhere outside the Composer.
 - While bytes are being transferred, the textarea is read-only and exposes
   `aria-busy="true"`; the send and autocomplete controls are disabled.
-- Electron main saves bounded bytes under the originating session's scratch
+- Electron main saves bounded paste/drop bytes under the originating session's scratch
   root and returns unique absolute paths plus sanitized original leaf names.
   The composer leaves visible text unchanged, appends leaf-name reference
   chips in clipboard order, then restores the textarea selection and focus.

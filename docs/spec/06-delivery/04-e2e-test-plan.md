@@ -5467,6 +5467,29 @@ Each scenario is documented in this format:
   provider/UI journey Draft (do not run E2E locally unless explicitly
   requested)
 
+#### E2E-102i: Composer file drop uses the bounded attachment bridge
+
+- **Preconditions**: The app is running with a home or Agent composer. A text
+  fixture and image fixture exist outside the active workspace, plus a URL or
+  plain-text draggable source for the negative case.
+- **Steps**: 1) Drag the two files over the Composer and confirm the Composer
+  shell shows its file-drop outline. 2) Drop them into the Composer, inspect
+  the leaf-name chips, and send a prompt. 3) Drag plain text or a URL over and
+  drop it; confirm the app does not turn it into an attachment. 4) Repeat from
+  the home composer and inspect the newly materialized session's scratch root.
+- **Expected**: A file drop follows the same bounded `composer/pasteFiles`
+  route as a clipboard file: session materialization, scratch copies,
+  MIME/image classification, structured attachment metadata, and a clean
+  workspace. The drop outline clears after leave/drop. Non-file drops keep
+  native browser behavior, and no area outside the Composer becomes a file
+  drop target.
+- **Specs linked**: `04-ux/09-interaction-patterns.md` §8a.2,
+  `03-runtime/01-ipc-protocol.md` §13c
+- **Acceptance**: C (conversation & stream), F (persistence), Quality
+- **Milestone**: M5
+- **Status**: Unit-covered (`apps/desktop/test/composer-paste-files.test.mjs`);
+  full UI journey Draft (do not run E2E locally unless explicitly requested)
+
 #### E2E-102a: Composer file reference results use compact leaf names
 
 - **Preconditions**: The app is running with an Agent session in a workspace
