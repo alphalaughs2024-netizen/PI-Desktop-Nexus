@@ -1263,3 +1263,46 @@
   .context-vault-actions { margin-left: 0; }
   .context-vault-grid.is-editing { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(120px, .8fr) minmax(0, 1.2fr); }
 }
+
+/* Native Context Vault workspace: project knowledge, not a plugin webview. */
+.context-vault-tab { position: relative; padding: 0; background: var(--ds-bg-primary); }
+.context-vault-workspace { border: 0; border-radius: 0; grid-template-columns: minmax(158px, .32fr) minmax(0, 1fr); }
+.context-vault-rail { gap: 4px; padding: 12px 8px 10px; background: color-mix(in oklab, var(--ds-bg-secondary) 82%, var(--ds-bg-primary)); }
+.context-vault-rail-brand { display: flex; align-items: center; gap: 7px; padding: 4px 7px 10px; color: var(--ds-text-primary); font-size: var(--text-xs-plus); font-weight: var(--font-weight-semibold); }
+.context-vault-rail-brand svg { color: var(--ds-accent); }
+.context-vault-rail-label { margin: 10px 7px 3px; color: var(--ds-text-muted); font-size: var(--text-2xs); font-weight: var(--font-weight-semibold); letter-spacing: .06em; text-transform: uppercase; }
+.context-vault-category { min-height: 32px; padding: 0 8px; border: 1px solid transparent; }
+.context-vault-category.active { border-color: color-mix(in oklab, var(--ds-accent) 26%, transparent); background: color-mix(in oklab, var(--ds-accent) 12%, var(--ds-bg-hover)); box-shadow: none; }
+.context-vault-category-group { padding: 0; border: 0; }
+.context-vault-tag-rail { display: flex; flex-direction: column; gap: 2px; }
+.context-vault-rail-health { display: flex; align-items: flex-start; gap: 7px; margin: auto 3px 0; padding: 9px; border: 1px solid var(--ds-border-subtle); border-radius: var(--radius-sm); background: color-mix(in oklab, var(--ds-tile) 78%, transparent); }
+.context-vault-rail-health svg { flex: 0 0 auto; color: var(--ds-accent); }
+.context-vault-rail-health p { margin: 0; }
+.context-vault-main { padding: 14px; gap: 10px; }
+.context-vault-toolbar { gap: 10px; }
+.context-vault-actions { margin: 0; padding: 0; border: 0; justify-content: flex-end; }
+.context-vault-action { gap: 6px; min-height: 32px; border-radius: var(--radius-sm); }
+.context-vault-action:disabled, .context-vault-inline-button:disabled { cursor: not-allowed; opacity: .55; }
+.context-vault-search-shell { min-height: 34px; border-radius: var(--radius-md); }
+.context-vault-search { min-height: 32px; }
+.context-vault-message { margin: -2px 0 0; padding: 7px 9px; border-radius: var(--radius-sm); font-size: var(--text-xs); }
+.context-vault-error { color: var(--ds-error); background: color-mix(in oklab, var(--ds-error) 10%, transparent); }
+.context-vault-notice { color: var(--ds-text-secondary); background: color-mix(in oklab, var(--ds-accent) 10%, transparent); }
+.context-vault-empty { gap: 10px; padding: 32px 20px; }
+.context-vault-empty-orbit { position: relative; display: grid; width: 112px; height: 104px; place-items: center; }
+.context-vault-empty-orbit > span { position: absolute; width: 8px; height: 8px; border: 1px solid color-mix(in oklab, var(--ds-accent) 50%, var(--ds-border)); border-radius: 50%; background: var(--ds-bg-primary); }
+.context-vault-empty-orbit > span:nth-child(1) { top: 5px; left: 17px; }.context-vault-empty-orbit > span:nth-child(2) { right: 8px; bottom: 23px; }.context-vault-empty-orbit > span:nth-child(3) { bottom: 4px; left: 33px; }
+.context-vault-empty-icon { position: relative; z-index: 1; width: 68px; height: 68px; border-radius: 50%; color: var(--ds-accent); box-shadow: 0 0 0 10px color-mix(in oklab, var(--ds-accent) 5%, transparent), var(--ds-shadow-sm); }
+.context-vault-purpose-cards { display: flex; max-width: 480px; flex-wrap: wrap; justify-content: center; gap: 6px; margin-top: 9px; }
+.context-vault-purpose-cards span { padding: 5px 8px; border: 1px solid var(--ds-border-subtle); border-radius: var(--radius-full); color: var(--ds-text-muted); font-size: var(--text-2xs); background: var(--ds-tile); }
+.context-vault-grid { gap: 10px; }.context-vault-grid.is-editing { grid-template-columns: minmax(190px, .7fr) minmax(270px, 1.3fr); }
+.context-vault-list, .context-vault-editor { padding: 8px; border-color: var(--ds-border-subtle); background: color-mix(in oklab, var(--ds-bg-secondary) 42%, transparent); }
+.context-vault-claim { padding: 10px; border: 1px solid transparent; border-radius: var(--radius-sm); }.context-vault-claim.active { border-color: color-mix(in oklab, var(--ds-accent) 32%, transparent); background: color-mix(in oklab, var(--ds-accent) 10%, var(--ds-bg-hover)); }
+.context-vault-editor { padding: 12px; }.context-vault-editor-header, .context-vault-modal > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 12px; }.context-vault-editor-header strong, .context-vault-modal h2 { color: var(--ds-text-primary); font-size: var(--text-sm); font-weight: var(--font-weight-semibold); }.context-vault-editor-header span { display: block; margin-top: 3px; color: var(--ds-text-muted); font-size: var(--text-2xs); line-height: var(--leading-body); }
+.context-vault-field-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }.context-vault-field-grid label { min-width: 0; }.context-vault-relationship-row { grid-template-columns: minmax(0, .75fr) minmax(0, 1.25fr) 28px; padding: 8px; margin-bottom: 6px; border: 1px solid var(--ds-border-subtle); border-radius: var(--radius-sm); background: var(--ds-tile); }.context-vault-relationship-row label { margin: 0; }.context-vault-relationship-row .context-vault-icon-button { align-self: end; }
+.context-vault-section-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 12px 0 7px; color: var(--ds-text-secondary); font-size: var(--text-xs); }.context-vault-section-heading strong { display: inline-flex; align-items: center; gap: 5px; }
+.context-vault-inline-button, .context-vault-icon-button { display: inline-flex; align-items: center; justify-content: center; gap: 4px; min-height: 26px; padding: 0 6px; border-radius: var(--radius-sm); color: var(--ds-text-secondary); font-size: var(--text-2xs); }.context-vault-inline-button:hover, .context-vault-icon-button:hover { background: var(--ds-bg-hover); color: var(--ds-text-primary); }
+.context-vault-evidence-row { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) 28px; gap: 7px; padding: 8px; margin-bottom: 6px; border: 1px solid var(--ds-border-subtle); border-radius: var(--radius-sm); background: var(--ds-tile); }.context-vault-evidence-row label { margin: 0; }.context-vault-evidence-row .context-vault-icon-button { align-self: end; }
+.context-vault-relationship-section, .context-vault-review-section { padding-top: 1px; }.context-vault-editor footer, .context-vault-modal footer { position: sticky; bottom: -12px; display: flex; flex-wrap: wrap; gap: 6px; padding: 12px 0 1px; background: color-mix(in oklab, var(--ds-bg-secondary) 92%, transparent); }
+.context-vault-modal-backdrop { position: absolute; z-index: 40; inset: 0; display: grid; place-items: center; padding: 16px; background: color-mix(in oklab, var(--ds-bg-primary) 54%, transparent); }.context-vault-modal { width: min(460px, 100%); max-height: min(540px, calc(100% - 20px)); overflow: auto; padding: 16px; border: 1px solid var(--ds-border-default); border-radius: var(--radius-md); background: var(--ds-bg-elevated-opaque); box-shadow: var(--ds-shadow-dialog); }.context-vault-modal h2 { margin: 0; }.context-vault-modal p { margin: 5px 0 0; color: var(--ds-text-muted); font-size: var(--text-xs); line-height: var(--leading-body); }.context-vault-import-items { display: flex; flex-direction: column; gap: 5px; margin-top: 12px; }.context-vault-import-item { display: flex; align-items: flex-start; gap: 8px; padding: 8px; border: 1px solid var(--ds-border-subtle); border-radius: var(--radius-sm); }.context-vault-import-item input { margin-top: 2px; }.context-vault-import-item span { min-width: 0; }.context-vault-import-item b, .context-vault-import-item small { display: block; overflow-wrap: anywhere; }.context-vault-import-item small { margin-top: 2px; color: var(--ds-text-muted); font-size: var(--text-2xs); }.context-vault-import-item:not(.is-selectable) { opacity: .62; }
+@media (max-width: 720px) { .context-vault-main { padding: 10px; }.context-vault-toolbar { align-items: stretch; }.context-vault-search-shell { flex-basis: 100%; }.context-vault-actions { justify-content: flex-start; }.context-vault-field-grid, .context-vault-evidence-row { grid-template-columns: minmax(0, 1fr); }.context-vault-evidence-row .context-vault-icon-button { justify-self: end; }.context-vault-grid.is-editing { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(120px, .8fr) minmax(0, 1.2fr); } }

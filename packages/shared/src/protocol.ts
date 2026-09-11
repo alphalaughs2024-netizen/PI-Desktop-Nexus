@@ -105,6 +105,8 @@ export const IPC = {
     contextVaultRecheck: "pi-desktop/contextVault/recheck",
     contextVaultExport: "pi-desktop/contextVault/export",
     contextVaultImport: "pi-desktop/contextVault/import",
+    contextVaultImportPreview: "pi-desktop/contextVault/importPreview",
+    contextVaultImportApply: "pi-desktop/contextVault/importApply",
     sessionOpenScratchPath: "pi-desktop/session/openScratchPath",
     projectOpenFolder: "pi-desktop/project/openFolder",
     settingsGet: "pi-desktop/settings/get",

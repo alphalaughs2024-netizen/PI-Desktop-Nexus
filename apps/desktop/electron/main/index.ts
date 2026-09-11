@@ -6438,14 +6438,17 @@ function registerIpc() {
     await writeFile(result.filePath, JSON.stringify(pack, null, 2), "utf8");
     return { ok: true };
   });
-  handle(IPC.invoke.contextVaultImport, async (input: { projectPath: string }) => {
+  handle(IPC.invoke.contextVaultImportPreview, async (input: { projectPath: string }) => {
     if (!host || !mainWindow) throw new Error("host unavailable");
     const selected = await dialog.showOpenDialog(mainWindow, { title: "Import Context Vault", properties: ["openFile"], filters: [{ name: "JSON", extensions: ["json"] }] });
-    if (selected.canceled || !selected.filePaths[0]) return { imported: 0, skipped: 0 };
+    if (selected.canceled || !selected.filePaths[0]) return { canceled: true };
     const pack = JSON.parse(await readFile(selected.filePaths[0], "utf8"));
-    const preview = await host.call<{ items?: Array<{ index: number; status: string }> }>("contextVault.importPreview", { projectPath: input.projectPath, pack });
-    const indexes = (preview.items ?? []).filter((item) => item.status === "selectable").map((item) => item.index);
-    return host.call("contextVault.importApply", { projectPath: input.projectPath, pack, selected: indexes });
+    const preview = await host.call("contextVault.importPreview", { projectPath: input.projectPath, pack });
+    return { canceled: false, pack, preview };
+  });
+  handle(IPC.invoke.contextVaultImportApply, async (input: { projectPath: string; pack: unknown; selected: number[] }) => {
+    if (!host) throw new Error("host unavailable");
+    return host.call("contextVault.importApply", input);
   });
   handle(IPC.invoke.sessionOpenScratchPath, async (input: { sessionId: string }) => {
     if (!host) throw new Error("host unavailable");

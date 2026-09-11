@@ -4,6 +4,9 @@ import test from "node:test";
 
 const tab = await readFile(new URL("../src/components/workpanel/ContextVaultTab.tsx", import.meta.url), "utf8");
 const styles = await readFile(new URL("../src/styles/work-panel.css", import.meta.url), "utf8");
+const api = await readFile(new URL("../src/lib/api.ts", import.meta.url), "utf8");
+const main = await readFile(new URL("../electron/main/index.ts", import.meta.url), "utf8");
+const protocol = await readFile(new URL("../../../packages/shared/src/protocol.ts", import.meta.url), "utf8");
 const en = await readFile(new URL("../../../packages/i18n/src/locales/en/index.ts", import.meta.url), "utf8");
 const zhCN = await readFile(new URL("../../../packages/i18n/src/locales/zh-CN/index.ts", import.meta.url), "utf8");
 
@@ -47,4 +50,30 @@ test("Context Vault has a native category rail and an intentional empty workspac
   assert.match(tab, /IconPlus/);
   assert.match(styles, /\.context-vault-workspace \{[\s\S]*?grid-template-columns: minmax\(124px, 0\.32fr\) minmax\(0, 1fr\)/);
   assert.match(styles, /\.context-vault-empty \{[\s\S]*?align-items: center[\s\S]*?justify-content: center/);
+});
+
+test("Context Vault previews an import and applies only the user's selected claims", () => {
+  assert.match(protocol, /contextVaultImportPreview: "pi-desktop\/contextVault\/importPreview"/);
+  assert.match(protocol, /contextVaultImportApply: "pi-desktop\/contextVault\/importApply"/);
+  assert.match(api, /previewContextVaultImport/);
+  assert.match(api, /applyContextVaultImport/);
+  assert.match(main, /IPC\.invoke\.contextVaultImportPreview/);
+  assert.match(main, /IPC\.invoke\.contextVaultImportApply/);
+  assert.doesNotMatch(main, /contextVaultImport,[\s\S]{0,1200}\.filter\(\(item\) => item\.status === "selectable"\)[\s\S]{0,400}contextVault\.importApply/);
+  assert.match(tab, /context-vault-import-sheet/);
+  assert.match(tab, /applyContextVaultImport/);
+});
+
+test("Context Vault provides a complete native editing workspace instead of a single-evidence form", () => {
+  assert.match(tab, /context-vault-rail-brand/);
+  assert.match(tab, /context-vault-purpose-cards/);
+  assert.match(tab, /context-vault-evidence-row/);
+  assert.match(tab, /context-vault-relationship-section/);
+  assert.match(tab, /context-vault-relationship-row/);
+  assert.match(tab, /context-vault-review-section/);
+  assert.match(tab, /context-vault-modal-backdrop/);
+  assert.match(tab, /evidence: \[evidenceRow\(\)\]/);
+  assert.match(styles, /\.context-vault-modal-backdrop \{/);
+  assert.match(styles, /\.context-vault-purpose-cards \{/);
+  assert.match(styles, /\.context-vault-evidence-row \{/);
 });

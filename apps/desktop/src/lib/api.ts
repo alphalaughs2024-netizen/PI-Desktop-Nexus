@@ -358,7 +358,13 @@ export const api = {
   recheckContextVaultClaim: (projectPath: string, id: string) =>
     invoke<{ claim: ContextVaultClaim | null }>(IPC.invoke.contextVaultRecheck, { projectPath, id }),
   exportContextVault: (projectPath: string) => invoke<{ ok: boolean }>(IPC.invoke.contextVaultExport, { projectPath }),
-  importContextVault: (projectPath: string) => invoke<{ imported: number; skipped: number }>(IPC.invoke.contextVaultImport, { projectPath }),
+  previewContextVaultImport: (projectPath: string) =>
+    invoke<{ canceled: boolean; pack?: unknown; preview?: { items?: Array<{ index: number; status: string; reason?: string; claim?: string }> } }>(
+      IPC.invoke.contextVaultImportPreview,
+      { projectPath },
+    ),
+  applyContextVaultImport: (projectPath: string, pack: unknown, selected: number[]) =>
+    invoke<{ imported: number; skipped: number }>(IPC.invoke.contextVaultImportApply, { projectPath, pack, selected }),
   openProjectFolder: (path: string) =>
     invoke<{ ok: boolean; path: string }>(IPC.invoke.projectOpenFolder, path),
   renameSession: (id: string, title: string) =>

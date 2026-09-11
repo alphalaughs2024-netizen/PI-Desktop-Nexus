@@ -9975,8 +9975,9 @@ sample extensions under `apps/desktop/test/fixtures/pi-extensions/`.
   are forwarded to the Nexus Context Vault executor for the active session,
   including when third-party plugins are disabled; none fail as an unknown
   tool. The pack contains no secrets, sessions, absolute paths, mtimes, or
-  workspace contents; preview labels duplicates/overlaps/invalid items and only
-  chosen valid claims merge.
+  workspace contents; choosing a pack opens a review sheet without writes,
+  preview labels selectable, duplicate, overlap, invalid, and incompatible
+  items, and only the explicitly checked valid claims merge.
 - **Specs linked**: ADR 0217, runtime and storage specifications.
 - **Status**: Draft.
 
@@ -10017,10 +10018,12 @@ sample extensions under `apps/desktop/test/fixtures/pi-extensions/`.
   disabled image support follows the deliberate fallback. A terminal Responses
   event completes without an EOF. Workspace paths contain `/`. Active assistant
   controls are absent and return after completion. Context Vault has localized
-  titles and controls, a category rail whose counts and filtering are local to
-  the visible list, an intentional empty state with visible claim/import
-  actions, independently usable list/editor scroll areas, and no horizontal
-  overflow.
+  titles and controls, a category/tag rail whose counts and filtering are local
+  to the visible list, an intentional empty state with visible first-claim,
+  user-decision, and import actions, independently usable list/editor scroll
+  areas, a reachable multi-evidence editor with review/supersession controls,
+  and no horizontal overflow. Import opens a selection preview before a claim
+  can be written.
 - **Status**: Unit/source-contract covered; desktop journey is Draft.
 ### E2E-179 — repeated identical tool-call safety
 

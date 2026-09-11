@@ -1,4 +1,4 @@
-import type { EnglishCatalog } from "../en/index.js";
+import { en, type EnglishCatalog } from "../en/index.js";
 
 export const fr = {
   "app": {
@@ -1317,7 +1317,7 @@ export const fr = {
       "tooLarge": "Le fichier est trop volumineux pour être prévisualisé"
     }
   },
-  "contextVault": { "noProject": "Open a project to use its private vault.", "health": "{{reviewed}} reviewed architecture · {{decisions}} user decisions · {{stale}} possibly stale", "newClaim": "New claim", "userDecision": "User decision", "export": "Export", "import": "Import", "search": "Search durable project knowledge", "emptyTitle": "No durable knowledge yet", "emptyBody": "Claims stay private to this project. Save only decisions and facts worth reusing.", "claim": "Claim", "category": "Category", "impact": "Impact", "scope": "Scope", "recheckGuidance": "Re-check guidance", "evidencePath": "Evidence path", "evidenceExcerpt": "Literal evidence excerpt", "save": "Save", "recheck": "Re-check evidence", "markReviewed": "Mark reviewed", "delete": "Delete", "categories": { "architecture": "Architecture", "decisions": "Decisions", "conventions": "Conventions", "gotchas": "Gotchas", "notes": "Notes" }, "freshness": { "fresh": "Fresh", "possibly_stale": "Possibly stale", "stale": "Stale", "unavailable": "Unavailable", "unverified": "Unverified" }, "review": { "reviewed": "Reviewed", "conflicted": "Conflicted", "superseded": "Superseded", "pending": "Pending" } },
+  "contextVault": { ...en.contextVault },
   "palette": {
     "placeholder": "Commandes de recherche…",
     "empty": "Aucune commande trouvée",
