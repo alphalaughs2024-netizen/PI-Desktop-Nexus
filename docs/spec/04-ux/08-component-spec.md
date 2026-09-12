@@ -2158,6 +2158,9 @@ reasoning-level control.
   `.composer-toolbar` spacing, minimum heights, theme surfaces, and controls.
   Only the parent placement and the localized placeholder copy differ between
   the empty home and a recorded conversation.
+- In Twilight Mountains, a fixed conversation title bar reserves its own
+  height plus an 8px visual clearance before the first transcript item. Live
+  activity and subagent status must not paint beneath title-bar controls.
 - Empty draft height: `.composer-input` uses `min-height: 3lh`, so an idle
   composer shows three lines of input before it grows with the draft.
 - Scroll stability: The thread scrollport reserves one stable trailing gutter,
