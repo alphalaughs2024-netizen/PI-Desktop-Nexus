@@ -10,6 +10,7 @@ const themeRowSource = await readFile(
 );
 const apiSource = await readFile(new URL("../src/lib/api.ts", import.meta.url), "utf8");
 const mainSource = await readFile(new URL("../electron/main/index.ts", import.meta.url), "utf8");
+const chatSurface = await readFile(new URL("../src/components/ChatSurface.tsx", import.meta.url), "utf8");
 const sharedTypes = await readFile(new URL("../../../packages/shared/src/types.ts", import.meta.url), "utf8");
 const packageJson = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
 const styles = await loadStyles();
@@ -43,18 +44,39 @@ test("Twilight packages its backdrop and uses a navy native fallback", async () 
   assert.match(mainSource, /theme === "twilight-mountains" \? "#071326"/);
 });
 
-test("Twilight uses one inert backdrop, glass semantic tokens, and readable fallbacks", () => {
+test("Twilight uses layered blue-glass materials with readable safety surfaces", () => {
   const shellChildRule =
     /\.app-shell > :not\(\.app-scenic-backdrop\)[^{]*\{([^}]*)\}/.exec(styles)?.[1] ?? "";
 
   assert.match(styles, /:root\[data-theme="dark"\]\[data-scenic-theme="twilight-mountains"\]/);
+  assert.match(styles, /--twilight-atmosphere:/);
+  assert.match(styles, /--twilight-shell-glass:/);
+  assert.match(styles, /--twilight-navigation-glass:/);
+  assert.match(styles, /--twilight-raised-glass:/);
+  assert.match(styles, /--twilight-safety-surface:/);
+  assert.match(styles, /--twilight-luminous-border:/);
+  assert.match(styles, /--twilight-focus-glow:/);
   assert.match(styles, /\.app-scenic-backdrop[\s\S]*?pointer-events:\s*none/);
   assert.match(styles, /\.app-scenic-backdrop[\s\S]*?twilight-mountains\.png/);
   assert.match(styles, /\.app-scenic-backdrop::after/);
+  assert.match(styles, /radial-gradient\(/);
+  assert.match(styles, /\.sidebar-rail[\s\S]*?var\(--twilight-navigation-glass\)/);
+  assert.match(styles, /\.main-titlebar[\s\S]*?var\(--twilight-navigation-glass\)/);
+  assert.match(styles, /\.composer-shell[\s\S]*?var\(--twilight-luminous-border\)/);
+  assert.match(styles, /\.dialog[\s\S]*?var\(--twilight-safety-surface\)/);
+  assert.match(styles, /\.tool-row-content[\s\S]*?var\(--twilight-safety-surface\)/);
   assert.match(shellChildRule, /z-index:\s*1/);
   assert.doesNotMatch(shellChildRule, /position\s*:/);
   assert.match(styles, /backdrop-filter:\s*blur\(/);
   assert.match(styles, /@media \(prefers-reduced-transparency: reduce\)/);
   assert.match(styles, /@supports not \(backdrop-filter: blur\(1px\)\)/);
-  assert.match(styles, /--ds-bg-elevated-opaque:\s*rgba\(/);
+  assert.match(styles, /--twilight-safety-surface:\s*rgba\(/);
+});
+
+test("Twilight alone replaces the empty-home mascot with the localized build greeting", () => {
+  assert.match(chatSurface, /const isTwilightMountains = settings\?\.theme === "twilight-mountains"/);
+  assert.match(chatSurface, /className=\{`home-main-content\$\{isTwilightMountains \? " is-twilight-mountains" : ""\}`\}/);
+  assert.match(chatSurface, /\{!isTwilightMountains \? \(\s*<div[\s\S]*?<HomeMascotLogo \/>/);
+  assert.match(chatSurface, /isTwilightMountains \? t\("chat\.emptyTitle"\)/);
+  assert.match(styles, /\[data-scenic-theme="twilight-mountains"\] \.empty-hero-icon\s*\{[\s\S]*?display:\s*none;/);
 });

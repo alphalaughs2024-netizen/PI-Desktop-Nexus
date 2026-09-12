@@ -2098,13 +2098,16 @@ reasoning-level control.
 - Workspace context: no project, Local, or branch rail is rendered or
   reserved above the shell in either home or thread-docked mode (D095)
 - Background: one solid semantic composer surface; no internal gradient,
-  background image, or decorative wash
+  background image, or decorative wash. Twilight Mountains is the scoped
+  first-party exception: it renders this same shell geometry as luminous blue
+  glass with a fine cool-white border and inner sheen.
 - Elevation: 20px radius with the restrained soft shadow alone; the hairline
   stroke was removed in D297;
   the docked transcript fade is outside the composer shell
 - The solid/near-opaque surface uses no `backdrop-filter`; focus-within adds a
   1px lift and token shadow without forcing transcript repaint through a blur
-  layer.
+  layer. Twilight Mountains may blur this one large composer surface only;
+  repeated transcript rows, code, and tool output remain unblurred.
 - Border: border-default top
 - Padding: px-4 py-3 inner textarea
 - Font: text-sm for Agent, Plan, and Goal; mode changes semantics and tool

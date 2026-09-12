@@ -1636,21 +1636,31 @@ Each scenario is documented in this format:
 - **Preconditions**: App running on Windows or Linux with a project and a
   plugin theme available; reduced-transparency preference can be simulated.
 - **Steps**: 1) Select Twilight Mountains in Settings → General → Appearance.
-  2) Visit Chat, Settings, Plugins, the work panel, a menu, and a dialog.
-  3) Resize the window and inspect its edges. 4) Enable reduced transparency,
-  then repeat the dialog/menu checks. 5) Select System, Light, Dark, and a
-  plugin theme in turn.
+  2) Inspect Chat's empty home at the supplied reference dimensions and a
+  normal Windows desktop window; confirm the blue mountains and pink horizon
+  remain visible behind the brighter navigation glass and atmospheric canvas.
+  3) Confirm the normal mascot is replaced only here by the localized build
+  greeting, then create/open a session and inspect the composer, file-drop
+  focus state, transcript, and tool output. 4) Visit Settings, Plugins, the
+  work panel, a sidebar/menu, a dialog, and a permission request. 5) Resize
+  the window; open and close the work panel; inspect fixed controls and native
+  Windows control band alignment. 6) Enable reduced transparency, then repeat
+  the dialog/menu/permission/tool-output checks. 7) Select System, Light,
+  Dark, and a plugin theme in turn and return to empty home.
 - **Expected**: Twilight Mountains keeps the shell and plugin/native appearance
   in dark mode while one bundled dusk-mountain backdrop remains behind glass
   surfaces. The scenic layer preserves the standard shell geometry: fixed and
   absolute controls, the work-panel toggle, and opening or closing the work
-  panel stay aligned and behave as they do in Dark. Menus, dialogs, permission
-  UI, code, and tool output retain readable opaque-enough contrast. Window
-  edges use a navy fallback. Reduced transparency removes blur and increases
-  opacity without removing the scenic palette. Selecting another theme removes
-  the scenic backdrop/state, and no plugin CSS permission or remote asset
-  request is needed.
-- **Specs linked**: `04-ux/06-settings-ia.md`, `04-ux/07-ui-design-system.md`, ADR 0226
+  panel stay aligned and behave as they do in Dark. Sidebar/title bands and
+  composer read as related luminous blue glass, while menus, dialogs,
+  permission UI, code, tool output, and settings controls retain readable
+  opaque-enough contrast. Window edges use a navy fallback. Reduced
+  transparency removes blur and increases opacity without removing the scenic
+  palette. System, Light, Dark, and plugin themes restore their normal mascot,
+  dynamic empty-home greeting, layout, and styling. Selecting another theme
+  removes the scenic backdrop/state, and no plugin CSS permission or remote
+  asset request is needed.
+- **Specs linked**: `04-ux/06-settings-ia.md`, `04-ux/07-ui-design-system.md`, `04-ux/08-component-spec.md`, ADR 0226, ADR 0227
 - **Acceptance**: Quality
 
 #### E2E-039: Settings titlebar drag moves the window

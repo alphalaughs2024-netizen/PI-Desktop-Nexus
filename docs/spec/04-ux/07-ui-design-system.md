@@ -685,9 +685,12 @@ High-frequency workstation feedback must remain compositor-friendly and bounded:
   controls provide a subtle pressed scale while active. The base transition
   includes `transform`, so press and release never snap; hover styling never
   changes element dimensions or surrounding layout.
-- Composer focus lifts by 1px with a restrained token-based shadow. Its
-  near-opaque surface must not use backdrop blur: transcript updates beneath a
-  blur layer would force avoidable repaint/compositing work while streaming.
+- Composer focus lifts by 1px with a restrained token-based shadow. Normal
+  themes use a near-opaque surface with no backdrop blur: transcript updates
+  beneath a blur layer would force avoidable repaint/compositing work while
+  streaming. Twilight Mountains is the narrow first-party exception: its one
+  compositor-bounded composer shell may use blur as part of the scenic glass
+  material, while transcript rows, list rows, code, and tool output never do.
 - Inline chat error notices wrap long provider detail and keep their actions
   reachable without introducing horizontal page overflow.
 - Stream-driven updates never restart route or shell animations. Every enter

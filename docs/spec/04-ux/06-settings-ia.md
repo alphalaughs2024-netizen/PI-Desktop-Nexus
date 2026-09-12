@@ -55,7 +55,10 @@ Settings is a **full-window page** that replaces the app sidebar + main chrome (
     current name. The menu pins System, Light, Dark, and the opt-in
     **Twilight Mountains** scenic dark theme at the top, then lists plugin
     themes after a divider with a "Provided by …" hint. Twilight Mountains uses
-    a bundled first-party backdrop behind readable translucent surfaces; it
+    a bundled first-party backdrop with a layered blue-glass shell: navigation
+    and the composer are luminous glass while menus, dialogs, permissions,
+    code, tool output, and controls remain deliberately more opaque. Its empty
+    chat home uses the localized build greeting instead of the mascot. It
     resolves as dark for controls and plugin panels. Search matches labels,
     descriptions, ids, and plugin ids. Selection updates `settings.theme`.
   - **Language**: a searchable picker row (not a card grid). The trigger fills

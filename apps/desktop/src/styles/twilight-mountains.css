@@ -1,14 +1,23 @@
 /* First-party scenic treatment. Components continue to consume semantic tokens. */
 :root[data-theme="dark"][data-scenic-theme="twilight-mountains"] {
-  --ds-bg-primary: rgba(5, 16, 34, 0.78);
-  --ds-bg-sidebar: rgba(6, 18, 38, 0.84);
-  --ds-bg-secondary: rgba(9, 26, 51, 0.76);
-  --ds-bg-tertiary: rgba(17, 39, 70, 0.74);
-  --ds-bg-inset: rgba(3, 12, 28, 0.9);
+  /* Twilight material tiers: large surfaces reveal the scene; dense/safety
+     surfaces intentionally stay opaque enough to read independently. */
+  --twilight-atmosphere: rgba(4, 18, 48, 0.28);
+  --twilight-shell-glass: rgba(7, 31, 78, 0.5);
+  --twilight-navigation-glass: rgba(8, 37, 91, 0.62);
+  --twilight-raised-glass: rgba(29, 79, 156, 0.42);
+  --twilight-safety-surface: rgba(5, 24, 61, 0.9);
+  --twilight-luminous-border: rgba(204, 229, 255, 0.5);
+  --twilight-focus-glow: rgba(143, 195, 255, 0.5);
+  --ds-bg-primary: var(--twilight-atmosphere);
+  --ds-bg-sidebar: var(--twilight-navigation-glass);
+  --ds-bg-secondary: var(--twilight-shell-glass);
+  --ds-bg-tertiary: var(--twilight-raised-glass);
+  --ds-bg-inset: var(--twilight-safety-surface);
   --ds-bg-under: #071326;
-  --ds-bg-elevated: rgba(12, 30, 57, 0.78);
-  --ds-bg-elevated-opaque: rgba(9, 23, 45, 0.96);
-  --ds-bg-composer: rgba(11, 29, 55, 0.88);
+  --ds-bg-elevated: var(--twilight-raised-glass);
+  --ds-bg-elevated-opaque: var(--twilight-safety-surface);
+  --ds-bg-composer: rgba(21, 66, 142, 0.58);
   --ds-bg-hover: rgba(198, 221, 255, 0.13);
   --ds-bg-active: rgba(211, 229, 255, 0.2);
   --ds-bg-chip: rgba(203, 224, 255, 0.13);
@@ -16,13 +25,13 @@
   --ds-text-secondary: rgba(237, 245, 255, 0.82);
   --ds-text-muted: rgba(225, 238, 255, 0.68);
   --ds-text-faint: rgba(215, 231, 255, 0.52);
-  --ds-border-default: rgba(227, 240, 255, 0.23);
+  --ds-border-default: var(--twilight-luminous-border);
   --ds-border-subtle: rgba(227, 240, 255, 0.14);
   --ds-border-strong: rgba(240, 247, 255, 0.34);
   --ds-tile: rgba(208, 228, 255, 0.1);
   --ds-tile-hover: rgba(213, 231, 255, 0.16);
   --ds-tile-deep: rgba(211, 230, 255, 0.2);
-  --ds-raised: rgba(13, 33, 62, 0.94);
+  --ds-raised: var(--twilight-safety-surface);
   --ds-raised-shadow: 0 8px 28px rgba(0, 8, 24, 0.28);
   --ds-accent: #f4f8ff;
   --ds-accent-hover: #ffffff;
@@ -34,7 +43,7 @@
   --ds-purple: #d5b8ff;
   --ds-shadow-dialog: 0 22px 64px rgba(0, 7, 22, 0.56);
   --ds-elevation-stroke: 0 0 0 0.5px rgba(238, 246, 255, 0.24);
-  --ds-shadow-composer: 0 10px 36px rgba(0, 8, 28, 0.35);
+  --ds-shadow-composer: 0 16px 42px rgba(0, 9, 35, 0.34);
   --ds-bg-elevated-primary: rgba(12, 31, 59, 0.88);
 }
 
@@ -45,7 +54,7 @@
   inset: -18px;
   pointer-events: none;
   background: url("../../resources/themes/twilight-mountains.png") 50% 42% / cover no-repeat;
-  filter: saturate(0.88) blur(5px);
+  filter: saturate(1.08) blur(3px);
   transform: scale(1.03);
 }
 
@@ -53,32 +62,75 @@
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(rgba(3, 11, 28, 0.38), rgba(3, 12, 31, 0.68));
+  background:
+    radial-gradient(ellipse at 53% 29%, rgba(255, 177, 190, 0.24), transparent 27%),
+    linear-gradient(180deg, rgba(3, 16, 54, 0.18), rgba(3, 15, 45, 0.42) 55%, rgba(2, 10, 33, 0.68));
 }
 
 :root[data-scenic-theme="twilight-mountains"] .app-shell,
-:root[data-scenic-theme="twilight-mountains"] .sidebar,
-:root[data-scenic-theme="twilight-mountains"] .work-panel,
-:root[data-scenic-theme="twilight-mountains"] .composer-shell,
-:root[data-scenic-theme="twilight-mountains"] .settings-shell-full,
-:root[data-scenic-theme="twilight-mountains"] .dialog,
-:root[data-scenic-theme="twilight-mountains"] .toast,
-:root[data-scenic-theme="twilight-mountains"] .anchored-menu,
-:root[data-scenic-theme="twilight-mountains"] .context-vault-modal {
+:root[data-scenic-theme="twilight-mountains"] .chat-surface,
+:root[data-scenic-theme="twilight-mountains"] .route-page {
+  background: var(--twilight-atmosphere);
+}
+
+:root[data-scenic-theme="twilight-mountains"] :is(.sidebar, .sidebar-rail, .main-titlebar, .conversation-topbar, .window-controls, .settings-titlebar, .work-panel-header) {
+  background-color: var(--twilight-navigation-glass);
+  background-image: linear-gradient(180deg, rgba(210, 232, 255, 0.13), transparent 70%);
   backdrop-filter: blur(18px) saturate(1.08);
   -webkit-backdrop-filter: blur(18px) saturate(1.08);
 }
 
+:root[data-scenic-theme="twilight-mountains"] :is(.sidebar, .sidebar-rail) {
+  box-shadow: inset -1px 0 rgba(192, 224, 255, 0.24);
+}
+
+:root[data-scenic-theme="twilight-mountains"] :is(.work-panel, .settings-shell-full, .plugins-page) {
+  background-color: var(--twilight-shell-glass);
+  backdrop-filter: blur(18px) saturate(1.08);
+  -webkit-backdrop-filter: blur(18px) saturate(1.08);
+}
+
+:root[data-scenic-theme="twilight-mountains"] .composer-shell {
+  border: 1px solid var(--twilight-luminous-border);
+  background: linear-gradient(145deg, rgba(58, 119, 212, 0.62), var(--ds-bg-composer));
+  box-shadow: inset 0 1px rgba(239, 248, 255, 0.25), var(--ds-shadow-composer);
+  backdrop-filter: blur(18px) saturate(1.12);
+  -webkit-backdrop-filter: blur(18px) saturate(1.12);
+}
+
+:root[data-scenic-theme="twilight-mountains"] .composer-shell:focus-within {
+  box-shadow: 0 0 0 2px var(--twilight-focus-glow), inset 0 1px rgba(239, 248, 255, 0.3), var(--ds-shadow-composer);
+}
+
+:root[data-scenic-theme="twilight-mountains"] :is(.thread-item.active, .thread-item:hover, .sidebar-session-group.active > .sidebar-session-group-header) {
+  background: linear-gradient(90deg, rgba(134, 184, 255, 0.3), rgba(100, 151, 239, 0.16));
+  box-shadow: inset 0 1px rgba(220, 237, 255, 0.13);
+}
+
+:root[data-scenic-theme="twilight-mountains"] :is(.dialog, .search-dialog, .provider-setup-dialog, .provider-advanced-dialog, .vendor-account-dialog, .oauth-dialog, .plugins-modal, .toast, .sidebar-row-menu, .sidebar-popover, .composer-permission-menu, .composer-model-menu, .composer-model-thinking-menu, .context-vault-modal, .work-panel-context-menu, .permission-card, .tool-row-content, pre, code, .settings-row-control .field-select, .settings-row-control .field-input, .settings-proxy-control .field-input, .plugins-setting-control > .field-input) {
+  border-color: var(--twilight-luminous-border);
+  background-color: var(--twilight-safety-surface);
+  box-shadow: var(--ds-shadow-dialog);
+}
+
+:root[data-scenic-theme="twilight-mountains"] .home-main-content.is-twilight-mountains .empty-hero {
+  gap: 0;
+}
+
+:root[data-scenic-theme="twilight-mountains"] .empty-hero-icon {
+  display: none;
+}
+
+:root[data-scenic-theme="twilight-mountains"] .home-main-content.is-twilight-mountains .empty-hero h1 {
+  background: linear-gradient(105deg, #ffffff, #d4e8ff 62%, #f2d9ff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 2px 18px rgba(169, 202, 255, 0.32);
+}
+
 @media (prefers-reduced-transparency: reduce) {
-  :root[data-scenic-theme="twilight-mountains"] .app-shell,
-  :root[data-scenic-theme="twilight-mountains"] .sidebar,
-  :root[data-scenic-theme="twilight-mountains"] .work-panel,
-  :root[data-scenic-theme="twilight-mountains"] .composer-shell,
-  :root[data-scenic-theme="twilight-mountains"] .settings-shell-full,
-  :root[data-scenic-theme="twilight-mountains"] .dialog,
-  :root[data-scenic-theme="twilight-mountains"] .toast,
-  :root[data-scenic-theme="twilight-mountains"] .anchored-menu,
-  :root[data-scenic-theme="twilight-mountains"] .context-vault-modal {
+  :root[data-scenic-theme="twilight-mountains"] :is(.sidebar, .sidebar-rail, .main-titlebar, .conversation-topbar, .window-controls, .work-panel, .settings-shell-full, .plugins-page, .composer-shell, .dialog, .search-dialog, .provider-setup-dialog, .provider-advanced-dialog, .vendor-account-dialog, .oauth-dialog, .plugins-modal, .toast, .sidebar-row-menu, .sidebar-popover, .composer-permission-menu, .composer-model-menu, .composer-model-thinking-menu, .context-vault-modal, .work-panel-context-menu, .permission-card) {
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
     background-color: var(--ds-bg-elevated-opaque);
@@ -86,15 +138,7 @@
 }
 
 @supports not (backdrop-filter: blur(1px)) {
-  :root[data-scenic-theme="twilight-mountains"] .app-shell,
-  :root[data-scenic-theme="twilight-mountains"] .sidebar,
-  :root[data-scenic-theme="twilight-mountains"] .work-panel,
-  :root[data-scenic-theme="twilight-mountains"] .composer-shell,
-  :root[data-scenic-theme="twilight-mountains"] .settings-shell-full,
-  :root[data-scenic-theme="twilight-mountains"] .dialog,
-  :root[data-scenic-theme="twilight-mountains"] .toast,
-  :root[data-scenic-theme="twilight-mountains"] .anchored-menu,
-  :root[data-scenic-theme="twilight-mountains"] .context-vault-modal {
+  :root[data-scenic-theme="twilight-mountains"] :is(.sidebar, .sidebar-rail, .main-titlebar, .conversation-topbar, .window-controls, .work-panel, .settings-shell-full, .plugins-page, .composer-shell, .dialog, .search-dialog, .provider-setup-dialog, .provider-advanced-dialog, .vendor-account-dialog, .oauth-dialog, .plugins-modal, .toast, .sidebar-row-menu, .sidebar-popover, .composer-permission-menu, .composer-model-menu, .composer-model-thinking-menu, .context-vault-modal, .work-panel-context-menu, .permission-card) {
     background-color: var(--ds-bg-elevated-opaque);
   }
 }
