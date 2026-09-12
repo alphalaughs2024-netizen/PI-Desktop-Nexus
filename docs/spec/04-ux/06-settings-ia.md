@@ -52,10 +52,12 @@ Settings is a **full-window page** that replaces the app sidebar + main chrome (
 - **Appearance** card:
   - **Theme**: a searchable picker row (same anchored-menu pattern as
     Language). The trigger fills the settings control column and shows the
-    current name. The menu pins System, Light, and Dark at the top, then lists
-    plugin themes after a divider with a "Provided by …" hint. Search matches
-    labels, descriptions, ids, and plugin ids. Selection updates
-    `settings.theme`.
+    current name. The menu pins System, Light, Dark, and the opt-in
+    **Twilight Mountains** scenic dark theme at the top, then lists plugin
+    themes after a divider with a "Provided by …" hint. Twilight Mountains uses
+    a bundled first-party backdrop behind readable translucent surfaces; it
+    resolves as dark for controls and plugin panels. Search matches labels,
+    descriptions, ids, and plugin ids. Selection updates `settings.theme`.
   - **Language**: a searchable picker row (not a card grid). The trigger fills
     the settings control column and shows the current native name, or Match
     system. The menu pins Auto at the top with the detected language inline

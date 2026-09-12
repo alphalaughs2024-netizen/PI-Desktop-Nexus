@@ -24,3 +24,4 @@ export * from "./font-size.js";
 export * from "./racp.js";
 export * from "./trusted-extensions.js";
 export * from "./provider-retry.js";
+export * from "./built-in-themes.js";

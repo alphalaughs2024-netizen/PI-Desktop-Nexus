@@ -26,7 +26,10 @@ test("theme picker uses an anchored menu so the settings card cannot clip it", (
 });
 
 test("theme is a searchable picker row, not a card grid", () => {
-  assert.match(rowSource, /BUILTIN_THEMES = \["system", "light", "dark"\]/);
+  assert.match(
+    rowSource,
+    /BUILT_IN_THEMES\.map\(\(theme\) => theme\.id\)/,
+  );
   assert.match(rowSource, /saveSettings\(\{ theme: id \}\)/);
   assert.match(settingsPageSource, /<ThemeRow /);
   assert.doesNotMatch(settingsPageSource, /settings-theme-grid/);

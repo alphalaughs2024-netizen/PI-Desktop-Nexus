@@ -2348,8 +2348,8 @@ function applyDeveloperMode(settings?: { developerMode?: unknown } | null) {
 function applyNativeThemeSource(settings?: { theme?: unknown } | null) {
   const preference = settings?.theme;
   let next: "system" | "light" | "dark" = "system";
-  if (preference === "light" || preference === "dark") {
-    next = preference;
+  if (preference === "light" || preference === "dark" || preference === "twilight-mountains") {
+    next = preference === "twilight-mountains" ? "dark" : preference;
   } else if (typeof preference === "string" && preference.startsWith("plugin:")) {
     const pluginTheme = plugins.getThemes().find((theme) => theme.id === preference);
     if (pluginTheme?.base === "light" || pluginTheme?.base === "dark") {
@@ -2382,14 +2382,14 @@ function applyApplicationMenuSettings(settings?: {
   }
   const preference = settings?.theme;
   appThemePreference =
-    preference === "light" || preference === "dark"
+    preference === "light" || preference === "dark" || preference === "twilight-mountains"
       ? preference
       : typeof preference === "string" && preference.startsWith("plugin:")
         ? preference
         : "system";
   applyNativeThemeSource(settings);
-  if (preference === "light" || preference === "dark") {
-    pluginPanelTheme = preference;
+  if (preference === "light" || preference === "dark" || preference === "twilight-mountains") {
+    pluginPanelTheme = preference === "twilight-mountains" ? "dark" : preference;
   } else if (typeof preference === "string" && preference.startsWith("plugin:")) {
     const pluginTheme = plugins.getThemes().find((theme) => theme.id === preference);
     pluginPanelTheme =
@@ -7990,7 +7990,7 @@ function registerIpc() {
 
   handle(IPC.invoke.windowSetBackgroundColor, async (input: unknown = {}) => {
     const theme = (input as { theme?: unknown })?.theme;
-    if (theme !== "light" && theme !== "dark") {
+    if (theme !== "light" && theme !== "dark" && theme !== "twilight-mountains") {
       throw Object.assign(new Error("invalid window background theme"), {
         errorCode: ErrorCodes.INVALID_ARGUMENT,
       });
@@ -8001,7 +8001,9 @@ function registerIpc() {
     if (!mainWindow || mainWindow.isDestroyed()) {
       throw new Error("main window unavailable");
     }
-    mainWindow.setBackgroundColor(theme === "light" ? "#ffffff" : "#181818");
+    mainWindow.setBackgroundColor(
+      theme === "light" ? "#ffffff" : theme === "twilight-mountains" ? "#071326" : "#181818",
+    );
     return { applied: true, theme };
   });
 

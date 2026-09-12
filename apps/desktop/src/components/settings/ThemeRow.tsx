@@ -7,13 +7,17 @@
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { AppSettings, ThemePreference } from "@pi-desktop/shared";
+import {
+  BUILT_IN_THEMES,
+  type AppSettings,
+  type ThemePreference,
+} from "@pi-desktop/shared";
 import { cx } from "../ui";
 import { IconCheck, IconChevronDown, IconSearch } from "../icons";
 import { AnchoredMenu } from "./AnchoredMenu";
 import { useAppStore } from "../../stores/app-store";
 
-const BUILTIN_THEMES = ["system", "light", "dark"] as const;
+const builtInThemeIds = BUILT_IN_THEMES.map((theme) => theme.id);
 
 type ThemeOption = {
   id: ThemePreference;
@@ -40,12 +44,14 @@ export function ThemeRow({
   const selectedId: ThemePreference = settings.theme ?? "system";
 
   const options = useMemo<ThemeOption[]>(() => {
-    const builtins: ThemeOption[] = BUILTIN_THEMES.map((id) => {
+    const builtins: ThemeOption[] = builtInThemeIds.map((id) => {
       const title = t(
         id === "light"
           ? "settings.themeLight"
           : id === "dark"
             ? "settings.themeDark"
+            : id === "twilight-mountains"
+              ? "settings.themeTwilightMountains"
             : "settings.themeSystem",
       );
       const hint = t(
@@ -53,6 +59,8 @@ export function ThemeRow({
           ? "settings.themeLightDesc"
           : id === "dark"
             ? "settings.themeDarkDesc"
+            : id === "twilight-mountains"
+              ? "settings.themeTwilightMountainsDesc"
             : "settings.themeSystemDesc",
       );
       return {

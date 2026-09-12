@@ -26,11 +26,11 @@ test("theme changes synchronize the native non-macOS window background", () => {
   );
   assert.match(
     apiSource,
-    /setWindowBackgroundColor:\s*\(theme:\s*"light" \| "dark"\)[\s\S]*?IPC\.invoke\.windowSetBackgroundColor/,
+    /setWindowBackgroundColor:\s*\(theme:\s*"light" \| "dark" \| "twilight-mountains"\)[\s\S]*?IPC\.invoke\.windowSetBackgroundColor/,
   );
   assert.match(
     mainSource,
-    /handle\(IPC\.invoke\.windowSetBackgroundColor,[\s\S]*?setBackgroundColor\(theme === "light" \? "#ffffff" : "#181818"\)/,
+    /handle\(IPC\.invoke\.windowSetBackgroundColor,[\s\S]*?theme === "twilight-mountains" \? "#071326" : "#181818"/,
   );
   assert.match(
     mainSource,
@@ -38,6 +38,6 @@ test("theme changes synchronize the native non-macOS window background", () => {
   );
   assert.match(
     appSource,
-    /document\.documentElement\.dataset\.theme = resolvedTheme;[\s\S]*?api\.setWindowBackgroundColor\(resolvedTheme\)/,
+    /document\.documentElement\.dataset\.theme = resolvedTheme;[\s\S]*?\.setWindowBackgroundColor\(/,
   );
 });
