@@ -44,11 +44,15 @@ test("Twilight packages its backdrop and uses a navy native fallback", async () 
 });
 
 test("Twilight uses one inert backdrop, glass semantic tokens, and readable fallbacks", () => {
+  const shellChildRule =
+    /\.app-shell > :not\(\.app-scenic-backdrop\)[^{]*\{([^}]*)\}/.exec(styles)?.[1] ?? "";
+
   assert.match(styles, /:root\[data-theme="dark"\]\[data-scenic-theme="twilight-mountains"\]/);
   assert.match(styles, /\.app-scenic-backdrop[\s\S]*?pointer-events:\s*none/);
   assert.match(styles, /\.app-scenic-backdrop[\s\S]*?twilight-mountains\.png/);
   assert.match(styles, /\.app-scenic-backdrop::after/);
-  assert.match(styles, /\.app-shell > :not\(\.app-scenic-backdrop\)/);
+  assert.match(shellChildRule, /z-index:\s*1/);
+  assert.doesNotMatch(shellChildRule, /position\s*:/);
   assert.match(styles, /backdrop-filter:\s*blur\(/);
   assert.match(styles, /@media \(prefers-reduced-transparency: reduce\)/);
   assert.match(styles, /@supports not \(backdrop-filter: blur\(1px\)\)/);

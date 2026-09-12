@@ -1642,11 +1642,14 @@ Each scenario is documented in this format:
   plugin theme in turn.
 - **Expected**: Twilight Mountains keeps the shell and plugin/native appearance
   in dark mode while one bundled dusk-mountain backdrop remains behind glass
-  surfaces. Menus, dialogs, permission UI, code, and tool output retain
-  readable opaque-enough contrast. Window edges use a navy fallback. Reduced
-  transparency removes blur and increases opacity without removing the scenic
-  palette. Selecting another theme removes the scenic backdrop/state, and no
-  plugin CSS permission or remote asset request is needed.
+  surfaces. The scenic layer preserves the standard shell geometry: fixed and
+  absolute controls, the work-panel toggle, and opening or closing the work
+  panel stay aligned and behave as they do in Dark. Menus, dialogs, permission
+  UI, code, and tool output retain readable opaque-enough contrast. Window
+  edges use a navy fallback. Reduced transparency removes blur and increases
+  opacity without removing the scenic palette. Selecting another theme removes
+  the scenic backdrop/state, and no plugin CSS permission or remote asset
+  request is needed.
 - **Specs linked**: `04-ux/06-settings-ia.md`, `04-ux/07-ui-design-system.md`, ADR 0226
 - **Acceptance**: Quality
 
