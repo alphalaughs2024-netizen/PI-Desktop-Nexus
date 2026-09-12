@@ -57,7 +57,11 @@ Settings is a **full-window page** that replaces the app sidebar + main chrome (
     themes after a divider with a "Provided by …" hint. Twilight Mountains uses
     a bundled first-party backdrop with a layered blue-glass shell: navigation
     and the composer are luminous glass while menus, dialogs, permissions,
-    code, tool output, and controls remain deliberately more opaque. Its empty
+    code, tool output, and controls remain deliberately more opaque. Settings
+    uses a related readable blue-glass hierarchy: row/panel surfaces, inputs,
+    segmented controls, picker menus, badges, and buttons remain distinct and
+    legible, while inline paths and code remain plain text rather than dark
+    rectangular surfaces. Its empty
     chat home uses the localized build greeting instead of the mascot. It
     resolves as dark for controls and plugin panels. Search matches labels,
     descriptions, ids, and plugin ids. Selection updates `settings.theme`.
@@ -326,6 +330,12 @@ skills remain portable under `<project>/.agents/skills`.
   Light and dark themes use the shared Settings surface, typography, borders,
   and semantic tokens; capability pages do not introduce a separate color
   system.
+- In Twilight Mountains, the same semantic Settings system resolves to
+  blue-glass materials without changing page geometry: group headers use a
+  compact navy strip, rows and empty states use readable raised glass, and
+  fields, filters, pickers, menu surfaces, badges, primary/secondary buttons,
+  disabled states, and focus rings stay visibly distinct. Mono path labels are
+  text, never opaque code blocks.
 - Each page is one workbench, not a stack of per-level sections (D257): a
   single toolbar above a single elevated panel. The toolbar carries the level
   filter as a segmented control with live counts (All / Global / Project), one

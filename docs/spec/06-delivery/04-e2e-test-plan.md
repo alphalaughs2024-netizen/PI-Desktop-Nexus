@@ -5978,6 +5978,11 @@ Each scenario is documented in this format:
       Composer, grouped by provider, with an inherit-session option, not a
       free-typed `provider/model` input. Pin a configured model, save, and
       confirm the document's `model:` frontmatter is `vendorKey-or-name/modelId`.
+  12. With Twilight Mountains selected, visit General, Models, Skills, MCP, and
+      Subagents. Confirm Settings rows, capability group headers, mono paths,
+      fields, segmented filters, project pickers, menus, badges, empty states,
+      focus rings, and enabled/disabled buttons remain readable blue-glass
+      surfaces; mono paths must not render as black bars.
       When two configured providers share a generic or vendor key, confirm each
       provider remains a separate group and its model pin uses a unique display
       name (or provider id when the names also collide).

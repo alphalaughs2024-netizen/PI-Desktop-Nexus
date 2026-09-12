@@ -11,6 +11,7 @@ const themeRowSource = await readFile(
 const apiSource = await readFile(new URL("../src/lib/api.ts", import.meta.url), "utf8");
 const mainSource = await readFile(new URL("../electron/main/index.ts", import.meta.url), "utf8");
 const chatSurface = await readFile(new URL("../src/components/ChatSurface.tsx", import.meta.url), "utf8");
+const twilightStyles = await readFile(new URL("../src/styles/twilight-mountains.css", import.meta.url), "utf8");
 const sharedTypes = await readFile(new URL("../../../packages/shared/src/types.ts", import.meta.url), "utf8");
 const packageJson = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
 const styles = await loadStyles();
@@ -86,6 +87,27 @@ test("Twilight overrides the dark composer and Settings rail instead of inheriti
     styles,
     /\[data-scenic-theme="twilight-mountains"\][\s\S]*?\.settings-search[\s\S]*?background:\s*var\(--twilight-safety-surface\)/,
   );
+});
+
+test("Twilight gives every Settings control readable blue-glass materials", () => {
+  const settingsGlassRule =
+    /\.settings-shell-full\s*:is\(\.settings-panel, \.settings-row, \.shortcut-row, \.agent-capability-row, \.agent-capability-empty\)\s*\{([^}]*)\}/.exec(twilightStyles)?.[1] ?? "";
+  const primaryButtonRule =
+    /\.settings-shell-full \.btn-primary\s*\{([^}]*)\}/.exec(twilightStyles)?.[1] ?? "";
+
+  assert.doesNotMatch(
+    twilightStyles,
+    /\.permission-card, \.tool-row-content, pre, code, \.plugins-setting-control/,
+  );
+  assert.match(settingsGlassRule, /background:\s*var\(--twilight-settings-surface\)/);
+  assert.match(twilightStyles, /\.agent-capability-group\s*\{[\s\S]*?background:\s*var\(--twilight-settings-strip\)/);
+  assert.match(twilightStyles, /\.agent-capability-group-path\s*\{[\s\S]*?background:\s*transparent/);
+  assert.match(twilightStyles, /\.settings-shell-full\s*:is\(\.settings-search, \.field-input, \.field-select, \.field-textarea/);
+  assert.match(twilightStyles, /\.settings-shell-full \.settings-segment\s*\{[\s\S]*?var\(--twilight-settings-control\)/);
+  assert.match(twilightStyles, /\.settings-shell-full :is\([^)]*\.icon-btn/);
+  assert.match(primaryButtonRule, /color:\s*#f8fbff/);
+  assert.match(primaryButtonRule, /linear-gradient/);
+  assert.match(twilightStyles, /\.settings-shell-full \.btn:disabled\s*\{[\s\S]*?color:\s*rgba\(232, 242, 255, 0\.7\)/);
 });
 
 test("Twilight preserves scenic depth and separates adjacent selected sidebar rows", () => {
