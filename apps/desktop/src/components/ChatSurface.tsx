@@ -45,6 +45,7 @@ export const ChatSurface = memo(function ChatSurface() {
   const selectingSessionId = useAppStore((state) => state.selectingSessionId);
   const retainedSessionIds = useAppStore((state) => state.retainedSessionIds);
   const messages = useAppStore((state) => state.messages);
+  const settings = useAppStore((state) => state.settings);
   // Only the error layer's retry affordance needs the run state here; each pane
   // reads its own session's flag.
   const isRunning = useAppStore((state) => state.isRunning);
@@ -84,6 +85,7 @@ export const ChatSurface = memo(function ChatSurface() {
   const isTemporarySession = Boolean(
     activeSessionId && activeSession && !activeSession.projectPath?.trim(),
   );
+  const isTwilightMountains = settings?.theme === "twilight-mountains";
   const emptyTitleParts = useMemo(() => {
     const marker = "__PROJECT__";
     const template = t("chat.emptyTitleInProject", { project: marker });
@@ -133,7 +135,7 @@ export const ChatSurface = memo(function ChatSurface() {
       <ActiveWorkflowCard sessionId={activeSessionId} />
       {showEmptyState ? (
         <div
-          className="home-main-content"
+          className={`home-main-content${isTwilightMountains ? " is-twilight-mountains" : ""}`}
           data-testid="home-empty"
           data-home-session-kind={
             heroProject ? "project" : isTemporarySession ? "temporary" : "empty"
@@ -142,15 +144,17 @@ export const ChatSurface = memo(function ChatSurface() {
           <div className="home-scroll">
             <div className="home-stack-inner">
               <div className="empty-hero">
-                <div
-                  className="empty-hero-icon"
-                  data-testid="home-icon"
-                  aria-hidden
-                >
-                  <HomeMascotLogo />
-                </div>
+                {!isTwilightMountains ? (
+                  <div
+                    className="empty-hero-icon"
+                    data-testid="home-icon"
+                    aria-hidden
+                  >
+                    <HomeMascotLogo />
+                  </div>
+                ) : null}
                 <h1>
-                  {heroProject ? (
+                  {isTwilightMountains ? t("chat.emptyTitle") : heroProject ? (
                     <>
                       {emptyTitleParts.before}
                       <button

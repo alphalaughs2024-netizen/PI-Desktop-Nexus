@@ -366,7 +366,11 @@ test("motion feedback is composited, bounded, and accessible", () => {
   assert.match(styles, /@keyframes work-panel-out/);
   assert.match(styles, /translateX\(8px\)/);
   assert.match(styles, /\.composer-shell:focus-within/);
-  assert.doesNotMatch(styles, /backdrop-filter:\s*blur/);
+  // Twilight Mountains may blur its one bounded composer surface. Repeated
+  // streaming content must remain unblurred so transcript updates do not
+  // repaint through a per-row filter.
+  assert.doesNotMatch(styles, /\.message-row[^{}]*\{[^}]*backdrop-filter/);
+  assert.doesNotMatch(styles, /\.tool-row-content[^{}]*\{[^}]*backdrop-filter/);
   assert.match(styles, /\.chat-error-notice > span[\s\S]*?overflow-wrap:\s*anywhere/);
   assert.match(
     styles,
