@@ -1663,7 +1663,8 @@ Each scenario is documented in this format:
   removes the scenic backdrop/state, and no plugin CSS permission or remote
   asset request is needed. An active project context and its selected child
   session remain distinct adjacent sidebar surfaces with a visible gap, and
-  live transcript or subagent activity does not paint beneath the fixed title
+  adjacent child session rows retain their own visible gap when one is active.
+  Live transcript or subagent activity does not paint beneath the fixed title
   bar.
 - **Specs linked**: `04-ux/06-settings-ia.md`, `04-ux/07-ui-design-system.md`, `04-ux/08-component-spec.md`, ADR 0226, ADR 0227
 - **Acceptance**: Quality

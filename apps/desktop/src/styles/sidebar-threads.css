@@ -182,6 +182,9 @@
 /* Nested session rows read as children through the indent alone; the tree
    rail is gone (D297). */
 .sidebar-session-group-body.project {
+  /* Nested rows can carry their own active glass surface. Reserve a gap so an
+     active child and its adjacent sibling remain distinct touch targets. */
+  gap: 4px;
   margin-left: 13px;
   padding-left: 9px;
 }
