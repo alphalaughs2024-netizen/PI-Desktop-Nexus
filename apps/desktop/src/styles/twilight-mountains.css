@@ -9,6 +9,9 @@
   --twilight-safety-surface: rgba(5, 24, 61, 0.9);
   --twilight-luminous-border: rgba(204, 229, 255, 0.5);
   --twilight-focus-glow: rgba(143, 195, 255, 0.5);
+  --twilight-settings-surface: rgba(34, 84, 160, 0.3);
+  --twilight-settings-control: rgba(7, 37, 97, 0.64);
+  --twilight-settings-strip: rgba(5, 29, 77, 0.56);
   --ds-bg-primary: var(--twilight-atmosphere);
   --ds-bg-sidebar: var(--twilight-navigation-glass);
   --ds-bg-secondary: var(--twilight-shell-glass);
@@ -137,10 +140,140 @@
   box-shadow: inset 0 1px rgba(220, 237, 255, 0.13);
 }
 
-:root[data-scenic-theme="twilight-mountains"] :is(.dialog, .search-dialog, .provider-setup-dialog, .provider-advanced-dialog, .vendor-account-dialog, .oauth-dialog, .plugins-modal, .toast, .sidebar-row-menu, .sidebar-popover, .composer-permission-menu, .composer-model-menu, .composer-model-thinking-menu, .context-vault-modal, .work-panel-context-menu, .permission-card, .tool-row-content, pre, code, .settings-row-control .field-select, .settings-row-control .field-input, .settings-proxy-control .field-input, .plugins-setting-control > .field-input) {
+:root[data-scenic-theme="twilight-mountains"] :is(.dialog, .search-dialog, .provider-setup-dialog, .provider-advanced-dialog, .vendor-account-dialog, .oauth-dialog, .plugins-modal, .toast, .sidebar-row-menu, .sidebar-popover, .composer-permission-menu, .composer-model-menu, .composer-model-thinking-menu, .context-vault-modal, .work-panel-context-menu, .permission-card, .tool-row-content, pre, .plugins-setting-control > .field-input) {
   border-color: var(--twilight-luminous-border);
   background-color: var(--twilight-safety-surface);
   box-shadow: var(--ds-shadow-dialog);
+}
+
+/* Settings has its own full-window shell, dense controls, and semantic paths.
+   The broader safety-surface rule above must not turn inline paths into black
+   bars: every Settings material gets a readable, related blue-glass tier. */
+:root[data-scenic-theme="twilight-mountains"] .settings-shell-full {
+  color: var(--ds-text-primary);
+}
+
+:root[data-scenic-theme="twilight-mountains"] .settings-shell-full :is(.settings-panel, .settings-row, .shortcut-row, .agent-capability-row, .agent-capability-empty) {
+  border: 1px solid rgba(213, 234, 255, 0.18);
+  background: var(--twilight-settings-surface);
+  box-shadow: inset 0 1px rgba(238, 247, 255, 0.1), 0 10px 28px rgba(0, 12, 47, 0.16);
+}
+
+:root[data-scenic-theme="twilight-mountains"] .settings-shell-full :is(.settings-row:hover, .shortcut-row:hover, .agent-capability-row:hover, .agent-capability-row.menu-open) {
+  background: rgba(56, 111, 198, 0.4);
+}
+
+:root[data-scenic-theme="twilight-mountains"] .settings-shell-full :is(.settings-row-desc, .settings-card-description, .agent-capability-intro-description, .agent-capability-description, .agent-capability-empty-message, .settings-empty) {
+  color: rgba(236, 245, 255, 0.88);
+}
+
+:root[data-scenic-theme="twilight-mountains"] .settings-shell-full :is(.agent-capability-intro-note, .agent-capability-empty-hint, .agent-capability-command, .settings-instruction-path, .settings-font-size-percent, .settings-nav-group-label) {
+  color: rgba(224, 239, 255, 0.74);
+}
+
+:root[data-scenic-theme="twilight-mountains"] .settings-shell-full :is(.settings-search, .field-input, .field-select, .field-textarea, .settings-pill-select, .settings-font-trigger, .settings-language-trigger, .settings-theme-trigger, .agent-capability-search-wrap, .agent-capability-project-picker select, .shortcut-recorder) {
+  border: 1px solid rgba(204, 229, 255, 0.24);
+  background: var(--twilight-settings-control);
+  box-shadow: inset 0 1px rgba(239, 248, 255, 0.12), 0 6px 18px rgba(0, 10, 42, 0.18);
+  color: var(--ds-text-primary);
+}
+
+:root[data-scenic-theme="twilight-mountains"] .settings-shell-full :is(.settings-search, .field-input, .field-select, .field-textarea, .agent-capability-search, .settings-font-search input, .settings-language-search input, .settings-theme-search input)::placeholder {
+  color: rgba(225, 239, 255, 0.64);
+}
+
+:root[data-scenic-theme="twilight-mountains"] .settings-shell-full :is(.settings-search, .field-input, .field-select, .field-textarea, .settings-pill-select, .settings-font-trigger, .settings-language-trigger, .settings-theme-trigger, .agent-capability-search-wrap, .agent-capability-project-picker select, .shortcut-recorder):focus-within,
+:root[data-scenic-theme="twilight-mountains"] .settings-shell-full :is(.settings-search, .field-input, .field-select, .field-textarea, .settings-pill-select, .settings-font-trigger, .settings-language-trigger, .settings-theme-trigger, .agent-capability-project-picker select, .shortcut-recorder):focus {
+  border-color: var(--twilight-luminous-border);
+  background: rgba(22, 69, 145, 0.72);
+  box-shadow: 0 0 0 2px var(--twilight-focus-glow), inset 0 1px rgba(239, 248, 255, 0.16);
+}
+
+:root[data-scenic-theme="twilight-mountains"] .settings-shell-full .settings-segment {
+  border: 1px solid rgba(207, 230, 255, 0.18);
+  background: var(--twilight-settings-control);
+  box-shadow: inset 0 1px rgba(238, 247, 255, 0.09);
+}
+
+:root[data-scenic-theme="twilight-mountains"] .settings-shell-full .settings-segment-item.active {
+  background: linear-gradient(135deg, rgba(108, 166, 248, 0.72), rgba(46, 101, 194, 0.68));
+  box-shadow: inset 0 1px rgba(241, 248, 255, 0.28), 0 5px 14px rgba(0, 10, 43, 0.22);
+}
+
+:root[data-scenic-theme="twilight-mountains"] .settings-shell-full .agent-capability-group {
+  border: 1px solid rgba(203, 228, 255, 0.14);
+  border-radius: var(--radius-md);
+  background: var(--twilight-settings-strip);
+  box-shadow: inset 0 1px rgba(239, 248, 255, 0.08);
+  padding: 8px 10px;
+}
+
+:root[data-scenic-theme="twilight-mountains"] .settings-shell-full .agent-capability-group-path {
+  background: transparent;
+  color: rgba(232, 243, 255, 0.82);
+}
+
+:root[data-scenic-theme="twilight-mountains"] .settings-shell-full :is(.agent-capability-group-count, .agent-capability-badge, .agent-capability-meta code, .shortcut-keybinding kbd) {
+  border: 1px solid rgba(208, 231, 255, 0.16);
+  background: rgba(156, 198, 255, 0.14);
+  color: rgba(241, 248, 255, 0.86);
+}
+
+:root[data-scenic-theme="twilight-mountains"] .settings-shell-full :is(.settings-font-menu, .settings-language-menu, .settings-theme-menu, .provider-service-menu, .agent-capability-menu) {
+  border: 1px solid var(--twilight-luminous-border);
+  background: var(--twilight-safety-surface);
+  box-shadow: var(--ds-shadow-dialog);
+}
+
+:root[data-scenic-theme="twilight-mountains"] .settings-shell-full :is(.settings-font-search, .settings-language-search, .settings-theme-search, .provider-service-search) {
+  background: rgba(94, 149, 232, 0.2);
+  color: rgba(231, 243, 255, 0.8);
+}
+
+:root[data-scenic-theme="twilight-mountains"] .settings-shell-full :is(.settings-font-item:hover, .settings-font-item.kb-active, .settings-language-option:hover, .settings-language-option.is-active, .settings-theme-option:hover, .settings-theme-option.is-active, .provider-service-option:hover, .provider-service-option.is-active, .agent-capability-menu button:hover:not(:disabled), .agent-capability-menu button:focus-visible) {
+  background: rgba(141, 188, 250, 0.2);
+}
+
+:root[data-scenic-theme="twilight-mountains"] .settings-shell-full .btn-primary {
+  border: 1px solid rgba(232, 244, 255, 0.48);
+  background: linear-gradient(135deg, #6ca9ff, #3f79d8);
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.34), 0 8px 20px rgba(0, 19, 66, 0.28);
+  color: #f8fbff;
+}
+
+:root[data-scenic-theme="twilight-mountains"] .settings-shell-full .btn-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #8ab9ff, #538be7);
+}
+
+:root[data-scenic-theme="twilight-mountains"] .settings-shell-full :is(.btn-secondary, .btn-ghost, .icon-btn, .settings-text-action, .settings-icon-button, .shortcut-disable, .shortcut-reset) {
+  border: 1px solid rgba(205, 229, 255, 0.16);
+  background: rgba(92, 145, 228, 0.18);
+  color: rgba(244, 249, 255, 0.92);
+}
+
+:root[data-scenic-theme="twilight-mountains"] .settings-shell-full :is(.btn-secondary, .btn-ghost, .icon-btn, .settings-text-action, .settings-icon-button, .shortcut-disable, .shortcut-reset):hover:not(:disabled),
+:root[data-scenic-theme="twilight-mountains"] .settings-shell-full :is(.btn-secondary, .btn-ghost, .icon-btn, .settings-text-action, .settings-icon-button, .shortcut-disable, .shortcut-reset):focus-visible {
+  background: rgba(126, 177, 246, 0.3);
+  color: #ffffff;
+}
+
+:root[data-scenic-theme="twilight-mountains"] .settings-shell-full .btn:disabled {
+  border-color: rgba(207, 229, 255, 0.18);
+  background: rgba(89, 133, 197, 0.22);
+  color: rgba(232, 242, 255, 0.7);
+  opacity: 1;
+}
+
+:root[data-scenic-theme="twilight-mountains"] .settings-shell-full .settings-toggle {
+  box-shadow: inset 0 0 0 1px rgba(205, 229, 255, 0.24);
+}
+
+:root[data-scenic-theme="twilight-mountains"] .settings-shell-full .settings-toggle.on {
+  background: #75adff;
+}
+
+:root[data-scenic-theme="twilight-mountains"] .settings-shell-full .settings-toggle.on .settings-toggle-thumb {
+  background: #f8fbff;
 }
 
 :root[data-scenic-theme="twilight-mountains"] .home-main-content.is-twilight-mountains .empty-hero {

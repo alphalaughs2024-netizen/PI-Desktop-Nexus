@@ -696,6 +696,12 @@ High-frequency workstation feedback must remain compositor-friendly and bounded:
   and translucent shell glass. Its active project context and selected child
   session are separate adjacent surfaces with a visible gap; they must never
   read as one merged pill.
+- Twilight Mountains gives the full Settings shell a material hierarchy rather
+  than inheriting raw dark controls: panels/rows/empty states use readable
+  blue glass, group headers use a compact navy strip, and fields, segmented
+  controls, picker menus, badges, buttons, disabled states, and focus rings
+  use higher-contrast related surfaces. Inline paths remain text and never
+  inherit a generic code-block background.
 - Inline chat error notices wrap long provider detail and keep their actions
   reachable without introducing horizontal page overflow.
 - Stream-driven updates never restart route or shell animations. Every enter
