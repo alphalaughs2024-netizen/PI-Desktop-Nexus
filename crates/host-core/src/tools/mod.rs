@@ -2639,6 +2639,9 @@ fn relative_display(root: &Path, path: &Path) -> String {
         .or_else(|_| path.strip_prefix(root))
         .unwrap_or(path)
         .to_string_lossy()
+        // Tool results are protocol-visible: keep POSIX separators on every
+        // platform so Grep/Glob/Read paths match plugin-package and session
+        // path spelling (and the host-core assertions in #209).
         .replace('\\', "/")
 }
 
