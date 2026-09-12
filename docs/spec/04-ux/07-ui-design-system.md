@@ -16,7 +16,7 @@ The desktop shell targets a 1:1 visual match with the local Codex desktop client
 1. A consumer-brand identity system with vibrant gradients or playful illustrations
 2. A full component library spec (that is [08-component-spec.md](08-component-spec.md))
 3. Custom font services or CDN font hosting — use local bundling
-4. Complex theme marketplace or user-customizable color palettes (MVP: system/light/dark only)
+4. User-customizable color palettes, uploaded backgrounds, or a general scenic-theme marketplace. Approved first-party scenic themes remain an exception: they use a registered dark/light base, one packaged asset, and semantic token overrides (ADR 0226).
 5. Pixel-perfect Figma handoff artifacts
 
 ## 3. Visual principles

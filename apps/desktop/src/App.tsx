@@ -15,6 +15,8 @@ import i18n from "i18next";
 import { useTranslation } from "react-i18next";
 import {
   KEYBOARD_SHORTCUTS,
+  builtInThemeBase,
+  isScenicBuiltInTheme,
   isActiveInProject,
   keybindingDisplayParts,
   keybindingMatchesEvent,
@@ -480,8 +482,8 @@ function AppShell() {
     // `system` instead of leaving the shell on a half-applied palette.
     const base: "system" | "light" | "dark" = pluginTheme
       ? pluginTheme.base
-      : preference === "light" || preference === "dark"
-        ? preference
+      : preference === "system" || preference === "light" || preference === "dark" || preference === "twilight-mountains"
+        ? builtInThemeBase(preference)
         : "system";
 
     let style = document.getElementById(PLUGIN_THEME_STYLE_ID) as HTMLStyleElement | null;
@@ -499,12 +501,22 @@ function AppShell() {
       delete document.documentElement.dataset.pluginTheme;
     }
 
+    if (preference === "twilight-mountains" && isScenicBuiltInTheme(preference)) {
+      document.documentElement.dataset.scenicTheme = "twilight-mountains";
+    } else {
+      delete document.documentElement.dataset.scenicTheme;
+    }
+
     const mq = window.matchMedia("(prefers-color-scheme: light)");
     const apply = () => {
       const resolvedTheme =
         base === "system" ? (mq.matches ? "light" : "dark") : base;
       document.documentElement.dataset.theme = resolvedTheme;
-      void api.setWindowBackgroundColor(resolvedTheme).catch(() => undefined);
+      void api
+        .setWindowBackgroundColor(
+          preference === "twilight-mountains" ? "twilight-mountains" : resolvedTheme,
+        )
+        .catch(() => undefined);
     };
     apply();
     if (base !== "system") return;
@@ -995,6 +1007,7 @@ function AppShell() {
       )}
       style={{ "--ds-sidebar-width": `${sidebarWidth}px` } as CSSProperties}
     >
+      <div className="app-scenic-backdrop" aria-hidden />
       {shell}
       {splash}
     </div>

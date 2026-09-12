@@ -1590,9 +1590,9 @@ Each scenario is documented in this format:
   and Korean system locales.
 - **Steps**:
   1) Open Settings → General.
-  2) In the Appearance card, open the Theme picker. Confirm System, Light, and
-     Dark are pinned at the top; select Dark and confirm the trigger shows Dark
-     and the UI switches to dark.
+  2) In the Appearance card, open the Theme picker. Confirm System, Light,
+     Dark, and Twilight Mountains are pinned at the top; select Dark and
+     confirm the trigger shows Dark and the UI switches to dark.
   3) Select Light and confirm the UI switches to light.
   4) In the Language row, open the searchable picker. Confirm Auto is pinned
      at the top with the detected native name and that English, 简体中文,
@@ -1608,7 +1608,8 @@ Each scenario is documented in this format:
      confirm unmatched options disappear.
 - **Expected**: Theme and Language are searchable picker rows (not a card grid
   and not a native select); each closed trigger fills the settings control
-  column without overflowing the row. Theme lists System, Light, and Dark,
+  column without overflowing the row. Theme lists System, Light, Dark, and
+  Twilight Mountains,
   then any plugin themes after a divider. Auto resolves the OS locale through
   the main process (`app.getLocale()`), passes it safely through the sandboxed
   preload bridge, and reflects the detected native name inline in the menu;
@@ -1629,6 +1630,25 @@ Each scenario is documented in this format:
 - **Acceptance**: A (core shell)
 - **Milestone**: M5
 - **Status**: Documented; native Windows validation pending
+
+#### E2E-091b: Twilight Mountains remains an optional readable scenic theme
+
+- **Preconditions**: App running on Windows or Linux with a project and a
+  plugin theme available; reduced-transparency preference can be simulated.
+- **Steps**: 1) Select Twilight Mountains in Settings → General → Appearance.
+  2) Visit Chat, Settings, Plugins, the work panel, a menu, and a dialog.
+  3) Resize the window and inspect its edges. 4) Enable reduced transparency,
+  then repeat the dialog/menu checks. 5) Select System, Light, Dark, and a
+  plugin theme in turn.
+- **Expected**: Twilight Mountains keeps the shell and plugin/native appearance
+  in dark mode while one bundled dusk-mountain backdrop remains behind glass
+  surfaces. Menus, dialogs, permission UI, code, and tool output retain
+  readable opaque-enough contrast. Window edges use a navy fallback. Reduced
+  transparency removes blur and increases opacity without removing the scenic
+  palette. Selecting another theme removes the scenic backdrop/state, and no
+  plugin CSS permission or remote asset request is needed.
+- **Specs linked**: `04-ux/06-settings-ia.md`, `04-ux/07-ui-design-system.md`, ADR 0226
+- **Acceptance**: Quality
 
 #### E2E-039: Settings titlebar drag moves the window
 

@@ -242,3 +242,4 @@ Each ADR includes:
 | 0223 | Nexus-managed Git and review workflow boundaries | Accepted |
 | 0224 | Nexus parallel task workflow boundaries | Accepted |
 | 0225 | Author-owned workflow packages remain guidance only | Accepted |
+| 0226 | First-party scenic themes use a base palette and semantic token layer | Accepted |

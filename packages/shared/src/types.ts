@@ -1142,7 +1142,12 @@ export type ModelInfo = {
  * Built-in themes, or `plugin:<pluginId>:<themeId>` for a theme contributed by
  * a plugin. The shell falls back to `system` when the provider goes away.
  */
-export type ThemePreference = "system" | "light" | "dark" | `plugin:${string}`;
+export type ThemePreference =
+  | "system"
+  | "light"
+  | "dark"
+  | "twilight-mountains"
+  | `plugin:${string}`;
 
 /**
  * What closing the main window does on Windows/Linux. macOS keeps the native

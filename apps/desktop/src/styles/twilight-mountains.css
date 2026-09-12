@@ -1,0 +1,100 @@
+/* First-party scenic treatment. Components continue to consume semantic tokens. */
+:root[data-theme="dark"][data-scenic-theme="twilight-mountains"] {
+  --ds-bg-primary: rgba(5, 16, 34, 0.78);
+  --ds-bg-sidebar: rgba(6, 18, 38, 0.84);
+  --ds-bg-secondary: rgba(9, 26, 51, 0.76);
+  --ds-bg-tertiary: rgba(17, 39, 70, 0.74);
+  --ds-bg-inset: rgba(3, 12, 28, 0.9);
+  --ds-bg-under: #071326;
+  --ds-bg-elevated: rgba(12, 30, 57, 0.78);
+  --ds-bg-elevated-opaque: rgba(9, 23, 45, 0.96);
+  --ds-bg-composer: rgba(11, 29, 55, 0.88);
+  --ds-bg-hover: rgba(198, 221, 255, 0.13);
+  --ds-bg-active: rgba(211, 229, 255, 0.2);
+  --ds-bg-chip: rgba(203, 224, 255, 0.13);
+  --ds-text-primary: #f6f9ff;
+  --ds-text-secondary: rgba(237, 245, 255, 0.82);
+  --ds-text-muted: rgba(225, 238, 255, 0.68);
+  --ds-text-faint: rgba(215, 231, 255, 0.52);
+  --ds-border-default: rgba(227, 240, 255, 0.23);
+  --ds-border-subtle: rgba(227, 240, 255, 0.14);
+  --ds-border-strong: rgba(240, 247, 255, 0.34);
+  --ds-tile: rgba(208, 228, 255, 0.1);
+  --ds-tile-hover: rgba(213, 231, 255, 0.16);
+  --ds-tile-deep: rgba(211, 230, 255, 0.2);
+  --ds-raised: rgba(13, 33, 62, 0.94);
+  --ds-raised-shadow: 0 8px 28px rgba(0, 8, 24, 0.28);
+  --ds-accent: #f4f8ff;
+  --ds-accent-hover: #ffffff;
+  --ds-accent-soft: #c8dcff;
+  --ds-success: #7ce6b4;
+  --ds-warning: #ffd38a;
+  --ds-error: #ff9d9d;
+  --ds-info: #c9ddff;
+  --ds-purple: #d5b8ff;
+  --ds-shadow-dialog: 0 22px 64px rgba(0, 7, 22, 0.56);
+  --ds-elevation-stroke: 0 0 0 0.5px rgba(238, 246, 255, 0.24);
+  --ds-shadow-composer: 0 10px 36px rgba(0, 8, 28, 0.35);
+  --ds-bg-elevated-primary: rgba(12, 31, 59, 0.88);
+}
+
+:root[data-scenic-theme="twilight-mountains"] .app-scenic-backdrop {
+  display: block;
+  position: absolute;
+  z-index: 0;
+  inset: -18px;
+  pointer-events: none;
+  background: url("../../resources/themes/twilight-mountains.png") 50% 42% / cover no-repeat;
+  filter: saturate(0.88) blur(5px);
+  transform: scale(1.03);
+}
+
+:root[data-scenic-theme="twilight-mountains"] .app-scenic-backdrop::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(rgba(3, 11, 28, 0.38), rgba(3, 12, 31, 0.68));
+}
+
+:root[data-scenic-theme="twilight-mountains"] .app-shell,
+:root[data-scenic-theme="twilight-mountains"] .sidebar,
+:root[data-scenic-theme="twilight-mountains"] .work-panel,
+:root[data-scenic-theme="twilight-mountains"] .composer-shell,
+:root[data-scenic-theme="twilight-mountains"] .settings-shell-full,
+:root[data-scenic-theme="twilight-mountains"] .dialog,
+:root[data-scenic-theme="twilight-mountains"] .toast,
+:root[data-scenic-theme="twilight-mountains"] .anchored-menu,
+:root[data-scenic-theme="twilight-mountains"] .context-vault-modal {
+  backdrop-filter: blur(18px) saturate(1.08);
+  -webkit-backdrop-filter: blur(18px) saturate(1.08);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  :root[data-scenic-theme="twilight-mountains"] .app-shell,
+  :root[data-scenic-theme="twilight-mountains"] .sidebar,
+  :root[data-scenic-theme="twilight-mountains"] .work-panel,
+  :root[data-scenic-theme="twilight-mountains"] .composer-shell,
+  :root[data-scenic-theme="twilight-mountains"] .settings-shell-full,
+  :root[data-scenic-theme="twilight-mountains"] .dialog,
+  :root[data-scenic-theme="twilight-mountains"] .toast,
+  :root[data-scenic-theme="twilight-mountains"] .anchored-menu,
+  :root[data-scenic-theme="twilight-mountains"] .context-vault-modal {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background-color: var(--ds-bg-elevated-opaque);
+  }
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  :root[data-scenic-theme="twilight-mountains"] .app-shell,
+  :root[data-scenic-theme="twilight-mountains"] .sidebar,
+  :root[data-scenic-theme="twilight-mountains"] .work-panel,
+  :root[data-scenic-theme="twilight-mountains"] .composer-shell,
+  :root[data-scenic-theme="twilight-mountains"] .settings-shell-full,
+  :root[data-scenic-theme="twilight-mountains"] .dialog,
+  :root[data-scenic-theme="twilight-mountains"] .toast,
+  :root[data-scenic-theme="twilight-mountains"] .anchored-menu,
+  :root[data-scenic-theme="twilight-mountains"] .context-vault-modal {
+    background-color: var(--ds-bg-elevated-opaque);
+  }
+}
