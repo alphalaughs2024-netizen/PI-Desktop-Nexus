@@ -747,7 +747,11 @@ function SessionImportPanel() {
                                 <span className="import-row-main">
                                   <span className="import-row-title">{c.title}</span>
                                   <span className="import-row-meta">
-                                    {t("settings.importMessages", { count: c.messageCount })}
+                                    {c.messageCount === null
+                                      ? t("settings.importMessagesUnknown")
+                                      : t("settings.importMessages", {
+                                          count: c.messageCount,
+                                        })}
                                     {" · "}
                                     {formatImportDate(
                                       c.updatedAt,
