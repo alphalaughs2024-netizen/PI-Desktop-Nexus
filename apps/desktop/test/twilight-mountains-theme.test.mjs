@@ -88,6 +88,15 @@ test("Twilight overrides the dark composer and Settings rail instead of inheriti
   );
 });
 
+test("Twilight preserves scenic depth and separates adjacent selected sidebar rows", () => {
+  assert.match(styles, /\.app-scenic-backdrop[\s\S]*?filter:\s*saturate\(1\.12\) blur\(2px\)/);
+  assert.match(styles, /linear-gradient\(180deg, rgba\(3, 16, 54, 0\.1\)/);
+  assert.match(styles, /\.composer-shell[\s\S]*?rgba\(58, 119, 212, 0\.46\)/);
+  assert.match(styles, /\.project-group\.active > \.sidebar-session-group-header[\s\S]*?background:\s*rgba\(125, 174, 246, 0\.18\)/);
+  assert.match(styles, /\.project-group\.active > \.sidebar-session-group-header \+ \.sidebar-session-group-body\.project[\s\S]*?padding-top:\s*4px/);
+  assert.match(styles, /\.thread-content[\s\S]*?padding-top:\s*calc\(var\(--ds-toolbar-height\) \+ 8px\)/);
+});
+
 test("Twilight alone replaces the empty-home mascot with the localized build greeting", () => {
   assert.match(chatSurface, /const isTwilightMountains = settings\?\.theme === "twilight-mountains"/);
   assert.match(chatSurface, /className=\{`home-main-content\$\{isTwilightMountains \? " is-twilight-mountains" : ""\}`\}/);

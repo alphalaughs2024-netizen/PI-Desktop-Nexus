@@ -1637,8 +1637,9 @@ Each scenario is documented in this format:
   plugin theme available; reduced-transparency preference can be simulated.
 - **Steps**: 1) Select Twilight Mountains in Settings → General → Appearance.
   2) Inspect Chat's empty home at the supplied reference dimensions and a
-  normal Windows desktop window; confirm the blue mountains and pink horizon
-  remain visible behind the brighter navigation glass and atmospheric canvas.
+  normal Windows desktop window; confirm the lighter blue mountain lake and
+  pink horizon remain visible behind the brighter navigation glass and
+  atmospheric canvas.
   3) Confirm the normal mascot is replaced only here by the localized build
   greeting, then create/open a session and inspect the composer, file-drop
   focus state, transcript, and tool output. 4) Visit Settings, Plugins, the
@@ -1652,14 +1653,18 @@ Each scenario is documented in this format:
   surfaces. The scenic layer preserves the standard shell geometry: fixed and
   absolute controls, the work-panel toggle, and opening or closing the work
   panel stay aligned and behave as they do in Dark. Sidebar/title bands and
-  composer read as related luminous blue glass, while menus, dialogs,
+  composer reads as translucent reflective blue glass rather than opaque
+  cobalt, while menus, dialogs,
   permission UI, code, tool output, and settings controls retain readable
   opaque-enough contrast. Window edges use a navy fallback. Reduced
   transparency removes blur and increases opacity without removing the scenic
   palette. System, Light, Dark, and plugin themes restore their normal mascot,
   dynamic empty-home greeting, layout, and styling. Selecting another theme
   removes the scenic backdrop/state, and no plugin CSS permission or remote
-  asset request is needed.
+  asset request is needed. An active project context and its selected child
+  session remain distinct adjacent sidebar surfaces with a visible gap, and
+  live transcript or subagent activity does not paint beneath the fixed title
+  bar.
 - **Specs linked**: `04-ux/06-settings-ia.md`, `04-ux/07-ui-design-system.md`, `04-ux/08-component-spec.md`, ADR 0226, ADR 0227
 - **Acceptance**: Quality
 

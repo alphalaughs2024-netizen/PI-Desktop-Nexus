@@ -691,6 +691,11 @@ High-frequency workstation feedback must remain compositor-friendly and bounded:
   streaming. Twilight Mountains is the narrow first-party exception: its one
   compositor-bounded composer shell may use blur as part of the scenic glass
   material, while transcript rows, list rows, code, and tool output never do.
+- Twilight Mountains keeps the scenic image luminous rather than uniformly
+  darkened: its backdrop uses a light top vignette, a moderate lower vignette,
+  and translucent shell glass. Its active project context and selected child
+  session are separate adjacent surfaces with a visible gap; they must never
+  read as one merged pill.
 - Inline chat error notices wrap long provider detail and keep their actions
   reachable without introducing horizontal page overflow.
 - Stream-driven updates never restart route or shell animations. Every enter

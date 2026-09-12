@@ -2,7 +2,7 @@
 :root[data-theme="dark"][data-scenic-theme="twilight-mountains"] {
   /* Twilight material tiers: large surfaces reveal the scene; dense/safety
      surfaces intentionally stay opaque enough to read independently. */
-  --twilight-atmosphere: rgba(4, 18, 48, 0.28);
+  --twilight-atmosphere: rgba(4, 18, 48, 0.16);
   --twilight-shell-glass: rgba(7, 31, 78, 0.5);
   --twilight-navigation-glass: rgba(8, 37, 91, 0.62);
   --twilight-raised-glass: rgba(29, 79, 156, 0.42);
@@ -54,7 +54,7 @@
   inset: -18px;
   pointer-events: none;
   background: url("../../resources/themes/twilight-mountains.png") 50% 42% / cover no-repeat;
-  filter: saturate(1.08) blur(3px);
+  filter: saturate(1.12) blur(2px);
   transform: scale(1.03);
 }
 
@@ -63,8 +63,8 @@
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(ellipse at 53% 29%, rgba(255, 177, 190, 0.24), transparent 27%),
-    linear-gradient(180deg, rgba(3, 16, 54, 0.18), rgba(3, 15, 45, 0.42) 55%, rgba(2, 10, 33, 0.68));
+    radial-gradient(ellipse at 53% 29%, rgba(255, 177, 190, 0.28), transparent 29%),
+    linear-gradient(180deg, rgba(3, 16, 54, 0.1), rgba(3, 15, 45, 0.28) 55%, rgba(2, 10, 33, 0.45));
 }
 
 :root[data-scenic-theme="twilight-mountains"] .app-shell,
@@ -92,8 +92,10 @@
 
 :root[data-scenic-theme="twilight-mountains"] :is(.composer-shell, .composer-shell:focus-within, .composer-shell.is-file-drop-active) {
   border: 1px solid var(--twilight-luminous-border);
-  background: linear-gradient(145deg, rgba(58, 119, 212, 0.84), rgba(8, 38, 101, 0.82));
-  box-shadow: inset 0 1px rgba(239, 248, 255, 0.25), var(--ds-shadow-composer);
+  background:
+    radial-gradient(ellipse at 74% -18%, rgba(232, 202, 255, 0.2), transparent 48%),
+    linear-gradient(145deg, rgba(58, 119, 212, 0.46), rgba(8, 38, 101, 0.38));
+  box-shadow: inset 0 1px rgba(239, 248, 255, 0.34), 0 14px 34px rgba(0, 9, 35, 0.2);
   backdrop-filter: blur(18px) saturate(1.12);
   -webkit-backdrop-filter: blur(18px) saturate(1.12);
 }
@@ -105,6 +107,17 @@
 :root[data-scenic-theme="twilight-mountains"] :is(.thread-item.active, .thread-item:hover, .sidebar-session-group.active > .sidebar-session-group-header) {
   background: linear-gradient(90deg, rgba(134, 184, 255, 0.3), rgba(100, 151, 239, 0.16));
   box-shadow: inset 0 1px rgba(220, 237, 255, 0.13);
+}
+
+/* An active project is context, while its active session is the selected item.
+   Keep them visually distinct and leave a real glass gap between their pills. */
+:root[data-scenic-theme="twilight-mountains"] .project-group.active > .sidebar-session-group-header {
+  background: rgba(125, 174, 246, 0.18);
+  box-shadow: inset 0 1px rgba(220, 237, 255, 0.1);
+}
+
+:root[data-scenic-theme="twilight-mountains"] .project-group.active > .sidebar-session-group-header + .sidebar-session-group-body.project {
+  padding-top: 4px;
 }
 
 :root[data-scenic-theme="twilight-mountains"] .settings-shell-full .settings-nav {
@@ -144,6 +157,12 @@
   background-clip: text;
   color: transparent;
   text-shadow: 0 2px 18px rgba(169, 202, 255, 0.32);
+}
+
+/* The fixed conversation band owns a small protected clearance above the first
+   transcript row, so live activity cannot paint into title-bar controls. */
+:root[data-scenic-theme="twilight-mountains"] .thread-content {
+  padding-top: calc(var(--ds-toolbar-height) + 8px);
 }
 
 @media (prefers-reduced-transparency: reduce) {
