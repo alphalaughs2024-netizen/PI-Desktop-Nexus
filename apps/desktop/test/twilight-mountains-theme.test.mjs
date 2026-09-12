@@ -73,6 +73,21 @@ test("Twilight uses layered blue-glass materials with readable safety surfaces",
   assert.match(styles, /--twilight-safety-surface:\s*rgba\(/);
 });
 
+test("Twilight overrides the dark composer and Settings rail instead of inheriting black surfaces", () => {
+  assert.match(
+    styles,
+    /\[data-scenic-theme="twilight-mountains"\][\s\S]*?\.composer-shell\.is-file-drop-active[\s\S]*?background:\s*linear-gradient/,
+  );
+  assert.match(
+    styles,
+    /\[data-scenic-theme="twilight-mountains"\][\s\S]*?\.settings-shell-full \.settings-nav[\s\S]*?background:\s*var\(--twilight-navigation-glass\)/,
+  );
+  assert.match(
+    styles,
+    /\[data-scenic-theme="twilight-mountains"\][\s\S]*?\.settings-search[\s\S]*?background:\s*var\(--twilight-safety-surface\)/,
+  );
+});
+
 test("Twilight alone replaces the empty-home mascot with the localized build greeting", () => {
   assert.match(chatSurface, /const isTwilightMountains = settings\?\.theme === "twilight-mountains"/);
   assert.match(chatSurface, /className=\{`home-main-content\$\{isTwilightMountains \? " is-twilight-mountains" : ""\}`\}/);
