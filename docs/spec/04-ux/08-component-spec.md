@@ -2161,6 +2161,9 @@ reasoning-level control.
 - In Twilight Mountains, a fixed conversation title bar reserves its own
   height plus an 8px visual clearance before the first transcript item. Live
   activity and subagent status must not paint beneath title-bar controls.
+- Project session rows retain a 4px gap between adjacent child sessions. The
+  gap preserves separate touch targets and prevents an active row from merging
+  visually with its sibling in scenic and standard themes.
 - Empty draft height: `.composer-input` uses `min-height: 3lh`, so an idle
   composer shows three lines of input before it grows with the draft.
 - Scroll stability: The thread scrollport reserves one stable trailing gutter,
