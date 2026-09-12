@@ -21,7 +21,6 @@
 @import "./ui-kit.css";
 @import "./overlays.css";
 @import "./theme-overrides.css";
-@import "./twilight-mountains.css";
 @import "./composer-menus.css";
 @import "./settings.css";
 @import "./destinations.css";
@@ -35,4 +34,7 @@
 @import "./plugins.css";
 @import "./extensions.css";
 @import "./plugin-launcher.css";
+/* Scenic themes are the final visual layer. They deliberately override the
+   ordinary dark/light component rules while responsive rules stay last. */
+@import "./twilight-mountains.css";
 @import "./responsive.css";

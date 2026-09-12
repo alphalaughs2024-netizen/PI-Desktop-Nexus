@@ -90,9 +90,9 @@
   -webkit-backdrop-filter: blur(18px) saturate(1.08);
 }
 
-:root[data-scenic-theme="twilight-mountains"] .composer-shell {
+:root[data-scenic-theme="twilight-mountains"] :is(.composer-shell, .composer-shell:focus-within, .composer-shell.is-file-drop-active) {
   border: 1px solid var(--twilight-luminous-border);
-  background: linear-gradient(145deg, rgba(58, 119, 212, 0.62), var(--ds-bg-composer));
+  background: linear-gradient(145deg, rgba(58, 119, 212, 0.84), rgba(8, 38, 101, 0.82));
   box-shadow: inset 0 1px rgba(239, 248, 255, 0.25), var(--ds-shadow-composer);
   backdrop-filter: blur(18px) saturate(1.12);
   -webkit-backdrop-filter: blur(18px) saturate(1.12);
@@ -103,6 +103,23 @@
 }
 
 :root[data-scenic-theme="twilight-mountains"] :is(.thread-item.active, .thread-item:hover, .sidebar-session-group.active > .sidebar-session-group-header) {
+  background: linear-gradient(90deg, rgba(134, 184, 255, 0.3), rgba(100, 151, 239, 0.16));
+  box-shadow: inset 0 1px rgba(220, 237, 255, 0.13);
+}
+
+:root[data-scenic-theme="twilight-mountains"] .settings-shell-full .settings-nav {
+  background: var(--twilight-navigation-glass);
+  background-image: linear-gradient(180deg, rgba(210, 232, 255, 0.13), transparent 70%);
+  box-shadow: inset -1px 0 rgba(192, 224, 255, 0.24);
+  backdrop-filter: blur(18px) saturate(1.08);
+  -webkit-backdrop-filter: blur(18px) saturate(1.08);
+}
+
+:root[data-scenic-theme="twilight-mountains"] .settings-search {
+  background: var(--twilight-safety-surface);
+}
+
+:root[data-scenic-theme="twilight-mountains"] .settings-nav-item.active {
   background: linear-gradient(90deg, rgba(134, 184, 255, 0.3), rgba(100, 151, 239, 0.16));
   box-shadow: inset 0 1px rgba(220, 237, 255, 0.13);
 }
