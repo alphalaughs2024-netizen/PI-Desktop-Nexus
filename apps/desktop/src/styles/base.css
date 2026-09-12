@@ -168,7 +168,6 @@ html {
 }
 
 .app-shell > :not(.app-scenic-backdrop) {
-  position: relative;
   z-index: 1;
 }
 
