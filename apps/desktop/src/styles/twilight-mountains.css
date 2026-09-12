@@ -83,6 +83,10 @@
   -webkit-backdrop-filter: blur(18px) saturate(1.08);
 }
 
+:root[data-scenic-theme="twilight-mountains"] .window-control-btn {
+  color: rgba(246, 249, 255, 0.92);
+}
+
 :root[data-scenic-theme="twilight-mountains"] :is(.sidebar, .sidebar-rail) {
   box-shadow: inset -1px 0 rgba(192, 224, 255, 0.24);
 }
@@ -153,10 +157,16 @@
   color: var(--ds-text-primary);
 }
 
-:root[data-scenic-theme="twilight-mountains"] .settings-shell-full :is(.settings-panel, .settings-row, .shortcut-row, .agent-capability-row, .agent-capability-empty) {
+:root[data-scenic-theme="twilight-mountains"] .settings-shell-full :is(.settings-row, .shortcut-row, .agent-capability-row, .agent-capability-empty) {
   border: 1px solid rgba(213, 234, 255, 0.18);
   background: var(--twilight-settings-surface);
   box-shadow: inset 0 1px rgba(238, 247, 255, 0.1), 0 10px 28px rgba(0, 12, 47, 0.16);
+}
+
+:root[data-scenic-theme="twilight-mountains"] .settings-shell-full :is(.settings-panel:has(> .settings-row), .settings-panel:has(> .shortcut-row), .settings-panel:has(> .agent-capability-row)) {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 :root[data-scenic-theme="twilight-mountains"] .settings-shell-full :is(.settings-row:hover, .shortcut-row:hover, .agent-capability-row:hover, .agent-capability-row.menu-open) {
@@ -228,6 +238,111 @@
 :root[data-scenic-theme="twilight-mountains"] .settings-shell-full :is(.settings-font-search, .settings-language-search, .settings-theme-search, .provider-service-search) {
   background: rgba(94, 149, 232, 0.2);
   color: rgba(231, 243, 255, 0.8);
+}
+
+/* Portaled provider selection menus live under document.body rather than the
+   Settings shell, so their scenic material must be scoped directly to the
+   menu root. */
+:root[data-scenic-theme="twilight-mountains"] .provider-service-menu {
+  border: 1px solid var(--twilight-luminous-border);
+  background: var(--twilight-safety-surface);
+  box-shadow: var(--ds-shadow-dialog);
+  color: var(--ds-text-primary);
+}
+
+:root[data-scenic-theme="twilight-mountains"] .provider-service-search {
+  margin: 2px 2px 5px;
+  padding: 3px 9px;
+  border: 1px solid rgba(204, 229, 255, 0.28);
+  border-radius: var(--radius-sm);
+  background: var(--twilight-settings-control);
+  color: var(--ds-text-secondary);
+  box-shadow: inset 0 1px rgba(239, 248, 255, 0.1);
+}
+
+:root[data-scenic-theme="twilight-mountains"] .provider-service-search input {
+  color: var(--ds-text-primary);
+}
+
+:root[data-scenic-theme="twilight-mountains"] .provider-service-search input::placeholder {
+  color: rgba(225, 239, 255, 0.68);
+}
+
+:root[data-scenic-theme="twilight-mountains"] .provider-service-option {
+  color: var(--ds-text-secondary);
+}
+
+:root[data-scenic-theme="twilight-mountains"] .provider-service-option:hover,
+:root[data-scenic-theme="twilight-mountains"] .provider-service-option.is-active {
+  background: rgba(126, 177, 246, 0.24);
+  color: var(--ds-text-primary);
+}
+
+:root[data-scenic-theme="twilight-mountains"] .provider-service-option.is-current {
+  background: linear-gradient(90deg, rgba(108, 166, 248, 0.42), rgba(46, 101, 194, 0.28));
+  color: var(--ds-text-primary);
+}
+
+/* Context Vault is native content inside the dock. Give its controls their own
+   blue material rather than inheriting the light accent token as a white fill. */
+:root[data-scenic-theme="twilight-mountains"] :is(.context-vault-tab, .context-vault-workspace) {
+  background: transparent;
+  color: var(--ds-text-primary);
+}
+
+:root[data-scenic-theme="twilight-mountains"] .context-vault-rail {
+  border-color: rgba(204, 229, 255, 0.2);
+  background: rgba(8, 37, 91, 0.72);
+}
+
+:root[data-scenic-theme="twilight-mountains"] .context-vault-rail-health,
+:root[data-scenic-theme="twilight-mountains"] .context-vault-list,
+:root[data-scenic-theme="twilight-mountains"] .context-vault-editor,
+:root[data-scenic-theme="twilight-mountains"] .context-vault-relationship-row,
+:root[data-scenic-theme="twilight-mountains"] .context-vault-evidence-row {
+  border-color: rgba(204, 229, 255, 0.2);
+  background: rgba(8, 38, 96, 0.5);
+  color: var(--ds-text-primary);
+}
+
+:root[data-scenic-theme="twilight-mountains"] .context-vault-search-shell,
+:root[data-scenic-theme="twilight-mountains"] .context-vault-editor :is(input, textarea, select) {
+  border-color: rgba(204, 229, 255, 0.3);
+  background: var(--twilight-settings-control);
+  color: var(--ds-text-primary);
+}
+
+:root[data-scenic-theme="twilight-mountains"] .context-vault-search::placeholder,
+:root[data-scenic-theme="twilight-mountains"] .context-vault-editor :is(input, textarea)::placeholder {
+  color: rgba(225, 239, 255, 0.68);
+}
+
+:root[data-scenic-theme="twilight-mountains"] .context-vault-action {
+  border-color: rgba(204, 229, 255, 0.28);
+  background: rgba(92, 145, 228, 0.24);
+  color: var(--ds-text-primary);
+  box-shadow: inset 0 1px rgba(239, 248, 255, 0.1);
+}
+
+:root[data-scenic-theme="twilight-mountains"] .context-vault-action:hover,
+:root[data-scenic-theme="twilight-mountains"] .context-vault-inline-button:hover,
+:root[data-scenic-theme="twilight-mountains"] .context-vault-icon-button:hover {
+  background: rgba(126, 177, 246, 0.34);
+  color: #ffffff;
+}
+
+:root[data-scenic-theme="twilight-mountains"] .context-vault-action-primary {
+  border-color: rgba(190, 222, 255, 0.55);
+  background: linear-gradient(135deg, #5e9bf2, #3268c4);
+  color: #f8fbff;
+}
+
+:root[data-scenic-theme="twilight-mountains"] .context-vault-action-primary:hover {
+  background: linear-gradient(135deg, #80b6ff, #477fdf);
+}
+
+:root[data-scenic-theme="twilight-mountains"] :is(.context-vault-header span, .context-vault-rail-label, .context-vault-rail-health, .context-vault-empty p, .context-vault-list small) {
+  color: rgba(225, 239, 255, 0.78);
 }
 
 :root[data-scenic-theme="twilight-mountains"] .settings-shell-full :is(.settings-font-item:hover, .settings-font-item.kb-active, .settings-language-option:hover, .settings-language-option.is-active, .settings-theme-option:hover, .settings-theme-option.is-active, .provider-service-option:hover, .provider-service-option.is-active, .agent-capability-menu button:hover:not(:disabled), .agent-capability-menu button:focus-visible) {

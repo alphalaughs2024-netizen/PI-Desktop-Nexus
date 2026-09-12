@@ -91,7 +91,7 @@ test("Twilight overrides the dark composer and Settings rail instead of inheriti
 
 test("Twilight gives every Settings control readable blue-glass materials", () => {
   const settingsGlassRule =
-    /\.settings-shell-full\s*:is\(\.settings-panel, \.settings-row, \.shortcut-row, \.agent-capability-row, \.agent-capability-empty\)\s*\{([^}]*)\}/.exec(twilightStyles)?.[1] ?? "";
+    /\.settings-shell-full\s*:is\(\.settings-row, \.shortcut-row, \.agent-capability-row, \.agent-capability-empty\)\s*\{([^}]*)\}/.exec(twilightStyles)?.[1] ?? "";
   const primaryButtonRule =
     /\.settings-shell-full \.btn-primary\s*\{([^}]*)\}/.exec(twilightStyles)?.[1] ?? "";
 
@@ -108,6 +108,44 @@ test("Twilight gives every Settings control readable blue-glass materials", () =
   assert.match(primaryButtonRule, /color:\s*#f8fbff/);
   assert.match(primaryButtonRule, /linear-gradient/);
   assert.match(twilightStyles, /\.settings-shell-full \.btn:disabled\s*\{[\s\S]*?color:\s*rgba\(232, 242, 255, 0\.7\)/);
+});
+
+test("Twilight keeps independent Settings rows out of a second parent tile", () => {
+  const listPanelRule =
+    /\.settings-shell-full :is\(\.settings-panel:has\(> \.settings-row\), \.settings-panel:has\(> \.shortcut-row\), \.settings-panel:has\(> \.agent-capability-row\)\)\s*\{([^}]*)\}/.exec(twilightStyles)?.[1] ?? "";
+
+  assert.match(listPanelRule, /background:\s*transparent/);
+  assert.match(listPanelRule, /border:\s*0/);
+  assert.match(listPanelRule, /box-shadow:\s*none/);
+  assert.match(twilightStyles, /\.settings-shell-full :is\(\.settings-row, \.shortcut-row, \.agent-capability-row, \.agent-capability-empty\)\s*\{[\s\S]*?var\(--twilight-settings-surface\)/);
+});
+
+test("Twilight styles portaled provider menus and Context Vault as readable blue surfaces", () => {
+  const providerMenuRule =
+    /\[data-scenic-theme="twilight-mountains"\] \.provider-service-menu\s*\{([^}]*)\}/.exec(twilightStyles)?.[1] ?? "";
+  const providerSearchRule =
+    /\[data-scenic-theme="twilight-mountains"\] \.provider-service-search\s*\{([^}]*)\}/.exec(twilightStyles)?.[1] ?? "";
+  const contextPrimaryRule =
+    /\.context-vault-action-primary\s*\{([^}]*)\}/.exec(twilightStyles)?.[1] ?? "";
+
+  assert.match(providerMenuRule, /var\(--twilight-safety-surface\)/);
+  assert.match(providerSearchRule, /border:/);
+  assert.match(providerSearchRule, /background:/);
+  assert.match(twilightStyles, /\.provider-service-option\.is-current\s*\{[\s\S]*?background:/);
+  assert.match(contextPrimaryRule, /linear-gradient/);
+  assert.doesNotMatch(contextPrimaryRule, /background:\s*var\(--ds-accent\)/);
+  assert.match(twilightStyles, /\.context-vault-rail\s*\{[\s\S]*?background:/);
+  assert.match(twilightStyles, /\.context-vault-search-shell[\s\S]*?var\(--twilight-settings-control\)/);
+});
+
+test("Twilight keeps workflow and native controls above the docked work panel", () => {
+  assert.match(
+    appSource,
+    /<WindowControls contained \/>\s*<section className="main-pane">/,
+  );
+  assert.match(twilightStyles, /\.window-control-btn\s*\{[\s\S]*?color:\s*rgba\(246, 249, 255, 0\.92\)/);
+  assert.match(styles, /\.active-workflow-card\s*\{[\s\S]*?margin:\s*calc\(var\(--ds-toolbar-height\) \+ 10px\)/);
+  assert.match(styles, /\.active-workflow-card\s*\{[\s\S]*?z-index:\s*11/);
 });
 
 test("Twilight preserves scenic depth and separates adjacent selected sidebar rows", () => {

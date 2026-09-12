@@ -2161,6 +2161,10 @@ reasoning-level control.
 - In Twilight Mountains, a fixed conversation title bar reserves its own
   height plus an 8px visual clearance before the first transcript item. Live
   activity and subagent status must not paint beneath title-bar controls.
+- An active workflow strip is an in-content compact status surface below the
+  title band. It reserves the title-bar clearance, wraps its actions at narrow
+  widths, and never overlaps the conversation title, native controls, or their
+  portaled tooltips.
 - Project session rows retain a 4px gap between adjacent child sessions. The
   gap preserves separate touch targets and prevents an active row from merging
   visually with its sibling in scenic and standard themes.

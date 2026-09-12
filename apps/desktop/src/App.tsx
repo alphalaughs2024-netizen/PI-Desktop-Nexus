@@ -860,8 +860,8 @@ function AppShell() {
             />
           ) : null}
 
+          <WindowControls contained />
           <section className="main-pane">
-            <WindowControls contained />
             {page === "chat" ? (
               <ConversationTopbar
                 sidebarCollapsed={sidebarCollapsed}

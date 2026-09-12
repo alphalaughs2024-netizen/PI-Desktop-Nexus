@@ -764,20 +764,23 @@
 }
 
 .active-workflow-card {
+  position: relative;
+  z-index: 11;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 12px;
-  margin: 10px 16px 0;
+  margin: calc(var(--ds-toolbar-height) + 10px) 16px 0;
   padding: 9px 12px;
   border: 1px solid var(--border-subtle);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   background: var(--bg-secondary);
   color: var(--text-primary);
-  font-size: 12px;
+  font-size: var(--text-sm);
 }
-.active-workflow-copy { display: grid; gap: 2px; min-width: 0; }
+.active-workflow-copy { display: grid; flex: 1 1 240px; gap: 2px; min-width: 0; }
 .active-workflow-copy span { color: var(--text-secondary); text-transform: capitalize; }
-.active-workflow-actions { display: flex; gap: 6px; margin-left: auto; }
+.active-workflow-actions { display: flex; flex: 0 1 auto; flex-wrap: wrap; gap: 6px; margin-left: auto; }
 .active-workflow-actions button { border: 0; background: transparent; color: var(--accent); cursor: pointer; font: inherit; }
 .active-workflow-body { grid-column: 1 / -1; max-height: 180px; overflow: auto; margin: 0; white-space: pre-wrap; color: var(--text-secondary); font: inherit; }
 

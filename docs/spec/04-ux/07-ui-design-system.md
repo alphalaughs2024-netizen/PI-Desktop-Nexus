@@ -702,6 +702,11 @@ High-frequency workstation feedback must remain compositor-friendly and bounded:
   controls, picker menus, badges, buttons, disabled states, and focus rings
   use higher-contrast related surfaces. Inline paths remain text and never
   inherit a generic code-block background.
+- Twilight native Window controls retain a bright resting glyph against their
+  navigation-glass band. Their fixed control band is a shell sibling of the
+  reflowing chat pane and dock, so opening a work panel cannot cover controls,
+  tooltips, or hit targets. Context Vault and portaled provider menus use
+  related opaque blue safety surfaces rather than a white primary accent fill.
 - Inline chat error notices wrap long provider detail and keep their actions
   reachable without introducing horizontal page overflow.
 - Stream-driven updates never restart route or shell animations. Every enter

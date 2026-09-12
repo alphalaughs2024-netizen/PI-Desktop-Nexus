@@ -1663,9 +1663,15 @@ Each scenario is documented in this format:
   removes the scenic backdrop/state, and no plugin CSS permission or remote
   asset request is needed. An active project context and its selected child
   session remain distinct adjacent sidebar surfaces with a visible gap, and
-  adjacent child session rows retain their own visible gap when one is active.
-  Live transcript or subagent activity does not paint beneath the fixed title
-  bar.
+    adjacent child session rows retain their own visible gap when one is active.
+    Live transcript or subagent activity does not paint beneath the fixed title
+    bar. An active workflow strip begins below that band, keeps its title/stage
+    and actions separate, and never appears behind native controls. Opening the
+    work panel preserves the top-right minimize/maximize/close band and its
+    toggle tooltip; Context Vault action buttons, search, labels, counts, and
+    health card remain readable blue surfaces. Settings row groups remain
+    individually tiled without an outer card, and the portaled Filter services
+    picker has an aligned blue search field and readable current option.
 - **Specs linked**: `04-ux/06-settings-ia.md`, `04-ux/07-ui-design-system.md`, `04-ux/08-component-spec.md`, ADR 0226, ADR 0227
 - **Acceptance**: Quality
 

@@ -58,7 +58,8 @@ Settings is a **full-window page** that replaces the app sidebar + main chrome (
     a bundled first-party backdrop with a layered blue-glass shell: navigation
     and the composer are luminous glass while menus, dialogs, permissions,
     code, tool output, and controls remain deliberately more opaque. Settings
-    uses a related readable blue-glass hierarchy: row/panel surfaces, inputs,
+    uses a related readable blue-glass hierarchy: independently tiled rows,
+    neutral row-group parents, inputs,
     segmented controls, picker menus, badges, and buttons remain distinct and
     legible, while inline paths and code remain plain text rather than dark
     rectangular surfaces. Its empty
@@ -336,6 +337,10 @@ skills remain portable under `<project>/.agents/skills`.
   fields, filters, pickers, menu surfaces, badges, primary/secondary buttons,
   disabled states, and focus rings stay visibly distinct. Mono path labels are
   text, never opaque code blocks.
+- A row-only Settings group stays visually neutral in Twilight so its child
+  rows remain separate tiles rather than appearing inside a second outer card.
+  Portaled provider service pickers use the same opaque blue safety material as
+  their originating Settings controls.
 - Each page is one workbench, not a stack of per-level sections (D257): a
   single toolbar above a single elevated panel. The toolbar carries the level
   filter as a segmented control with live counts (All / Global / Project), one
