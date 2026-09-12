@@ -1878,6 +1878,22 @@ Each scenario is documented in this format:
 - **Acceptance**: G (remote marketplace source)
 - **Status**: Documented / host-core unit covered
 
+#### E2E-024Z: Windows localized curl diagnostics stay readable
+
+- **Preconditions**: Windows x64 host. The official catalog request is forced
+  to fail with a localized, non-UTF-8 curl/Schannel diagnostic (a deterministic
+  fake curl in the test PATH may emit GBK stderr and exit 35).
+- **Steps**: 1) Select Extensions → Marketplace with GitHub (official) as the
+  source. 2) Refresh the marketplace. 3) Inspect the error toast. 4) Switch to
+  the CNB mirror and refresh again.
+- **Expected**: The failed request remains a `PLUGIN_NETWORK` failure and
+  retains the readable localized diagnostic without Unicode replacement
+  characters; switching to the mirror can refresh the catalog normally.
+- **Specs linked**: `07-plugins/07-plugin-marketplace.md`,
+  `03-runtime/07-process-model.md`
+- **Acceptance**: G (remote marketplace source)
+- **Status**: Documented / host-core unit covered; Windows rendered validation pending
+
 #### E2E-024B: Marketplace install with permission review
 
 - **Preconditions**: App running; official market catalog available.
