@@ -858,6 +858,8 @@ Running turns and pending approvals continue to gate the controls.
   Decorative icons remain `aria-hidden` and do not need a tooltip.
 - Tooltip text must describe the action, not the icon shape, and must come from
   the active i18n catalog.
+- Activating a `TooltipButton` dismisses its visible tooltip after dispatch;
+  pointer re-entry makes it eligible again while preserving the action handler.
 
 ## 7. Focus management
 

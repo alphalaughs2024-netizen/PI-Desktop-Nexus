@@ -337,6 +337,8 @@ test("assistant context inspector keeps a compact summary and retry action wired
   assert.match(inspectorSource, /getBoundingClientRect\(\)/);
   assert.match(inspectorSource, /addEventListener\("scroll", handleViewportChange, true\)/);
   assert.match(inspectorSource, /ResizeObserver\(updatePopoverPosition\)/);
+  assert.match(inspectorSource, /const pane = triggerRef\.current\?\.closest\("\.main-pane"\)/);
+  assert.match(inspectorSource, /observer\.observe\(pane\)/);
   assert.match(inspectorSource, /aria-controls=\{open \? panelId : undefined\}/);
   assert.match(transcriptSource, /retryAssistantMessage/);
   assert.match(transcriptSource, /chat\.retry/);

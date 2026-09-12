@@ -10224,6 +10224,27 @@ sample extensions under `apps/desktop/test/fixtures/pi-extensions/`.
   and no horizontal overflow. Import opens a selection preview before a claim
   can be written.
 - **Status**: Unit/source-contract covered; desktop journey is Draft.
+### E2E-214 — Unicode-safe, workspace-contained chat file links
+
+- Render Unicode relative and in-workspace absolute paths, an outside absolute
+  path, and a filename immediately followed by Unicode text.
+- Valid in-workspace paths become preview links; outside and home paths remain
+  literal text. Unit coverage: `apps/desktop/test/chat-links.test.mjs`.
+
+### E2E-215 — Context inspector follows pane geometry
+
+- Open the usage inspector, toggle the sidebar, and open or resize the work
+  panel. The body-level inspector repositions against the conversation pane and
+  never renders beneath the panel. Unit/source coverage is in
+  `apps/desktop/test/transcript-style.test.mjs`.
+
+### E2E-216 — TooltipButton dismisses after activation
+
+- Show an icon action tooltip, activate the action, then leave and re-enter.
+  The action remains functional and the tooltip closes immediately; re-entry
+  can show it again. Unit/source coverage is in
+  `apps/desktop/test/icon-tooltip.test.mjs`.
+
 ### E2E-179 — repeated identical tool-call safety
 
 With a deterministic agent fixture, three identical `Read` calls execute and a

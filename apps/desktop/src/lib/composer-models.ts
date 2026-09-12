@@ -7,6 +7,22 @@ import {
 
 type ConfiguredProvider = Pick<ProviderPublic, "id" | "models" | "defaultModelId">;
 
+export function composerProviderDisplayName(
+  provider: Pick<ProviderPublic, "name" | "oauthAccountLabel">,
+): string {
+  return provider.oauthAccountLabel?.trim() || provider.name.trim();
+}
+
+export function composerProviderSearchText(
+  provider: Pick<ProviderPublic, "name" | "oauthAccountLabel">,
+): string {
+  const displayName = composerProviderDisplayName(provider);
+  const providerName = provider.name.trim();
+  return displayName === providerName
+    ? displayName
+    : `${displayName} ${providerName}`;
+}
+
 function configuredModelIds(provider: ConfiguredProvider): string[] {
   const ids = (provider.models ?? [])
     .map((binding) => binding.id.trim())

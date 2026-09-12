@@ -1392,7 +1392,8 @@ Single message render — either user (plaintext) or assistant (markdown streami
   explicit. Unknown models use the provider's generic default window. The
   panel is portaled to the document body as a fixed viewport overlay, flips
   above or below the trigger, clamps to viewport margins, and repositions on
-  scroll or window resize so no clipping ancestor can hide it (D103, D184,
+  scroll, window resize, or conversation-pane geometry changes so no clipping
+  ancestor or newly opened work panel can hide it (D103, D184,
   D244, D347). When the active session has an installed context checkpoint,
   the panel adds one muted summary line for the compaction count and newest
   summary's estimated token cost; the transcript still shows one row per
@@ -2545,7 +2546,9 @@ there is no separate top-bar model selector.
   available. The native hover tooltip exposes that complete display name
   without resizing or reflowing the menu; the model ID is not rendered as a
   second visible label. A configured alias is applied from the persisted
-  binding on both the initial and refreshed row.
+  binding on both the initial and refreshed row. A non-empty OAuth account
+  label is the visible provider heading and accessible group name; search
+  indexes both that label and the vendor name.
 
 ### 12.5 Accessibility
 

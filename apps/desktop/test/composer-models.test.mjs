@@ -5,6 +5,8 @@ import {
   composerModelBadges,
   composerModelDisplayName,
   composerModelMatchesQuery,
+  composerProviderDisplayName,
+  composerProviderSearchText,
   composerModelsForProvider,
 } from "../src/lib/composer-models.ts";
 
@@ -177,4 +179,11 @@ test("composer model search matches id, name, family and provider", () => {
     );
   }
   assert.equal(composerModelMatchesQuery(model, "Anthropic", "gemini"), false);
+});
+
+test("composer provider labels prefer OAuth aliases while search keeps the vendor name", () => {
+  const provider = { name: "Anthropic", oauthAccountLabel: "  Work account  " };
+  assert.equal(composerProviderDisplayName(provider), "Work account");
+  assert.equal(composerProviderSearchText(provider), "Work account Anthropic");
+  assert.equal(composerProviderDisplayName({ name: " Anthropic ", oauthAccountLabel: " " }), "Anthropic");
 });

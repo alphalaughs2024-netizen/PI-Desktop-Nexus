@@ -23,6 +23,7 @@ test("parseFileRef accepts pathy tokens and strips line refs", () => {
   assert.equal(parseFileRef("docs/Makefile"), "docs/Makefile");
   assert.equal(parseFileRef("./README.md"), "./README.md");
   assert.equal(parseFileRef("../adr/0163.md"), "../adr/0163.md");
+  assert.equal(parseFileRef("src/组件.ts"), "src/组件.ts");
 });
 
 test("parseFileRef accepts bare names only with known extensions", () => {
@@ -143,6 +144,24 @@ test("splitChatText linkifies embedded refs and keeps literals", () => {
   assert.deepEqual(splitChatText("普通文本，没有链接。", ROOT), [
     { kind: "text", text: "普通文本，没有链接。" },
   ]);
+});
+
+test("splitChatText handles Unicode filenames without mislinking outside paths", () => {
+  const segments = splitChatText(
+    `see src/组件.ts, App.tsx文件, ${ROOT}/src/inside.ts, and /outside/root.ts`,
+    ROOT,
+  );
+  const files = segments.filter((segment) =>
+    segment.kind === "target" && segment.target.kind === "file"
+  );
+  assert.deepEqual(
+    files.map((segment) => segment.target.path),
+    ["src/组件.ts", "App.tsx", "src/inside.ts"],
+  );
+  assert.equal(
+    segments.some((segment) => segment.kind === "target" && segment.text.includes("outside")),
+    false,
+  );
 });
 
 test("splitChatText resolves ./ files against the markdown base directory", () => {

@@ -50,4 +50,7 @@ test("icon-only actions expose localized hover tooltips", () => {
   assert.match(uiSource, /\}, \[active, delayMs, hideDelayMs\]\);/);
   assert.doesNotMatch(uiSource, /\}, \[active, delayMs, hideDelayMs, visible\]\);/);
   assert.match(uiSource, /if \(!disabled\) return;[\s\S]*?setHovered\(false\);[\s\S]*?setFocused\(false\)/);
+  assert.match(uiSource, /const \[dismissed, setDismissed\] = useState\(false\)/);
+  assert.match(uiSource, /const dismiss = \(\) => \{[\s\S]*?setDismissed\(true\)/);
+  assert.match(uiSource, /onClick=\{\(event\) => \{[\s\S]*?tooltip\.dismiss\(\)/);
 });

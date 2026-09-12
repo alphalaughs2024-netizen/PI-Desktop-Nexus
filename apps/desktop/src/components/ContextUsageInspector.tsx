@@ -186,6 +186,15 @@ export function ContextUsageInspector({
   }, [open, updatePopoverPosition]);
 
   useEffect(() => {
+    if (!open || typeof ResizeObserver === "undefined") return;
+    const pane = triggerRef.current?.closest(".main-pane");
+    if (!pane) return;
+    const observer = new ResizeObserver(updatePopoverPosition);
+    observer.observe(pane);
+    return () => observer.disconnect();
+  }, [open, updatePopoverPosition]);
+
+  useEffect(() => {
     if (!open) return;
     const handlePointerDown = (event: PointerEvent) => {
       const target = event.target as Node | null;

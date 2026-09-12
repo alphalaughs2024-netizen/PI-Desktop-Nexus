@@ -16,7 +16,7 @@ use tokio::io::{AsyncRead, AsyncReadExt};
 use tokio::process::{ChildStderr, ChildStdin, ChildStdout, Command};
 use tokio::sync::{mpsc, watch};
 
-use crate::workspace::{resolve_tool_path_with_external, ToolRoot};
+use crate::workspace::{resolve_tool_path_with_external, simple_canonicalize, ToolRoot};
 
 mod grep_rg;
 pub mod hashline;
@@ -2634,12 +2634,12 @@ fn relative_display(root: &Path, path: &Path) -> String {
     // `path` comes back canonicalized from the resolver; strip against the
     // canonical root spelling too, or symlinked roots (macOS /var vs
     // /private/var) would render absolute.
-    let canonical_root = root.canonicalize().unwrap_or_else(|_| root.to_path_buf());
+    let canonical_root = simple_canonicalize(root).unwrap_or_else(|_| root.to_path_buf());
     path.strip_prefix(&canonical_root)
         .or_else(|_| path.strip_prefix(root))
         .unwrap_or(path)
         .to_string_lossy()
-        .to_string()
+        .replace('\\', "/")
 }
 
 pub fn builtin_tool_defs() -> Value {
@@ -2776,6 +2776,17 @@ mod tests {
 
     fn plain_read(content: &str) -> String {
         hashline::strip_write_markup(content)
+    }
+
+    #[test]
+    fn relative_display_uses_workspace_relative_posix_separators() {
+        let workspace = tempfile::tempdir().unwrap();
+        let nested = workspace.path().join("src").join("main.rs");
+        std::fs::create_dir_all(nested.parent().unwrap()).unwrap();
+        std::fs::write(&nested, "fn main() {}\n").unwrap();
+
+        let resolved = simple_canonicalize(&nested).unwrap();
+        assert_eq!(relative_display(workspace.path(), &resolved), "src/main.rs");
     }
 
     #[test]

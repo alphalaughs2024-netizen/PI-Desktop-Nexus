@@ -35,16 +35,23 @@ function useTooltip<T extends HTMLElement>(
   const visibleRef = useRef(false);
   const [hovered, setHovered] = useState(false);
   const [focused, setFocused] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
   const [visible, setVisible] = useState(false);
   const [position, setPosition] = useState<TooltipPosition | null>(null);
   const active =
     Boolean(label) &&
     (hovered || focused) &&
+    !dismissed &&
     (showWhenDisabled || !disabled);
 
   const setTooltipVisible = (next: boolean) => {
     visibleRef.current = next;
     setVisible(next);
+  };
+
+  const dismiss = () => {
+    setDismissed(true);
+    if (visibleRef.current) setTooltipVisible(false);
   };
 
   useEffect(() => {
@@ -118,10 +125,14 @@ function useTooltip<T extends HTMLElement>(
     anchorRef,
     open: visible,
     position,
-    onPointerEnter: () => setHovered(true),
+    onPointerEnter: () => {
+      setDismissed(false);
+      setHovered(true);
+    },
     onPointerLeave: () => setHovered(false),
     onFocus: () => setFocused(true),
     onBlur: () => setFocused(false),
+    dismiss,
   };
 }
 
@@ -243,6 +254,7 @@ export function TooltipButton({
   onPointerLeave,
   onFocus,
   onBlur,
+  onClick,
   ...buttonProps
 }: TooltipButtonProps) {
   const tooltip = useTooltip<HTMLButtonElement>(
@@ -278,6 +290,10 @@ export function TooltipButton({
         onBlur={(event) => {
           tooltip.onBlur();
           onBlur?.(event);
+        }}
+        onClick={(event) => {
+          tooltip.dismiss();
+          onClick?.(event);
         }}
       >
         {children}
