@@ -135,6 +135,21 @@
   -webkit-app-region: drag;
 }
 
+/* The dock can extend beneath the viewport-fixed native control band. Keep the
+ * header's drag surface explicitly carved away from that band; otherwise
+ * Electron may resolve the later dock sibling as the hit target even when the
+ * controls are painted above it. */
+:root[data-platform="win32"] .work-panel-header::before,
+:root[data-platform="linux"] .work-panel-header::before {
+  content: "";
+  position: absolute;
+  inset: 0 var(--ds-window-controls-width) 0 0;
+  z-index: 0;
+  -webkit-app-region: drag;
+  app-region: drag;
+  pointer-events: none;
+}
+
 :root[data-platform="win32"] .work-panel-header,
 :root[data-platform="linux"] .work-panel-header {
   padding-right: calc(var(--ds-window-controls-width) + 46px);
@@ -179,6 +194,7 @@
   left: 0;
   right: auto;
   z-index: 50;
+  pointer-events: auto;
   width: max-content;
   min-width: 200px;
   max-width: 280px;
@@ -353,6 +369,8 @@
 }
 
 .work-panel-switcher-trigger {
+  position: relative;
+  z-index: 1;
   display: flex;
   width: 100%;
   min-width: 0;
@@ -363,6 +381,9 @@
   border-radius: var(--radius-sm);
   color: var(--ds-text-primary);
   text-align: left;
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+  pointer-events: auto;
   transition: background var(--motion-duration-fast) var(--motion-ease-out);
 }
 
