@@ -89,9 +89,9 @@ test("Alpine Light is a first-party scenic light theme with its own backdrop con
   assert.match(appSource, /preference === "alpine-light"/);
   assert.match(alpineStyles, /data-scenic-theme="alpine-light"/);
   assert.match(alpineStyles, /alpine-light\.png/);
-  assert.match(alpineStyles, /data-scenic-backdrop-blur="low"[\s\S]*?6px/);
-  assert.match(alpineStyles, /data-scenic-backdrop-blur="medium"[\s\S]*?12px/);
-  assert.match(alpineStyles, /data-scenic-backdrop-blur="high"[\s\S]*?20px/);
+  assert.match(alpineStyles, /data-scenic-backdrop-blur="low"[\s\S]*?4px/);
+  assert.match(alpineStyles, /data-scenic-backdrop-blur="medium"[\s\S]*?8px/);
+  assert.match(alpineStyles, /data-scenic-backdrop-blur="high"[\s\S]*?16px/);
   assert.match(alpineStyles, /pointer-events:\s*none/);
   assert.match(alpineStyles, /prefers-reduced-transparency/);
   assert.ok((await stat(new URL("../resources/themes/alpine-light.png", import.meta.url))).size > 0);

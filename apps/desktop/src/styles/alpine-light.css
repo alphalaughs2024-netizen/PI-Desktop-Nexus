@@ -42,9 +42,9 @@
   transform: scale(1.03);
 }
 
-:root[data-scenic-theme="alpine-light"][data-scenic-backdrop-blur="low"] { --alpine-backdrop-blur: 6px; }
-:root[data-scenic-theme="alpine-light"][data-scenic-backdrop-blur="medium"] { --alpine-backdrop-blur: 12px; }
-:root[data-scenic-theme="alpine-light"][data-scenic-backdrop-blur="high"] { --alpine-backdrop-blur: 20px; }
+:root[data-scenic-theme="alpine-light"][data-scenic-backdrop-blur="low"] { --alpine-backdrop-blur: 4px; }
+:root[data-scenic-theme="alpine-light"][data-scenic-backdrop-blur="medium"] { --alpine-backdrop-blur: 8px; }
+:root[data-scenic-theme="alpine-light"][data-scenic-backdrop-blur="high"] { --alpine-backdrop-blur: 16px; }
 
 :root[data-scenic-theme="alpine-light"] .app-scenic-backdrop::after {
   content: "";
