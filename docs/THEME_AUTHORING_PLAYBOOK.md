@@ -629,6 +629,127 @@ ancestor that happens to wrap several tiles.
 - Repeat the ownership checks in reduced-transparency and no-filter fallbacks;
   making children opaque must never make a row-only parent opaque again.
 
+### Reusable Settings implementation guide
+
+This section is the required handoff for the next first-party theme or any
+Nexus plugin surface that presents Settings-like controls. It turns the
+failures above into an implementation sequence.
+
+#### Step 1: inventory the page before writing CSS
+
+Record the route, heading, section wrapper, content panel, repeated row class,
+control classes, portals, and empty/loading/error states. Use the rendered DOM
+and source search; do not infer class names from a screenshot. For each section,
+label it `mixed-panel`, `row-list`, `single-control`, or `empty-state`.
+
+The minimum inventory is:
+
+| Role | Classes/components to locate | Theme question |
+| --- | --- | --- |
+| Page shell | `.settings-shell-full`, `.settings-content`, `.settings-nav`, title bars | Which large surfaces show the backdrop and which must be more opaque? |
+| Section ownership | `.settings-card-block`, `.settings-card-heading`, heading rows | Is the wrapper only spacing/heading, or does it contain mixed content? |
+| Generic rows | `.settings-row`, `.settings-row-copy`, `.settings-row-control` | Does each row own its tile, radius, border, and shadow? |
+| Specialized rows | `.shortcut-row`, `.provider-row`, `.model-provider-row`, `.agent-capability-row` | Do specialized styles override the generic material later in the cascade? |
+| Parent lists | `.shortcut-map`, `.provider-list-panel`, `.model-provider-panel`, `.agent-capability-panel`, list containers | Is the parent intentionally transparent, or is it a mixed-content panel? |
+| Controls | `.btn-*`, `.icon-btn`, `.settings-icon-button`, `.settings-text-action`, toggles, fields, segmented items | Are hover, focus, disabled, active, error, and busy states covered? |
+| Portals | menus, dialogs, popovers, tooltips, permission surfaces | Is the surface outside the Settings subtree and therefore missing scoped rules? |
+| Semantics | path/meta classes, badges, keycaps, `pre`, tool output, errors | Is a generic HTML tag being mistaken for a product role? |
+
+Keep this inventory beside the implementation notes. A new page is not covered
+because one generic selector matches its outermost element.
+
+#### Step 2: choose material ownership before opacity values
+
+Use this decision tree:
+
+1. Does the element own a heading and spacing only? Keep it transparent.
+2. Does it contain mixed content that should read as one unit? Give the panel
+   one glass surface.
+3. Does it contain repeated independent rows? Dissolve the parent and style
+   each row as a tile.
+4. Is it floating, safety-critical, or portaled? Use the opaque safety tier.
+5. Is it a text field, menu trigger, toggle, or segmented option? Use the
+   control tier, not the page-panel tier.
+
+Never solve a hierarchy problem by adding a darker/lighter parent behind child
+tiles. If the parent is transparent in the base stylesheet, the scenic rule
+must preserve that contract with equal or greater specificity.
+
+#### Step 3: define a small, explicit token ladder
+
+Every theme should name tokens for atmospheric canvas, shell glass, navigation
+glass, row/raised glass, control glass, safety surface, border, text hierarchy,
+focus, hover, selected, and disabled states. Record the intended alpha range
+and role for each token. Adjacent Settings tiles should differ only when the
+difference communicates role; arbitrary opacity variation is a defect.
+
+Do not use `var(--ds-tile)` blindly in a scenic theme. First verify what that
+token resolves to on the page. If it is transparent or inherited from a base
+theme, map specialized child rows explicitly to the scenic row token.
+
+#### Step 4: implement selectors in cascade-safe layers
+
+Use this order:
+
+1. Theme root tokens (`data-theme` + `data-scenic-theme`).
+2. Large shell and page surfaces.
+3. Parent ownership resets for row-only panels.
+4. Child row and mixed-panel materials.
+5. Controls and interaction states.
+6. Portaled/floating surfaces.
+7. Reduced-transparency and unsupported-filter overrides.
+
+Place the stylesheet after ordinary component CSS and before responsive
+overrides. For every reset, inspect later provider/model/extensions styles for
+`background`, `border`, `box-shadow`, `overflow`, `backdrop-filter`, and
+`border-radius`; these are the properties that repeatedly recreated outer
+rectangles or clipping.
+
+#### Step 5: validate every Settings family
+
+The visual pass must include General → Appearance, General → AI, General →
+Shortcuts, Skills/workflows, Models/provider configuration, Vendor accounts,
+MCP/Extensions, and Subagents/capabilities. On each page verify at least one
+mixed panel and one row-only list. Scroll through the full list; the first few
+rows can look correct while a later specialized group reintroduces a parent
+surface.
+
+For each page, capture these states:
+
+- normal loaded state;
+- hover and keyboard focus;
+- selected/active and disabled rows;
+- empty, loading, refreshing, and error states;
+- open menu/dialog/popover;
+- narrow window and scrolled position;
+- reduced transparency and no `backdrop-filter` support.
+
+#### Step 6: write contract tests that assert negative space
+
+Positive tests prove required selectors exist. They are not enough. Add
+negative assertions that:
+
+- section wrappers do not appear in child-tile selectors;
+- row-only parents explicitly set transparent background, no border/shadow,
+  and visible overflow where needed;
+- specialized provider/model/capability parents cannot restore a background;
+- fallback blocks do not reintroduce an outer tile;
+- each specialized child row has the scenic tile background;
+- generic `code`, `button`, or `input` rules do not capture unrelated roles;
+- plugin theme and base-theme selectors remain untouched.
+
+Keep one source contract test per theme plus focused tests for complex page
+families. Run the source tests after every selector change, not only at the end.
+
+#### Step 7: visual sign-off criteria
+
+A page passes only when the backdrop is visible but subordinate, headings sit on
+the canvas, independent rows read as separate tiles, mixed panels read as one
+intentional tile, controls share a coherent tier, text remains legible, and no
+second rectangle appears around a list. Compare at the same approximate window
+dimensions as the reference. If a screenshot still shows a parent rectangle,
+stop and inspect computed styles and cascade order before changing opacity.
+
 ## The failure history: symptoms, root causes, and permanent lessons
 
 This section exists so the next theme implementation does not repeat expensive
