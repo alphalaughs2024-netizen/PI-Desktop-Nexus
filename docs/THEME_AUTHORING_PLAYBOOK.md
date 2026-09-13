@@ -596,6 +596,39 @@ rg -n '^\.(settings|model|provider|vendor|oauth|shortcut|agent)' `
   apps/desktop/src/styles/settings.css
 ```
 
+### Settings-page issue and fix matrix
+
+Use this matrix as a page-by-page implementation and review checklist. The
+surface owner column is important: style the owning child surface, not a broad
+ancestor that happens to wrap several tiles.
+
+| Settings page/family | Common issue observed | Correct surface ownership/fix | Required regression check |
+| --- | --- | --- | --- |
+| General → Appearance | Section headings become large white rectangles; cards look merged. | Keep `.settings-card-block` and headings transparent. Style each mixed-content `.settings-panel` as one tile; keep spacing between sections. | Appearance, Network, and Close behavior headings remain on the scenic canvas. |
+| General → Appearance controls | Theme, blur, language, font, and size controls inherit unrelated colors or opacity. | Scope triggers, fields, segmented controls, sliders, and toggles under the scenic marker; use one deliberate control tier. | Switch Alpine/Twilight/base themes and confirm no stale scenic tokens remain. |
+| General → AI | Permission/default rows appear inside an outer tile or controls use mismatched fills. | Treat direct `settings-row` children as independent tiles; neutralize `settings-panel:has(> .settings-row)` parents. | Verify permission, mode, shell, link, toggle, and numeric-input rows individually. |
+| General → Shortcuts | Shortcut rows are individually tiled but `.shortcut-map` paints a second rounded rectangle; recorder/action buttons are missed. | Make `.settings-panel.shortcut-map` transparent; style `.shortcut-row`, recorder, reset, disable, hover, focus, and disabled states. | Check Navigation and Agent groups, restore defaults, recording, reset, and narrow-window wrapping. |
+| Skills / workflow packages | Skill rows look correct while the surrounding capability panel remains a translucent rectangle; group headers can be mistaken for tiles. | Keep `.agent-capability-panel` and `.agent-capability-list` transparent; style `.agent-capability-row` and empty states as child tiles. Keep group headers/path labels canvas-level. | Check built-in, global, project, and workflow groups, empty states, search, import, inspect, menu, and toggles. |
+| Models → provider lists | Provider/model rows fall back to transparent `var(--ds-tile)` or a provider stylesheet restores clipping/background. | Explicitly style `.provider-row` and `.model-provider-row` with the shared Alpine/Twilight row material. Neutralize `provider-list-panel` and `model-provider-panel` parents. | Verify default model, all providers, actions, toggles, disabled rows, menus, and no outer rectangle. |
+| Vendor accounts | Account rows use provider-specific classes and can diverge from model/provider rows. | Include `.vendor-account-row` through its `.provider-row` role; do not rely only on generic Settings selectors. | Test connected, disconnected, empty, add-account, and delete/confirmation states. |
+| MCP / extensions | Inline paths, badges, code-like labels, menus, or capability filters become black blocks or unreadable. | Do not style by the `code` tag. Target semantic path/meta classes, actual `pre`/output blocks, search/filter controls, and portaled menus separately. | Inspect MCP, extensions, filters, paths, badges, menu options, errors, and empty states. |
+| Subagents / capabilities | Capability groups, project pickers, action menus, and empty states use mixed or inherited materials. | Reuse capability row/list ownership rules; style project picker, group strip, count badge, menu, and empty state explicitly. | Verify project selection, loading/refreshing, unsupported states, and action menus. |
+| Every Settings page | Buttons are inconsistently themed, text contrast changes by destination, or fallback modes recreate parent cards. | Inventory actual classes (`.btn-*`, `.icon-btn`, `.settings-icon-button`, `.settings-text-action`, shortcut actions). Keep opaque safety surfaces readable and preserve parent/child ownership in fallbacks. | Run normal, reduced-transparency, and unsupported-filter checks across at least one mixed and one row-only page. |
+
+#### Universal Settings tile rules
+
+- A section wrapper owns heading and spacing; it is never a tile by accident.
+- A mixed-content panel may own one glass tile.
+- A row-only panel must dissolve (`background: transparent`, no border/shadow,
+  and visible overflow where required), leaving each child row as its own tile.
+- Provider/model/capability-specific styles must be audited after generic
+  Settings rules because they can restore clipping or a parent background.
+- Opacity differences are allowed only when they communicate a named material
+  role. If adjacent tiles look arbitrarily brighter or darker, rebalance the
+  tier values instead of adding another selector.
+- Repeat the ownership checks in reduced-transparency and no-filter fallbacks;
+  making children opaque must never make a row-only parent opaque again.
+
 ## The failure history: symptoms, root causes, and permanent lessons
 
 This section exists so the next theme implementation does not repeat expensive
