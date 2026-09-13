@@ -372,6 +372,8 @@ a session in the selected project when needed; missing project or unavailable
 plugin capabilities report a concise toast instead of silently doing nothing.
 The work-panel header reserves the native control band as a drag-free hit area,
 and its context switcher/menu remains interactive while the dock is open.
+The empty work-panel state exposes Context Vault alongside Browser and Files;
+all three entry points remain interactive and preserve the shared session path.
 
 When **Twilight Mountains** is selected, Appearance exposes a persisted
 backdrop-blur control with Low (2px), Medium (6px), and High (12px) strengths.

@@ -874,7 +874,6 @@ function AppShell() {
             />
           ) : null}
 
-          <WindowControls contained />
           <section className="main-pane">
             {page === "chat" ? (
               <ConversationTopbar
@@ -1000,6 +999,11 @@ function AppShell() {
           >
             <IconPanel size={15} />
           </TooltipButton>
+
+          {/* Keep native controls as the final shell sibling. Electron resolves
+              frameless app-region hit testing by compositor order; mounting
+              this after the dock guarantees the controls win while it is open. */}
+          <WindowControls contained />
 
           <SearchDialog open={searchOpen} onClose={() => setSearchOpen(false)} />
           <ToastHost />
