@@ -370,3 +370,8 @@ Window controls remain available on Windows/Linux across Chat, Settings,
 sidebar, work-panel, and theme transitions. Work-panel resource actions create
 a session in the selected project when needed; missing project or unavailable
 plugin capabilities report a concise toast instead of silently doing nothing.
+
+When **Twilight Mountains** is selected, Appearance exposes a persisted
+backdrop-blur control with Low (2px), Medium (6px), and High (12px) strengths.
+It affects only the scenic backdrop image; glass-material blur remains fixed.
+The control is unavailable outside the Twilight theme.

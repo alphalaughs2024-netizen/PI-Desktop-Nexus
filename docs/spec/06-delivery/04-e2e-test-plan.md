@@ -10298,6 +10298,14 @@ sample extensions under `apps/desktop/test/fixtures/pi-extensions/`.
   can show it again. Unit/source coverage is in
   `apps/desktop/test/icon-tooltip.test.mjs`.
 
+### E2E-217 — Twilight scenic backdrop blur preference
+
+Select Twilight Mountains in Appearance, choose Low, Medium, and High blur,
+restart, then switch to a base theme. The scenic image uses 2px, 6px, and 12px
+respectively; fixed glass materials are unchanged; the value persists and the
+control is unavailable outside Twilight. Unit/source coverage is in
+`apps/desktop/test/twilight-mountains-theme.test.mjs`.
+
 ### E2E-179 — repeated identical tool-call safety
 
 With a deterministic agent fixture, three identical `Read` calls execute and a

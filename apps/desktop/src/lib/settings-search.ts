@@ -52,6 +52,7 @@ export const SETTINGS_NAV: SettingsNavEntry[] = [
     keywordKeys: [
       "settings.appearance",
       "settings.theme",
+      "settings.twilightBackdropBlur",
       "settings.language",
       "settings.languageAuto",
       "settings.font",

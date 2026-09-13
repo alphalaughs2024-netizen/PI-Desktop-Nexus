@@ -6458,6 +6458,12 @@ IPC 请求无法关闭。
 - **里程碑**：M3+
 - **状态**：由 `apps/desktop/test/host-boot-diagnostics.test.mjs` 源码契约覆盖
 
+#### E2E-247：Twilight 风景背景模糊偏好
+
+- **步骤**：在“外观”选择 Twilight Mountains，依次选择低、中和高模糊，重启应用后再切换到基础主题。
+- **预期**：风景图像分别使用 2px、6px 和 12px；固定玻璃材质保持不变；所选值会持久化，并且控件仅在 Twilight 中可用。
+- **状态**：由 `apps/desktop/test/twilight-mountains-theme.test.mjs` 源码契约覆盖；除非明确请求，否则不运行本地 E2E。
+
 #### E2E-240：Apple Silicon 上的 Intel macOS 构建会指向原生下载
 
 - **前提条件**：Apple Silicon Mac；安装并通过 Rosetta 2 运行 x64 macOS 包。

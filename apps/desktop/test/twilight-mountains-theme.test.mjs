@@ -8,6 +8,14 @@ const themeRowSource = await readFile(
   new URL("../src/components/settings/ThemeRow.tsx", import.meta.url),
   "utf8",
 );
+const twilightBackdropBlurRowSource = await readFile(
+  new URL("../src/components/settings/TwilightBackdropBlurRow.tsx", import.meta.url),
+  "utf8",
+);
+const settingsPageSource = await readFile(
+  new URL("../src/pages/SettingsPage.tsx", import.meta.url),
+  "utf8",
+);
 const apiSource = await readFile(new URL("../src/lib/api.ts", import.meta.url), "utf8");
 const mainSource = await readFile(new URL("../electron/main/index.ts", import.meta.url), "utf8");
 const chatSurface = await readFile(new URL("../src/components/ChatSurface.tsx", import.meta.url), "utf8");
@@ -27,10 +35,35 @@ test("Twilight resolves to dark while its scenic state mounts and clears indepen
   const effect = appSource.slice(appSource.indexOf("const preference = settings?.theme"));
   assert.match(effect, /preference === "twilight-mountains"/);
   assert.match(effect, /document\.documentElement\.dataset\.scenicTheme = "twilight-mountains"/);
+  assert.match(effect, /document\.documentElement\.dataset\.twilightBackdropBlur/);
   assert.match(effect, /delete document\.documentElement\.dataset\.scenicTheme/);
+  assert.match(effect, /delete document\.documentElement\.dataset\.twilightBackdropBlur/);
   assert.match(effect, /document\.documentElement\.dataset\.theme = resolvedTheme/);
   assert.match(effect, /\.setWindowBackgroundColor\(/);
   assert.match(appSource, /className="app-scenic-backdrop"/);
+});
+
+test("Twilight backdrop blur is persisted, validated, and available only with the scenic theme", () => {
+  assert.match(sharedTypes, /type TwilightBackdropBlur = "low" \| "medium" \| "high"/);
+  assert.match(sharedTypes, /DEFAULT_TWILIGHT_BACKDROP_BLUR: TwilightBackdropBlur = "low"/);
+  assert.match(sharedTypes, /normalizeTwilightBackdropBlur/);
+  assert.match(apiSource, /normalizeTwilightBackdropBlur/);
+  assert.match(apiSource, /twilightBackdropBlur is invalid/);
+  assert.match(twilightBackdropBlurRowSource, /value: "low"/);
+  assert.match(twilightBackdropBlurRowSource, /value: "medium"/);
+  assert.match(twilightBackdropBlurRowSource, /value: "high"/);
+  assert.match(twilightBackdropBlurRowSource, /settings\.theme === "twilight-mountains"/);
+  assert.match(twilightBackdropBlurRowSource, /disabled=\{!enabled\}/);
+  assert.match(twilightBackdropBlurRowSource, /showToast\(/);
+  assert.match(settingsPageSource, /<ThemeRow settings=\{settings\} saveSettings=\{saveSettings\} \/>/);
+  assert.match(settingsPageSource, /<TwilightBackdropBlurRow settings=\{settings\} saveSettings=\{saveSettings\} \/>/);
+});
+
+test("Twilight maps the persisted blur strengths only to its backdrop image", () => {
+  assert.match(twilightStyles, /filter:\s*saturate\(1\.12\) blur\(var\(--twilight-backdrop-blur, 2px\)\)/);
+  assert.match(twilightStyles, /\[data-twilight-backdrop-blur="low"\][\s\S]*?--twilight-backdrop-blur:\s*2px/);
+  assert.match(twilightStyles, /\[data-twilight-backdrop-blur="medium"\][\s\S]*?--twilight-backdrop-blur:\s*6px/);
+  assert.match(twilightStyles, /\[data-twilight-backdrop-blur="high"\][\s\S]*?--twilight-backdrop-blur:\s*12px/);
 });
 
 test("Twilight packages its backdrop and uses a navy native fallback", async () => {
@@ -152,7 +185,7 @@ test("Twilight preserves scenic depth and separates adjacent selected sidebar ro
   const projectSessionBodyRule =
     /\.sidebar-session-group-body\.project\s*\{([^}]*)\}/.exec(styles)?.[1] ?? "";
 
-  assert.match(styles, /\.app-scenic-backdrop[\s\S]*?filter:\s*saturate\(1\.12\) blur\(2px\)/);
+  assert.match(styles, /\.app-scenic-backdrop[\s\S]*?filter:\s*saturate\(1\.12\) blur\(var\(--twilight-backdrop-blur, 2px\)\)/);
   assert.match(styles, /linear-gradient\(180deg, rgba\(3, 16, 54, 0\.1\)/);
   assert.match(styles, /\.composer-shell[\s\S]*?rgba\(58, 119, 212, 0\.46\)/);
   assert.match(styles, /\.project-group\.active > \.sidebar-session-group-header[\s\S]*?background:\s*rgba\(125, 174, 246, 0\.18\)/);

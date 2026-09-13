@@ -57,8 +57,20 @@
   inset: -18px;
   pointer-events: none;
   background: url("../../resources/themes/twilight-mountains.png") 50% 42% / cover no-repeat;
-  filter: saturate(1.12) blur(2px);
+  filter: saturate(1.12) blur(var(--twilight-backdrop-blur, 2px));
   transform: scale(1.03);
+}
+
+:root[data-scenic-theme="twilight-mountains"][data-twilight-backdrop-blur="low"] {
+  --twilight-backdrop-blur: 2px;
+}
+
+:root[data-scenic-theme="twilight-mountains"][data-twilight-backdrop-blur="medium"] {
+  --twilight-backdrop-blur: 6px;
+}
+
+:root[data-scenic-theme="twilight-mountains"][data-twilight-backdrop-blur="high"] {
+  --twilight-backdrop-blur: 12px;
 }
 
 :root[data-scenic-theme="twilight-mountains"] .app-scenic-backdrop::after {

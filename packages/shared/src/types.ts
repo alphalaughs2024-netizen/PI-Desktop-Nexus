@@ -1149,6 +1149,14 @@ export type ThemePreference =
   | "twilight-mountains"
   | `plugin:${string}`;
 
+export type TwilightBackdropBlur = "low" | "medium" | "high";
+
+export const DEFAULT_TWILIGHT_BACKDROP_BLUR: TwilightBackdropBlur = "low";
+
+export function normalizeTwilightBackdropBlur(value: unknown): TwilightBackdropBlur {
+  return value === "medium" || value === "high" ? value : DEFAULT_TWILIGHT_BACKDROP_BLUR;
+}
+
 /**
  * What closing the main window does on Windows/Linux. macOS keeps the native
  * Dock lifecycle and never consults this preference.
@@ -1168,6 +1176,8 @@ export type AppSettings = {
   /** Global permission mode default; sessions with `inherit` follow this. */
   defaultPermissionMode?: GlobalPermissionMode;
   theme: ThemePreference;
+  /** Blur strength for the Twilight Mountains chat backdrop image. */
+  twilightBackdropBlur?: TwilightBackdropBlur;
   /** UI language; `auto` (and absent) follows the OS locale. */
   language?: "auto" | "en" | "zh-CN" | "zh-TW" | "tr" | "de" | "es" | "fr" | "ko";
   /**
