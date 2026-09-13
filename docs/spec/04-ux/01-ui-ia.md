@@ -375,3 +375,5 @@ When **Twilight Mountains** is selected, Appearance exposes a persisted
 backdrop-blur control with Low (2px), Medium (6px), and High (12px) strengths.
 It affects only the scenic backdrop image; glass-material blur remains fixed.
 The control is unavailable outside the Twilight theme.
+Changing the control applies the new scenic blur immediately in the active chat;
+the preference remains persisted across restarts and theme changes.

@@ -40,6 +40,10 @@ test("Twilight resolves to dark while its scenic state mounts and clears indepen
   assert.match(effect, /delete document\.documentElement\.dataset\.twilightBackdropBlur/);
   assert.match(effect, /document\.documentElement\.dataset\.theme = resolvedTheme/);
   assert.match(effect, /\.setWindowBackgroundColor\(/);
+  assert.match(
+    appSource,
+    /\}, \[settings\?\.theme, settings\?\.twilightBackdropBlur, pluginThemes\]\);/,
+  );
   assert.match(appSource, /className="app-scenic-backdrop"/);
 });
 

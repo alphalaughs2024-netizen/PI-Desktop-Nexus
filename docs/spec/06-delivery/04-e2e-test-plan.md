@@ -10301,6 +10301,7 @@ sample extensions under `apps/desktop/test/fixtures/pi-extensions/`.
 ### E2E-217 — Twilight scenic backdrop blur preference
 
 Select Twilight Mountains in Appearance, choose Low, Medium, and High blur,
+confirming the active chat backdrop changes immediately after each selection,
 restart, then switch to a base theme. The scenic image uses 2px, 6px, and 12px
 respectively; fixed glass materials are unchanged; the value persists and the
 control is unavailable outside Twilight. Unit/source coverage is in
