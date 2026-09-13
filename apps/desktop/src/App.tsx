@@ -537,7 +537,7 @@ function AppShell() {
     const onChange = () => apply();
     mq.addEventListener("change", onChange);
     return () => mq.removeEventListener("change", onChange);
-  }, [settings?.theme, pluginThemes]);
+  }, [settings?.theme, settings?.twilightBackdropBlur, pluginThemes]);
 
   // Global UI font: the Settings picker stores a CSS `font-family` stack in
   // `AppSettings.fontFamily`; absent means the built-in token stack.
