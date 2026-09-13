@@ -481,7 +481,7 @@ export function WorkPanel({
                 <span className="work-panel-current-label">{activeLabel}</span>
               </div>
             ) : (
-                <button
+              <button
                 ref={contextButtonRef}
                 type="button"
                 className="work-panel-switcher-trigger"
@@ -490,7 +490,7 @@ export function WorkPanel({
                 aria-controls="work-panel-context-menu"
                 title={activeTab?.resource ?? activeLabel}
                 onClick={() => setContextOpen((open) => !open)}
-                  onKeyDown={onTriggerKeyDown}
+                onKeyDown={onTriggerKeyDown}
               >
                 <span className="work-panel-current-icon" aria-hidden>
                   <ActiveIcon size={15} />
@@ -518,7 +518,7 @@ export function WorkPanel({
                 <div className="work-panel-menu-group" role="group">
                   <div className="work-panel-menu-title">Nexus</div>
                   <button
-                      type="button"
+                    type="button"
                     role="menuitemradio"
                     aria-checked={activeTab?.kind === "contextVault"}
                     tabIndex={-1}
@@ -762,6 +762,15 @@ export function WorkPanel({
                   role="group"
                   aria-label={t("panel.tools")}
                 >
+                  <button
+                    type="button"
+                    className="work-panel-empty-tool"
+                    data-work-panel-context-vault=""
+                    onClick={() => void openContextVault()}
+                  >
+                    <IconBookOpen size={15} />
+                    <span>{t("panel.tabs.contextVault")}</span>
+                  </button>
                   {pluginViews.map((view) => {
                     const Icon = pluginViewIcon(view.icon);
                     return (
