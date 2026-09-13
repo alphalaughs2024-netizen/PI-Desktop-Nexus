@@ -1302,6 +1302,46 @@ run broad recursive deletion commands against a workspace root or guessed path.
 
 ## Twilight Mountains: concise case-study summary
 
+### Regression case study: visible controls that could not be clicked
+
+Twilight exposed an interaction failure in work-panel and window utility
+controls: buttons could be painted yet fail to receive pointer input when the
+panel was open, after theme changes, or on Settings. Minimize/maximize/close,
+the work-panel toggle, and Context Vault/Browser/Files actions could appear
+present while clicks were swallowed.
+
+The root cause was hit-testing and paint order rather than button handlers.
+Scenic foreground rules and panel overlays introduced stacking contexts above
+controls, while Electron drag regions could consume clicks unless real
+controls explicitly opted out with `-webkit-app-region: no-drag`.
+
+The durable repair is to keep interaction ownership explicit:
+
+1. Mount one scenic backdrop below app content with `pointer-events: none`.
+2. Keep renderer-drawn native controls mounted across Chat, sidebar transitions,
+   Settings, the work panel, and theme changes.
+3. Preserve titlebar reservation and give the control wrapper/buttons an
+   explicit higher paint layer plus `no-drag`; do not rely on incidental DOM
+   order.
+4. Keep work-panel headers, resize edges, menus, and content in separate
+   stacking layers. Menus may cover panel content, never the native-control hit
+   area or panel buttons.
+5. Never use scenic selectors on generic shell children to set geometry,
+   stacking, or pointer behavior; scope them to named backdrop/control/panel
+   classes.
+6. Route Context Vault, Browser, and Files through one ensure-session path. It
+   creates/reuses a session for the selected project, reports a concise toast
+   when no project or Browser plugin is available, and avoids duplicate tabs.
+7. Theme switching must remove scenic markers and restore base-theme hit regions,
+   not merely change colors.
+
+Regression tests must check interaction as well as visibility: exercise controls
+on first render, with the sidebar collapsed/expanded, with the work panel
+open/closed, in Settings, and while switching System/Light/Dark/Twilight.
+Assert that maximize/restore and Context Vault clicks reach their actions,
+native IPC failures produce feedback, and scenic layers remain non-interactive.
+A screenshot showing a button is not evidence that the button works.
+
 Twilight Mountains ultimately achieved the intended blue-glass, mountain-horizon
 atmosphere by treating the visual reference as a hierarchy of materials rather
 than a wallpaper:
