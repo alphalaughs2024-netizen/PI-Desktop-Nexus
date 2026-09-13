@@ -54,8 +54,6 @@ import {
   composerProviderDisplayName,
   composerProviderSearchText,
   composerModelsForProvider,
-  composerProviderDisplayName,
-  composerProviderSearchText,
 } from "../lib/composer-models";
 import {
   providerThinkingLevels,
@@ -1268,8 +1266,6 @@ export function Composer({
         providerDisplayName: composerProviderDisplayName(candidate),
         providerSearchText: composerProviderSearchText(candidate),
         models,
-        providerDisplayName: composerProviderDisplayName(candidate),
-        providerSearchText: composerProviderSearchText(candidate),
       };
     })
     .filter((group) => group.models.length > 0), [providers, providerModels]);
@@ -1280,11 +1276,6 @@ export function Composer({
           ...group,
           models: group.models.filter((model) =>
             composerModelMatchesQuery(model, group.providerSearchText, modelQueryNeedle),
-            composerModelMatchesQuery(
-              model,
-              group.providerSearchText,
-              modelQueryNeedle,
-            ),
           ),
         }))
         .filter((group) => group.models.length > 0)
