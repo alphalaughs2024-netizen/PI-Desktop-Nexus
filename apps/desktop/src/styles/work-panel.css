@@ -865,9 +865,14 @@
   max-width: 208px;
   flex-direction: column;
   margin-top: 14px;
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+  pointer-events: auto;
 }
 
 .work-panel-empty-tool {
+  position: relative;
+  z-index: 1;
   display: flex;
   height: 28px;
   align-items: center;
@@ -877,6 +882,9 @@
   color: var(--ds-text-primary);
   font-size: var(--text-md);
   text-align: left;
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+  pointer-events: auto;
   transition: background var(--motion-duration-fast) var(--motion-ease-out);
 }
 

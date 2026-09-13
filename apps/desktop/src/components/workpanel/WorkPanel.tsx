@@ -762,6 +762,15 @@ export function WorkPanel({
                   role="group"
                   aria-label={t("panel.tools")}
                 >
+                  <button
+                    type="button"
+                    className="work-panel-empty-tool"
+                    data-work-panel-context-vault=""
+                    onClick={() => void openContextVault()}
+                  >
+                    <IconBookOpen size={15} />
+                    <span>{t("panel.tabs.contextVault")}</span>
+                  </button>
                   {pluginViews.map((view) => {
                     const Icon = pluginViewIcon(view.icon);
                     return (

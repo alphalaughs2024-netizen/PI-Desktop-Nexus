@@ -87,3 +87,10 @@ test("Context Vault provides a complete native editing workspace instead of a si
   assert.match(styles, /\.context-vault-purpose-cards \{/);
   assert.match(styles, /\.context-vault-evidence-row \{/);
 });
+
+test("empty work panel exposes Context Vault beside Browser and Files", () => {
+  assert.match(workPanel, /data-testid=\"work-panel-empty\"/);
+  assert.match(workPanel, /onClick=\{\(\) => void openContextVault\(\)\}/);
+  assert.match(workPanel, /data-work-panel-context-vault/);
+  assert.match(workPanel, /panel\.tabs\.contextVault/);
+});
