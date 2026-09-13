@@ -1881,3 +1881,6 @@ startup failure is logged and does not prevent the desktop from launching.
 | `WORKSPACE_REQUIRED` | Project directory required |
 | `PATH_OUTSIDE_WORKSPACE` | Path out of bounds before an explicit outside-path permission decision |
 | `INTERNAL` | Uncategorized internal error |
+The shared package's TypeScript build includes its Node-based contract tests and
+declares the corresponding Node type package as a development-only dependency;
+runtime consumers do not receive a Node dependency through the shared package.

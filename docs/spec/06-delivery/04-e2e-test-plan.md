@@ -10305,3 +10305,12 @@ fourth is rejected before host dispatch with `TOOL_REPEAT_LIMIT_EXCEEDED` and a
 visible retriable error row. Reordered argument keys compare identically;
 changed arguments, intervening calls, and a new prompt reset the streak. The
 existing three-failed-`Edit` recovery scenario remains unchanged.
+#### E2E-NEXUS-006: Clean-install desktop development launch
+
+- **Steps**: From a clean Nexus checkout, run `pnpm install --frozen-lockfile`
+  followed by `pnpm dev`.
+- **Expected**: The shared package's Node-based contract tests compile during
+  dependency preparation, and the desktop launcher reaches Electron without a
+  `Cannot find module 'node:fs'` declaration error.
+- **Status**: Covered by the shared package build; do not run local E2E unless
+  explicitly requested.

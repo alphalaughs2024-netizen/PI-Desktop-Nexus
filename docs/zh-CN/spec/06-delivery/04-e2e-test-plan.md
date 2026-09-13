@@ -6490,3 +6490,10 @@ IPC 请求无法关闭。
 - **验收**：C（对话）、F（持久化）、Quality
 - **里程碑**：M6
 - **状态**：由 host-core 单元测试覆盖（2026-09-10）：`truncate_from_drops_the_tail_and_archives_the_discarded_branch`、`truncate_from_rejects_an_unknown_message`、`truncate_from_refreshes_the_stamped_revision`、`truncate_from_rpc_cuts_without_shipping_the_kept_prefix`。桌面行程仍为草稿。
+#### E2E-NEXUS-006：干净安装后的桌面开发启动
+
+- **步骤**：在干净的 Nexus 检出目录中运行 `pnpm install --frozen-lockfile`，
+  然后运行 `pnpm dev`。
+- **预期**：依赖准备阶段能够编译 shared 包中的 Node 契约测试，桌面启动器可以
+  进入 Electron，不再出现 `Cannot find module 'node:fs'` 类型声明错误。
+- **状态**：由 shared 包构建覆盖；除非明确要求，否则不运行本地 E2E。
