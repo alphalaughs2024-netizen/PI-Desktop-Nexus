@@ -947,6 +947,13 @@
  * viewport-fixed position must not follow MainPane while the work panel reflows. */
 .window-controls.window-controls-in-pane {
   position: fixed;
+  isolation: isolate;
+}
+
+/* Electron resolves app-region hit testing across siblings. The controls must
+ * be a later compositor layer than an open work-panel drag header. */
+.app-shell > .window-controls {
+  z-index: 1100;
 }
 
 .window-control-btn {

@@ -168,6 +168,9 @@
   flex: 0 1 auto;
   min-width: 0;
   align-items: center;
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+  pointer-events: auto;
 }
 
 .work-panel-context-menu {
@@ -187,6 +190,8 @@
   background: var(--ds-bg-elevated-opaque);
   box-shadow: var(--ds-shadow-dialog);
   -webkit-app-region: no-drag;
+  app-region: no-drag;
+  pointer-events: auto;
   animation: work-panel-menu-in var(--motion-duration-fast) var(--motion-ease-out)
     both;
 }
@@ -268,6 +273,9 @@
   gap: 8px;
   padding: 0 4px 0 8px;
   text-align: left;
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+  pointer-events: auto;
 }
 
 .work-panel-menu-item > svg {
