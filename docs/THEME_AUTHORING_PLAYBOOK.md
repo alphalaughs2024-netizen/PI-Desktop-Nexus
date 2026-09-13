@@ -756,6 +756,10 @@ the base row-only-panel transparency contract.
   look for a second rectangle surrounding independent rows.
 - Verify normal, reduced-transparency, and unsupported-filter modes separately;
   fallback opacity must not reintroduce a parent tile.
+- For provider/model/capability lists, test the actual nested list marker
+  (`.provider-row-list`, `.model-provider-list`, or capability rows), not just
+  the generic panel class; a provider-specific stylesheet can reintroduce
+  `overflow: hidden` or a background after the scenic rule.
 
 ### Failure: a screenshot fix risked breaking other themes
 
