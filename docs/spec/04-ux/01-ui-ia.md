@@ -365,3 +365,8 @@ shared capability contract:
 English is the source locale. Shipped translations (zh-CN, zh-TW, Turkish, German, Spanish, French, and
 Korean) cover shell chrome; labels are asserted by US-UI e2e scenarios.
 Copy rules live in [02-i18n-english-first](02-i18n-english-first.md).
+
+Window controls remain available on Windows/Linux across Chat, Settings,
+sidebar, work-panel, and theme transitions. Work-panel resource actions create
+a session in the selected project when needed; missing project or unavailable
+plugin capabilities report a concise toast instead of silently doing nothing.

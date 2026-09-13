@@ -10314,3 +10314,15 @@ existing three-failed-`Edit` recovery scenario remains unchanged.
   `Cannot find module 'node:fs'` declaration error.
 - **Status**: Covered by the shared package build; do not run local E2E unless
   explicitly requested.
+
+### UI reliability: native controls and resource actions
+
+- **Steps**: On Windows/Linux, switch between Chat, Settings, collapsed and
+  expanded sidebar, work panel, and System/Light/Dark/Twilight themes. Verify
+  minimize, maximize/restore, and close remain visible and clickable. With a
+  selected project but no active session, open Context Vault, Browser, and
+  Files from the work-panel menu.
+- **Expected**: Controls retain their hit band; failed IPC shows a toast. Each
+  resource action creates/selects a project-scoped session and opens its tab;
+  no selected project or missing Browser view produces a concise toast.
+- **Status**: Documented; local E2E is not run unless explicitly requested.

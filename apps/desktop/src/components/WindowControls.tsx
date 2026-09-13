@@ -3,6 +3,15 @@ import { useTranslation } from "react-i18next";
 import { api } from "../lib/api";
 import { IconClose, IconCopy, IconMinus, IconSquare } from "./icons";
 import { TooltipButton } from "./ui";
+import { useAppStore } from "../stores/app-store";
+
+function resolveRendererPlatform(): NodeJS.Platform {
+  if (window.piDesktop?.platform) return window.piDesktop.platform;
+  const ua = typeof navigator !== "undefined" ? navigator.userAgent : "";
+  if (/Windows/i.test(ua)) return "win32";
+  if (/Macintosh|Mac OS/i.test(ua)) return "darwin";
+  return "linux";
+}
 
 /**
  * Renderer-drawn window controls for Windows/Linux (D-frameless chrome).
@@ -19,7 +28,8 @@ export function WindowControls({
   contained?: boolean;
 } = {}) {
   const { t } = useTranslation();
-  const platform = window.piDesktop?.platform ?? "darwin";
+  const platform = resolveRendererPlatform();
+  const showToast = useAppStore((state) => state.showToast);
   const [maximized, setMaximized] = useState(false);
 
   useEffect(() => {
@@ -50,7 +60,11 @@ export function WindowControls({
         className="window-control-btn"
         tooltip={t("window.minimize", "Minimize")}
         ariaLabel={t("window.minimize", "Minimize")}
-        onClick={() => void api.windowControl("minimize")}
+        onClick={() =>
+          void api.windowControl("minimize").catch(() =>
+            showToast("Unable to minimize the window", { variant: "error" }),
+          )
+        }
       >
         <IconMinus size={12} strokeWidth={1.5} aria-hidden />
       </TooltipButton>
@@ -68,9 +82,12 @@ export function WindowControls({
             : t("window.maximize", "Maximize")
         }
         onClick={() =>
-          void api.windowControl("toggleMaximize").then((r) =>
-            setMaximized(r.maximized),
-          )
+          void api
+            .windowControl("toggleMaximize")
+            .then((result) => setMaximized(result.maximized))
+            .catch(() =>
+              showToast("Unable to change window size", { variant: "error" }),
+            )
         }
       >
         {maximized ? (
@@ -84,7 +101,11 @@ export function WindowControls({
         className="window-control-btn window-control-close"
         tooltip={t("window.close", "Close")}
         ariaLabel={t("window.close", "Close")}
-        onClick={() => void api.windowControl("close")}
+        onClick={() =>
+          void api.windowControl("close").catch(() =>
+            showToast("Unable to close the window", { variant: "error" }),
+          )
+        }
       >
         <IconClose size={12} strokeWidth={1.5} aria-hidden />
       </TooltipButton>

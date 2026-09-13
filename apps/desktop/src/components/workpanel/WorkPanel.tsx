@@ -99,6 +99,11 @@ export function WorkPanel({
   const tabs = rawTabs.filter(isKnownWorkPanelTab);
   const activeTabId = useAppStore((s) => s.activeWorkPanelTabId);
   const activeSessionId = useAppStore((s) => s.activeSessionId);
+  const activeProjectPath = useAppStore(
+    (s) => s.activeProjectPath ?? s.workspace?.path ?? null,
+  );
+  const newSession = useAppStore((s) => s.newSession);
+  const showToast = useAppStore((s) => s.showToast);
   const pluginViews = useAppStore((s) => s.pluginViews);
   const width = useAppStore((s) => s.workPanelWidth);
   const activateTab = useAppStore((s) => s.activateWorkPanelTab);
@@ -230,8 +235,26 @@ export function WorkPanel({
     [activateTab, closeContext],
   );
 
+  const ensureSession = useCallback(async () => {
+    if (useAppStore.getState().activeSessionId) return true;
+    if (!activeProjectPath) {
+      showToast("Select a project before opening a work panel tool", {
+        variant: "error",
+      });
+      return false;
+    }
+    try {
+      await newSession({ projectPath: activeProjectPath });
+      return Boolean(useAppStore.getState().activeSessionId);
+    } catch {
+      showToast("Unable to create a chat session", { variant: "error" });
+      return false;
+    }
+  }, [activeProjectPath, newSession, showToast]);
+
   const openPluginView = useCallback(
-    (view: PluginViewMeta) => {
+    async (view: PluginViewMeta) => {
+      if (!(await ensureSession())) return;
       // Same singleton rule as the built-in tools: one tab per view, so
       // re-picking it from the menu returns to the live page rather than
       // stacking a second copy of the same plugin surface.
@@ -241,14 +264,15 @@ export function WorkPanel({
       else openWorkPanelTab(tab);
       closeContext();
     },
-    [activateTab, closeContext, openWorkPanelTab, tabs],
+    [activateTab, closeContext, ensureSession, openWorkPanelTab, tabs],
   );
-  const openContextVault = useCallback(() => {
+  const openContextVault = useCallback(async () => {
+    if (!(await ensureSession())) return;
     const tab = contextVaultWorkPanelTab();
     if (tabs.some((candidate) => candidate.id === tab.id)) activateTab(tab.id);
     else openWorkPanelTab(tab);
     closeContext();
-  }, [activateTab, closeContext, openWorkPanelTab, tabs]);
+  }, [activateTab, closeContext, ensureSession, openWorkPanelTab, tabs]);
 
   const onTriggerKeyDown = (event: ReactKeyboardEvent<HTMLButtonElement>) => {
     if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
@@ -493,7 +517,15 @@ export function WorkPanel({
               >
                 <div className="work-panel-menu-group" role="group">
                   <div className="work-panel-menu-title">Nexus</div>
-                  <button type="button" role="menuitemradio" aria-checked={activeTab?.kind === "contextVault"} tabIndex={-1} data-work-panel-menu-item="" className="work-panel-menu-item" disabled={!activeSessionId} title={!activeSessionId ? t("contextVault.noSession", "Open a chat session first") : undefined} onClick={openContextVault}>
+                  <button
+                    type="button"
+                    role="menuitemradio"
+                    aria-checked={activeTab?.kind === "contextVault"}
+                    tabIndex={-1}
+                    data-work-panel-menu-item=""
+                    className="work-panel-menu-item"
+                    onClick={() => void openContextVault()}
+                  >
                     <IconBookOpen size={15} /><span className="work-panel-menu-label">Context Vault</span>
                   </button>
                 </div>

@@ -4497,9 +4497,9 @@ export const useAppStore = create<AppState>((set, get) => ({
       (view) => view.pluginId === "pi.browser" && view.viewId === "browser",
     );
     if (!hasBrowser) {
-      if (/^https?:\/\//i.test(url.trim())) {
-        void api.browserOpenExternal(url.trim());
-      }
+      get().showToast("Browser is not available in this Nexus installation", {
+        variant: "error",
+      });
       return;
     }
     get().openWorkPanelTab(browserPluginTab(url));

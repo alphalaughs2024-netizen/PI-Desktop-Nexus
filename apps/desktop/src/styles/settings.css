@@ -55,7 +55,7 @@
 }
 
 :root[data-theme="dark"] .settings-shell-full .settings-nav {
-  background: #000000;
+  background: var(--ds-bg-sidebar);
 }
 
 .settings-nav-top {

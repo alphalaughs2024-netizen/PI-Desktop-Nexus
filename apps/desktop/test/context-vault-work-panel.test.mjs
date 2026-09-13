@@ -22,10 +22,13 @@ test("Context Vault has a localized native tab and visible controls", () => {
   assert.match(tab, /context-vault-action context-vault-action-secondary/);
 });
 
-test("Context Vault resolves the active session project during workspace transitions", () => {
+test("Context Vault creates a project-scoped session instead of silently ignoring the opener", () => {
   assert.match(workPanel, /const activeSessionId = useAppStore\(\(s\) => s\.activeSessionId\);/);
+  assert.match(workPanel, /const ensureSession = useCallback\(async \(\) =>/);
+  assert.match(workPanel, /await newSession\(\{ projectPath: activeProjectPath \}\)/);
+  assert.match(workPanel, /Select a project before opening a work panel tool/);
+  assert.doesNotMatch(workPanel, /disabled=\{!activeSessionId\}/);
   assert.match(tab, /activeSession\?\.projectPath \?\? state\.activeProjectPath/);
-  assert.match(workPanel, /disabled=\{!activeSessionId\}/);
 });
 
 test("Context Vault stacks and wraps instead of overflowing a narrow work panel", () => {
