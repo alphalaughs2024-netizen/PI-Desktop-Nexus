@@ -53,11 +53,6 @@ function useTooltip<T extends HTMLElement>(
     if (visibleRef.current) setTooltipVisible(false);
   };
 
-  const dismiss = () => {
-    setDismissed(true);
-    if (visibleRef.current) setTooltipVisible(false);
-  };
-
   useEffect(() => {
     if (showTimerRef.current !== null) {
       window.clearTimeout(showTimerRef.current);
