@@ -1382,6 +1382,11 @@ menus, and buttons use scoped translucent white glass with navy text. Do not
 reuse Twilight's dark button fills or change shared base selectors; keep these
 rules under the Alpine scenic marker. Reduced-transparency and unavailable-filter
 paths use near-opaque white tiles so every Settings destination remains readable.
+Section containers such as `.settings-card-block` are layout/heading ownership
+only and must stay transparent; apply the white-glass tile to `.settings-panel`
+and its row/content surfaces. This prevents headings such as Appearance or
+Network from becoming oversized white rectangles and preserves the scenic
+canvas between groups.
 
 When a future user asks for another Nexus theme, begin here, inspect the current
 implementation, and extend the architecture intentionally. Do not rebuild the
