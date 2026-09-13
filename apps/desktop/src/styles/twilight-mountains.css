@@ -120,6 +120,8 @@
 :root[data-scenic-theme="twilight-mountains"] .app-work-panel-toggle,
 :root[data-scenic-theme="twilight-mountains"] .window-controls {
   pointer-events: auto;
+  position: fixed;
+  z-index: 1000;
   -webkit-app-region: no-drag;
   app-region: no-drag;
 }

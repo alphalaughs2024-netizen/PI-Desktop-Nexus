@@ -563,7 +563,7 @@
   position: fixed;
   top: 9px;
   right: 12px;
-  z-index: 30;
+  z-index: 1000;
   pointer-events: auto;
   -webkit-app-region: no-drag;
   app-region: no-drag;
@@ -930,7 +930,7 @@
   position: fixed;
   top: 0;
   right: 0;
-  z-index: 200; /* above titlebar (10) and work panel chrome */
+  z-index: 1000; /* above every renderer surface and draggable titlebar */
   display: flex;
   align-items: center;
   width: var(--ds-window-controls-width);
