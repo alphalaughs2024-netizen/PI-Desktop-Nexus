@@ -130,6 +130,14 @@
 :root[data-scenic-theme="alpine-light"] .settings-shell-full :is(.settings-row, .shortcut-row, .agent-capability-row, .agent-capability-empty) {
   border: 1px solid rgba(255,255,255,.58);
 }
+:root[data-scenic-theme="alpine-light"] .settings-shell-full :is(.provider-row, .model-provider-row) {
+  background: rgba(255, 255, 255, 0.58);
+  border: 1px solid rgba(255,255,255,.58);
+  box-shadow: 0 8px 24px rgba(65, 94, 135, 0.08), inset 0 1px rgba(255,255,255,.7);
+}
+:root[data-scenic-theme="alpine-light"] .settings-shell-full :is(.provider-row:hover, .model-provider-row:hover) {
+  background: rgba(255, 255, 255, 0.68);
+}
 :root[data-scenic-theme="alpine-light"] .settings-shell-full :is(.settings-row, .shortcut-row, .agent-capability-row, .agent-capability-empty):hover {
   background: rgba(255, 255, 255, 0.68);
 }
