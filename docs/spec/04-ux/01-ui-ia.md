@@ -362,3 +362,8 @@ shared capability contract:
 English is the source locale. Shipped translations (zh-CN, zh-TW, Turkish, German, Spanish, French, and
 Korean) cover shell chrome; labels are asserted by US-UI e2e scenarios.
 Copy rules live in [02-i18n-english-first](02-i18n-english-first.md).
+
+When **Twilight Mountains** is selected, Appearance exposes a persisted
+backdrop-blur control with Low (2px), Medium (6px), and High (12px) strengths.
+It affects only the scenic backdrop image; glass-material blur remains fixed.
+The control is unavailable outside the Twilight theme.

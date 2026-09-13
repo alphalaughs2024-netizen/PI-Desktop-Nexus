@@ -99,6 +99,7 @@ import {
   normalizeLargePasteThreshold,
   normalizeMode,
   normalizeNetworkProxy,
+  normalizeTwilightBackdropBlur,
   resolveFontScale,
   validateNetworkProxy,
 } from "@pi-desktop/shared";
@@ -198,6 +199,9 @@ export function normalizeSettings(settings: AppSettings): AppSettings {
       (settings as { largePasteThreshold?: unknown }).largePasteThreshold,
     ),
     fontScale: resolveFontScale(settings),
+    twilightBackdropBlur: normalizeTwilightBackdropBlur(
+      (settings as { twilightBackdropBlur?: unknown }).twilightBackdropBlur,
+    ),
     networkProxy: normalizeNetworkProxy(
       (settings as { networkProxy?: unknown }).networkProxy,
     ),
@@ -209,8 +213,17 @@ export function validateSettingsWrite(settings: AppSettings): AppSettings {
     defaultCommandShell?: unknown;
     largePasteThreshold?: unknown;
     fontScale?: unknown;
+    twilightBackdropBlur?: unknown;
     networkProxy?: unknown;
   };
+  if (
+    Object.prototype.hasOwnProperty.call(value, "twilightBackdropBlur") &&
+    normalizeTwilightBackdropBlur(value.twilightBackdropBlur) !== value.twilightBackdropBlur
+  ) {
+    throw Object.assign(new Error("twilightBackdropBlur is invalid"), {
+      errorCode: "INVALID_PARAMS",
+    });
+  }
   if (
     Object.prototype.hasOwnProperty.call(value, "defaultCommandShell") &&
     !isCommandShellId(value.defaultCommandShell)

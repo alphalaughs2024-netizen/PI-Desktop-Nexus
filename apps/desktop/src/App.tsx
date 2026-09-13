@@ -503,10 +503,12 @@ function AppShell() {
 
     if (preference === "twilight-mountains" && isScenicBuiltInTheme(preference)) {
       document.documentElement.dataset.scenicTheme = "twilight-mountains";
+      document.documentElement.dataset.twilightBackdropBlur =
+        settings?.twilightBackdropBlur ?? "low";
     } else {
       delete document.documentElement.dataset.scenicTheme;
+      delete document.documentElement.dataset.twilightBackdropBlur;
     }
-
     const mq = window.matchMedia("(prefers-color-scheme: light)");
     const apply = () => {
       const resolvedTheme =
