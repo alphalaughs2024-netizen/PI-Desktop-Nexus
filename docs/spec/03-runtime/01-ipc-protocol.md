@@ -1309,6 +1309,11 @@ checkout. Review packages reuse bounded diff and host-owned message review
 evidence; they neither grant authority nor create a parallel review store. See
 ADR 0223.
 
+Git preflight errors preserve their failure category across the host/renderer
+boundary. The renderer receives a concise recovery action, while the agent
+runtime receives a blocked status and must stop retrying until the workspace,
+session, permission, or repository state changes.
+
 Phase 5 adds `nexus/coordination/dispatching-parallel-agents` and
 `nexus/coordination/subagent-driven-development`. They build on the existing
 Agent-mode `Task`, `TaskWait`, `TaskList`, and `TaskStop` lifecycle; they do not
