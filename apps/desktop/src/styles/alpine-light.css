@@ -118,7 +118,7 @@
 :root[data-scenic-theme="alpine-light"] .settings-shell-full :is(
   .settings-panel.provider-list-panel:has(> .provider-row-list),
   .settings-panel.model-provider-panel:has(> .model-provider-list),
-  .settings-panel.agent-capability-panel:has(> .agent-capability-row)
+  .settings-panel.agent-capability-panel
 ) {
   background: transparent;
   border: 0;
@@ -178,7 +178,7 @@
   :root[data-scenic-theme="alpine-light"] .settings-shell-full :is(
     .settings-panel.provider-list-panel:has(> .provider-row-list),
     .settings-panel.model-provider-panel:has(> .model-provider-list),
-    .settings-panel.agent-capability-panel:has(> .agent-capability-row)
+    .settings-panel.agent-capability-panel
   ) {
     background: transparent;
     border: 0;
@@ -193,7 +193,7 @@
   :root[data-scenic-theme="alpine-light"] .settings-shell-full :is(
     .settings-panel.provider-list-panel:has(> .provider-row-list),
     .settings-panel.model-provider-panel:has(> .model-provider-list),
-    .settings-panel.agent-capability-panel:has(> .agent-capability-row)
+    .settings-panel.agent-capability-panel
   ) {
     background: transparent;
     border: 0;
