@@ -24,6 +24,21 @@ test("work panel uses a quiet light-theme inset surface", () => {
   );
 });
 
+test("work panel context menu layers above native panel content", () => {
+  assert.match(
+    styles,
+    /\.work-panel-header\s*\{[\s\S]*?z-index:\s*10;/,
+  );
+  assert.match(
+    styles,
+    /\.work-panel-context-menu\s*\{[\s\S]*?z-index:\s*50;/,
+  );
+  assert.match(
+    styles,
+    /\.work-panel-body\s*\{[\s\S]*?z-index:\s*0;/,
+  );
+});
+
 test("work panel interactive rows ease hover fills with motion tokens", () => {
   for (const selector of [
     ".file-tree-row",
