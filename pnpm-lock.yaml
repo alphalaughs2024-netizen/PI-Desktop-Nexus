@@ -15,7 +15,7 @@ overrides:
   vite@5: '>=6.4.3 <7'
 
 patchedDependencies:
-  '@earendil-works/pi-ai@0.85.1': 26724c58ca1d577301544a2113855fde883b085302e5a07c624793cc10b35fd0
+  '@earendil-works/pi-ai@0.85.1': f12b66690a80534cd42421169df7c428c457934ff2c92e5a31e61701f04d3df6
   electron-vite@4.0.1: 8f31df3d906fc713dfc180e80de876103f34a8456d180f2f19946230070494ab
 
 importers:
@@ -34,7 +34,7 @@ importers:
     devDependencies:
       '@earendil-works/pi-ai':
         specifier: 0.85.1
-        version: 0.85.1(patch_hash=26724c58ca1d577301544a2113855fde883b085302e5a07c624793cc10b35fd0)(supports-color@7.2.0)(ws@8.21.1)(zod@4.4.3)
+        version: 0.85.1(patch_hash=f12b66690a80534cd42421169df7c428c457934ff2c92e5a31e61701f04d3df6)(supports-color@7.2.0)(ws@8.21.1)(zod@4.4.3)
       '@pi-desktop/agent-host':
         specifier: workspace:*
         version: link:../../packages/agent-host
@@ -167,7 +167,7 @@ importers:
         version: 0.85.1(supports-color@7.2.0)(ws@8.21.1)(zod@4.4.3)
       '@earendil-works/pi-ai':
         specifier: 0.85.1
-        version: 0.85.1(patch_hash=26724c58ca1d577301544a2113855fde883b085302e5a07c624793cc10b35fd0)(supports-color@7.2.0)(ws@8.21.1)(zod@4.4.3)
+        version: 0.85.1(patch_hash=f12b66690a80534cd42421169df7c428c457934ff2c92e5a31e61701f04d3df6)(supports-color@7.2.0)(ws@8.21.1)(zod@4.4.3)
       '@pi-desktop/shared':
         specifier: workspace:*
         version: link:../shared
@@ -4565,7 +4565,7 @@ snapshots:
   '@earendil-works/pi-agent-core@0.85.1(supports-color@7.2.0)(ws@8.21.1)(zod@4.4.3)':
     dependencies:
       '@earendil-works/chord': 0.85.1
-      '@earendil-works/pi-ai': 0.85.1(patch_hash=26724c58ca1d577301544a2113855fde883b085302e5a07c624793cc10b35fd0)(supports-color@7.2.0)(ws@8.21.1)(zod@4.4.3)
+      '@earendil-works/pi-ai': 0.85.1(patch_hash=f12b66690a80534cd42421169df7c428c457934ff2c92e5a31e61701f04d3df6)(supports-color@7.2.0)(ws@8.21.1)(zod@4.4.3)
       '@earendil-works/pi-telemetry': 0.85.1
       diff: 8.0.4
       ignore: 7.0.5
@@ -4579,7 +4579,7 @@ snapshots:
       - ws
       - zod
 
-  '@earendil-works/pi-ai@0.85.1(patch_hash=26724c58ca1d577301544a2113855fde883b085302e5a07c624793cc10b35fd0)(supports-color@7.2.0)(ws@8.21.1)(zod@4.4.3)':
+  '@earendil-works/pi-ai@0.85.1(patch_hash=f12b66690a80534cd42421169df7c428c457934ff2c92e5a31e61701f04d3df6)(supports-color@7.2.0)(ws@8.21.1)(zod@4.4.3)':
     dependencies:
       '@anthropic-ai/sdk': 0.123.0(zod@4.4.3)
       '@aws-sdk/client-bedrock-runtime': 3.1048.0
@@ -4603,7 +4603,7 @@ snapshots:
     dependencies:
       '@earendil-works/chord': 0.85.1
       '@earendil-works/pi-agent-core': 0.85.1(supports-color@7.2.0)(ws@8.21.1)(zod@4.4.3)
-      '@earendil-works/pi-ai': 0.85.1(patch_hash=26724c58ca1d577301544a2113855fde883b085302e5a07c624793cc10b35fd0)(supports-color@7.2.0)(ws@8.21.1)(zod@4.4.3)
+      '@earendil-works/pi-ai': 0.85.1(patch_hash=f12b66690a80534cd42421169df7c428c457934ff2c92e5a31e61701f04d3df6)(supports-color@7.2.0)(ws@8.21.1)(zod@4.4.3)
       '@earendil-works/pi-tui': 0.85.1
       '@silvia-odwyer/photon-node': 0.3.4
       chalk: 5.6.2

@@ -1255,6 +1255,12 @@ authority or bypass confirmation. Active bodies are injected before the first
 model action; non-active guidance remains subject to the 8,000-character Skill
 catalog and session id gate.
 
+When a terminal agent event arrives, Electron keeps local turn ownership while
+`session.endTurn` persists the terminal state. The Agent Host queue is kicked
+only after that promise settles (success or failure), and the bridge reports the
+in-flight finalization as busy until then. This preserves FIFO ordering without
+leaving queued prompts asleep after persistence completes.
+
 Phase 2 packages add four quality workflows with deterministic, high-confidence
 activation. A request to add, create, build, implement, introduce, redesign, or
 change a named product behavior enters **discovery** through

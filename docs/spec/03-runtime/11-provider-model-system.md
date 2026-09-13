@@ -610,11 +610,11 @@ model-level pin the provider-wide style applies unchanged.
 
 The pinned `@earendil-works/pi-ai@0.85.1` distribution carries a reproducible
 pnpm patch: when a Responses stream emits `response.completed` or
-`response.incomplete`, processing finalizes and returns without waiting for the
+`response.incomplete`, processing finalizes and stops consuming without waiting for the
 HTTP iterator to close. This preserves ordinary premature-EOF and error
 handling while avoiding a completed turn that remains active behind a
 never-closing gateway stream. The patch is removed only after Nexus pins an
-upstream pi-ai release that includes the equivalent terminal-event return.
+upstream pi-ai release that includes the equivalent terminal-event behavior.
 
 This is the **universal escape hatch** guaranteeing market coverage beyond native integrations.
 

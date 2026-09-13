@@ -409,7 +409,11 @@ receives only that recovery checkpoint and applicable tail. The lifecycle event 
 this as `fallback: "retained_tail"` so the renderer can show a warning rather
 than a false success. If the fallback cannot be prepared, persisted, or kept
 below the safe budget, the user row and an assistant error remain durable and
-no provider request starts. Provider-reported context overflow is the last
+no provider request starts. A completed-turn fallback with no ordinary retained
+tail selects the newest user messages under the same bounded budget, so a
+restart or model switch never restores an empty model context. A subsequent
+fallback strips only its recovery notice and retains any real carried summary.
+Provider-reported context overflow is the last
 recovery layer: omit the failed assistant from model context, compact once,
 and retry once. A second overflow remains terminal. Bedrock's
 `prompt is too long: N tokens > M maximum` form maps to this path.

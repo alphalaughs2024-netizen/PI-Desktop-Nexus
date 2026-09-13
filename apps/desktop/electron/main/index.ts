@@ -5547,18 +5547,15 @@ function finishTurn(
   })();
 
   turnFinalizations.set(sessionId, finalization);
-  void finalization.then(
-    () => {
-      if (turnFinalizations.get(sessionId) === finalization) {
-        turnFinalizations.delete(sessionId);
-      }
-    },
-    () => {
-      if (turnFinalizations.get(sessionId) === finalization) {
-        turnFinalizations.delete(sessionId);
-      }
-    },
-  );
+  const releaseFinalization = () => {
+    if (turnFinalizations.get(sessionId) !== finalization) return;
+    turnFinalizations.delete(sessionId);
+    // Agent Host received the terminal event while `activeTurns` still held
+    // local ownership. Re-check its deferred FIFO queue only after durable
+    // persistence and both busy guards have settled.
+    if (!quitting) agentHostBridge?.agentHost.kick(sessionId);
+  };
+  void finalization.then(releaseFinalization, releaseFinalization);
   return finalization;
 }
 
@@ -9750,7 +9747,8 @@ app.whenReady().then(async () => {
     invoke: invokeIpc,
     channels: IPC.invoke,
     getHost: () => host,
-    isSessionBusy: (sessionId) => activeTurns.has(sessionId),
+    isSessionBusy: (sessionId) =>
+      activeTurns.has(sessionId) || turnFinalizations.has(sessionId),
     onQueueChange: (event) => sendToRenderer(IPC.event.agentQueueChanged, event),
     log: (level, message, data) => logger.app("runtime", level, message, { data }),
   });

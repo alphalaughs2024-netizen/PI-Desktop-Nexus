@@ -169,6 +169,8 @@ type AgentStopResponse = {
 **立即发送** 操作时调用该渠道，并在终止事件之后通过常规的 `agent/prompt`
 流程释放该项。
 
+代理终止事件到达时，Electron 会在 `session.endTurn` 持久化终止状态期间保留本地回合所有权。只有该 Promise 成功或失败地完成后，才会唤醒 Agent Host 队列；桥接层在此之前仍将终结过程视为忙碌状态。这样既保持 FIFO 顺序，也不会在持久化完成后让已排队的提示保持休眠。
+
 ### 5.3 abort
 
 ```ts
