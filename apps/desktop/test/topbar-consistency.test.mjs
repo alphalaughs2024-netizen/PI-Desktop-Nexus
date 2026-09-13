@@ -37,6 +37,17 @@ test("window control band draws no boundary of its own", () => {
   assert.match(controls, /background:\s*var\(--ds-bg-primary\);/);
 });
 
+test("work-panel titlebars never reclaim the native control hit band", () => {
+  assert.doesNotMatch(
+    stylesSource,
+    /\.conversation-topbar\.ct-work-panel-open\s*\{[^}]*right:\s*0;/,
+  );
+  assert.doesNotMatch(
+    stylesSource,
+    /\.main-titlebar\.work-panel-open\s*\{[^}]*padding-right:\s*0;/,
+  );
+});
+
 test("sidebar and work-panel headers use the shared toolbar metric", () => {
   assert.match(styleBlock("\\.sidebar-header"), /height:\s*var\(--ds-toolbar-height\);/);
   assert.match(styleBlock("\\.sidebar-header"), /flex:\s*0 0 var\(--ds-toolbar-height\);/);

@@ -13,6 +13,7 @@ export * from "./thinking-levels.js";
 export * from "./command-shells.js";
 export * from "./context-compaction.js";
 export * from "./rpc-timeouts.js";
+export * from "./rpc-limits.js";
 export * from "./subagent-definition.js";
 export * from "./subagent-presets.js";
 export * from "./provider-presets.js";

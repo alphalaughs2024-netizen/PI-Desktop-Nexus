@@ -9,6 +9,7 @@ const main = await readFile(new URL("../electron/main/index.ts", import.meta.url
 const protocol = await readFile(new URL("../../../packages/shared/src/protocol.ts", import.meta.url), "utf8");
 const en = await readFile(new URL("../../../packages/i18n/src/locales/en/index.ts", import.meta.url), "utf8");
 const zhCN = await readFile(new URL("../../../packages/i18n/src/locales/zh-CN/index.ts", import.meta.url), "utf8");
+const workPanel = await readFile(new URL("../src/components/workpanel/WorkPanel.tsx", import.meta.url), "utf8");
 
 test("Context Vault has a localized native tab and visible controls", () => {
   assert.match(en, /contextVault: "Context Vault"/);
@@ -19,6 +20,12 @@ test("Context Vault has a localized native tab and visible controls", () => {
   assert.match(tab, /t\(`contextVault\.categories\.\$\{item\}`\)/);
   assert.match(tab, /context-vault-action context-vault-action-primary/);
   assert.match(tab, /context-vault-action context-vault-action-secondary/);
+});
+
+test("Context Vault resolves the active session project during workspace transitions", () => {
+  assert.match(workPanel, /const activeSessionId = useAppStore\(\(s\) => s\.activeSessionId\);/);
+  assert.match(tab, /activeSession\?\.projectPath \?\? state\.activeProjectPath/);
+  assert.match(workPanel, /disabled=\{!activeSessionId\}/);
 });
 
 test("Context Vault stacks and wraps instead of overflowing a narrow work panel", () => {

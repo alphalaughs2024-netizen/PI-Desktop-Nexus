@@ -3,7 +3,13 @@ import { createInterface } from "node:readline";
 import { randomUUID } from "node:crypto";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
-import { ErrorCodes, PROTOCOL_VERSION, rpcTimeoutMs, stripProxyEnv } from "@pi-desktop/shared";
+import {
+  ErrorCodes,
+  MAX_HOST_STDIN_LINE_BYTES,
+  PROTOCOL_VERSION,
+  rpcTimeoutMs,
+  stripProxyEnv,
+} from "@pi-desktop/shared";
 import {
   GlibcUnsupportedError,
   glibcMissingSymbol,
@@ -318,6 +324,12 @@ export class HostProcess {
     const id = randomUUID();
     const timeoutMs = timeoutOverrideMs ?? rpcTimeoutMs(method, params);
     const payload = JSON.stringify({ jsonrpc: "2.0", id, method, params }) + "\n";
+    if (Buffer.byteLength(payload, "utf8") > MAX_HOST_STDIN_LINE_BYTES) {
+      throw Object.assign(new Error("request line exceeds 64 MiB"), {
+        errorCode: ErrorCodes.LIMIT_EXCEEDED,
+        code: 1002,
+      });
+    }
     return new Promise<T>((resolve, reject) => {
       let timer: ReturnType<typeof setTimeout> | undefined;
       let settled = false;

@@ -51,6 +51,8 @@ import {
   composerModelBadges,
   composerModelDisplayName,
   composerModelMatchesQuery,
+  composerProviderDisplayName,
+  composerProviderSearchText,
   composerModelsForProvider,
   composerProviderDisplayName,
   composerProviderSearchText,
@@ -1263,6 +1265,8 @@ export function Composer({
       );
       return {
         provider: candidate,
+        providerDisplayName: composerProviderDisplayName(candidate),
+        providerSearchText: composerProviderSearchText(candidate),
         models,
         providerDisplayName: composerProviderDisplayName(candidate),
         providerSearchText: composerProviderSearchText(candidate),
@@ -1276,6 +1280,11 @@ export function Composer({
           ...group,
           models: group.models.filter((model) =>
             composerModelMatchesQuery(model, group.providerSearchText, modelQueryNeedle),
+            composerModelMatchesQuery(
+              model,
+              group.providerSearchText,
+              modelQueryNeedle,
+            ),
           ),
         }))
         .filter((group) => group.models.length > 0)

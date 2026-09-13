@@ -280,6 +280,9 @@ come from the cached catalog or configured bindings; live discovery remains a
 background update. A configured non-empty alias is resolved from the binding
 for every equivalent model ID and remains the sole visible model name while
 the catalog is refreshed.
+An OAuth provider heading uses its non-secret account label when present, so
+duplicate accounts from one vendor remain distinguishable; model rows still
+use the configured model alias or published model name.
 
 ## 10. Default model policy
 
@@ -385,8 +388,8 @@ the provider form matches the typed text against model id and display name with
 a plain case-insensitive substring test.
 
 The Composer picker likewise searches the **configured** models only, matching
-model id, display name, published family and provider name
-(`composerModelMatchesQuery`).
+model id, display name, published family and the account-aware provider display
+name (`composerModelMatchesQuery`).
 
 Model ids are compared case-insensitively wherever a chosen model is matched
 against a returned one, so a hand-typed `GPT-5` and a published `gpt-5` are the

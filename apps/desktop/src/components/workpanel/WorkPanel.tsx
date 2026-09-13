@@ -493,7 +493,7 @@ export function WorkPanel({
               >
                 <div className="work-panel-menu-group" role="group">
                   <div className="work-panel-menu-title">Nexus</div>
-                  <button type="button" role="menuitemradio" aria-checked={activeTab?.kind === "contextVault"} tabIndex={-1} data-work-panel-menu-item="" className="work-panel-menu-item" onClick={openContextVault}>
+                  <button type="button" role="menuitemradio" aria-checked={activeTab?.kind === "contextVault"} tabIndex={-1} data-work-panel-menu-item="" className="work-panel-menu-item" disabled={!activeSessionId} title={!activeSessionId ? t("contextVault.noSession", "Open a chat session first") : undefined} onClick={openContextVault}>
                     <IconBookOpen size={15} /><span className="work-panel-menu-label">Context Vault</span>
                   </button>
                 </div>

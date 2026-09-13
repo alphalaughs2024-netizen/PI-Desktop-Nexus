@@ -186,9 +186,10 @@ test("Windows and Linux use menu-free frameless chrome with window controls", ()
     stylesSource,
     /:root\[data-platform="win32"\] \.main-titlebar,[\s\S]*:root\[data-platform="linux"\] \.settings-titlebar\s*\{[^}]*right:\s*var\(--ds-window-controls-width\);/,
   );
-  assert.match(
+  assert.doesNotMatch(
     stylesSource,
-    /:root\[data-platform="win32"\] \.main-titlebar\.work-panel-open,[\s\S]*:root\[data-platform="linux"\] \.main-titlebar\.work-panel-open\s*\{[^}]*right:\s*0;/,
+    /:root\[data-platform="(?:win32|linux)"\] \.main-titlebar\.work-panel-open\s*,[\s\S]*?right:\s*0;/,
+    "the draggable titlebar must keep reserving the native control band while the work panel is open",
   );
   assert.doesNotMatch(stylesSource, /\.work-panel-header\s*\{[^}]*margin-right:/s);
   assert.match(

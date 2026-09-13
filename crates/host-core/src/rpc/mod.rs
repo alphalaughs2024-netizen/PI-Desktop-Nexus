@@ -70,9 +70,81 @@ struct CacheModelsParams {
 #[derive(Debug)]
 enum StdinEvent {
     Line(String),
-    Oversize,
+    Oversize { id: Value },
     Error(String),
 }
+
+/// Best-effort JSON-RPC id from a possibly truncated NDJSON prefix.
+///
+/// Electron matches host replies by id. A `LIMIT_EXCEEDED` reply with a null
+/// id is treated as a notification and the caller waits out the 130 s deadline.
+fn peek_jsonrpc_id(prefix: &str) -> Value {
+    let window = prefix.get(..prefix.len().min(2048)).unwrap_or(prefix);
+    if let Ok(value) = serde_json::from_str::<Value>(window) {
+        return value.get("id").cloned().unwrap_or(Value::Null);
+    }
+    let bytes = window.as_bytes();
+    let mut i = 0;
+    while i + 4 < bytes.len() {
+        if &bytes[i..i + 4] != b"\"id\"" {
+            i += 1;
+            continue;
+        }
+        let mut j = i + 4;
+        while j < bytes.len() && bytes[j].is_ascii_whitespace() {
+            j += 1;
+        }
+        if j >= bytes.len() || bytes[j] != b':' {
+            i += 1;
+            continue;
+        }
+        j += 1;
+        while j < bytes.len() && bytes[j].is_ascii_whitespace() {
+            j += 1;
+        }
+        if j >= bytes.len() {
+            return Value::Null;
+        }
+        if bytes[j] == b'"' {
+            j += 1;
+            let start = j;
+            while j < bytes.len() {
+                if bytes[j] == b'\\' {
+                    j = (j + 2).min(bytes.len());
+                    continue;
+                }
+                if bytes[j] == b'"' {
+                    return std::str::from_utf8(&bytes[start..j])
+                        .map(|text| Value::String(text.to_string()))
+                        .unwrap_or(Value::Null);
+                }
+                j += 1;
+            }
+            return Value::Null;
+        }
+        if bytes.get(j..j + 4) == Some(&b"null"[..]) {
+            return Value::Null;
+        }
+        let start = j;
+        if bytes[j] == b'-' {
+            j += 1;
+        }
+        while j < bytes.len() && bytes[j].is_ascii_digit() {
+            j += 1;
+        }
+        if j > start {
+            if let Ok(text) = std::str::from_utf8(&bytes[start..j]) {
+                if let Ok(n) = text.parse::<i64>() {
+                    return json!(n);
+                }
+            }
+        }
+        return Value::Null;
+    }
+    Value::Null
+}
+
+const STDOUT_WRITER_SHUTDOWN: Duration = Duration::from_secs(5);
 
 
 /// Tokio's stdio adapter delegates every read/write to the blocking pool. If
@@ -131,8 +203,9 @@ fn spawn_stdin_reader(tx: mpsc::UnboundedSender<StdinEvent>) -> io::Result<threa
                                 }
                             }
                         }
+                        let id = peek_jsonrpc_id(&line);
                         line.clear();
-                        if tx.send(StdinEvent::Oversize).is_err() {
+                        if tx.send(StdinEvent::Oversize { id }).is_err() {
                             break;
                         }
                     }
@@ -251,10 +324,10 @@ pub async fn serve(state: Arc<Mutex<AppState>>) -> Result<()> {
                 };
                 let line = match event {
                     StdinEvent::Line(line) => line,
-                    StdinEvent::Oversize => {
+                    StdinEvent::Oversize { id } => {
                         let response = JsonRpcResponse {
                             jsonrpc: "2.0",
-                            id: Value::Null,
+                            id,
                             result: None,
                             error: Some(rpc_err(
                                 1002,
@@ -374,10 +447,16 @@ pub async fn serve(state: Arc<Mutex<AppState>>) -> Result<()> {
     }
     drop(tx);
     if !writer_done {
-        input_error = match writer_done_rx.await {
-            Ok(Some(error)) => Some(format!("host stdout write failed: {error}")),
-            Ok(None) => input_error,
-            Err(_) => Some("host stdout writer status unavailable".to_string()),
+        input_error = match tokio::time::timeout(STDOUT_WRITER_SHUTDOWN, writer_done_rx).await {
+            Ok(Ok(Some(error))) => Some(format!("host stdout write failed: {error}")),
+            Ok(Ok(None)) => input_error,
+            Ok(Err(_)) => Some("host stdout writer status unavailable".to_string()),
+            Err(_) => {
+                tracing::warn!("host stdout writer did not stop after stdin closed");
+                input_error.or_else(|| {
+                    Some("host stdout writer did not stop after stdin closed".to_string())
+                })
+            }
         };
     }
     input_error
@@ -3845,7 +3924,7 @@ mod tests {
     use tokio::sync::{mpsc, Mutex};
 
     use super::{
-        capability_err, handle_request, parse_capability_query, provider_rpc_err,
+        capability_err, handle_request, parse_capability_query, peek_jsonrpc_id, provider_rpc_err,
         resolve_plan_workspace, resolve_tool_workspace, scope_err, skill_err,
     };
     use crate::plans::{PlanResolveParams, PlanSubmitParams};
@@ -3884,6 +3963,27 @@ mod tests {
             capability_err("missing project").data.unwrap()["errorCode"],
             "CAPABILITY_INVALID"
         );
+    }
+
+    #[test]
+    fn peek_jsonrpc_id_reads_a_string_id_from_a_truncated_prefix() {
+        let prefix =
+            r#"{"jsonrpc":"2.0","id":"abc-123","method":"session.replaceMessages","params":{"#;
+        assert_eq!(peek_jsonrpc_id(prefix), json!("abc-123"));
+    }
+
+    #[test]
+    fn peek_jsonrpc_id_reads_a_numeric_id() {
+        assert_eq!(
+            peek_jsonrpc_id(r#"{"jsonrpc":"2.0","id":7,"method":"x"}"#),
+            json!(7)
+        );
+    }
+
+    #[test]
+    fn peek_jsonrpc_id_is_null_when_the_prefix_has_no_id() {
+        assert_eq!(peek_jsonrpc_id("not json"), Value::Null);
+        assert_eq!(peek_jsonrpc_id(""), Value::Null);
     }
 
     #[test]

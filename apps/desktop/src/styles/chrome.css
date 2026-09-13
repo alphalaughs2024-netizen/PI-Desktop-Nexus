@@ -427,9 +427,6 @@
   -webkit-app-region: drag;
 }
 
-.main-titlebar.work-panel-open {
-  padding-right: 0;
-}
 
 /* Conversation top bar (Codex/WorkBuddy-style): replaces the empty chat
  * titlebar band with a real toolbar — session title and action buttons. It
@@ -491,9 +488,6 @@
   padding-right: 36px;
 }
 
-.conversation-topbar.ct-work-panel-open .ct-right {
-  padding-right: 0;
-}
 
 .conversation-topbar .ct-title-wrap {
   display: flex;
@@ -660,11 +654,6 @@
   right: var(--ds-window-controls-width);
 }
 
-:root[data-platform="win32"] .conversation-topbar.ct-work-panel-open,
-:root[data-platform="linux"] .conversation-topbar.ct-work-panel-open {
-  /* Window controls stay viewport-fixed over the panel, not this pane. */
-  right: 0;
-}
 
 .notification-center {
   position: relative;
@@ -995,10 +984,6 @@
   right: var(--ds-window-controls-width);
 }
 
-:root[data-platform="win32"] .main-titlebar.work-panel-open,
-:root[data-platform="linux"] .main-titlebar.work-panel-open {
-  right: 0;
-}
 
 .sidebar-header {
   display: flex;

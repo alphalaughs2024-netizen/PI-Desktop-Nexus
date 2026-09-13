@@ -1878,6 +1878,22 @@ Each scenario is documented in this format:
 - **Acceptance**: G (remote marketplace source)
 - **Status**: Documented / host-core unit covered
 
+#### E2E-024Z: Windows localized curl diagnostics stay readable
+
+- **Preconditions**: Windows x64 host. The official catalog request is forced
+  to fail with a localized, non-UTF-8 curl/Schannel diagnostic (a deterministic
+  fake curl in the test PATH may emit GBK stderr and exit 35).
+- **Steps**: 1) Select Extensions → Marketplace with GitHub (official) as the
+  source. 2) Refresh the marketplace. 3) Inspect the error toast. 4) Switch to
+  the CNB mirror and refresh again.
+- **Expected**: The failed request remains a `PLUGIN_NETWORK` failure and
+  retains the readable localized diagnostic without Unicode replacement
+  characters; switching to the mirror can refresh the catalog normally.
+- **Specs linked**: `07-plugins/07-plugin-marketplace.md`,
+  `03-runtime/07-process-model.md`
+- **Acceptance**: G (remote marketplace source)
+- **Status**: Documented / host-core unit covered; Windows rendered validation pending
+
 #### E2E-024B: Marketplace install with permission review
 
 - **Preconditions**: App running; official market catalog available.
@@ -3871,7 +3887,9 @@ Each scenario is documented in this format:
   appearing as a fully visible tooltip 8px above the chip on hover and on
   keyboard focus (#74); the tooltip remains fully painted when it overlaps the
   sidebar edge and is never occluded by the sidebar background; no chip renders
-  caption text. While an assistant response is streaming, its toolbar omits
+  caption text. Clicking an action dismisses its tooltip immediately; it does not
+  remain visible while the action retains focus. While an assistant response is
+  streaming, its toolbar omits
   Copy; after the response settles, the assistant toolbar offers Copy, Fork,
   Regenerate. The user toolbar offers the pager (when variants exist), Copy,
   Edit, Delete. Edit replaces the prompt bubble with a wider inline
@@ -6242,7 +6260,9 @@ Each scenario is documented in this format:
   fixed list is portaled above the dialog without changing dialog height or
   being clipped by the dialog's overflow. Confirm a custom model ID can still
   be entered. Press Test connection and confirm the result resolves the edited
-  account. 5) Resolve
+  account. Open the Composer model menu and confirm the edited account label is
+  used as the OAuth provider group heading, while the configured model alias is
+  shown on its model row. 5) Resolve
   and use each account separately, including model discovery and one streamed
   turn per account. 6) Start the device-code login on a second vendor, then
   press Cancel while the dialog is polling; confirm no row or credential is
@@ -8215,7 +8235,9 @@ This test plan spec is accepted when:
   Continue; confirm leftover delegates abort, the session is idle, Continue
   is accepted, and the failed assistant error surface stays visible. 8) Define
   a delegate with an explicit `maxTokens` and one without, run both, and read
-  the two outgoing provider requests.
+  the two outgoing provider requests. 9) Start enough delegates for their
+  combined reports to exceed the bounded `TaskWait` result, then let the parent
+  idle.
 - **Expected**: Idle and duration watchdogs never fire. Parent idle does not
   abort delegates. Completion reports are delivered into the same durable
   turn. `TaskWait` expiry reports “Still running after Ns”, includes a
@@ -8227,7 +8249,9 @@ This test plan spec is accepted when:
   capped delegate's request carries the declared output limit and the uncapped
   one carries the model's published limit, so the cap overrides the derived
   `max_tokens` / `max_completion_tokens` / `max_output_tokens` without
-  disturbing the session's own requests (D383).
+  disturbing the session's own requests (D383). In step 9, the reports omitted
+  from the bounded `TaskWait` content are delivered once by the idle resume and
+  are not replayed after they reach the parent.
 - **Specs linked**: `03-runtime/02-agent-runtime.md` §5f,
   `03-runtime/08-error-codes.md`, `03-runtime/09-logging-and-observability.md`,
   ADR 0166, ADR 0189, decisions-log D328 / D352 / D383
@@ -8918,7 +8942,10 @@ are withdrawn with ADR 0165.
   assistant markdown. 2) Prompt a turn whose assistant reply mentions
   `apps/desktop/src/App.tsx` as a bare path, as inline code, and as a
   markdown link. 3) Click each. 4) Open the ADR markdown file in the work-panel
-  files viewer and click a `../spec/00-baseline.md` link.
+  files viewer and click a `../spec/00-baseline.md` link. 5) Prompt a turn
+  whose reply mentions a workspace file with a non-ASCII name (e.g.
+  `docs/规范/架构.md`), an absolute path outside the workspace, and a
+  `~/Downloads/…` path.
 - **Expected**:
   - Opening the session paints the transcript without throwing.
   - Each chat path opens the work-panel files viewer on
@@ -8926,6 +8953,8 @@ are withdrawn with ADR 0165.
   - The markdown-file `../` link opens `docs/spec/00-baseline.md`, not a
     workspace-root `spec/00-baseline.md`.
   - A `../../../outside.ts` link from `docs/adr` stays inert.
+  - The non-ASCII workspace path chips and opens like an ASCII one; the
+    outside-absolute and `~/` mentions stay plain text with no dead chip.
 - **Specs linked**: `04-ux/08-component-spec.md` §8.3,
   `08-meta/decisions-log.md` (D322)
 - **Acceptance**: C (conversation & stream), D (workspace), Quality
@@ -10183,10 +10212,12 @@ sample extensions under `apps/desktop/test/fixtures/pi-extensions/`.
 - **Preconditions**: Nexus has upgraded from a profile that contains legacy
   `local.context-vault` plugin settings; two workspace roots are available.
 - **Steps**: 1) Open each project and open Context Vault from the work-panel
-  launcher. 2) Confirm both native vaults start empty. 3) Create a repository
-  claim with literal relative evidence in project A, then switch projects.
-  4) Start an ordinary task and a task matching the claim. 5) Export project A,
-  inspect the JSON, then import it into project B through preview.
+  launcher. Confirm it is disabled with an explanation before any chat session
+  exists. 2) Confirm both native vaults start empty. 3) Create a repository
+  claim with literal relative evidence in project A, then switch projects while
+  retaining the panel. 4) Start an ordinary task and a task matching the claim.
+  5) Export project A, inspect the JSON, then import it into project B through
+  preview.
 - **Expected**: Legacy settings are untouched and not shown. No claim leaks to
   project B. The ordinary task gets no brief or forced save; the matching task
   sees availability metadata only and may explicitly brief. Native
@@ -10196,7 +10227,9 @@ sample extensions under `apps/desktop/test/fixtures/pi-extensions/`.
   tool. The pack contains no secrets, sessions, absolute paths, mtimes, or
   workspace contents; choosing a pack opens a review sheet without writes,
   preview labels selectable, duplicate, overlap, invalid, and incompatible
-  items, and only the explicitly checked valid claims merge.
+  items, and only the explicitly checked valid claims merge. A retained panel
+  resolves its active session project during the switch and never flashes an
+  unrelated or blank vault.
 - **Specs linked**: ADR 0217, runtime and storage specifications.
 - **Status**: Draft.
 

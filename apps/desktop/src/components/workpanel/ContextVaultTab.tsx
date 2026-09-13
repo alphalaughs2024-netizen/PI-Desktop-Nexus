@@ -22,7 +22,12 @@ function draftFrom(claim: ContextVaultClaim): ContextVaultClaimInput {
 
 export function ContextVaultTab() {
   const { t } = useTranslation();
-  const projectPath = useAppStore((state) => state.activeProjectPath);
+  const projectPath = useAppStore((state) => {
+    const activeSession = state.activeSessionId
+      ? state.sessions.find((session) => session.id === state.activeSessionId)
+      : undefined;
+    return activeSession?.projectPath ?? state.activeProjectPath;
+  });
   const [claims, setClaims] = useState<ContextVaultClaim[]>([]);
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<ContextVaultCategory | "all">("all");

@@ -87,7 +87,10 @@ destination, chat as the home surface, tools and permissions inline.
   `Cmd/Ctrl + J` both toggle the active session's retained panel context —
   revealing it without creating a resource tab and collapsing it without
   discarding one; the create trigger remains unavailable while the panel is
-  closed. A
+  closed. The Context Vault launcher is session-scoped: it is disabled with a
+  concise explanation until a chat session exists, and its content resolves
+  the active session's project path during workspace transitions so a retained
+  panel cannot briefly show the wrong project or an empty black surface. A
   successful active-session workspace Write/Edit artifact opens Review;
   scratch, failed, and background-session writes never steal focus. The outer
   inner divider resizes the panel from 244px to 720px; moving it left takes
