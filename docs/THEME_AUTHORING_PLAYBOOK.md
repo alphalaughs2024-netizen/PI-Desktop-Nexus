@@ -725,6 +725,38 @@ class before finalizing the theme.
 shortcut-specific actions, toggle states, and disabled/focus/hover variants as
 applicable. Test the selectors with a direct stylesheet contract assertion.
 
+### Failure: Alpine Settings tiles had inconsistent opacity and a parent rectangle
+
+**Symptom:** some Alpine Settings rows appeared bright white while others were
+more transparent, and a large surrounding rectangle made groups of tiles look
+like one unwanted card. This was especially noticeable on Skills and Model
+configuration pages.
+
+**Root cause:** scenic surfaces were assigned different material tiers without
+making the ownership boundary explicit. A later `.settings-panel` rule also
+painted a background behind row-only panels whose children were already
+individual tiles. The result was a translucent row inside a second translucent
+parent, plus opacity differences that looked accidental rather than intentional.
+
+**Permanent lesson:** define surface tiers by component role. A section wrapper
+owns the heading and spacing; it is not a tile. A mixed-content panel may be one
+tile, but a row-only panel must dissolve so each row owns its own background,
+border, radius, and shadow. Keep opacity differences small enough to read as a
+deliberate hierarchy. Never let a generic scenic `.settings-panel` rule override
+the base row-only-panel transparency contract.
+
+**Prevention checklist:**
+
+- Keep `.settings-card-block` and its heading transparent on the scenic canvas.
+- Apply white glass to `.settings-panel` only for mixed content; use row/content
+  surfaces for row-only sections.
+- Neutralize row-only parents with transparent background, no border/shadow, and
+  visible overflow when required by the base layout.
+- Test one mixed panel and one row-only panel on every Settings destination and
+  look for a second rectangle surrounding independent rows.
+- Verify normal, reduced-transparency, and unsupported-filter modes separately;
+  fallback opacity must not reintroduce a parent tile.
+
 ### Failure: a screenshot fix risked breaking other themes
 
 **Symptom:** it was tempting to edit the base dark CSS so scenic Settings or
