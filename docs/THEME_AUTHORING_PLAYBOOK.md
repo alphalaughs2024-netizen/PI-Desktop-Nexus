@@ -1376,6 +1376,13 @@ blur remains fixed by the theme stylesheet. Alpine Light uses 4px, 8px, and
 themes that declare support, and reduced-transparency/no-filter fallbacks remove
 both kinds of blur in favor of readable opaque surfaces.
 
+Alpine Settings is a full-page continuation of the same material system: the
+Settings rail, content shell, cards, row tiles, fields, segmented controls,
+menus, and buttons use scoped translucent white glass with navy text. Do not
+reuse Twilight's dark button fills or change shared base selectors; keep these
+rules under the Alpine scenic marker. Reduced-transparency and unavailable-filter
+paths use near-opaque white tiles so every Settings destination remains readable.
+
 When a future user asks for another Nexus theme, begin here, inspect the current
 implementation, and extend the architecture intentionally. Do not rebuild the
 same lessons through screenshots and accidental regressions.
