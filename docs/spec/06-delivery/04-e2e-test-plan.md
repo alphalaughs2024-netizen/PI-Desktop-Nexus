@@ -10307,6 +10307,16 @@ Alpine uses 4px, 8px, and 16px; fixed glass materials are unchanged; the value
 persists and the control is unavailable outside scenic themes. Unit/source coverage is in
 `apps/desktop/test/twilight-mountains-theme.test.mjs`.
 
+### E2E-218 — Alpine Light Settings glass
+
+Select Alpine Light and visit General, Agent, Skills, MCP, Subagents, Plugins,
+and other Settings destinations. Confirm the rail, cards, rows, fields,
+segmented controls, menus, and buttons use translucent white glass with readable
+navy text and a faint scenic backdrop; no Twilight-blue fills leak into Alpine.
+Enable reduced transparency (or use a browser without backdrop-filter support)
+and confirm the same surfaces become near-opaque and remain readable. Return to
+Dark and Twilight and confirm their existing Settings materials are unchanged.
+
 ### E2E-179 — repeated identical tool-call safety
 
 With a deterministic agent fixture, three identical `Read` calls execute and a
