@@ -10298,13 +10298,13 @@ sample extensions under `apps/desktop/test/fixtures/pi-extensions/`.
   can show it again. Unit/source coverage is in
   `apps/desktop/test/icon-tooltip.test.mjs`.
 
-### E2E-217 — Twilight scenic backdrop blur preference
+### E2E-217 — Scenic backdrop blur preference
 
-Select Twilight Mountains in Appearance, choose Low, Medium, and High blur,
+Select Twilight Mountains or Alpine Light in Appearance, choose Low, Medium, and High blur,
 confirming the active chat backdrop changes immediately after each selection,
-restart, then switch to a base theme. The scenic image uses 2px, 6px, and 12px
-respectively; fixed glass materials are unchanged; the value persists and the
-control is unavailable outside Twilight. Unit/source coverage is in
+restart, then switch to a base theme. Twilight uses 2px, 6px, and 12px while
+Alpine uses 6px, 12px, and 20px; fixed glass materials are unchanged; the value
+persists and the control is unavailable outside scenic themes. Unit/source coverage is in
 `apps/desktop/test/twilight-mountains-theme.test.mjs`.
 
 ### E2E-179 — repeated identical tool-call safety

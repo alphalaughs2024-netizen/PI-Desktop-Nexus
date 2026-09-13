@@ -1,0 +1,102 @@
+:root[data-theme="light"][data-scenic-theme="alpine-light"] {
+  --alpine-atmosphere: rgba(235, 243, 255, 0.18);
+  --alpine-shell-glass: rgba(225, 237, 255, 0.48);
+  --alpine-navigation-glass: rgba(214, 229, 250, 0.72);
+  --alpine-raised-glass: rgba(245, 249, 255, 0.68);
+  --alpine-safety-surface: rgba(247, 251, 255, 0.94);
+  --alpine-luminous-border: rgba(255, 255, 255, 0.82);
+  --alpine-focus-glow: rgba(52, 104, 174, 0.35);
+  --ds-bg-primary: var(--alpine-atmosphere);
+  --ds-bg-sidebar: var(--alpine-navigation-glass);
+  --ds-bg-secondary: var(--alpine-shell-glass);
+  --ds-bg-tertiary: var(--alpine-raised-glass);
+  --ds-bg-inset: var(--alpine-safety-surface);
+  --ds-bg-under: #d7e5f8;
+  --ds-bg-elevated: var(--alpine-raised-glass);
+  --ds-bg-elevated-opaque: var(--alpine-safety-surface);
+  --ds-bg-composer: rgba(248, 252, 255, 0.82);
+  --ds-bg-hover: rgba(87, 125, 177, 0.12);
+  --ds-bg-active: rgba(87, 125, 177, 0.2);
+  --ds-text-primary: #12233d;
+  --ds-text-secondary: rgba(18, 35, 61, 0.78);
+  --ds-text-muted: rgba(18, 35, 61, 0.62);
+  --ds-text-faint: rgba(18, 35, 61, 0.48);
+  --ds-border-default: rgba(255, 255, 255, 0.76);
+  --ds-border-subtle: rgba(67, 101, 145, 0.18);
+  --ds-border-strong: rgba(67, 101, 145, 0.34);
+  --ds-accent: #244e84;
+  --ds-accent-hover: #173d70;
+  --ds-accent-soft: #d8e9ff;
+  --ds-shadow-dialog: 0 22px 60px rgba(53, 81, 122, 0.24);
+  --ds-shadow-composer: 0 16px 42px rgba(53, 81, 122, 0.2);
+}
+
+:root[data-scenic-theme="alpine-light"] .app-scenic-backdrop {
+  display: block;
+  position: absolute;
+  z-index: 0;
+  inset: -18px;
+  pointer-events: none;
+  background: url("../../resources/themes/alpine-light.png") 50% 44% / cover no-repeat;
+  filter: saturate(0.9) blur(var(--alpine-backdrop-blur, 6px));
+  transform: scale(1.03);
+}
+
+:root[data-scenic-theme="alpine-light"][data-scenic-backdrop-blur="low"] { --alpine-backdrop-blur: 6px; }
+:root[data-scenic-theme="alpine-light"][data-scenic-backdrop-blur="medium"] { --alpine-backdrop-blur: 12px; }
+:root[data-scenic-theme="alpine-light"][data-scenic-backdrop-blur="high"] { --alpine-backdrop-blur: 20px; }
+
+:root[data-scenic-theme="alpine-light"] .app-scenic-backdrop::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(228, 239, 255, 0.2), rgba(255, 243, 243, 0.08) 48%, rgba(168, 193, 226, 0.24)),
+    radial-gradient(ellipse at 50% 20%, rgba(255, 231, 224, 0.24), transparent 42%);
+}
+
+:root[data-scenic-theme="alpine-light"] .app-shell,
+:root[data-scenic-theme="alpine-light"] .chat-surface,
+:root[data-scenic-theme="alpine-light"] .route-page { background: var(--alpine-atmosphere); }
+
+:root[data-scenic-theme="alpine-light"] :is(.sidebar, .sidebar-rail, .main-titlebar, .conversation-topbar, .window-controls, .settings-titlebar, .work-panel-header) {
+  background-color: var(--alpine-navigation-glass);
+  background-image: linear-gradient(180deg, rgba(255,255,255,.42), transparent 70%);
+  backdrop-filter: blur(16px) saturate(1.06);
+  -webkit-backdrop-filter: blur(16px) saturate(1.06);
+}
+
+:root[data-scenic-theme="alpine-light"] .composer-shell {
+  background: var(--ds-bg-composer);
+  border-color: var(--alpine-luminous-border);
+  box-shadow: var(--ds-shadow-composer), inset 0 1px rgba(255,255,255,.9);
+  backdrop-filter: blur(18px) saturate(1.04);
+  -webkit-backdrop-filter: blur(18px) saturate(1.04);
+}
+
+:root[data-scenic-theme="alpine-light"] :is(.dialog, .menu, .popover, .settings-theme-menu, .tool-row-content, pre, .permission-card, .toast) {
+  background: var(--alpine-safety-surface);
+  color: var(--ds-text-primary);
+  border-color: var(--ds-border-default);
+}
+
+:root[data-scenic-theme="alpine-light"] .empty-hero-icon { display: none; }
+:root[data-scenic-theme="alpine-light"] .empty-hero h1 { color: var(--ds-text-primary); text-shadow: 0 1px 16px rgba(255,255,255,.7); }
+
+:root[data-scenic-theme="alpine-light"] .home-main-content.is-scenic-mascot-free .empty-hero { min-height: 0; }
+
+@media (prefers-reduced-transparency: reduce) {
+  :root[data-scenic-theme="alpine-light"] :is(.sidebar, .sidebar-rail, .main-titlebar, .conversation-topbar, .window-controls, .settings-titlebar, .work-panel-header, .composer-shell) {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background-color: rgba(226, 238, 253, 0.96);
+  }
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  :root[data-scenic-theme="alpine-light"] :is(.sidebar, .sidebar-rail, .main-titlebar, .conversation-topbar, .window-controls, .settings-titlebar, .work-panel-header, .composer-shell) {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background-color: rgba(226, 238, 253, 0.96);
+  }
+}

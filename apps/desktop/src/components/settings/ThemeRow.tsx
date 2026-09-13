@@ -52,6 +52,8 @@ export function ThemeRow({
             ? "settings.themeDark"
             : id === "twilight-mountains"
               ? "settings.themeTwilightMountains"
+              : id === "alpine-light"
+                ? "settings.themeAlpineLight"
             : "settings.themeSystem",
       );
       const hint = t(
@@ -61,6 +63,8 @@ export function ThemeRow({
             ? "settings.themeDarkDesc"
             : id === "twilight-mountains"
               ? "settings.themeTwilightMountainsDesc"
+              : id === "alpine-light"
+                ? "settings.themeAlpineLightDesc"
             : "settings.themeSystemDesc",
       );
       return {

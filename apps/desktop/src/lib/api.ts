@@ -100,6 +100,7 @@ import {
   normalizeMode,
   normalizeNetworkProxy,
   normalizeTwilightBackdropBlur,
+  normalizeScenicBackdropBlur,
   resolveFontScale,
   validateNetworkProxy,
 } from "@pi-desktop/shared";
@@ -200,8 +201,9 @@ export function normalizeSettings(settings: AppSettings): AppSettings {
       (settings as { largePasteThreshold?: unknown }).largePasteThreshold,
     ),
     fontScale: resolveFontScale(settings),
-    twilightBackdropBlur: normalizeTwilightBackdropBlur(
-      (settings as { twilightBackdropBlur?: unknown }).twilightBackdropBlur,
+    scenicBackdropBlur: normalizeScenicBackdropBlur(
+      (settings as { scenicBackdropBlur?: unknown; twilightBackdropBlur?: unknown }).scenicBackdropBlur ??
+        (settings as { twilightBackdropBlur?: unknown }).twilightBackdropBlur,
     ),
     networkProxy: normalizeNetworkProxy(
       (settings as { networkProxy?: unknown }).networkProxy,
@@ -215,6 +217,7 @@ export function validateSettingsWrite(settings: AppSettings): AppSettings {
     largePasteThreshold?: unknown;
     fontScale?: unknown;
     twilightBackdropBlur?: unknown;
+    scenicBackdropBlur?: unknown;
     networkProxy?: unknown;
   };
   if (
@@ -222,6 +225,14 @@ export function validateSettingsWrite(settings: AppSettings): AppSettings {
     normalizeTwilightBackdropBlur(value.twilightBackdropBlur) !== value.twilightBackdropBlur
   ) {
     throw Object.assign(new Error("twilightBackdropBlur is invalid"), {
+      errorCode: "INVALID_PARAMS",
+    });
+  }
+  if (
+    Object.prototype.hasOwnProperty.call(value, "scenicBackdropBlur") &&
+    normalizeScenicBackdropBlur(value.scenicBackdropBlur) !== value.scenicBackdropBlur
+  ) {
+    throw Object.assign(new Error("scenicBackdropBlur is invalid"), {
       errorCode: "INVALID_PARAMS",
     });
   }
@@ -904,8 +915,8 @@ export const api = {
       IPC.invoke.windowSetWorkPanelChatWidth,
       { width },
     ),
-  setWindowBackgroundColor: (theme: "light" | "dark" | "twilight-mountains") =>
-    invoke<{ applied: boolean; theme: "light" | "dark" | "twilight-mountains" }>(
+  setWindowBackgroundColor: (theme: "light" | "dark" | "twilight-mountains" | "alpine-light") =>
+    invoke<{ applied: boolean; theme: "light" | "dark" | "twilight-mountains" | "alpine-light" }>(
       IPC.invoke.windowSetBackgroundColor,
       { theme },
     ),

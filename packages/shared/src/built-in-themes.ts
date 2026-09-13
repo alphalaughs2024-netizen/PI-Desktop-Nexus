@@ -7,7 +7,20 @@ export const BUILT_IN_THEMES = [
   { id: "system", base: "system" },
   { id: "light", base: "light" },
   { id: "dark", base: "dark" },
-  { id: "twilight-mountains", base: "dark", scenic: true },
+  {
+    id: "twilight-mountains",
+    base: "dark",
+    scenic: true,
+    backdropBlur: true,
+    nativeFallback: "twilight-mountains",
+  },
+  {
+    id: "alpine-light",
+    base: "light",
+    scenic: true,
+    backdropBlur: true,
+    nativeFallback: "alpine-light",
+  },
 ] as const;
 
 export type BuiltInThemeId = (typeof BUILT_IN_THEMES)[number]["id"];
@@ -20,5 +33,15 @@ export function builtInThemeBase(theme: BuiltInThemeId): ResolvedThemeBase {
 export function isScenicBuiltInTheme(theme: BuiltInThemeId): boolean {
   return BUILT_IN_THEMES.some(
     (entry) => entry.id === theme && "scenic" in entry && entry.scenic === true,
+  );
+}
+
+export function builtInThemeMetadata(theme: BuiltInThemeId) {
+  return BUILT_IN_THEMES.find((entry) => entry.id === theme);
+}
+
+export function supportsScenicBackdropBlur(theme: string): boolean {
+  return BUILT_IN_THEMES.some(
+    (entry) => entry.id === theme && "backdropBlur" in entry && entry.backdropBlur === true,
   );
 }

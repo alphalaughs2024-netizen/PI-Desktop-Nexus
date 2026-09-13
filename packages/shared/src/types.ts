@@ -1147,14 +1147,24 @@ export type ThemePreference =
   | "light"
   | "dark"
   | "twilight-mountains"
+  | "alpine-light"
   | `plugin:${string}`;
 
-export type TwilightBackdropBlur = "low" | "medium" | "high";
+export type ScenicBackdropBlur = "low" | "medium" | "high";
+/** @deprecated Use ScenicBackdropBlur. Kept for persisted Twilight settings compatibility. */
+export type TwilightBackdropBlur = ScenicBackdropBlur;
 
-export const DEFAULT_TWILIGHT_BACKDROP_BLUR: TwilightBackdropBlur = "low";
+export const DEFAULT_SCENIC_BACKDROP_BLUR: ScenicBackdropBlur = "low";
+/** @deprecated Use DEFAULT_SCENIC_BACKDROP_BLUR. */
+export const DEFAULT_TWILIGHT_BACKDROP_BLUR: TwilightBackdropBlur = DEFAULT_SCENIC_BACKDROP_BLUR;
 
+export function normalizeScenicBackdropBlur(value: unknown): ScenicBackdropBlur {
+  return value === "medium" || value === "high" ? value : DEFAULT_SCENIC_BACKDROP_BLUR;
+}
+
+/** @deprecated Use normalizeScenicBackdropBlur. */
 export function normalizeTwilightBackdropBlur(value: unknown): TwilightBackdropBlur {
-  return value === "medium" || value === "high" ? value : DEFAULT_TWILIGHT_BACKDROP_BLUR;
+  return normalizeScenicBackdropBlur(value);
 }
 
 /**
@@ -1176,7 +1186,9 @@ export type AppSettings = {
   /** Global permission mode default; sessions with `inherit` follow this. */
   defaultPermissionMode?: GlobalPermissionMode;
   theme: ThemePreference;
-  /** Blur strength for the Twilight Mountains chat backdrop image. */
+  /** Blur strength for the active scenic theme's backdrop image. */
+  scenicBackdropBlur?: ScenicBackdropBlur;
+  /** @deprecated Read for migration compatibility; new writes use scenicBackdropBlur. */
   twilightBackdropBlur?: TwilightBackdropBlur;
   /** UI language; `auto` (and absent) follows the OS locale. */
   language?: "auto" | "en" | "zh-CN" | "zh-TW" | "tr" | "de" | "es" | "fr" | "ko";

@@ -61,15 +61,15 @@
   transform: scale(1.03);
 }
 
-:root[data-scenic-theme="twilight-mountains"][data-twilight-backdrop-blur="low"] {
+:root[data-scenic-theme="twilight-mountains"][data-scenic-backdrop-blur="low"] {
   --twilight-backdrop-blur: 2px;
 }
 
-:root[data-scenic-theme="twilight-mountains"][data-twilight-backdrop-blur="medium"] {
+:root[data-scenic-theme="twilight-mountains"][data-scenic-backdrop-blur="medium"] {
   --twilight-backdrop-blur: 6px;
 }
 
-:root[data-scenic-theme="twilight-mountains"][data-twilight-backdrop-blur="high"] {
+:root[data-scenic-theme="twilight-mountains"][data-scenic-backdrop-blur="high"] {
   --twilight-backdrop-blur: 12px;
 }
 
