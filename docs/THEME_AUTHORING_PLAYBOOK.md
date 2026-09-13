@@ -6,7 +6,7 @@ This is the practical handoff for creating a new Nexus theme without breaking
 the application. It records the architecture, decisions, visual lessons,
 failures, fixes, validation method, and delivery rules learned while building
 and polishing **Twilight Mountains**, Nexus's first opt-in first-party scenic
-theme.
+theme, and **Alpine Light**, its second scenic reference implementation.
 
 Read this document before designing or implementing a theme. It is deliberately
 more detailed than an ordinary feature note: a new theme affects every visible
@@ -100,12 +100,13 @@ must preserve.
 | Runtime resolution + marker | `apps/desktop/src/App.tsx` | Owns `data-theme`, `data-scenic-theme`, plugin CSS withdrawal, and native-window color updates. |
 | One shared scenic backdrop | `apps/desktop/src/App.tsx` and `apps/desktop/src/styles/base.css` | The backdrop is mounted once directly below application content. |
 | CSS import order | `apps/desktop/src/styles/globals.css` | Scenic CSS is intentionally after ordinary component CSS and before responsive overrides. |
-| Twilight reference implementation | `apps/desktop/src/styles/twilight-mountains.css` | The concrete material tiers, scoping, fallbacks, and Settings repair. |
+| Twilight reference implementation | `apps/desktop/src/styles/twilight-mountains.css` | Dark scenic material tiers, scoping, fallbacks, and interaction-safe Settings treatment. |
+| Alpine reference implementation | `apps/desktop/src/styles/alpine-light.css` | Light scenic materials, white-glass Settings surfaces, row-list parent neutralization, and fallbacks. |
 | Empty-home theme variation | `apps/desktop/src/components/ChatSurface.tsx` | Shows how to make a presentation-only theme variation without changing normal-theme behavior. |
 | Renderer-to-main native API | `apps/desktop/src/lib/api.ts` | Defines the named native background values allowed from renderer code. |
 | Native window behavior | `apps/desktop/electron/main/index.ts` | Resolves Scenic-to-dark plugin/native appearance and applies Windows/Linux fallback colors. |
 | Packaged scenic assets | `apps/desktop/package.json` and `apps/desktop/resources/themes/` | Keeps first-party images local and available in production packages. |
-| Theme test suite | `apps/desktop/test/twilight-mountains-theme.test.mjs` | Contract-focused protection against the exact regressions that occurred. |
+| Theme contract tests | `apps/desktop/test/twilight-mountains-theme.test.mjs`, `apps/desktop/test/alpine-settings-theme.test.mjs` | Contract-focused protection for scenic activation, materials, Settings ownership, and known regressions. |
 | UX and component contracts | `docs/spec/04-ux/06-settings-ia.md`, `docs/spec/04-ux/07-ui-design-system.md`, `docs/spec/04-ux/08-component-spec.md` | Defines behavior and visual constraints that must remain true. |
 | User-visible manual scenario | `docs/spec/06-delivery/04-e2e-test-plan.md` | Contains Twilight and Settings-wide manual test coverage. |
 
@@ -152,6 +153,7 @@ export const BUILT_IN_THEMES = [
   { id: "light", base: "light" },
   { id: "dark", base: "dark" },
   { id: "twilight-mountains", base: "dark", scenic: true },
+  { id: "alpine-light", base: "light", scenic: true },
 ] as const;
 ```
 
@@ -200,8 +202,8 @@ At startup and whenever Settings change, `App.tsx`:
 3. resolves the ordinary base (`system`, `light`, or `dark`);
 4. sets `document.documentElement.dataset.theme` to the resolved base;
 5. mounts plugin CSS only for a valid plugin theme and removes it otherwise;
-6. sets `data-scenic-theme="twilight-mountains"` only while Twilight is
-   selected, and deletes the marker for every other selection;
+6. sets `data-scenic-theme` to the selected registered scenic id (Twilight
+   Mountains or Alpine Light), and deletes the marker for every other selection;
 7. calls the Electron main-process API with either the normal resolved base or
    the scenic id so the native window background does not flash an unrelated
    color around the renderer;
@@ -1079,6 +1081,9 @@ installer unless the user explicitly asks.
 # The dedicated scenic-theme contract suite.
 node --test apps/desktop/test/twilight-mountains-theme.test.mjs
 
+# Alpine Settings ownership and fallback contract.
+node --test apps/desktop/test/alpine-settings-theme.test.mjs
+
 # The focused family used for Twilight/Settings changes.
 node --test `
   apps/desktop/test/twilight-mountains-theme.test.mjs `
@@ -1306,6 +1311,13 @@ run broad recursive deletion commands against a workspace root or guessed path.
       distinct material roles.
 - [ ] Settings has full destination/control coverage, including generic icon
       buttons and inline semantic paths.
+- [ ] Settings material tiers are deliberate: opacity differences map to clear
+      roles rather than arbitrary selectors.
+- [ ] Section wrappers/headings remain transparent; mixed-content panels may be
+      tiles, while row-only provider/model/capability parents are transparent
+      with independent child tiles.
+- [ ] Reduced-transparency and unsupported-filter fallbacks preserve that same
+      parent/child ownership and do not recreate an outer rectangle.
 - [ ] Generic element selectors do not capture unrelated product roles.
 - [ ] No theme selector changes protected geometry without explicit approved
       layout work.
@@ -1326,6 +1338,8 @@ run broad recursive deletion commands against a workspace root or guessed path.
 - [ ] Contract tests cover registry, activation/removal, asset, native fallback,
       material/fallback rules, and normal-theme compatibility.
 - [ ] Focused desktop tests pass.
+- [ ] Alpine-specific contract test passes (`alpine-settings-theme.test.mjs`)
+      alongside the general scenic suite.
 - [ ] Desktop typecheck passes.
 - [ ] `git diff --check` passes.
 - [ ] Manual visual QA covered the full matrix at ordinary and constrained sizes.
@@ -1400,6 +1414,18 @@ than a wallpaper:
 The main lesson is simple: **a beautiful theme is not an image behind an app.
 It is a carefully bounded system of product semantics, materials, accessibility,
 platform behavior, and regression protection.**
+
+### Regression case study: Alpine Settings surface ownership
+
+Alpine Light exposed a second Settings failure mode after the initial scenic
+implementation. Rows used different opacity tiers, which made the hierarchy
+look inconsistent, and provider/model lists showed a large outer rectangle
+behind otherwise independent tiles. The root cause was a generic scenic panel
+background combined with provider-specific clipping that overrode the base
+row-only panel contract. The durable fix is to neutralize row-list parents and
+style only the child rows, while reserving a single panel tile for mixed
+content. Future themes must review both a mixed panel and a row-only list at
+normal and fallback opacity before visual sign-off.
 
 ### Reusable scenic backdrop blur contract
 
