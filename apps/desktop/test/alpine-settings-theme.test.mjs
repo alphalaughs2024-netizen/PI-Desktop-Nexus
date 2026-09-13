@@ -22,4 +22,6 @@ test("Alpine Settings uses translucent white glass tiles and themed controls", (
   assert.match(styles, /settings-panel\.agent-capability-panel[\s\S]*?background:\s*transparent/);
   assert.match(styles, /\.provider-row[\s\S]*?background:\s*rgba\(/);
   assert.match(styles, /\.model-provider-row[\s\S]*?background:\s*rgba\(/);
+  assert.match(styles, /\.settings-panel:has\(> \.settings-row\)[\s\S]*?background:\s*transparent/);
+  assert.match(styles, /\.settings-panel\.shortcut-map[\s\S]*?background:\s*transparent/);
 });
