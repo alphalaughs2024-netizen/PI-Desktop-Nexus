@@ -10317,6 +10317,12 @@ Enable reduced transparency (or use a browser without backdrop-filter support)
 and confirm the same surfaces become near-opaque and remain readable. Return to
 Dark and Twilight and confirm their existing Settings materials are unchanged.
 
+Section headings (for example Appearance, Network, and Close behavior) must
+remain on the faint scenic canvas rather than becoming large white rectangles;
+only the panel and row content beneath each heading is rendered as a distinct
+translucent white-glass tile. Verify headings, panels, and controls remain
+visually separated at the reference window size.
+
 ### E2E-179 — repeated identical tool-call safety
 
 With a deterministic agent fixture, three identical `Read` calls execute and a
