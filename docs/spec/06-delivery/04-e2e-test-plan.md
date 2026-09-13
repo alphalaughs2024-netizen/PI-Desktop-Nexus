@@ -2069,6 +2069,26 @@ Each scenario is documented in this format:
 - **Acceptance**: E (tools and permissions) + G (agent guidance)
 - **Status**: Unit/runtime/source-contract covered; visual scenario Draft
 
+#### E2E-024IAR: Workflow strip and session-settlement regression (ADR 0228)
+
+- **Preconditions**: A Nexus session with an active workflow, a queued
+  follow-up prompt, and a provider fixture that can complete, fail, or abort a
+  turn; Twilight Mountains is enabled for the visual pass.
+- **Steps**: 1) Queue two prompts while a turn is running. 2) Finish the turn
+  and wait for durable settlement. 3) Confirm only the first queued prompt
+  starts, then repeat for the second. 4) Open workflow Inspect and resize the
+  window through a narrow width. 5) Switch the app language and reopen the
+  card.
+- **Expected**: The queue remains blocked until terminal persistence settles,
+  then resumes FIFO exactly once. The workflow card remains above the shell,
+  its three actions have visible outlines/focus states, and Inspect renders a
+  full-width readable surface with no black rectangle or layout collision.
+  Labels and fallback text follow the selected locale; dismiss and Settings
+  retain their existing session/navigation behavior.
+- **Specs linked**: `03-runtime/01-ipc-protocol.md` §12b.1, ADR 0228
+- **Acceptance**: E (tools and permissions) + G (agent guidance)
+- **Status**: Unit/source-contract covered; Electron visual journey Draft
+
 #### E2E-024IB: Core quality workflow transitions (ADR 0221)
 
 - **Preconditions**: An ordinary Nexus workspace with a focused test command;

@@ -469,6 +469,19 @@ const COMPACTION_FALLBACK_MAX_SUMMARY_CHARS = 12_000;
 const COMPACTION_SUMMARY_PROMPT_SAFETY_TOKENS = 2_048;
 const COMPACTION_FALLBACK_MARKER =
   "[automatic context recovery: older context was omitted after summary generation failed]";
+const COMPACTION_FALLBACK_NO_SUMMARY =
+  "No previous context checkpoint is available.";
+
+/** Keep a fallback checkpoint's real carried summary, without its notice. */
+export function stripCompactionFallbackNotice(
+  summary: string | undefined,
+): string | undefined {
+  if (!summary?.includes(COMPACTION_FALLBACK_MARKER)) return summary;
+  const carried = summary.split(COMPACTION_FALLBACK_MARKER, 1)[0]?.trim();
+  return carried && carried !== COMPACTION_FALLBACK_NO_SUMMARY
+    ? carried
+    : undefined;
+}
 /** Path-scoped rules are best-effort and must not stall a file tool turn. */
 export const PATH_INSTRUCTION_RESOLUTION_TIMEOUT_MS = 2_000;
 const PATH_SCOPED_INSTRUCTION_TOOLS = new Set([
@@ -4934,10 +4947,18 @@ export class DesktopAgentRuntime {
       keepRecentTokens: budget.keepRecentTokens,
     } satisfies CompactionSettings);
     if (!prepared.ok || !prepared.value) return prepared;
+    const previousSummary = stripCompactionFallbackNotice(
+      prepared.value.previousSummary,
+    );
     return {
       ok: true as const,
       value: this.codexShapedPreparation(
-        prepared.value,
+        {
+          ...prepared.value,
+          ...(previousSummary === prepared.value.previousSummary
+            ? {}
+            : { previousSummary }),
+        },
         retainedUserTokens,
         retentionMode,
       ),
@@ -5249,7 +5270,7 @@ export class DesktopAgentRuntime {
           preparation.previousSummary,
           Math.min(COMPACTION_FALLBACK_MAX_SUMMARY_CHARS, maxSummaryChars),
         )
-      : "No previous context checkpoint is available.";
+      : COMPACTION_FALLBACK_NO_SUMMARY;
     const continuation =
       retentionMode === "active_turn"
         ? "The provider is continuing the active turn. Use the one retained latest user request as the source of truth for that continuation."
@@ -5260,8 +5281,17 @@ export class DesktopAgentRuntime {
       "The automatic summary request did not complete. Older messages before this checkpoint are omitted from the next model request.",
       `The complete transcript remains available in the session. ${continuation}`,
     ].join("\n\n");
+    const retainedTail =
+      preparation.retainedTail.length > 0
+        ? preparation.retainedTail
+        : selectRetainedUserMessages(
+            preparation.messagesToSummarize.filter(
+              (message): message is UserMessage => message.role === "user",
+            ),
+            preparation.settings.keepRecentTokens,
+          );
     return this.createCheckpoint(
-      preparation,
+      { ...preparation, retainedTail },
       throughMessageId,
       summary,
       undefined,
@@ -5402,7 +5432,9 @@ export class DesktopAgentRuntime {
     if (!sourceInput.ok || !sourceInput.value) return preparation;
     return {
       ...sourceInput.value,
-      previousSummary: terminal.summary,
+      previousSummary:
+        stripCompactionFallbackNotice(terminal.summary) ??
+        sourceInput.value.previousSummary,
     };
   }
 

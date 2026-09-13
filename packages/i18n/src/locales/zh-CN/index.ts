@@ -1909,6 +1909,16 @@ export const zhCN = {
     actionFailed: "无法更新通知。",
     justNow: "刚刚",
   },
+  workflow: {
+    activeLabel: "当前工作流",
+    status: "阶段：{{stage}} · 激活原因：{{reason}}",
+    inspect: "查看",
+    hide: "隐藏",
+    dismiss: "忽略",
+    settings: "设置",
+    loadingGuidance: "正在加载工作流指引…",
+    guidanceUnavailable: "工作流指引不可用。",
+  },
   errors: {
     HOST_UNAVAILABLE: "本地服务不可用",
     MODEL_NOT_CONFIGURED: "该模型尚未配置，或当前 AI 服务不提供此模型。",

@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { WorkflowSessionStatus } from "@pi-desktop/shared";
 import { api } from "../lib/api";
 import { useAppStore } from "../stores/app-store";
 
 export function ActiveWorkflowCard({ sessionId }: { sessionId?: string | null }) {
+  const { t } = useTranslation();
   const [status, setStatus] = useState<WorkflowSessionStatus | null>(null);
   const [busy, setBusy] = useState(false);
   const [expanded, setExpanded] = useState(false);
@@ -36,28 +38,43 @@ export function ActiveWorkflowCard({ sessionId }: { sessionId?: string | null })
     setExpanded(next);
     if (next && body === null) {
       const result = await api.readWorkflow(primary.id).catch(() => null);
-      setBody(result?.body ?? "Workflow guidance is unavailable.");
+      setBody(result?.body ?? t("workflow.guidanceUnavailable"));
     }
   };
   return (
-    <aside className="active-workflow-card" aria-label="Active workflow">
+    <aside className="active-workflow-card" aria-label={t("workflow.activeLabel")}>
       <div className="active-workflow-copy">
         <strong>{primary.name}</strong>
-        <span>Stage: {primary.stage} · Activated: {primary.reasonCategory.replaceAll("_", " ")}</span>
+        <span>
+          {t("workflow.status", {
+            stage: primary.stage,
+            reason: primary.reasonCategory.replaceAll("_", " "),
+          })}
+        </span>
         {primary.nextAction ? <span>{primary.nextAction}</span> : null}
       </div>
       <div className="active-workflow-actions">
         <button type="button" onClick={() => void inspect()}>
-          {expanded ? "Hide" : "Inspect"}
+          {expanded ? t("workflow.hide") : t("workflow.inspect")}
         </button>
-        <button type="button" disabled={busy} onClick={() => void dismiss()}>Dismiss</button>
+        <button type="button" disabled={busy} onClick={() => void dismiss()}>
+          {t("workflow.dismiss")}
+        </button>
         <button type="button" onClick={() => {
           const store = useAppStore.getState();
           store.setSettingsTab("skills");
           store.setPage("settings");
-        }}>Settings</button>
+        }}>
+          {t("workflow.settings")}
+        </button>
       </div>
-      {expanded ? <pre className="active-workflow-body">{body ?? "Loading workflow guidance…"}</pre> : null}
+      {expanded ? (
+        <div className="active-workflow-body-wrap">
+          <pre className="active-workflow-body">
+            {body ?? t("workflow.loadingGuidance")}
+          </pre>
+        </div>
+      ) : null}
     </aside>
   );
 }

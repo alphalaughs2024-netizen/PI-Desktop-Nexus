@@ -1881,6 +1881,16 @@ export const es = {
     "actionFailed": "No se pudieron actualizar las notificaciones.",
     "justNow": "Justo ahora"
   },
+  "workflow": {
+    "activeLabel": "Flujo de trabajo activo",
+    "status": "Etapa: {{stage}} · Activado: {{reason}}",
+    "inspect": "Inspeccionar",
+    "hide": "Ocultar",
+    "dismiss": "Descartar",
+    "settings": "Configuración",
+    "loadingGuidance": "Cargando guía del flujo de trabajo…",
+    "guidanceUnavailable": "La guía del flujo de trabajo no está disponible."
+  },
   "errors": {
     "HOST_UNAVAILABLE": "El servicio local no está disponible",
     "MODEL_NOT_CONFIGURED": "Este modelo no está configurado o el proveedor de IA no lo ofrece.",

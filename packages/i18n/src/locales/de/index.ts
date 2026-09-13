@@ -1888,6 +1888,16 @@ export const de = {
     "actionFailed": "Benachrichtigungen konnten nicht aktualisiert werden.",
     "justNow": "Gerade eben"
   },
+  "workflow": {
+    "activeLabel": "Aktiver Arbeitsablauf",
+    "status": "Phase: {{stage}} · Aktiviert: {{reason}}",
+    "inspect": "Ansehen",
+    "hide": "Ausblenden",
+    "dismiss": "Verwerfen",
+    "settings": "Einstellungen",
+    "loadingGuidance": "Arbeitsablauf-Anleitung wird geladen…",
+    "guidanceUnavailable": "Arbeitsablauf-Anleitung ist nicht verfügbar."
+  },
   "errors": {
     "HOST_UNAVAILABLE": "Der lokale Dienst ist nicht verfügbar",
     "MODEL_NOT_CONFIGURED": "Dieses Modell ist nicht eingerichtet oder der KI-Anbieter bietet es nicht an.",

@@ -1881,6 +1881,16 @@ export const fr = {
     "actionFailed": "Impossible de mettre à jour les notifications.",
     "justNow": "À l'instant"
   },
+  "workflow": {
+    "activeLabel": "Flux de travail actif",
+    "status": "Étape : {{stage}} · Activé : {{reason}}",
+    "inspect": "Inspecter",
+    "hide": "Masquer",
+    "dismiss": "Ignorer",
+    "settings": "Paramètres",
+    "loadingGuidance": "Chargement des instructions du flux de travail…",
+    "guidanceUnavailable": "Les instructions du flux de travail ne sont pas disponibles."
+  },
   "errors": {
     "HOST_UNAVAILABLE": "Le service local n'est pas disponible",
     "MODEL_NOT_CONFIGURED": "Ce modèle n'est pas configuré ou le fournisseur d'IA ne le propose pas.",

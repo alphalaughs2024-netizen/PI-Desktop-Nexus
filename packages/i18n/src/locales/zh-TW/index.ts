@@ -1891,6 +1891,16 @@ export const zhTW = {
     actionFailed: "無法更新通知。",
     justNow: "剛剛",
   },
+  workflow: {
+    activeLabel: "使用中的工作流程",
+    status: "階段：{{stage}} · 啟用原因：{{reason}}",
+    inspect: "查看",
+    hide: "隱藏",
+    dismiss: "略過",
+    settings: "設定",
+    loadingGuidance: "正在載入工作流程指引…",
+    guidanceUnavailable: "工作流程指引無法使用。",
+  },
   errors: {
     HOST_UNAVAILABLE: "本地服務不可用",
     MODEL_NOT_CONFIGURED: "該模型尚未配置，或當前 AI 服務不提供此模型。",
