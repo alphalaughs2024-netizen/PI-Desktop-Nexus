@@ -1,0 +1,111 @@
+:root[data-theme="dark"][data-scenic-theme="obsidian-horizon"] {
+  --obsidian-atmosphere: rgba(3, 8, 16, 0.18);
+  --obsidian-shell-glass: rgba(7, 14, 25, 0.58);
+  --obsidian-navigation-glass: rgba(3, 8, 15, 0.82);
+  --obsidian-raised-glass: rgba(17, 28, 44, 0.68);
+  --obsidian-safety-surface: rgba(8, 15, 26, 0.94);
+  --obsidian-control-surface: rgba(18, 30, 47, 0.82);
+  --obsidian-border: rgba(190, 211, 238, 0.24);
+  --obsidian-focus: rgba(149, 190, 244, 0.72);
+  --ds-bg-primary: var(--obsidian-atmosphere);
+  --ds-bg-sidebar: var(--obsidian-navigation-glass);
+  --ds-bg-secondary: var(--obsidian-shell-glass);
+  --ds-bg-tertiary: var(--obsidian-raised-glass);
+  --ds-bg-inset: var(--obsidian-safety-surface);
+  --ds-bg-elevated: var(--obsidian-raised-glass);
+  --ds-bg-elevated-opaque: var(--obsidian-safety-surface);
+  --ds-bg-composer: rgba(7, 14, 24, 0.84);
+  --ds-bg-hover: rgba(154, 190, 232, 0.14);
+  --ds-bg-active: rgba(154, 190, 232, 0.2);
+  --ds-text-primary: #edf4ff;
+  --ds-text-secondary: rgba(222, 235, 253, 0.86);
+  --ds-text-muted: rgba(188, 207, 233, 0.72);
+  --ds-text-faint: rgba(168, 190, 220, 0.58);
+  --ds-border-default: var(--obsidian-border);
+  --ds-border-subtle: rgba(181, 207, 238, 0.14);
+  --ds-border-strong: rgba(198, 220, 248, 0.34);
+  --ds-accent: #9dbfe8;
+  --ds-accent-hover: #c7dcf7;
+  --ds-accent-soft: rgba(136, 176, 226, 0.24);
+  --ds-shadow-dialog: 0 22px 60px rgba(0, 0, 0, 0.52);
+  --ds-shadow-composer: 0 16px 42px rgba(0, 0, 0, 0.46);
+}
+
+:root[data-scenic-theme="obsidian-horizon"] .app-scenic-backdrop {
+  display: block;
+  position: absolute;
+  z-index: 0;
+  inset: -18px;
+  pointer-events: none;
+  background: url("../../resources/themes/obsidian-horizon.png") 50% 46% / cover no-repeat;
+  filter: saturate(0.92) contrast(1.04) blur(var(--obsidian-backdrop-blur, 2px));
+  transform: scale(1.03);
+}
+:root[data-scenic-theme="obsidian-horizon"][data-scenic-backdrop-blur="low"] { --obsidian-backdrop-blur: 2px; }
+:root[data-scenic-theme="obsidian-horizon"][data-scenic-backdrop-blur="medium"] { --obsidian-backdrop-blur: 6px; }
+:root[data-scenic-theme="obsidian-horizon"][data-scenic-backdrop-blur="high"] { --obsidian-backdrop-blur: 12px; }
+:root[data-scenic-theme="obsidian-horizon"] .app-scenic-backdrop::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(1, 5, 12, 0.28), rgba(3, 9, 18, 0.06) 48%, rgba(1, 5, 12, 0.38));
+}
+
+:root[data-scenic-theme="obsidian-horizon"] .app-shell,
+:root[data-scenic-theme="obsidian-horizon"] .chat-surface,
+:root[data-scenic-theme="obsidian-horizon"] .route-page { background: var(--obsidian-atmosphere); }
+:root[data-scenic-theme="obsidian-horizon"] :is(.sidebar, .sidebar-rail, .main-titlebar, .conversation-topbar, .window-controls, .settings-titlebar, .work-panel-header) {
+  background-color: var(--obsidian-navigation-glass);
+  background-image: linear-gradient(180deg, rgba(130, 164, 207, 0.1), transparent 72%);
+  border-color: var(--obsidian-border);
+  backdrop-filter: blur(16px) saturate(1.08);
+  -webkit-backdrop-filter: blur(16px) saturate(1.08);
+}
+:root[data-scenic-theme="obsidian-horizon"] .composer-shell {
+  background: var(--ds-bg-composer);
+  border-color: rgba(205, 224, 249, 0.4);
+  box-shadow: var(--ds-shadow-composer), inset 0 1px rgba(220, 236, 255, 0.14);
+  backdrop-filter: blur(18px) saturate(1.08);
+  -webkit-backdrop-filter: blur(18px) saturate(1.08);
+}
+:root[data-scenic-theme="obsidian-horizon"] :is(.dialog, .menu, .popover, .settings-theme-menu, .tool-row-content, pre, .permission-card, .toast, .context-vault-modal, .work-panel-context-menu) {
+  background: var(--obsidian-safety-surface);
+  color: var(--ds-text-primary);
+  border-color: var(--obsidian-border);
+}
+:root[data-scenic-theme="obsidian-horizon"] :is(.thread-item.active, .thread-item:hover, .project-group.active > .sidebar-session-group-header) {
+  background: rgba(145, 181, 227, 0.18);
+  border-color: rgba(197, 221, 250, 0.28);
+}
+:root[data-scenic-theme="obsidian-horizon"] .empty-hero-icon { display: none; }
+:root[data-scenic-theme="obsidian-horizon"] .empty-hero h1 { color: var(--ds-text-primary); text-shadow: 0 1px 18px rgba(180, 211, 248, 0.34); }
+
+/* Settings: transparent section/list parents; child rows own the tile. */
+:root[data-scenic-theme="obsidian-horizon"] .settings-shell-full .settings-card-block { background: transparent; border-color: transparent; box-shadow: none; }
+:root[data-scenic-theme="obsidian-horizon"] .settings-shell-full :is(.settings-panel, .settings-row, .shortcut-row, .provider-row, .model-provider-row, .agent-capability-row, .agent-capability-empty) {
+  background: var(--obsidian-raised-glass);
+  border: 1px solid var(--obsidian-border);
+  box-shadow: inset 0 1px rgba(220, 236, 255, 0.08), 0 8px 24px rgba(0, 0, 0, 0.16);
+}
+:root[data-scenic-theme="obsidian-horizon"] .settings-shell-full :is(
+  .settings-panel:has(> .settings-row), .settings-panel.shortcut-map,
+  .settings-panel.provider-list-panel:has(> .provider-row-list),
+  .settings-panel.model-provider-panel:has(> .model-provider-list),
+  .settings-panel.agent-capability-panel
+) { background: transparent; border: 0; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; overflow: visible; }
+:root[data-scenic-theme="obsidian-horizon"] .settings-shell-full :is(.settings-search, .settings-theme-trigger, .settings-language-trigger, .settings-segment, .field-input, .field-select, .field-textarea, .settings-toggle) {
+  background: var(--obsidian-control-surface); color: var(--ds-text-primary); border-color: var(--obsidian-border);
+}
+:root[data-scenic-theme="obsidian-horizon"] .settings-shell-full :is(.settings-theme-menu, .settings-language-menu, .settings-font-menu, .settings-search-results) { background: var(--obsidian-safety-surface); color: var(--ds-text-primary); border-color: var(--obsidian-border); }
+:root[data-scenic-theme="obsidian-horizon"] .settings-shell-full :is(.btn-primary, .btn-secondary, .btn-ghost, .icon-btn, .settings-text-action, .settings-icon-button, .shortcut-disable, .shortcut-reset) { color: var(--ds-text-primary); border-color: var(--obsidian-border); background: rgba(24, 39, 60, 0.72); }
+:root[data-scenic-theme="obsidian-horizon"] .settings-shell-full .btn-primary { background: linear-gradient(180deg, rgba(173, 205, 244, 0.9), rgba(91, 131, 181, 0.76)); color: #06101d; }
+:root[data-scenic-theme="obsidian-horizon"] .settings-shell-full :is(.btn-secondary, .btn-ghost, .icon-btn, .settings-text-action, .settings-icon-button):hover:not(:disabled) { background: rgba(102, 145, 199, 0.34); }
+
+@media (prefers-reduced-transparency: reduce) {
+  :root[data-scenic-theme="obsidian-horizon"] :is(.sidebar, .sidebar-rail, .main-titlebar, .conversation-topbar, .window-controls, .settings-titlebar, .work-panel-header, .composer-shell) { backdrop-filter: none; -webkit-backdrop-filter: none; background-color: rgba(5, 11, 20, 0.96); }
+  :root[data-scenic-theme="obsidian-horizon"] .settings-shell-full :is(.settings-panel, .settings-row, .shortcut-row, .provider-row, .model-provider-row, .agent-capability-row, .agent-capability-empty) { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(18, 31, 48, 0.96); }
+}
+@supports not (backdrop-filter: blur(1px)) {
+  :root[data-scenic-theme="obsidian-horizon"] :is(.sidebar, .sidebar-rail, .main-titlebar, .conversation-topbar, .window-controls, .settings-titlebar, .work-panel-header, .composer-shell) { backdrop-filter: none; -webkit-backdrop-filter: none; background-color: rgba(5, 11, 20, 0.96); }
+  :root[data-scenic-theme="obsidian-horizon"] .settings-shell-full :is(.settings-panel, .settings-row, .shortcut-row, .provider-row, .model-provider-row, .agent-capability-row, .agent-capability-empty) { background: rgba(18, 31, 48, 0.96); }
+}

@@ -495,7 +495,7 @@ function AppShell() {
     // `system` instead of leaving the shell on a half-applied palette.
     const base: "system" | "light" | "dark" = pluginTheme
       ? pluginTheme.base
-      : preference === "system" || preference === "light" || preference === "dark" || preference === "twilight-mountains" || preference === "alpine-light"
+      : preference === "system" || preference === "light" || preference === "dark" || preference === "twilight-mountains" || preference === "alpine-light" || preference === "obsidian-horizon"
         ? builtInThemeBase(preference)
         : "system";
 
@@ -514,7 +514,7 @@ function AppShell() {
       delete document.documentElement.dataset.pluginTheme;
     }
 
-    const builtinMetadata = !pluginTheme && (preference === "twilight-mountains" || preference === "alpine-light")
+    const builtinMetadata = !pluginTheme && (preference === "twilight-mountains" || preference === "alpine-light" || preference === "obsidian-horizon")
       ? builtInThemeMetadata(preference)
       : undefined;
     if (builtinMetadata?.scenic && isScenicBuiltInTheme(preference)) {

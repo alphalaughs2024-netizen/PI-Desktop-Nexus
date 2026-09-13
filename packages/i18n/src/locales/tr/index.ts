@@ -801,6 +801,8 @@ export const tr = {
     themeDarkDesc: "Koyu tema.",
     themeTwilightMountainsDesc: "Koyu, manzaralı cam tema.",
     themeAlpineLightDesc: "Light scenic glass theme.",
+    themeObsidianHorizon: "Obsidyen Ufku",
+    themeObsidianHorizonDesc: "Ay ışıklı dağlarla koyu cam teması.",
     twilightBackdropBlur: "Alacakaranlık arka plan bulanıklığı",
     scenicBackdropBlur: "Scenic backdrop blur",
     twilightBackdropBlurDesc: "Bulanıklığı yalnızca Alacakaranlık Dağları sohbet arka planı için ayarlayın.",

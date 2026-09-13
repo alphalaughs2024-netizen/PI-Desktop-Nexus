@@ -801,6 +801,8 @@ export const ko = {
     themeDarkDesc: "어두운 테마입니다.",
     themeTwilightMountainsDesc: "어두운 산 풍경 유리 테마입니다.",
     themeAlpineLightDesc: "Light scenic glass theme.",
+    themeObsidianHorizon: "흑요석 지평선",
+    themeObsidianHorizonDesc: "달빛 산악 풍경의 어두운 유리 테마입니다.",
     twilightBackdropBlur: "황혼의 배경 흐림",
     scenicBackdropBlur: "Scenic backdrop blur",
     twilightBackdropBlurDesc: "황혼의 산맥 채팅 배경에만 흐림 정도를 조정합니다.",

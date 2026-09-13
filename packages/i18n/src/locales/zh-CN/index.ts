@@ -793,6 +793,8 @@ export const zhCN = {
     themeDarkDesc: "深色主题。",
     themeTwilightMountainsDesc: "深色山景玻璃主题。",
     themeAlpineLightDesc: "Light scenic glass theme.",
+    themeObsidianHorizon: "黑曜地平线",
+    themeObsidianHorizonDesc: "月光山景深色玻璃主题。",
     twilightBackdropBlur: "暮光背景模糊",
     scenicBackdropBlur: "Scenic backdrop blur",
     twilightBackdropBlurDesc: "仅调整暮光群山聊天背景的模糊程度。",

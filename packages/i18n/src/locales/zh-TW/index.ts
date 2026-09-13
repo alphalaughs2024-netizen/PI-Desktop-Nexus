@@ -797,6 +797,8 @@ export const zhTW = {
     themeDarkDesc: "深色主題。",
     themeTwilightMountainsDesc: "深色山景玻璃主題。",
     themeAlpineLightDesc: "Light scenic glass theme.",
+    themeObsidianHorizon: "黑曜地平線",
+    themeObsidianHorizonDesc: "月光山景深色玻璃主題。",
     twilightBackdropBlur: "暮光背景模糊",
     scenicBackdropBlur: "Scenic backdrop blur",
     twilightBackdropBlurDesc: "僅調整暮光群山聊天背景的模糊程度。",

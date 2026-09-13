@@ -702,6 +702,14 @@ High-frequency workstation feedback must remain compositor-friendly and bounded:
   controls, picker menus, badges, buttons, disabled states, and focus rings
   use higher-contrast related surfaces. Inline paths remain text and never
   inherit a generic code-block background.
+- Obsidian Horizon is a dark scenic implementation of the same contract. It
+  uses a local moonlit backdrop, charcoal/navy material tiers, and a
+  near-opaque safety tier for dense or security-sensitive surfaces. The shared
+  scenic blur preference affects only the image (2px/6px/12px for
+  Low/Medium/High); no transcript row, repeated list, code, or tool-output
+  element receives backdrop blur. Settings row-only parents remain transparent
+  and child rows own their tiles. Windows/Linux native controls and titlebar
+  geometry remain unchanged; no macOS chrome is emulated.
 - Twilight native Window controls retain a bright resting glyph against their
   navigation-glass band. Their fixed control band is a shell sibling of the
   reflowing chat pane and dock, so opening a work panel cannot cover controls,
