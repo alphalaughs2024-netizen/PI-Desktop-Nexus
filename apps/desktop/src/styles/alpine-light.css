@@ -116,6 +116,8 @@
 /* Row-list panels already contain independent tiles. Dissolve the parent so
    Alpine does not create a second rounded rectangle around the list. */
 :root[data-scenic-theme="alpine-light"] .settings-shell-full :is(
+  .settings-panel:has(> .settings-row),
+  .settings-panel.shortcut-map,
   .settings-panel.provider-list-panel:has(> .provider-row-list),
   .settings-panel.model-provider-panel:has(> .model-provider-list),
   .settings-panel.agent-capability-panel
@@ -184,6 +186,8 @@
     background: rgba(248, 252, 255, 0.96);
   }
   :root[data-scenic-theme="alpine-light"] .settings-shell-full :is(
+    .settings-panel:has(> .settings-row),
+    .settings-panel.shortcut-map,
     .settings-panel.provider-list-panel:has(> .provider-row-list),
     .settings-panel.model-provider-panel:has(> .model-provider-list),
     .settings-panel.agent-capability-panel
@@ -199,6 +203,8 @@
     background: rgba(248, 252, 255, 0.96);
   }
   :root[data-scenic-theme="alpine-light"] .settings-shell-full :is(
+    .settings-panel:has(> .settings-row),
+    .settings-panel.shortcut-map,
     .settings-panel.provider-list-panel:has(> .provider-row-list),
     .settings-panel.model-provider-panel:has(> .model-provider-list),
     .settings-panel.agent-capability-panel
