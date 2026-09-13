@@ -76,9 +76,9 @@ test("a viewport-fixed toggle is the sole pointer collapse control", () => {
     globalStyles,
     /:root\[data-platform="win32"\] \.work-panel-header,[\s\S]*:root\[data-platform="linux"\] \.work-panel-header\s*\{[^}]*padding-right:\s*calc\(var\(--ds-window-controls-width\) \+ 46px\);/,
   );
-  assert.match(
+  assert.doesNotMatch(
     globalStyles,
-    /:root\[data-platform="win32"\] \.conversation-topbar\.ct-work-panel-open,[\s\S]*:root\[data-platform="linux"\] \.conversation-topbar\.ct-work-panel-open\s*\{[^}]*right:\s*0;/,
+    /:root\[data-platform="(?:win32|linux)"\] \.conversation-topbar\.ct-work-panel-open[\s\S]*?right:\s*0;/,
   );
 });
 

@@ -10212,10 +10212,12 @@ sample extensions under `apps/desktop/test/fixtures/pi-extensions/`.
 - **Preconditions**: Nexus has upgraded from a profile that contains legacy
   `local.context-vault` plugin settings; two workspace roots are available.
 - **Steps**: 1) Open each project and open Context Vault from the work-panel
-  launcher. 2) Confirm both native vaults start empty. 3) Create a repository
-  claim with literal relative evidence in project A, then switch projects.
-  4) Start an ordinary task and a task matching the claim. 5) Export project A,
-  inspect the JSON, then import it into project B through preview.
+  launcher. Confirm it is disabled with an explanation before any chat session
+  exists. 2) Confirm both native vaults start empty. 3) Create a repository
+  claim with literal relative evidence in project A, then switch projects while
+  retaining the panel. 4) Start an ordinary task and a task matching the claim.
+  5) Export project A, inspect the JSON, then import it into project B through
+  preview.
 - **Expected**: Legacy settings are untouched and not shown. No claim leaks to
   project B. The ordinary task gets no brief or forced save; the matching task
   sees availability metadata only and may explicitly brief. Native
@@ -10225,7 +10227,9 @@ sample extensions under `apps/desktop/test/fixtures/pi-extensions/`.
   tool. The pack contains no secrets, sessions, absolute paths, mtimes, or
   workspace contents; choosing a pack opens a review sheet without writes,
   preview labels selectable, duplicate, overlap, invalid, and incompatible
-  items, and only the explicitly checked valid claims merge.
+  items, and only the explicitly checked valid claims merge. A retained panel
+  resolves its active session project during the switch and never flashes an
+  unrelated or blank vault.
 - **Specs linked**: ADR 0217, runtime and storage specifications.
 - **Status**: Draft.
 
