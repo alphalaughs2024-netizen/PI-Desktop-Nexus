@@ -2166,6 +2166,13 @@ reasoning-level control.
   title band. It reserves the title-bar clearance, wraps its actions at narrow
   widths, and never overlaps the conversation title, native controls, or their
   portaled tooltips.
+- The active workflow strip exposes outlined `Inspect`, `Dismiss`, and
+  `Settings` buttons with visible keyboard focus. Inspect opens a full-width,
+  bounded scrolling guidance surface below the strip; it uses an explicit
+  readable background and never relies on a browser-default or black `pre`
+  surface. In Twilight Mountains the strip uses raised glass and the inspected
+  body uses the opaque safety tier. Labels and loading/error messages are
+  localized.
 - Project session rows retain a 4px gap between adjacent child sessions. The
   gap preserves separate touch targets and prevents an active row from merging
   visually with its sibling in scenic and standard themes.

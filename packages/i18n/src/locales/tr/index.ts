@@ -1920,6 +1920,16 @@ export const tr = {
     actionFailed: "Bildirimler güncellenemedi.",
     justNow: "Az önce",
   },
+  workflow: {
+    activeLabel: "Etkin iş akışı",
+    status: "Aşama: {{stage}} · Etkinleştirme: {{reason}}",
+    inspect: "İncele",
+    hide: "Gizle",
+    dismiss: "Kapat",
+    settings: "Ayarlar",
+    loadingGuidance: "İş akışı yönergeleri yükleniyor…",
+    guidanceUnavailable: "İş akışı yönergeleri kullanılamıyor.",
+  },
   errors: {
     HOST_UNAVAILABLE: "Yerel servis kullanılamıyor",
     MODEL_NOT_CONFIGURED: "Bu model kurulu değil veya AI servisi onu sunmuyor.",

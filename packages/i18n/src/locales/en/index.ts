@@ -1936,6 +1936,16 @@ export const en = {
     actionFailed: "Couldn't update notifications.",
     justNow: "Just now",
   },
+  workflow: {
+    activeLabel: "Active workflow",
+    status: "Stage: {{stage}} · Activated: {{reason}}",
+    inspect: "Inspect",
+    hide: "Hide",
+    dismiss: "Dismiss",
+    settings: "Settings",
+    loadingGuidance: "Loading workflow guidance…",
+    guidanceUnavailable: "Workflow guidance is unavailable.",
+  },
   errors: {
     HOST_UNAVAILABLE: "The local service is unavailable",
     MODEL_NOT_CONFIGURED: "This model isn't set up, or the AI provider doesn't offer it.",

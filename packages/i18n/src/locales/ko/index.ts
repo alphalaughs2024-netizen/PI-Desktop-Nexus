@@ -1920,6 +1920,16 @@ export const ko = {
     actionFailed: "알림을 업데이트할 수 없습니다.",
     justNow: "방금",
   },
+  workflow: {
+    activeLabel: "활성 워크플로",
+    status: "단계: {{stage}} · 활성화: {{reason}}",
+    inspect: "검사",
+    hide: "숨기기",
+    dismiss: "해제",
+    settings: "설정",
+    loadingGuidance: "워크플로 안내를 불러오는 중…",
+    guidanceUnavailable: "워크플로 안내를 사용할 수 없습니다.",
+  },
   errors: {
     HOST_UNAVAILABLE: "로컬 서비스를 사용할 수 없습니다",
     MODEL_NOT_CONFIGURED: "이 모델이 설정되지 않았거나 AI 프로바이더에서 제공하지 않습니다.",
