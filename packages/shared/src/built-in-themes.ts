@@ -21,6 +21,13 @@ export const BUILT_IN_THEMES = [
     backdropBlur: true,
     nativeFallback: "alpine-light",
   },
+  {
+    id: "obsidian-horizon",
+    base: "dark",
+    scenic: true,
+    backdropBlur: true,
+    nativeFallback: "obsidian-horizon",
+  },
 ] as const;
 
 export type BuiltInThemeId = (typeof BUILT_IN_THEMES)[number]["id"];

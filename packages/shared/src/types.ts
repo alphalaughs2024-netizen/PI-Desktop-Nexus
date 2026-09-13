@@ -1148,6 +1148,7 @@ export type ThemePreference =
   | "dark"
   | "twilight-mountains"
   | "alpine-light"
+  | "obsidian-horizon"
   | `plugin:${string}`;
 
 export type ScenicBackdropBlur = "low" | "medium" | "high";

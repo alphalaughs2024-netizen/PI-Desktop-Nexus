@@ -54,6 +54,8 @@ export function ThemeRow({
               ? "settings.themeTwilightMountains"
               : id === "alpine-light"
                 ? "settings.themeAlpineLight"
+                : id === "obsidian-horizon"
+                  ? "settings.themeObsidianHorizon"
             : "settings.themeSystem",
       );
       const hint = t(
@@ -65,6 +67,8 @@ export function ThemeRow({
               ? "settings.themeTwilightMountainsDesc"
               : id === "alpine-light"
                 ? "settings.themeAlpineLightDesc"
+                : id === "obsidian-horizon"
+                  ? "settings.themeObsidianHorizonDesc"
             : "settings.themeSystemDesc",
       );
       return {

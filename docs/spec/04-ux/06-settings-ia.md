@@ -57,8 +57,8 @@ materials retain each theme's fixed blur treatment.
   - **Theme**: a searchable picker row (same anchored-menu pattern as
     Language). The trigger fills the settings control column and shows the
     current name. The menu pins System, Light, Dark, and the opt-in
-    **Twilight Mountains** scenic dark theme and **Alpine Light** scenic light
-    theme at the top, then lists plugin
+    **Twilight Mountains** and **Obsidian Horizon** scenic dark themes and
+    **Alpine Light** scenic light theme at the top, then lists plugin
     themes after a divider with a "Provided by …" hint. Twilight Mountains uses
     a bundled first-party backdrop with a layered blue-glass shell: navigation
     and the composer are luminous glass while menus, dialogs, permissions,
@@ -346,6 +346,11 @@ skills remain portable under `<project>/.agents/skills`.
   rows remain separate tiles rather than appearing inside a second outer card.
   Portaled provider service pickers use the same opaque blue safety material as
   their originating Settings controls.
+- In Alpine Light and Obsidian Horizon, the same ownership contract applies:
+  scenic styling may tint child tiles, but row-only list parents remain
+  transparent so independent rows never acquire a second outer rectangle.
+  Obsidian uses charcoal/navy safety surfaces and stronger opacity for fields,
+  menus, permissions, code, and tool output.
 - Each page is one workbench, not a stack of per-level sections (D257): a
   single toolbar above a single elevated panel. The toolbar carries the level
   filter as a segmented control with live counts (All / Global / Project), one

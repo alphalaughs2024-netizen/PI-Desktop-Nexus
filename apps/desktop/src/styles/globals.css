@@ -38,4 +38,5 @@
    ordinary dark/light component rules while responsive rules stay last. */
 @import "./twilight-mountains.css";
 @import "./alpine-light.css";
+@import "./obsidian-horizon.css";
 @import "./responsive.css";

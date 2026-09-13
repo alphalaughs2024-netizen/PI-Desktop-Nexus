@@ -795,6 +795,8 @@ export const de = {
     "themeDarkDesc": "Dunkles Thema.",
     "themeTwilightMountainsDesc": "Dunkles, landschaftliches Glasthema.",
     "themeAlpineLightDesc": "Helles, landschaftliches Glasthema.",
+    "themeObsidianHorizon": "Obsidian-Horizont",
+    "themeObsidianHorizonDesc": "Dunkles Glasthema mit mondbeschienenen Bergen.",
     "twilightBackdropBlur": "Dämmerungs-Hintergrundunschärfe",
     "scenicBackdropBlur": "Unschärfe des Landschaftshintergrunds",
     "twilightBackdropBlurDesc": "Unschärfe nur für den Chat-Hintergrund der Dämmerungsberge anpassen.",

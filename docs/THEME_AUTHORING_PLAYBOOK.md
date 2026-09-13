@@ -6,7 +6,8 @@ This is the practical handoff for creating a new Nexus theme without breaking
 the application. It records the architecture, decisions, visual lessons,
 failures, fixes, validation method, and delivery rules learned while building
 and polishing **Twilight Mountains**, Nexus's first opt-in first-party scenic
-theme, and **Alpine Light**, its second scenic reference implementation.
+theme, **Alpine Light**, its second scenic reference implementation, and
+**Obsidian Horizon**, its third scenic reference implementation.
 
 Read this document before designing or implementing a theme. It is deliberately
 more detailed than an ordinary feature note: a new theme affects every visible
@@ -102,6 +103,7 @@ must preserve.
 | CSS import order | `apps/desktop/src/styles/globals.css` | Scenic CSS is intentionally after ordinary component CSS and before responsive overrides. |
 | Twilight reference implementation | `apps/desktop/src/styles/twilight-mountains.css` | Dark scenic material tiers, scoping, fallbacks, and interaction-safe Settings treatment. |
 | Alpine reference implementation | `apps/desktop/src/styles/alpine-light.css` | Light scenic materials, white-glass Settings surfaces, row-list parent neutralization, and fallbacks. |
+| Obsidian reference implementation | `apps/desktop/src/styles/obsidian-horizon.css` | Dark charcoal scenic materials, moonlit backdrop composition, and Settings ownership-safe fallbacks. |
 | Empty-home theme variation | `apps/desktop/src/components/ChatSurface.tsx` | Shows how to make a presentation-only theme variation without changing normal-theme behavior. |
 | Renderer-to-main native API | `apps/desktop/src/lib/api.ts` | Defines the named native background values allowed from renderer code. |
 | Native window behavior | `apps/desktop/electron/main/index.ts` | Resolves Scenic-to-dark plugin/native appearance and applies Windows/Linux fallback colors. |
@@ -154,6 +156,7 @@ export const BUILT_IN_THEMES = [
   { id: "dark", base: "dark" },
   { id: "twilight-mountains", base: "dark", scenic: true },
   { id: "alpine-light", base: "light", scenic: true },
+  { id: "obsidian-horizon", base: "dark", scenic: true },
 ] as const;
 ```
 
@@ -190,6 +193,43 @@ Themes are visual packages. They do not have their own runtime authority.
 
 ## The Twilight Mountains implementation map
 
+## Obsidian Horizon case study
+
+Obsidian Horizon is the dark scenic reference implementation. Its source image
+is copied unchanged to `apps/desktop/resources/themes/obsidian-horizon.png` and
+packaged through the desktop theme resource directory. The registry resolves it
+to the existing `dark` base and adds the `obsidian-horizon` scenic marker; it is
+never a third color-scheme or a plugin capability.
+
+Its material tiers are intentionally distinct: an atmospheric canvas, charcoal
+shell glass, deep navigation glass, raised slate glass, and near-opaque safety
+surfaces. The safety tier is required for menus, dialogs, permissions, code,
+tool output, search, Settings controls, and Context Vault. Blur is limited to
+large stable shells and the single pointer-inert backdrop. Obsidian maps the
+shared image-only blur preference to Low/Medium/High = `2px`/`6px`/`12px`.
+
+The empty home suppresses the mascot only while the Obsidian marker is present
+and reuses the localized `chat.emptyTitle` greeting. Switching to any base or
+plugin theme must remove both scenic data attributes and restore the ordinary
+mascot/presentation.
+
+Settings are the most common source of visual regressions. Keep
+`.settings-card-block` and headings transparent; a mixed-content
+`.settings-panel` may own one tile, but row-only parents (including provider,
+model, capability, shortcut, and equivalent list containers) must remain fully
+transparent with no border, shadow, blur, clipping, or rounded frame. Their
+child rows own individual Obsidian surfaces. Audit provider/model/extension
+rules after generic rules because they can reintroduce an outer rectangle.
+Never use bare `code`, `button`, `input`, `div`, `section`, or generic shell
+child selectors. Explicitly theme controls, fields, menus, and safety surfaces.
+
+Obsidian preserves renderer-drawn Windows/Linux controls, drag-region
+reservations, work-panel hit areas, Context Vault behavior, plugin CSS
+isolation, and the existing macOS transparent/vibrancy path. It does not copy
+macOS chrome or outer-window geometry. Reduced-transparency and unsupported
+filter paths remove blur and increase opacity while preserving the same
+transparent-parent/opaque-child ownership model.
+
 Twilight is the reference implementation, but future themes should reuse its
 architecture rather than copy its exact colors, assets, or selector list.
 
@@ -203,7 +243,8 @@ At startup and whenever Settings change, `App.tsx`:
 4. sets `document.documentElement.dataset.theme` to the resolved base;
 5. mounts plugin CSS only for a valid plugin theme and removes it otherwise;
 6. sets `data-scenic-theme` to the selected registered scenic id (Twilight
-   Mountains or Alpine Light), and deletes the marker for every other selection;
+   Mountains, Alpine Light, or Obsidian Horizon), and deletes the marker for
+   every other selection;
 7. calls the Electron main-process API with either the normal resolved base or
    the scenic id so the native window background does not flash an unrelated
    color around the renderer;

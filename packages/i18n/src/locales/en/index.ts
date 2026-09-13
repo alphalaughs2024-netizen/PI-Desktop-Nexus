@@ -795,6 +795,8 @@ export const en = {
     themeDarkDesc: "Dark theme.",
     themeTwilightMountainsDesc: "Dark scenic glass theme.",
     themeAlpineLightDesc: "Light scenic glass theme.",
+    themeObsidianHorizon: "Obsidian Horizon",
+    themeObsidianHorizonDesc: "Dark moonlit mountain glass theme.",
     twilightBackdropBlur: "Twilight backdrop blur",
     scenicBackdropBlur: "Scenic backdrop blur",
     twilightBackdropBlurDesc: "Adjust blur for the Twilight Mountains chat backdrop only.",

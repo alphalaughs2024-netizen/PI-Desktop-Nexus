@@ -915,8 +915,8 @@ export const api = {
       IPC.invoke.windowSetWorkPanelChatWidth,
       { width },
     ),
-  setWindowBackgroundColor: (theme: "light" | "dark" | "twilight-mountains" | "alpine-light") =>
-    invoke<{ applied: boolean; theme: "light" | "dark" | "twilight-mountains" | "alpine-light" }>(
+  setWindowBackgroundColor: (theme: "light" | "dark" | "twilight-mountains" | "alpine-light" | "obsidian-horizon") =>
+    invoke<{ applied: boolean; theme: "light" | "dark" | "twilight-mountains" | "alpine-light" | "obsidian-horizon" }>(
       IPC.invoke.windowSetBackgroundColor,
       { theme },
     ),

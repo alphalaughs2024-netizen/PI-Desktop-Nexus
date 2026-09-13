@@ -13,11 +13,14 @@ describe("built-in themes", () => {
       "dark",
       "twilight-mountains",
       "alpine-light",
+      "obsidian-horizon",
     ]);
     expect(builtInThemeBase("twilight-mountains")).toBe("dark");
     expect(isScenicBuiltInTheme("twilight-mountains")).toBe(true);
     expect(isScenicBuiltInTheme("dark")).toBe(false);
     expect(builtInThemeBase("alpine-light")).toBe("light");
     expect(isScenicBuiltInTheme("alpine-light")).toBe(true);
+    expect(builtInThemeBase("obsidian-horizon")).toBe("dark");
+    expect(isScenicBuiltInTheme("obsidian-horizon")).toBe(true);
   });
 });

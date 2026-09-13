@@ -2348,8 +2348,8 @@ function applyDeveloperMode(settings?: { developerMode?: unknown } | null) {
 function applyNativeThemeSource(settings?: { theme?: unknown } | null) {
   const preference = settings?.theme;
   let next: "system" | "light" | "dark" = "system";
-  if (preference === "light" || preference === "dark" || preference === "twilight-mountains" || preference === "alpine-light") {
-    next = preference === "twilight-mountains" ? "dark" : preference === "alpine-light" ? "light" : preference;
+  if (preference === "light" || preference === "dark" || preference === "twilight-mountains" || preference === "alpine-light" || preference === "obsidian-horizon") {
+    next = preference === "twilight-mountains" || preference === "obsidian-horizon" ? "dark" : preference === "alpine-light" ? "light" : preference;
   } else if (typeof preference === "string" && preference.startsWith("plugin:")) {
     const pluginTheme = plugins.getThemes().find((theme) => theme.id === preference);
     if (pluginTheme?.base === "light" || pluginTheme?.base === "dark") {
@@ -2382,14 +2382,14 @@ function applyApplicationMenuSettings(settings?: {
   }
   const preference = settings?.theme;
   appThemePreference =
-    preference === "light" || preference === "dark" || preference === "twilight-mountains" || preference === "alpine-light"
+    preference === "light" || preference === "dark" || preference === "twilight-mountains" || preference === "alpine-light" || preference === "obsidian-horizon"
       ? preference
       : typeof preference === "string" && preference.startsWith("plugin:")
         ? preference
         : "system";
   applyNativeThemeSource(settings);
-  if (preference === "light" || preference === "dark" || preference === "twilight-mountains" || preference === "alpine-light") {
-    pluginPanelTheme = preference === "twilight-mountains" ? "dark" : preference === "alpine-light" ? "light" : preference;
+  if (preference === "light" || preference === "dark" || preference === "twilight-mountains" || preference === "alpine-light" || preference === "obsidian-horizon") {
+    pluginPanelTheme = preference === "twilight-mountains" || preference === "obsidian-horizon" ? "dark" : preference === "alpine-light" ? "light" : preference;
   } else if (typeof preference === "string" && preference.startsWith("plugin:")) {
     const pluginTheme = plugins.getThemes().find((theme) => theme.id === preference);
     pluginPanelTheme =
@@ -7986,7 +7986,7 @@ function registerIpc() {
 
   handle(IPC.invoke.windowSetBackgroundColor, async (input: unknown = {}) => {
     const theme = (input as { theme?: unknown })?.theme;
-    if (theme !== "light" && theme !== "dark" && theme !== "twilight-mountains" && theme !== "alpine-light") {
+    if (theme !== "light" && theme !== "dark" && theme !== "twilight-mountains" && theme !== "alpine-light" && theme !== "obsidian-horizon") {
       throw Object.assign(new Error("invalid window background theme"), {
         errorCode: ErrorCodes.INVALID_ARGUMENT,
       });
@@ -7998,7 +7998,7 @@ function registerIpc() {
       throw new Error("main window unavailable");
     }
     mainWindow.setBackgroundColor(
-      theme === "light" ? "#ffffff" : theme === "twilight-mountains" ? "#071326" : theme === "alpine-light" ? "#d7e5f8" : "#181818",
+      theme === "light" ? "#ffffff" : theme === "twilight-mountains" ? "#071326" : theme === "alpine-light" ? "#d7e5f8" : theme === "obsidian-horizon" ? "#080d16" : "#181818",
     );
     return { applied: true, theme };
   });

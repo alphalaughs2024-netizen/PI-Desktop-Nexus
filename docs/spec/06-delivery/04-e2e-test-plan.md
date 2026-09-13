@@ -10356,3 +10356,22 @@ existing three-failed-`Edit` recovery scenario remains unchanged.
   resource action creates/selects a project-scoped session and opens its tab;
   no selected project or missing Browser view produces a concise toast.
 - **Status**: Documented; local E2E is not run unless explicitly requested.
+#### E2E-OBS: Obsidian Horizon scenic theme and Settings ownership
+
+- **Steps**: Select Obsidian Horizon in Appearance, then inspect Chat, General,
+  AI, Shortcuts, Skills/workflows, Models/providers, vendor accounts, MCP /
+  Extensions, Subagents/capabilities, Plugins, the work panel, Context Vault,
+  menus, dialogs, permissions, and tool output. Toggle Low/Medium/High scenic
+  blur, switch the sidebar and work panel, switch away to each base theme and a
+  plugin theme, and repeat at a narrow window width with reduced transparency.
+- **Expected**: Obsidian resolves to the dark base and shows its local moonlit
+  backdrop with image-only 2px/6px/12px blur. The backdrop never intercepts
+  clicks; renderer-drawn Windows/Linux controls, titlebar reservations,
+  work-panel actions, and Context Vault remain usable. The empty home hides the
+  mascot and uses the localized build greeting only for Obsidian. Settings
+  mixed-content panels may be tiles, while row-only parents are transparent
+  and each row is a separate charcoal tile with no outer rectangle. Menus,
+  dialogs, permissions, code, and tool output remain readable and more opaque.
+  Reduced-transparency removes blur and keeps the same readable ownership.
+  Switching away removes all scenic state and restores the selected base/plugin
+  presentation and mascot behavior.
