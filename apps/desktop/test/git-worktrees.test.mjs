@@ -17,7 +17,51 @@ const {
   runGitWorktreeOperation,
   validateManagedBranch,
   validateManagedRecord,
+  getGitBlocker,
+  clearGitBlocker,
 } = loadTypeScript(join(desktopRoot, "electron/main/git-worktrees.ts"));
+
+test("classifies missing workspaces and blocks branch-changing retries", async () => {
+  clearGitBlocker("missing-session");
+  const deps = { dataDir: join(tmpdir(), "profile"), resolveWorkspace: async () => null, confirm: async () => false };
+  await assert.rejects(() => runGitWorktreeOperation(deps, "missing-session", { operation: "status", branch: "nexus/one" }), /no workspace is open/);
+  const blocker = getGitBlocker("missing-session");
+  assert.equal(blocker.category, "WORKSPACE_MISSING");
+  await assert.rejects(() => runGitWorktreeOperation(deps, "missing-session", { operation: "status", branch: "nexus/two" }), /Open or select a project/);
+  assert.equal(getGitBlocker("missing-session").attempts, 1);
+  clearGitBlocker("missing-session");
+});
+
+test("preserves session lookup failures as a distinct blocker", async () => {
+  clearGitBlocker("lookup-session");
+  const deps = { dataDir: join(tmpdir(), "profile"), resolveWorkspace: async () => { throw new Error("IPC unavailable"); }, confirm: async () => false };
+  await assert.rejects(() => runGitWorktreeOperation(deps, "lookup-session", { operation: "status", branch: "nexus/one" }), /IPC unavailable/);
+  assert.equal(getGitBlocker("lookup-session").category, "SESSION_LOOKUP_FAILED");
+  clearGitBlocker("lookup-session");
+});
+
+test("records dirty repository blockers and does not retry them", async () => {
+  const root = mkdtempSync(join(tmpdir(), "nexus-git-dirty-"));
+  const repository = join(root, "project");
+  mkdirSync(repository);
+  try {
+    git(repository, "init");
+    git(repository, "config", "user.email", "nexus-test@example.invalid");
+    git(repository, "config", "user.name", "Nexus test");
+    writeFileSync(join(repository, "README.md"), "base\n");
+    git(repository, "add", "README.md");
+    git(repository, "commit", "-m", "base");
+    writeFileSync(join(repository, "README.md"), "dirty\n");
+    clearGitBlocker("dirty-session");
+    const deps = { dataDir: join(root, "profile"), resolveWorkspace: async () => repository, confirm: async () => false };
+    await assert.rejects(() => runGitWorktreeOperation(deps, "dirty-session", { operation: "create", branch: "nexus/one" }), /uncommitted changes/);
+    assert.equal(getGitBlocker("dirty-session").category, "DIRTY_REPOSITORY");
+    await assert.rejects(() => runGitWorktreeOperation(deps, "dirty-session", { operation: "create", branch: "nexus/two" }), /clean repository/);
+  } finally {
+    clearGitBlocker("dirty-session");
+    rmSync(root, { recursive: true, force: true });
+  }
+});
 
 test("accepts only Nexus-owned branch names and computes a deterministic sibling path", () => {
   assert.equal(validateManagedBranch("nexus/phase-4").ok, true);

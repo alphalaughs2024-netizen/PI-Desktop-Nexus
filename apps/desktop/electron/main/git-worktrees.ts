@@ -1,6 +1,6 @@
 import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync, statSync } from "node:fs";
 import { basename, dirname, isAbsolute, join, resolve } from "node:path";
 
 export type ManagedWorktreeRecord = {
@@ -21,6 +21,79 @@ export type ManagedWorktreeStatus = {
 };
 
 export type GitWorktreeOperation = "status" | "create" | "merge" | "cleanup";
+
+export type GitFailureCategory =
+  | "WORKSPACE_MISSING"
+  | "SESSION_LOOKUP_FAILED"
+  | "WORKSPACE_PATH_UNAVAILABLE"
+  | "ACCESS_DENIED"
+  | "NOT_A_GIT_REPOSITORY"
+  | "GIT_EXECUTABLE_UNAVAILABLE"
+  | "UPSTREAM_CHECKOUT_PROTECTED"
+  | "DIRTY_REPOSITORY"
+  | "BRANCH_CONFLICT"
+  | "WORKTREE_CONFLICT"
+  | "TRANSIENT_GIT_FAILURE";
+
+export type GitBlocker = {
+  sessionId: string;
+  operation: GitWorktreeOperation;
+  category: GitFailureCategory;
+  workspaceIdentity: string;
+  attempts: number;
+  timestamp: string;
+  recovery: string;
+};
+
+export class GitWorkflowError extends Error {
+  readonly category: GitFailureCategory;
+  readonly recovery: string;
+  constructor(category: GitFailureCategory, message: string, recovery: string) {
+    super(message);
+    this.name = "GitWorkflowError";
+    this.category = category;
+    this.recovery = recovery;
+  }
+}
+
+const blockers = new Map<string, GitBlocker>();
+
+export function getGitBlocker(sessionId: string): GitBlocker | undefined {
+  return blockers.get(sessionId);
+}
+
+export function clearGitBlocker(sessionId: string): void {
+  blockers.delete(sessionId);
+}
+
+function recoveryFor(category: GitFailureCategory): string {
+  switch (category) {
+    case "WORKSPACE_MISSING": return "Open or select a project before using Git.";
+    case "SESSION_LOOKUP_FAILED": return "Nexus could not read this session. Refresh or select the project again.";
+    case "WORKSPACE_PATH_UNAVAILABLE": return "The selected project is unavailable. Choose another project.";
+    case "ACCESS_DENIED": return "Git access was denied. Grant access or choose another project.";
+    case "NOT_A_GIT_REPOSITORY": return "This project is not a Git repository.";
+    case "GIT_EXECUTABLE_UNAVAILABLE": return "Git is unavailable on this system. Install Git and try again.";
+    case "UPSTREAM_CHECKOUT_PROTECTED": return "Open the Nexus fork instead of the upstream PI-Desktop checkout.";
+    case "DIRTY_REPOSITORY": return "This operation requires a clean repository. Resolve the pending changes first.";
+    case "BRANCH_CONFLICT": return "That local branch already exists. Choose another branch or inspect it.";
+    case "WORKTREE_CONFLICT": return "That worktree already exists or is registered. Inspect it before retrying.";
+    case "TRANSIENT_GIT_FAILURE": return "Git failed temporarily. Retry once; if it persists, inspect the repository.";
+  }
+}
+
+function classifyGitError(error: unknown, fallback: GitFailureCategory = "TRANSIENT_GIT_FAILURE"): GitFailureCategory {
+  if (error instanceof GitWorkflowError) return error.category;
+  const message = error instanceof Error ? error.message : String(error);
+  if (/ENOENT|no such file|not found/i.test(message) && /git/i.test(message)) return "GIT_EXECUTABLE_UNAVAILABLE";
+  if (/EACCES|permission denied|access is denied|safe\.directory|dubious ownership/i.test(message)) return "ACCESS_DENIED";
+  if (/not a git repository|cannot find git repository/i.test(message)) return "NOT_A_GIT_REPOSITORY";
+  return fallback;
+}
+
+function workflowError(category: GitFailureCategory, message: string): GitWorkflowError {
+  return new GitWorkflowError(category, message, recoveryFor(category));
+}
 
 type GitResult = { code: number; stdout: string; stderr: string };
 
@@ -71,7 +144,10 @@ function comparablePath(path: string): string {
 
 async function gitOrThrow(cwd: string, args: string[]): Promise<string> {
   const result = await runGit(cwd, args);
-  if (result.code !== 0) throw new Error(result.stderr.trim() || `git ${args.join(" ")} failed`);
+  if (result.code !== 0) {
+    const detail = result.stderr.trim() || `git ${args.join(" ")} failed`;
+    throw workflowError(classifyGitError(new Error(detail)), detail);
+  }
   return result.stdout.trim();
 }
 
@@ -104,21 +180,30 @@ function removeRecord(dataDir: string, repositoryPath: string, branch: string): 
 }
 
 async function repositoryRoot(workspacePath: string): Promise<string> {
-  if (!workspacePath || !isAbsolute(workspacePath)) throw new Error("GitWorktree: no absolute workspace is open.");
+  if (!workspacePath) throw workflowError("WORKSPACE_MISSING", "no workspace is open");
+  if (!isAbsolute(workspacePath)) throw workflowError("WORKSPACE_PATH_UNAVAILABLE", "workspace path is not absolute");
+  try {
+    if (!existsSync(workspacePath) || !statSync(workspacePath).isDirectory()) {
+      throw workflowError("WORKSPACE_PATH_UNAVAILABLE", "the selected workspace path is unavailable");
+    }
+  } catch (error) {
+    if (error instanceof GitWorkflowError) throw error;
+    throw workflowError("ACCESS_DENIED", "the selected workspace cannot be read");
+  }
   const root = await gitOrThrow(workspacePath, ["rev-parse", "--show-toplevel"]);
   if (!root || !isAbsolute(root)) throw new Error("GitWorktree: Git did not return an absolute repository root.");
   const repositoryPath = resolve(root);
   // The shipped Nexus fork may work on any user project, but it must never
   // manage the separately checked-out upstream PI-Desktop application.
   if (basename(repositoryPath).toLowerCase() === "pi-desktop") {
-    throw new Error("GitWorktree: the upstream PI-Desktop checkout is protected; open the Nexus fork or another project instead.");
+    throw workflowError("UPSTREAM_CHECKOUT_PROTECTED", "the upstream PI-Desktop checkout is protected");
   }
   return repositoryPath;
 }
 
 async function ensureClean(cwd: string, label: string): Promise<void> {
   const status = await gitOrThrow(cwd, ["status", "--porcelain=v1", "--untracked-files=all"]);
-  if (status) throw new Error(`GitWorktree: ${label} has uncommitted changes.`);
+  if (status) throw workflowError("DIRTY_REPOSITORY", `${label} has uncommitted changes`);
 }
 
 async function branchExists(cwd: string, branch: string): Promise<boolean> {
@@ -180,7 +265,7 @@ function requireManaged(status: ManagedWorktreeStatus): void {
   }
 }
 
-export async function runGitWorktreeOperation(
+async function runGitWorktreeOperationInternal(
   deps: GitWorktreeManagerDeps,
   sessionId: string,
   input: { operation?: unknown; branch?: unknown },
@@ -192,10 +277,37 @@ export async function runGitWorktreeOperation(
   const rawBranch = typeof input.branch === "string" ? input.branch.trim() : "";
   const valid = validateManagedBranch(rawBranch);
   if (!valid.ok) throw new Error(`GitWorktree: ${valid.error}.`);
-  const workspacePath = await deps.resolveWorkspace(sessionId);
-  if (!workspacePath) throw new Error("GitWorktree: no workspace is open.");
+  const existingBlocker = blockers.get(sessionId);
+  if (existingBlocker && existingBlocker.category !== "TRANSIENT_GIT_FAILURE") {
+    throw workflowError(existingBlocker.category, existingBlocker.recovery);
+  }
+  if (existingBlocker?.category === "TRANSIENT_GIT_FAILURE" && existingBlocker.attempts >= 2) {
+    throw workflowError(existingBlocker.category, existingBlocker.recovery);
+  }
+  let workspacePath: string | null;
+  try {
+    workspacePath = await deps.resolveWorkspace(sessionId);
+  } catch (error) {
+    const blocker = { sessionId, operation, category: "SESSION_LOOKUP_FAILED" as const, workspaceIdentity: "session", attempts: (existingBlocker?.attempts ?? 0) + 1, timestamp: new Date().toISOString(), recovery: recoveryFor("SESSION_LOOKUP_FAILED") };
+    blockers.set(sessionId, blocker);
+    throw workflowError(blocker.category, error instanceof Error ? error.message : "session lookup failed");
+  }
+  if (!workspacePath) {
+    const blocker = { sessionId, operation, category: "WORKSPACE_MISSING" as const, workspaceIdentity: "none", attempts: (existingBlocker?.attempts ?? 0) + 1, timestamp: new Date().toISOString(), recovery: recoveryFor("WORKSPACE_MISSING") };
+    blockers.set(sessionId, blocker);
+    throw workflowError(blocker.category, "no workspace is open");
+  }
   const canonicalBranch = `nexus/${valid.shortName}`;
-  const repositoryPath = await repositoryRoot(workspacePath);
+  let repositoryPath: string;
+  try {
+    repositoryPath = await repositoryRoot(workspacePath);
+  } catch (error) {
+    const category = classifyGitError(error, error instanceof GitWorkflowError ? error.category : "TRANSIENT_GIT_FAILURE");
+    const blocker = { sessionId, operation, category, workspaceIdentity: comparablePath(workspacePath), attempts: (existingBlocker?.attempts ?? 0) + 1, timestamp: new Date().toISOString(), recovery: recoveryFor(category) };
+    blockers.set(sessionId, blocker);
+    throw error;
+  }
+  clearGitBlocker(sessionId);
   const worktreePath = managedWorktreePath(repositoryPath, canonicalBranch);
 
   if (operation === "status") {
@@ -205,10 +317,10 @@ export async function runGitWorktreeOperation(
   if (operation === "create") {
     await ensureClean(repositoryPath, "the source repository");
     if (await branchExists(repositoryPath, canonicalBranch)) {
-      throw new Error(`GitWorktree: branch ${canonicalBranch} already exists.`);
+      throw workflowError("BRANCH_CONFLICT", `branch ${canonicalBranch} already exists`);
     }
     if (existsSync(worktreePath) || await worktreeIsRegistered(repositoryPath, worktreePath)) {
-      throw new Error(`GitWorktree: target worktree already exists at ${worktreePath}.`);
+      throw workflowError("WORKTREE_CONFLICT", `target worktree already exists at ${worktreePath}`);
     }
     const confirmed = await deps.confirm(
       "Create Nexus worktree?",
@@ -271,4 +383,33 @@ export async function runGitWorktreeOperation(
   await gitOrThrow(repositoryPath, ["branch", "-d", canonicalBranch]);
   removeRecord(deps.dataDir, repositoryPath, canonicalBranch);
   return `GitWorktree: removed ${worktreePath} and deleted merged local branch ${canonicalBranch}. No remote was pushed.`;
+}
+
+/** Execute a Git operation while recording semantic blockers for every failure domain. */
+export async function runGitWorktreeOperation(
+  deps: GitWorktreeManagerDeps,
+  sessionId: string,
+  input: { operation?: unknown; branch?: unknown },
+): Promise<string> {
+  try {
+    return await runGitWorktreeOperationInternal(deps, sessionId, input);
+  } catch (error) {
+    const existing = blockers.get(sessionId);
+    const category = classifyGitError(error);
+    // Preflight failures are already recorded with the safe workspace identity.
+    // Do not increment their attempt count merely because the error crossed this wrapper.
+    if (!existing || existing.category !== category) {
+      const rawWorkspace = existing?.workspaceIdentity ?? "unknown";
+      blockers.set(sessionId, {
+        sessionId,
+        operation: String(input.operation ?? "status") as GitWorktreeOperation,
+        category,
+        workspaceIdentity: rawWorkspace,
+        attempts: existing?.category === category ? existing.attempts : 1,
+        timestamp: new Date().toISOString(),
+        recovery: recoveryFor(category),
+      });
+    }
+    throw error;
+  }
 }

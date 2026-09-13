@@ -2164,6 +2164,11 @@ Each scenario is documented in this format:
   and local branch. Review shows current scope and validation evidence without
   creating a second review store or granting authority. The upstream checkout
   is refused.
+- **Additional blocker checks**: Repeat status with a missing/stale session,
+  an unavailable path, a non-Git folder, denied Git ownership, and changing
+  branch names. Each case reports its category and recovery action, stops
+  unchanged retries, and resumes after project/session/access repair or an
+  explicit Retry.
 - **Specs linked**: `03-runtime/01-ipc-protocol.md` §12b.1,
   `03-runtime/03-tools-and-permissions.md` §5a, ADR 0223
 - **Acceptance**: E (permissions and Git isolation) + G (workflow guidance)

@@ -196,7 +196,7 @@ import {
   setWorkflowPackageEnabled,
   updateWorkflowPackage,
 } from "./workflow-packages";
-import { runGitWorktreeOperation } from "./git-worktrees";
+import { GitWorkflowError, runGitWorktreeOperation } from "./git-worktrees";
 import { loadScopedPluginGuidance } from "./plugin-guidance";
 import { registerPluginDevTools } from "./plugin-dev-tools";
 import { PluginPanelHost } from "./plugin-panel-host";
@@ -5357,12 +5357,9 @@ async function startSidecar(): Promise<void> {
           {
             dataDir,
             resolveWorkspace: async (id) => {
-              try {
-                const result = await host?.call<{ session?: { projectPath?: string } }>("session.get", { id });
-                return result?.session?.projectPath?.trim() || null;
-              } catch {
-                return null;
-              }
+              if (!host) throw new Error("host unavailable while reading session");
+              const result = await host.call<{ session?: { projectPath?: string } }>("session.get", { id });
+              return result?.session?.projectPath?.trim() || null;
             },
             confirm: async (title, detail) => {
               const options = {
@@ -5386,10 +5383,12 @@ async function startSidecar(): Promise<void> {
         ),
       };
     } catch (error) {
+      const detail = error instanceof Error ? error.message.replace(/^GitWorktree: /, "") : String(error);
+      const recovery = error instanceof GitWorkflowError ? error.recovery : "";
       return {
         ok: false,
         isError: true,
-        content: `GitWorktree: ${error instanceof Error ? error.message.replace(/^GitWorktree: /, "") : String(error)}`,
+        content: `GitWorktree: ${detail}${recovery ? `\n\nRecovery: ${recovery}` : ""}`,
       };
     }
   });

@@ -389,6 +389,10 @@ host permission boundary for ordinary file or shell work.
   eligible.
 - Workflows remain guidance only. They do not suppress the confirmation or
   cause a Git action to happen automatically.
+- Git preflight failures are classified (workspace/session, access, repository,
+  dirty state, conflict, or transient) and returned with a recovery action.
+  Unchanged blockers are session-scoped and changing a branch name does not
+  reset them; only a relevant state change or explicit retry clears the block.
 
 ### 5b. Parallel Task coordination (ADR 0224)
 
