@@ -178,7 +178,7 @@ test("Twilight styles portaled provider menus and Context Vault as readable blue
 test("Twilight keeps workflow and native controls above the docked work panel", () => {
   assert.match(
     appSource,
-    /<WindowControls contained \/>\s*<section className="main-pane">/,
+    /<section className="main-pane">[\s\S]*?<WindowControls contained \/>/,
   );
   assert.match(twilightStyles, /\.window-control-btn\s*\{[\s\S]*?color:\s*rgba\(246, 249, 255, 0\.92\)/);
   assert.match(styles, /\.active-workflow-card\s*\{[\s\S]*?margin:\s*calc\(var\(--ds-toolbar-height\) \+ 10px\)/);
