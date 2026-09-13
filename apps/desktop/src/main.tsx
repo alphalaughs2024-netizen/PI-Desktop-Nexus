@@ -7,6 +7,7 @@ import App from "./App";
 import { PluginLauncher } from "./components/PluginLauncher";
 import { initLanguageSync, resolveOsLocale } from "./lib/app-language";
 import { installScrollbarReveal } from "./lib/scrollbar-reveal";
+import { rendererPlatform } from "./lib/renderer-platform";
 import "./styles/globals.css";
 
 const rendererSurface = new URLSearchParams(window.location.search).get("surface");
@@ -14,8 +15,7 @@ if (rendererSurface) document.documentElement.dataset.surface = rendererSurface;
 document.documentElement.dataset.theme = "dark";
 // Window-chrome layout differs per OS (traffic lights left on macOS,
 // controls overlay right on Windows/Linux); set before first paint.
-document.documentElement.dataset.platform =
-  window.piDesktop?.platform ?? "darwin";
+document.documentElement.dataset.platform = rendererPlatform();
 // Scrollbars are transparent at rest (base.css); this marks the scrolling
 // element so the thumb shows while it moves, not only under the pointer.
 installScrollbarReveal(document);

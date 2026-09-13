@@ -117,6 +117,13 @@
   box-shadow: inset -1px 0 rgba(192, 224, 255, 0.24);
 }
 
+:root[data-scenic-theme="twilight-mountains"] .app-work-panel-toggle,
+:root[data-scenic-theme="twilight-mountains"] .window-controls {
+  pointer-events: auto;
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
 :root[data-scenic-theme="twilight-mountains"] :is(.work-panel, .settings-shell-full, .plugins-page) {
   background-color: var(--twilight-shell-glass);
   backdrop-filter: blur(18px) saturate(1.08);

@@ -4,6 +4,7 @@ import { api } from "../lib/api";
 import { IconClose, IconCopy, IconMinus, IconSquare } from "./icons";
 import { TooltipButton } from "./ui";
 import { useAppStore } from "../stores/app-store";
+import { rendererPlatform } from "../lib/renderer-platform";
 
 function resolveRendererPlatform(): NodeJS.Platform {
   if (window.piDesktop?.platform) return window.piDesktop.platform;
@@ -28,7 +29,7 @@ export function WindowControls({
   contained?: boolean;
 } = {}) {
   const { t } = useTranslation();
-  const platform = resolveRendererPlatform();
+  const platform = rendererPlatform();
   const showToast = useAppStore((state) => state.showToast);
   const [maximized, setMaximized] = useState(false);
 

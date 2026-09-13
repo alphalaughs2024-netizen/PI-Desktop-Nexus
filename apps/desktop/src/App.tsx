@@ -39,6 +39,7 @@ import { useAppStore } from "./stores/app-store";
 import { api } from "./lib/api";
 import { installRendererApi } from "./capture/renderer-api";
 import { commitWorkPanelPresentation } from "./lib/work-panel-presentation";
+import { rendererPlatform } from "./lib/renderer-platform";
 import { browserPluginTab } from "./lib/work-panel-tabs";
 import {
   clampSidebarWidth,
@@ -164,11 +165,12 @@ function RoutePending() {
 
 function AppShell() {
   const { t } = useTranslation();
-  const platform = window.piDesktop?.platform ?? "darwin";
+  const platform = rendererPlatform();
   const bootstrap = useAppStore((s) => s.bootstrap);
   const ready = useAppStore((s) => s.ready);
   const page = useAppStore((s) => s.page);
   const activeSessionId = useAppStore((s) => s.activeSessionId);
+  const activeProjectPath = useAppStore((s) => s.activeProjectPath ?? s.workspace?.path ?? null);
   const showToast = useAppStore((s) => s.showToast);
   const handleAgentEvent = useAppStore((s) => s.handleAgentEvent);
   const handlePlansChanged = useAppStore((s) => s.handlePlansChanged);
@@ -303,8 +305,18 @@ function AppShell() {
       }
       return;
     }
+    if (!store.activeSessionId) {
+      if (!activeProjectPath) {
+        showToast("Select a project before opening the work panel", { variant: "error" });
+        return;
+      }
+      void store.newSession({ projectPath: activeProjectPath })
+        .then(() => useAppStore.getState().openWorkPanel())
+        .catch(() => showToast("Unable to create a chat session", { variant: "error" }));
+      return;
+    }
     store.openWorkPanel();
-  }, []);
+  }, [activeProjectPath, showToast]);
 
   const finishWorkPanelExit = useCallback((generation: number) => {
     if (generation !== workPanelExitGeneration.current) return;
@@ -982,7 +994,6 @@ function AppShell() {
             tooltip={t("nav.toggleWorkPanel")}
             ariaLabel={t("nav.toggleWorkPanel")}
             aria-pressed={workPanelOpen || presentedWorkPanelOpen}
-            disabled={!activeSessionId && !presentedWorkPanelOpen && !workPanelExiting}
             onClick={togglePresentedWorkPanel}
           >
             <IconPanel size={15} />
