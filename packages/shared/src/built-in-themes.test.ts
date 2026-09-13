@@ -12,9 +12,12 @@ describe("built-in themes", () => {
       "light",
       "dark",
       "twilight-mountains",
+      "alpine-light",
     ]);
     expect(builtInThemeBase("twilight-mountains")).toBe("dark");
     expect(isScenicBuiltInTheme("twilight-mountains")).toBe(true);
     expect(isScenicBuiltInTheme("dark")).toBe(false);
+    expect(builtInThemeBase("alpine-light")).toBe("light");
+    expect(isScenicBuiltInTheme("alpine-light")).toBe(true);
   });
 });

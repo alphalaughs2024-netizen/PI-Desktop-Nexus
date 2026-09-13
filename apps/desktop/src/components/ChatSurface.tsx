@@ -85,7 +85,8 @@ export const ChatSurface = memo(function ChatSurface() {
   const isTemporarySession = Boolean(
     activeSessionId && activeSession && !activeSession.projectPath?.trim(),
   );
-  const isTwilightMountains = settings?.theme === "twilight-mountains";
+  const isScenicMascotFree =
+    settings?.theme === "twilight-mountains" || settings?.theme === "alpine-light";
   const emptyTitleParts = useMemo(() => {
     const marker = "__PROJECT__";
     const template = t("chat.emptyTitleInProject", { project: marker });
@@ -135,7 +136,7 @@ export const ChatSurface = memo(function ChatSurface() {
       <ActiveWorkflowCard sessionId={activeSessionId} />
       {showEmptyState ? (
         <div
-          className={`home-main-content${isTwilightMountains ? " is-twilight-mountains" : ""}`}
+          className={`home-main-content${isScenicMascotFree ? " is-twilight-mountains" : ""}`}
           data-testid="home-empty"
           data-home-session-kind={
             heroProject ? "project" : isTemporarySession ? "temporary" : "empty"
@@ -144,7 +145,7 @@ export const ChatSurface = memo(function ChatSurface() {
           <div className="home-scroll">
             <div className="home-stack-inner">
               <div className="empty-hero">
-                {!isTwilightMountains ? (
+                {!isScenicMascotFree ? (
                   <div
                     className="empty-hero-icon"
                     data-testid="home-icon"
@@ -154,7 +155,7 @@ export const ChatSurface = memo(function ChatSurface() {
                   </div>
                 ) : null}
                 <h1>
-                  {isTwilightMountains ? t("chat.emptyTitle") : heroProject ? (
+                  {isScenicMascotFree ? t("chat.emptyTitle") : heroProject ? (
                     <>
                       {emptyTitleParts.before}
                       <button

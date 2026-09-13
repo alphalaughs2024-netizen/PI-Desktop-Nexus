@@ -44,7 +44,11 @@ Settings is a **full-window page** that replaces the app sidebar + main chrome (
 - No additional settings destinations or placeholder navigation rows are shown
 - Main content pane on primary surface with large section title + elevated
   rounded cards of rows. Its content uses the full width available after the
-  fixed rail and pane gutters, and resizes continuously with the window.
+    fixed rail and pane gutters, and resizes continuously with the window.
+
+Scenic themes that declare backdrop-blur support expose one shared Low/Medium/
+High control in Appearance. It affects only the scenic backdrop image; glass
+materials retain each theme's fixed blur treatment.
 
 ## 2. Section contents
 
@@ -53,7 +57,8 @@ Settings is a **full-window page** that replaces the app sidebar + main chrome (
   - **Theme**: a searchable picker row (same anchored-menu pattern as
     Language). The trigger fills the settings control column and shows the
     current name. The menu pins System, Light, Dark, and the opt-in
-    **Twilight Mountains** scenic dark theme at the top, then lists plugin
+    **Twilight Mountains** scenic dark theme and **Alpine Light** scenic light
+    theme at the top, then lists plugin
     themes after a divider with a "Provided by …" hint. Twilight Mountains uses
     a bundled first-party backdrop with a layered blue-glass shell: navigation
     and the composer are luminous glass while menus, dialogs, permissions,

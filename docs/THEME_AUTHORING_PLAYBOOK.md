@@ -1365,6 +1365,17 @@ The main lesson is simple: **a beautiful theme is not an image behind an app.
 It is a carefully bounded system of product semantics, materials, accessibility,
 platform behavior, and regression protection.**
 
+### Reusable scenic backdrop blur contract
+
+Backdrop-image blur is a shared scenic capability, not a Twilight feature. The
+persisted `scenicBackdropBlur` value has `low`, `medium`, and `high` levels;
+legacy `twilightBackdropBlur` values are read for compatibility. Each scenic
+theme maps those levels to its own image blur scale while its glass-material
+blur remains fixed by the theme stylesheet. Alpine Light uses 6px, 12px, and
+20px; Twilight uses 2px, 6px, and 12px. The control is shown only for scenic
+themes that declare support, and reduced-transparency/no-filter fallbacks remove
+both kinds of blur in favor of readable opaque surfaces.
+
 When a future user asks for another Nexus theme, begin here, inspect the current
 implementation, and extend the architecture intentionally. Do not rebuild the
 same lessons through screenshots and accidental regressions.

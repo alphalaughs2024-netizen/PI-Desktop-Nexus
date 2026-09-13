@@ -16,6 +16,7 @@ import { useTranslation } from "react-i18next";
 import {
   KEYBOARD_SHORTCUTS,
   builtInThemeBase,
+  builtInThemeMetadata,
   isScenicBuiltInTheme,
   isActiveInProject,
   keybindingDisplayParts,
@@ -494,7 +495,7 @@ function AppShell() {
     // `system` instead of leaving the shell on a half-applied palette.
     const base: "system" | "light" | "dark" = pluginTheme
       ? pluginTheme.base
-      : preference === "system" || preference === "light" || preference === "dark" || preference === "twilight-mountains"
+      : preference === "system" || preference === "light" || preference === "dark" || preference === "twilight-mountains" || preference === "alpine-light"
         ? builtInThemeBase(preference)
         : "system";
 
@@ -513,12 +514,16 @@ function AppShell() {
       delete document.documentElement.dataset.pluginTheme;
     }
 
-    if (preference === "twilight-mountains" && isScenicBuiltInTheme(preference)) {
-      document.documentElement.dataset.scenicTheme = "twilight-mountains";
-      document.documentElement.dataset.twilightBackdropBlur =
-        settings?.twilightBackdropBlur ?? "low";
+    const builtinMetadata = !pluginTheme && (preference === "twilight-mountains" || preference === "alpine-light")
+      ? builtInThemeMetadata(preference)
+      : undefined;
+    if (builtinMetadata?.scenic && isScenicBuiltInTheme(preference)) {
+      document.documentElement.dataset.scenicTheme = preference;
+      document.documentElement.dataset.scenicBackdropBlur =
+        settings?.scenicBackdropBlur ?? settings?.twilightBackdropBlur ?? "low";
     } else {
       delete document.documentElement.dataset.scenicTheme;
+      delete document.documentElement.dataset.scenicBackdropBlur;
       delete document.documentElement.dataset.twilightBackdropBlur;
     }
     const mq = window.matchMedia("(prefers-color-scheme: light)");
@@ -528,7 +533,7 @@ function AppShell() {
       document.documentElement.dataset.theme = resolvedTheme;
       void api
         .setWindowBackgroundColor(
-          preference === "twilight-mountains" ? "twilight-mountains" : resolvedTheme,
+          builtinMetadata?.nativeFallback ?? resolvedTheme,
         )
         .catch(() => undefined);
     };
@@ -537,7 +542,7 @@ function AppShell() {
     const onChange = () => apply();
     mq.addEventListener("change", onChange);
     return () => mq.removeEventListener("change", onChange);
-  }, [settings?.theme, settings?.twilightBackdropBlur, pluginThemes]);
+  }, [settings?.theme, settings?.scenicBackdropBlur, settings?.twilightBackdropBlur, pluginThemes]);
 
   // Global UI font: the Settings picker stores a CSS `font-family` stack in
   // `AppSettings.fontFamily`; absent means the built-in token stack.

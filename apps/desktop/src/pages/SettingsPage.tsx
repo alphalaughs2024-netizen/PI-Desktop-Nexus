@@ -50,7 +50,7 @@ import { FontFamilyRow } from "../components/settings/FontFamilyRow";
 import { FontSizeRow } from "../components/settings/FontSizeRow";
 import { LanguageRow } from "../components/settings/LanguageRow";
 import { ThemeRow } from "../components/settings/ThemeRow";
-import { TwilightBackdropBlurRow } from "../components/settings/TwilightBackdropBlurRow";
+import { ScenicBackdropBlurRow } from "../components/settings/TwilightBackdropBlurRow";
 import { NetworkProxySection } from "../components/settings/NetworkProxySection";
 import { ReleaseNotesDialog } from "../components/ReleaseNotesDialog";
 import { ProjectsPage } from "./ProjectsPage";
@@ -1364,7 +1364,7 @@ export function SettingsPage() {
             <div className="settings-stack">
               <SettingsCard title={t("settings.appearance")}>
                 <ThemeRow settings={settings} saveSettings={saveSettings} />
-                <TwilightBackdropBlurRow settings={settings} saveSettings={saveSettings} />
+                <ScenicBackdropBlurRow settings={settings} saveSettings={saveSettings} />
                 <LanguageRow settings={settings} saveSettings={saveSettings} />
                 <FontFamilyRow settings={settings} saveSettings={saveSettings} />
                 <FontSizeRow settings={settings} saveSettings={saveSettings} />

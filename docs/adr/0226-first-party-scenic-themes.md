@@ -33,3 +33,6 @@ vibrancy behavior.
 - Future first-party scenic themes can reuse the registry, app-shell backdrop,
   and token architecture without component-by-component styling or authority
   expansion.
+- Scenic themes may declare support for the shared Low/Medium/High backdrop-image
+  blur preference. Each theme maps those levels to its own image blur scale;
+  glass-material blur remains theme-specific.
