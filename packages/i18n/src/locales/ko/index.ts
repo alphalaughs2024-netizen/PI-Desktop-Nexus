@@ -658,7 +658,7 @@ export const ko = {
     mcpGlobalPath: "전역 MCP 경로",
     mcpProjectPath: "프로젝트 MCP 경로",
     subagents: "서브에이전트",
-    subagentsDescription: "병렬 작업을 위한 개인 에이전트입니다.",
+    subagentsDescription: "병렬 작업을 위한 내장 및 개인 에이전트입니다.",
     subagentsGlobalPath: "전역 서브에이전트 경로",
     subagentsOnlyGlobal: "서브에이전트는 전역 전용입니다. 프로젝트 정의는 지원되지 않습니다.",
     capabilityPriority: "같은 이름의 경우 프로젝트 기능이 전역 기능보다 우선합니다.",

@@ -27,7 +27,7 @@ Settings is a **full-window page** that replaces the app sidebar + main chrome (
   5. **Models / 模型** — Lucide `Bot` (providers and default model)
   6. **Skills / 技能** — Lucide `BookOpen` (reusable agent instructions)
   7. **MCP** — Lucide `Server` (agent connections)
-  8. **Subagents / 子智能体** — Lucide `Bot` (personal parallel agents)
+  8. **Subagents / 子智能体** — Lucide `Bot` (built-in and personal parallel agents)
   9. **Import / 导入** — Lucide `Download` (bring sessions and model configuration in from other tools)
   10. **Projects / 项目** — Lucide `Archive` (durable project index)
   11. **Info / 信息** — Lucide `Info` (versions, logs, updates, developer)
@@ -44,14 +44,7 @@ Settings is a **full-window page** that replaces the app sidebar + main chrome (
 - No additional settings destinations or placeholder navigation rows are shown
 - Main content pane on primary surface with large section title + elevated
   rounded cards of rows. Its content uses the full width available after the
-    fixed rail and pane gutters, and resizes continuously with the window.
-
-Scenic themes have a dedicated **Scenic themes** destination directly below
-General in Preferences. Each scenic theme has its own integer backdrop-image
-blur value from `0px` through `20px`. Moving the slider previews the image
-locally; the explicit Apply action persists the displayed value. It affects
-only the scenic backdrop image; glass materials retain each theme's fixed blur
-treatment.
+  fixed rail and pane gutters, and resizes continuously with the window.
 
 ## 2. Section contents
 
@@ -59,24 +52,10 @@ treatment.
 - **Appearance** card:
   - **Theme**: a searchable picker row (same anchored-menu pattern as
     Language). The trigger fills the settings control column and shows the
-    current name. The menu offers System, Light, Dark, then plugin themes after
-    a divider with a "Provided by …" hint. First-party scenic themes are chosen
-    only from the Scenic themes destination.
-
-### Scenic themes
-- **Theme cards**: Twilight Mountains, Alpine Light, Obsidian Horizon, and
-  Emerald Afterglow appear in registry order and select immediately. Emerald
-  uses a bundled sunlit forest backdrop with deep-emerald glass; navigation and
-  composer surfaces are luminous glass while menus, dialogs, permissions, code,
-  tool output, and controls remain deliberately more opaque. Settings uses a
-  related readable hierarchy: independently tiled rows, neutral row-group
-  parents, inputs,
-    segmented controls, picker menus, badges, and buttons remain distinct and
-    legible, while inline paths and code remain plain text rather than dark
-    rectangular surfaces. Its empty
-    chat home uses the localized build greeting instead of the mascot. It
-    resolves as dark for controls and plugin panels. Search matches labels,
-    descriptions, ids, and plugin ids. Selection updates `settings.theme`.
+    current name. The menu pins System, Light, and Dark at the top, then lists
+    plugin themes after a divider with a "Provided by …" hint. Search matches
+    labels, descriptions, ids, and plugin ids. Selection updates
+    `settings.theme`.
   - **Language**: a searchable picker row (not a card grid). The trigger fills
     the settings control column and shows the current native name, or Match
     system. The menu pins Auto at the top with the detected language inline
@@ -130,12 +109,15 @@ treatment.
 - **Permissions** card: the global permission-mode control
   (ask / accept-edits / auto) that governs how autonomously the agent acts.
 - **Defaults** card: the host-backed default operating mode (Agent / Plan / Goal),
-  command shell selection, Link open destination, Enter-to-send control, and the
-  large text paste threshold. Link open destination uses the Work panel browser
-  by default and can route plain HTTP(S) link clicks to the system browser.
-  The threshold controls when a text-only paste becomes a temporary
-  session-scratch file; it defaults to 600 characters and accepts integer values
-  from 1 through 1,000,000.
+  command shell selection, Link open destination, context usage display
+  (remaining or used), Enter-to-send control, and the large text paste
+  threshold. Link open destination uses the Work panel browser by default
+  and can route plain HTTP(S) link clicks to the system browser. Context
+  usage display controls whether the composer toolbar context ring and its
+  popover lead with the remaining or the used capacity figure; the default
+  is remaining. The threshold controls when a text-only paste becomes a
+  temporary session-scratch file; it defaults to 600 characters and accepts
+  integer values from 1 through 1,000,000.
 - The **Command shell** row in Defaults uses the host-discovered catalog of native
   PowerShell 5.1, PowerShell 7, cmd, Git Bash, and Bash with IDs
   `windows-powershell`, `windows-pwsh`, `cmd`, `git-bash`, and
@@ -253,9 +235,11 @@ a usage tab.
     detached. Search results keep a dedicated no-match state instead of
     reusing the search placeholder.
   - each model option and configuration row shows a compact text/vision
-    capability state. Vision is derived only from the exact models.dev model
-    record; provider discovery or a user-entered ID cannot promote an unknown
-    model to image transport.
+    capability state. Settings compares the checkbox with the published model
+    record, while the Composer badge and runtime use the effective binding:
+    absent or `null` `supportsImages` follows the published value, and an
+    explicit `true` or `false` overrides it. An unknown model remains
+    conservative unless its configured binding explicitly enables image input.
   - model discovery is debounced after a valid endpoint, key, or API style
     change, including no-auth/local endpoints; named add-path discovery waits
     for an API key (editing reuses the stored secret) and does not mark
@@ -330,39 +314,29 @@ Skills, MCP servers, and user-owned Subagents remain three independent
 destinations under the Agent group. They share a capability-management visual
 system while preserving their different data ownership:
 
-The Skills destination also shows a separate **Nexus workflow skills** group.
-These app-shipped documents expose source/version metadata, a read-only inspect
-viewer, and an enablement switch. They cannot be edited, deleted, or replaced;
-their enablement is stored in the active Nexus data profile. User-owned global
-skills are shown beneath the profile's `agents/skills` directory, while project
-skills remain portable under `<project>/.agents/skills`.
-
 - Each capability page starts with a quiet, page-specific description and a
   short scope note on one shared line rather than a decorative hero or alert.
   Light and dark themes use the shared Settings surface, typography, borders,
   and semantic tokens; capability pages do not introduce a separate color
   system.
-- In Twilight Mountains, the same semantic Settings system resolves to
-  blue-glass materials without changing page geometry: group headers use a
-  compact navy strip, rows and empty states use readable raised glass, and
-  fields, filters, pickers, menu surfaces, badges, primary/secondary buttons,
-  disabled states, and focus rings stay visibly distinct. Mono path labels are
-  text, never opaque code blocks.
-- A row-only Settings group stays visually neutral in Twilight so its child
-  rows remain separate tiles rather than appearing inside a second outer card.
-  Portaled provider service pickers use the same opaque blue safety material as
-  their originating Settings controls.
-- In Alpine Light, Obsidian Horizon, and Emerald Afterglow, the same ownership contract applies:
-  scenic styling may tint child tiles, but row-only list parents remain
-  transparent so independent rows never acquire a second outer rectangle.
-  Obsidian uses charcoal/navy safety surfaces and stronger opacity for fields,
-  menus, permissions, code, and tool output.
 - Each page is one workbench, not a stack of per-level sections (D257): a
   single toolbar above a single elevated panel. The toolbar carries the level
   filter as a segmented control with live counts (All / Global / Project), one
   search field with a clear affordance, the selected-project picker, and the
   page's primary actions right-aligned. Subagents omits the filter and the
   picker because it is global-only, keeping only search and its actions.
+  The panel still uses two in-panel groups: **Built-in** (the five shipped
+  definitions `explorer`, `code-reviewer`, `test-runner`, `fixer`, and
+  `ui-designer`, rendered as read-only rows) and **Global**
+  (`~/.agents/subagents`, user-owned). An enabled user document of the same
+  name shadows that builtin in the Task catalog, so the Built-in row is omitted
+  while the user row remains. A disabled user document of the same name leaves
+  the builtin in the catalog (and on the Built-in list) because Task uses the
+  shipped definition again. Built-in rows carry a source badge and
+  **Copy as mine** (opens the create sheet pre-filled from that definition, with
+  the matching template chip selected); they have no enablement switch, reveal,
+  or delete because they are not files.
+  are not files.
 - The level filter narrows which groups the panel renders; it never hides the
   toolbar or moves the actions. New capabilities are created at the level the
   filter points at — Global under All or Global, Project under Project — and
@@ -445,9 +419,14 @@ skills remain portable under `<project>/.agents/skills`.
   is a picker over the configured providers' models; the picker groups entries
   by provider and every option comes from the configured catalog, so there is
   no hand-typed pin entry (issue #60). With no providers configured it shows
-  an empty state whose action opens Models. Builtins and project shadows stay
-  on the existing read-only rows; the picker is for new and user-owned
-  subagents only.
+  an empty state whose action opens Models. Builtins stay on the existing
+  read-only Built-in rows; the picker is for new and user-owned subagents
+  only.
+  The create/edit sheet stays compact at desktop sizes: form controls are
+  local filled wells with restrained padding, the prompt editor is the only
+  intentionally tall control, and Advanced remains a compact disclosure. Hover
+  and focus lift a control without adding a persistent in-flow divider; invalid
+  form state is announced from the shared error region.
 
 ### Instructions (`instructions` tab)
 - Edit the global instruction Markdown used by every PI-Desktop Agent session.
@@ -479,6 +458,14 @@ skills remain portable under `<project>/.agents/skills`.
   the destination still has no visibility toggle
 - Supports project search, add, activate, project-session expansion, pin,
   archive/restore, and close
+- A successful session import bound to an archived project restores that
+  project's renderer presentation state after the session refresh, making the
+  imported session visible in the default sidebar. Ordinary refreshes and
+  skipped imports preserve the archive choice.
+- Add project opens the Create project dialog. The user supplies a display name
+  and can select multiple local folders in one native picker; the first folder
+  is the Primary workspace and the remaining folders are retained as open
+  project tabs after creation.
 - The destination is one workbench, not a stack of bands (D267, revising D168):
   a quiet intro line above a single toolbar above a single elevated panel. It
   reuses the same composition, control height, and row rhythm as the agent
@@ -507,40 +494,18 @@ skills remain portable under `<project>/.agents/skills`.
   pinned tag remains as the localized text cue.
 - The row menu groups create/edit actions above pin, archive/restore, and the
   destructive Close action, and closes on Escape or any outside press
+- The row menu includes Project memory. Its editor is a compact viewport-level
+  dialog with a list of editable memory cards. Each card supports an optional
+  title, multiline content, and removal; the dialog also supports adding
+  entries, shows an empty state, and keeps Cancel/Save actions. Saved entries
+  are scoped to that project's path and are available in later chats for the
+  project.
 - Project search also matches session titles. Matching a session retains and
   expands its owning project; expanded sessions are ordered by latest activity,
   show a count and relative update time, and reveal additional rows in batches
   of eight rather than silently truncating the history
 - Activating a project or project session returns to chat; archive and close
   actions keep Project archive open even when the active workspace changes
-
-### Workspaces
-- Shows only Nexus profile-recorded managed Git worktrees; arbitrary Git
-  worktrees never appear here and remain ineligible for cleanup.
-- The empty state is a compact theme-compatible tile with a branch icon, a
-  concise explanation, and an **Open a project** action that uses the existing
-  project picker. Refresh remains available beside the quiet page description.
-- Repository and worktree paths are shortened for scanning and retain their
-  complete values in accessible hover titles. Each row shows a localized date,
-  task count, and a status badge for unavailable, dirty, active, or merged
-  worktrees.
-- Open, Reveal, and Clean up are guarded asynchronous actions. Only the
-  active row action is pending at a time; failures surface through the global
-  error toast. Cleanup keeps the existing host confirmation and refuses dirty,
-  unmerged, unknown, or non-recorded worktrees.
-- A valid recorded worktree whose repository has been moved or removed remains
-  visible as **Folder unavailable**, so the inventory explains stale records
-  instead of silently disappearing them. Such a row cannot be opened, revealed,
-  or cleaned up.
-
-### Scenic theme surfaces
-- Project archive is a row-list surface: each project row owns its visual tile,
-  while the surrounding list remains transparent across all four first-party
-  scenic themes.
-- Project titles, metadata, group labels, and update times use the active scenic
-  text tokens so they remain readable over the themed backdrop.
-- The transparent-parent rule remains active with reduced transparency enabled
-  or when backdrop filters are unavailable.
 
 ### Info
 - app/host/protocol versions + open logs

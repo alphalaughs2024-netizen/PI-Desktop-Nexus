@@ -85,6 +85,15 @@ test("the editor applies a preset by overwriting the draft body and tools", () =
   assert.match(editorSource, /description: preset\.description/);
 });
 
+test("the editor can prefill a create draft from a catalog definition", () => {
+  assert.match(editorSource, /export function draftFromDefinition\(/);
+  assert.match(editorSource, /findSubagentPreset\(definition\.name\)/);
+  assert.match(editorSource, /body: definition\.prompt/);
+  assert.match(editorSource, /maxTurns: definition\.maxTurns \?\? 0/);
+  assert.match(editorSource, /initialPresetId\?: string/);
+  assert.match(editorSource, /copiedPreset && initialPresetId \? initialPresetId/);
+});
+
 test("the model picker uses the configured provider catalog", () => {
   // The picker uses the shared provider catalog and preserves an existing
   // orphan pin instead of silently changing it to session inheritance.

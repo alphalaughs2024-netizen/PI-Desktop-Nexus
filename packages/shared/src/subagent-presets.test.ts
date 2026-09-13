@@ -10,6 +10,7 @@ import { DEFAULT_SUBAGENT_TOOLS } from "./subagent-definition.js";
 import {
   SUBAGENT_PRESETS,
   defaultSubagentPresetTools,
+  fallbackBuiltinDefinitions,
   findSubagentPreset,
 } from "./subagent-presets.js";
 
@@ -82,5 +83,17 @@ describe("findSubagentPreset", () => {
 describe("defaultSubagentPresetTools", () => {
   it("matches the shared default tool list", () => {
     expect(defaultSubagentPresetTools()).toEqual(DEFAULT_SUBAGENT_TOOLS);
+  });
+});
+
+describe("fallbackBuiltinDefinitions", () => {
+  it("emits one catalog entry per preset, keyed by Task handle", () => {
+    const definitions = fallbackBuiltinDefinitions();
+    expect(definitions.map((item) => item.name)).toEqual(SUBAGENT_PRESETS.map((preset) => preset.id));
+    for (const definition of definitions) {
+      expect(definition.source).toBe("builtin");
+      expect(definition.prompt.trim().length).toBeGreaterThan(0);
+      expect(definition.tools.length).toBeGreaterThan(0);
+    }
   });
 });

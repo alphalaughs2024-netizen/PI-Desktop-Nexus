@@ -650,7 +650,7 @@ export const zhCN = {
     mcpGlobalPath: "全局 MCP 路径",
     mcpProjectPath: "项目 MCP 路径",
     subagents: "子智能体",
-    subagentsDescription: "用于并行工作的个人智能体。",
+    subagentsDescription: "内置与自建的并行工作智能体。",
     subagentsGlobalPath: "全局子智能体路径",
     subagentsOnlyGlobal: "子智能体仅支持全局级，暂不支持项目级定义。",
     capabilityPriority: "同名能力遵循项目级优先于全局级。",

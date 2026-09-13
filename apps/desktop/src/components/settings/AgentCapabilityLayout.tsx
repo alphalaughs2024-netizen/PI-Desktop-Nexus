@@ -362,7 +362,8 @@ export function CapabilityGroupHeader({
   action,
 }: {
   label: string;
-  path: string;
+  /** Resolved `.agents` path; omit for shipped sources that have no file. */
+  path?: string;
   count: number;
   action?: ReactNode;
 }) {
@@ -370,9 +371,13 @@ export function CapabilityGroupHeader({
   return (
     <div className="agent-capability-group" role="presentation">
       <span className="agent-capability-group-label">{label}</span>
-      <code className="agent-capability-group-path" title={path}>
-        {path}
-      </code>
+      {path ? (
+        <code className="agent-capability-group-path" title={path}>
+          {path}
+        </code>
+      ) : (
+        <span className="agent-capability-group-path" aria-hidden="true" />
+      )}
       <span
         className="agent-capability-group-count"
         title={t("settings.capabilityCount", { count })}

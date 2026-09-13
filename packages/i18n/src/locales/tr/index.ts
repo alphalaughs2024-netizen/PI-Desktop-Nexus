@@ -658,7 +658,7 @@ export const tr = {
     mcpGlobalPath: "Genel MCP yolu",
     mcpProjectPath: "Proje MCP yolu",
     subagents: "Alt ajanlar",
-    subagentsDescription: "Paralel iş için kişisel ajanlar.",
+    subagentsDescription: "Paralel iş için yerleşik ve kişisel ajanlar.",
     subagentsGlobalPath: "Genel alt ajan yolu",
     subagentsOnlyGlobal: "Alt ajanlar yalnızca geneldir. Proje tanımları desteklenmez.",
     capabilityPriority: "Aynı adlı proje yetenekleri, genel yeteneklerden önce gelir.",

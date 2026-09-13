@@ -654,7 +654,7 @@ export const zhTW = {
     mcpGlobalPath: "全域性 MCP 路徑",
     mcpProjectPath: "專案 MCP 路徑",
     subagents: "子智慧體",
-    subagentsDescription: "用於並行工作的個人智慧體。",
+    subagentsDescription: "內建與自建的並行工作智慧體。",
     subagentsGlobalPath: "全域性子智慧體路徑",
     subagentsOnlyGlobal: "子智慧體僅支援全域性級，暫不支援專案級定義。",
     capabilityPriority: "同名能力遵循專案級優先於全域性級。",

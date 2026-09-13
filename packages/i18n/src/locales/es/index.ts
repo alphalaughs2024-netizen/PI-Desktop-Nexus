@@ -665,7 +665,7 @@ export const es = {
     "mcpGlobalPath": "Ruta MCP global",
     "mcpProjectPath": "Ruta MCP del proyecto",
     "subagents": "Subagentes",
-    "subagentsDescription": "Agentes personales para trabajo paralelo.",
+    "subagentsDescription": "Agentes integrados y personales para trabajo paralelo.",
     "subagentsGlobalPath": "Ruta de subagentes globales",
     "subagentsOnlyGlobal": "Los subagentes son solo globales. No se admiten definiciones de proyectos.",
     "capabilityPriority": "Las capacidades del proyecto tienen prioridad sobre las capacidades globales con el mismo nombre.",

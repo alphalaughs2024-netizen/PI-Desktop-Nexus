@@ -129,7 +129,7 @@ test("a dead host transport degrades quietly instead of warning", () => {
 test("the subagents page recovers when the host comes back", () => {
   // The page loads through the shared host-collection hook, which owns the
   // plugin-changed and host-status subscriptions.
-  assert.match(pageSource, /useHostCollection\(fetchSubagents/);
+  assert.match(pageSource, /useHostCollection\(fetchSubagentPageData/);
   assert.match(hostCollectionSource, /api\.onHostStatus\(\(status\) => \{\n\s+if \(status\.ok\) void reload\(\);/);
   // Both subscriptions have to be released, so the effect returns a composed
   // cleanup rather than a single unsubscribe.

@@ -672,7 +672,7 @@ export const de = {
     "mcpGlobalPath": "Globaler MCP-Pfad",
     "mcpProjectPath": "Projekt-MCP-Pfad",
     "subagents": "Subagenten",
-    "subagentsDescription": "Persönliche Agenten für paralleles Arbeiten.",
+    "subagentsDescription": "Eingebaute und persönliche Agenten für paralleles Arbeiten.",
     "subagentsGlobalPath": "Globaler Subagentenpfad",
     "subagentsOnlyGlobal": "Subagenten sind nur global. Projektdefinitionen werden nicht unterstützt.",
     "capabilityPriority": "Projektfunktionen haben Vorrang vor globalen Funktionen mit demselben Namen.",
