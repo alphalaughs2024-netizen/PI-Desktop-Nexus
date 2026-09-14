@@ -577,6 +577,7 @@ export const en = {
     scenicThemes: "Scenic themes",
     scenicThemesDesc: "Choose a scenic glass theme and tune its backdrop blur.",
     scenicEffects: "Effects",
+    scenicApply: "Apply",
     ai: "AI",
     shortcuts: "Shortcuts",
     instructions: "Instructions",

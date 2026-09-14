@@ -798,6 +798,7 @@ export const es = {
     "scenicBackdropBlur": "Desenfoque del fondo paisajístico",
     "twilightBackdropBlurDesc": "Ajusta el desenfoque solo del fondo del chat de Montañas del crepúsculo.",
     "scenicBackdropBlurDesc": "Ajusta el desenfoque solo del fondo del tema paisajístico activo.",
+    "scenicApply": "Aplicar",
     "twilightBackdropBlurLow": "Bajo",
     "twilightBackdropBlurMedium": "Medio",
     "twilightBackdropBlurHigh": "Alto",

@@ -805,6 +805,7 @@ export const de = {
     "scenicBackdropBlur": "Unschärfe des Landschaftshintergrunds",
     "twilightBackdropBlurDesc": "Unschärfe nur für den Chat-Hintergrund der Dämmerungsberge anpassen.",
     "scenicBackdropBlurDesc": "Unschärfe nur für den Hintergrund des aktiven Landschaftsthemas anpassen.",
+    "scenicApply": "Anwenden",
     "twilightBackdropBlurLow": "Niedrig",
     "twilightBackdropBlurMedium": "Mittel",
     "twilightBackdropBlurHigh": "Hoch",

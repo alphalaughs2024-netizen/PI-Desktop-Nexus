@@ -811,6 +811,7 @@ export const ko = {
     scenicBackdropBlur: "Scenic backdrop blur",
     twilightBackdropBlurDesc: "황혼의 산맥 채팅 배경에만 흐림 정도를 조정합니다.",
     scenicBackdropBlurDesc: "Adjust blur for the active scenic theme backdrop only.",
+    scenicApply: "적용",
     twilightBackdropBlurLow: "낮음",
     twilightBackdropBlurMedium: "중간",
     twilightBackdropBlurHigh: "높음",

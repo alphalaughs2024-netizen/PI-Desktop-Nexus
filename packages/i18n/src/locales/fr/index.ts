@@ -798,6 +798,7 @@ export const fr = {
     "scenicBackdropBlur": "Flou de l’arrière-plan panoramique",
     "twilightBackdropBlurDesc": "Ajustez le flou de l’arrière-plan du chat des Montagnes du crépuscule uniquement.",
     "scenicBackdropBlurDesc": "Ajustez le flou de l’arrière-plan du thème panoramique actif uniquement.",
+    "scenicApply": "Appliquer",
     "twilightBackdropBlurLow": "Faible",
     "twilightBackdropBlurMedium": "Moyen",
     "twilightBackdropBlurHigh": "Élevé",
