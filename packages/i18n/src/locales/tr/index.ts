@@ -811,6 +811,7 @@ export const tr = {
     scenicBackdropBlur: "Scenic backdrop blur",
     twilightBackdropBlurDesc: "Bulanıklığı yalnızca Alacakaranlık Dağları sohbet arka planı için ayarlayın.",
     scenicBackdropBlurDesc: "Adjust blur for the active scenic theme backdrop only.",
+    scenicApply: "Uygula",
     twilightBackdropBlurLow: "Düşük",
     twilightBackdropBlurMedium: "Orta",
     twilightBackdropBlurHigh: "Yüksek",

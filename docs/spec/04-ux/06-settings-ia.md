@@ -46,9 +46,12 @@ Settings is a **full-window page** that replaces the app sidebar + main chrome (
   rounded cards of rows. Its content uses the full width available after the
     fixed rail and pane gutters, and resizes continuously with the window.
 
-Scenic themes that declare backdrop-blur support expose one shared Low/Medium/
-High control in Appearance. It affects only the scenic backdrop image; glass
-materials retain each theme's fixed blur treatment.
+Scenic themes have a dedicated **Scenic themes** destination directly below
+General in Preferences. Each scenic theme has its own integer backdrop-image
+blur value from `0px` through `20px`. Moving the slider previews the image
+locally; the explicit Apply action persists the displayed value. It affects
+only the scenic backdrop image; glass materials retain each theme's fixed blur
+treatment.
 
 ## 2. Section contents
 

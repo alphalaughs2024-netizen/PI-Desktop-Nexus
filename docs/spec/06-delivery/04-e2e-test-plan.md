@@ -10361,11 +10361,11 @@ existing three-failed-`Edit` recovery scenario remains unchanged.
 - **Steps**: Select Obsidian Horizon in Appearance, then inspect Chat, General,
   AI, Shortcuts, Skills/workflows, Models/providers, vendor accounts, MCP /
   Extensions, Subagents/capabilities, Plugins, the work panel, Context Vault,
-  menus, dialogs, permissions, and tool output. Toggle Low/Medium/High scenic
-  blur, switch the sidebar and work panel, switch away to each base theme and a
+  menus, dialogs, permissions, and tool output. Preview the `0px` through
+  `20px` scenic blur slider, apply a value, switch the sidebar and work panel, switch away to each base theme and a
   plugin theme, and repeat at a narrow window width with reduced transparency.
 - **Expected**: Obsidian resolves to the dark base and shows its local moonlit
-  backdrop with image-only 2px/6px/12px blur. The backdrop never intercepts
+  backdrop with the applied image-only `0px` through `20px` blur. The backdrop never intercepts
   clicks; renderer-drawn Windows/Linux controls, titlebar reservations,
   work-panel actions, and Context Vault remain usable. The empty home hides the
   mascot and uses the localized build greeting only for Obsidian. Settings

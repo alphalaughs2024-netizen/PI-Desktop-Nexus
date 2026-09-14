@@ -803,6 +803,7 @@ export const zhCN = {
     scenicBackdropBlur: "Scenic backdrop blur",
     twilightBackdropBlurDesc: "仅调整暮光群山聊天背景的模糊程度。",
     scenicBackdropBlurDesc: "Adjust blur for the active scenic theme backdrop only.",
+    scenicApply: "应用",
     twilightBackdropBlurLow: "低",
     twilightBackdropBlurMedium: "中",
     twilightBackdropBlurHigh: "高",
