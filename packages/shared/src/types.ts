@@ -1169,6 +1169,12 @@ export function scenicBackdropBlurDefault(theme: ScenicThemeId): number {
   return theme === "alpine-light" ? 8 : 6;
 }
 
+export function resolveScenicBackdropBlur(settings: Pick<AppSettings, "scenicBackdropBlur" | "scenicBackdropBlurByTheme" | "twilightBackdropBlur">, theme: ScenicThemeId): number {
+  const stored = settings.scenicBackdropBlurByTheme?.[theme];
+  if (typeof stored === "number") return normalizeScenicBackdropBlur(stored);
+  return migrateScenicBackdropBlur(settings.scenicBackdropBlur ?? settings.twilightBackdropBlur, theme);
+}
+
 export function migrateScenicBackdropBlur(value: unknown, theme: ScenicThemeId): number {
   if (typeof value === "number" && Number.isInteger(value)) return normalizeScenicBackdropBlur(value);
   const defaults: Record<ScenicThemeId, Record<string, number>> = {
