@@ -24,6 +24,7 @@ import {
   resolveFontScale,
   resolveKeybinding,
   type AppMenuCommand,
+  type BuiltInThemeId,
   type KeyboardShortcutId,
   type ShortcutPlatform,
 } from "@pi-desktop/shared";
@@ -495,7 +496,7 @@ function AppShell() {
     // `system` instead of leaving the shell on a half-applied palette.
     const base: "system" | "light" | "dark" = pluginTheme
       ? pluginTheme.base
-      : preference === "system" || preference === "light" || preference === "dark" || preference === "twilight-mountains" || preference === "alpine-light" || preference === "obsidian-horizon"
+      : preference === "system" || preference === "light" || preference === "dark" || preference === "twilight-mountains" || preference === "alpine-light" || preference === "obsidian-horizon" || preference === "emerald-afterglow"
         ? builtInThemeBase(preference)
         : "system";
 
@@ -514,12 +515,15 @@ function AppShell() {
       delete document.documentElement.dataset.pluginTheme;
     }
 
-    const builtinMetadata = !pluginTheme && (preference === "twilight-mountains" || preference === "alpine-light" || preference === "obsidian-horizon")
-      ? builtInThemeMetadata(preference)
+    const scenicPreference = !pluginTheme && (preference === "twilight-mountains" || preference === "alpine-light" || preference === "obsidian-horizon" || preference === "emerald-afterglow")
+      ? preference as BuiltInThemeId
       : undefined;
-    if (builtinMetadata && isScenicBuiltInTheme(preference)) {
-      document.documentElement.dataset.scenicTheme = preference;
-      const blur = settings?.scenicBackdropBlurByTheme?.[preference as "twilight-mountains" | "alpine-light" | "obsidian-horizon"] ?? (typeof settings?.scenicBackdropBlur === "number" ? settings.scenicBackdropBlur : preference === "alpine-light" ? 8 : 6);
+    const builtinMetadata = scenicPreference
+      ? builtInThemeMetadata(scenicPreference)
+      : undefined;
+    if (builtinMetadata && scenicPreference && isScenicBuiltInTheme(scenicPreference)) {
+      document.documentElement.dataset.scenicTheme = scenicPreference;
+      const blur = settings?.scenicBackdropBlurByTheme?.[scenicPreference as "twilight-mountains" | "alpine-light" | "obsidian-horizon" | "emerald-afterglow"] ?? (typeof settings?.scenicBackdropBlur === "number" ? settings.scenicBackdropBlur : scenicPreference === "alpine-light" ? 8 : 6);
       document.documentElement.dataset.scenicBackdropBlur = String(blur);
       document.documentElement.style.setProperty("--scenic-backdrop-blur", `${blur}px`);
     } else {
@@ -535,7 +539,9 @@ function AppShell() {
       document.documentElement.dataset.theme = resolvedTheme;
       void api
         .setWindowBackgroundColor(
-          builtinMetadata?.nativeFallback ?? resolvedTheme,
+          builtinMetadata && "nativeFallback" in builtinMetadata
+            ? builtinMetadata.nativeFallback
+            : resolvedTheme,
         )
         .catch(() => undefined);
     };

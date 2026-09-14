@@ -5,7 +5,7 @@ import { IconCheck } from "../icons";
 import { useAppStore } from "../../stores/app-store";
 
 const SCENIC = BUILT_IN_THEMES.filter((theme) => "scenic" in theme && theme.scenic).map((theme) => theme.id) as ScenicThemeId[];
-const ASSETS: Record<ScenicThemeId, string> = { "twilight-mountains": "twilight-mountains.png", "alpine-light": "alpine-light.png", "obsidian-horizon": "obsidian-horizon.png" };
+const ASSETS: Record<ScenicThemeId, string> = { "twilight-mountains": "twilight-mountains.png", "alpine-light": "alpine-light.png", "obsidian-horizon": "obsidian-horizon.png", "emerald-afterglow": "emerald-afterglow.png" };
 const clamp = (value: number) => Math.max(0, Math.min(20, Math.round(value)));
 
 export function ScenicThemesSection({ settings, saveSettings }: { settings: AppSettings; saveSettings: (patch: Partial<AppSettings>) => Promise<void> }) {
@@ -27,7 +27,7 @@ export function ScenicThemesSection({ settings, saveSettings }: { settings: AppS
       <p className="settings-section-description">{t("settings.scenicThemesDesc")}</p>
       <div className="scenic-theme-cards" role="listbox" aria-label={t("settings.scenicThemes")}>
         {SCENIC.map((id) => {
-          const key = id === "twilight-mountains" ? "TwilightMountains" : id === "alpine-light" ? "AlpineLight" : "ObsidianHorizon";
+          const key = id === "twilight-mountains" ? "TwilightMountains" : id === "alpine-light" ? "AlpineLight" : id === "obsidian-horizon" ? "ObsidianHorizon" : "EmeraldAfterglow";
           return (
             <button key={id} type="button" role="option" aria-selected={settings.theme === id} className={`scenic-theme-card${settings.theme === id ? " is-selected" : ""}`} style={{ backgroundImage: `url("../../resources/themes/${ASSETS[id]}")` }} onClick={() => choose(id)}>
               <span className="scenic-theme-card-copy"><strong>{t(`settings.theme${key}`)}</strong><span>{t(`settings.theme${key}Desc`)}</span></span>

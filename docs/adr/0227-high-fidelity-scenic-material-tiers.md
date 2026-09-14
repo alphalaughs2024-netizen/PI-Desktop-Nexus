@@ -26,9 +26,9 @@ Menus, dialogs, permissions, code, tool output, and controls use the opaque
 safety tier; reduced-transparency and unsupported-filter paths use the same
 readable opaque material without blur.
 
-Twilight's empty home may use a theme-only presentation marker to suppress its
-mascot and show the localized build greeting. Other built-in and plugin themes
-retain the normal empty-home behavior.
+Each mascot-free first-party scenic empty home may use a theme-only presentation
+marker to suppress its mascot and show the localized build greeting. Base and
+plugin themes retain the normal empty-home behavior.
 
 ## Consequences
 

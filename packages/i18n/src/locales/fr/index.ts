@@ -794,6 +794,8 @@ export const fr = {
     "themeAlpineLightDesc": "Thème de verre clair et panoramique.",
     "themeObsidianHorizon": "Horizon d’obsidienne",
     "themeObsidianHorizonDesc": "Thème de verre sombre avec montagnes au clair de lune.",
+    "themeEmeraldAfterglow": "Emerald Afterglow",
+    "themeEmeraldAfterglowDesc": "Dark sunlit forest glass theme.",
     "twilightBackdropBlur": "Flou de l’arrière-plan crépusculaire",
     "scenicBackdropBlur": "Flou de l’arrière-plan panoramique",
     "twilightBackdropBlurDesc": "Ajustez le flou de l’arrière-plan du chat des Montagnes du crépuscule uniquement.",

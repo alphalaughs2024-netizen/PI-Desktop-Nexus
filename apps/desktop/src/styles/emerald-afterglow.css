@@ -1,0 +1,91 @@
+:root[data-theme="dark"][data-scenic-theme="emerald-afterglow"] {
+  --emerald-atmosphere: rgba(4, 18, 12, 0.18);
+  --emerald-shell-glass: rgba(7, 29, 19, 0.62);
+  --emerald-navigation-glass: rgba(4, 22, 14, 0.82);
+  --emerald-raised-glass: rgba(20, 53, 35, 0.7);
+  --emerald-safety-surface: rgba(6, 25, 16, 0.95);
+  --emerald-control-surface: rgba(21, 57, 38, 0.84);
+  --emerald-border: rgba(215, 239, 218, 0.25);
+  --emerald-focus: rgba(150, 223, 171, 0.78);
+  --ds-bg-primary: var(--emerald-atmosphere);
+  --ds-bg-sidebar: var(--emerald-navigation-glass);
+  --ds-bg-secondary: var(--emerald-shell-glass);
+  --ds-bg-tertiary: var(--emerald-raised-glass);
+  --ds-bg-inset: var(--emerald-safety-surface);
+  --ds-bg-elevated: var(--emerald-raised-glass);
+  --ds-bg-elevated-opaque: var(--emerald-safety-surface);
+  --ds-bg-composer: rgba(6, 28, 18, 0.86);
+  --ds-bg-hover: rgba(160, 228, 176, 0.14);
+  --ds-bg-active: rgba(160, 228, 176, 0.22);
+  --ds-text-primary: #f0fbf2;
+  --ds-text-secondary: rgba(226, 246, 230, 0.88);
+  --ds-text-muted: rgba(194, 223, 201, 0.76);
+  --ds-text-faint: rgba(169, 204, 179, 0.61);
+  --ds-border-default: var(--emerald-border);
+  --ds-border-subtle: rgba(202, 232, 210, 0.15);
+  --ds-border-strong: rgba(222, 246, 227, 0.38);
+  --ds-accent: #9fdda9;
+  --ds-accent-hover: #cdf4d2;
+  --ds-accent-soft: rgba(138, 215, 158, 0.25);
+  --ds-shadow-dialog: 0 22px 60px rgba(0, 12, 6, 0.54);
+  --ds-shadow-composer: 0 16px 42px rgba(0, 13, 7, 0.48);
+}
+
+:root[data-scenic-theme="emerald-afterglow"] { --emerald-backdrop-blur: var(--scenic-backdrop-blur, 6px); }
+:root[data-scenic-theme="emerald-afterglow"] .app-scenic-backdrop {
+  display: block;
+  position: absolute;
+  z-index: 0;
+  inset: -18px;
+  pointer-events: none;
+  background: url("../../resources/themes/emerald-afterglow.png") 50% 45% / cover no-repeat;
+  filter: saturate(0.9) contrast(1.03) blur(var(--emerald-backdrop-blur));
+  transform: scale(1.03);
+}
+:root[data-scenic-theme="emerald-afterglow"] .app-scenic-backdrop::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(2, 17, 9, 0.42), rgba(7, 42, 23, 0.09) 48%, rgba(2, 17, 9, 0.5));
+}
+
+:root[data-scenic-theme="emerald-afterglow"] :is(.app-shell, .chat-surface, .route-page) { background: var(--emerald-atmosphere); }
+:root[data-scenic-theme="emerald-afterglow"] :is(.sidebar, .sidebar-rail, .main-titlebar, .conversation-topbar, .window-controls, .settings-titlebar, .work-panel-header) {
+  background-color: var(--emerald-navigation-glass);
+  background-image: linear-gradient(180deg, rgba(177, 232, 186, 0.11), transparent 72%);
+  border-color: var(--emerald-border);
+  backdrop-filter: blur(16px) saturate(1.06);
+  -webkit-backdrop-filter: blur(16px) saturate(1.06);
+}
+:root[data-scenic-theme="emerald-afterglow"] .composer-shell {
+  background: var(--ds-bg-composer);
+  border-color: rgba(218, 245, 222, 0.4);
+  box-shadow: var(--ds-shadow-composer), inset 0 1px rgba(229, 250, 232, 0.15);
+  backdrop-filter: blur(18px) saturate(1.06);
+  -webkit-backdrop-filter: blur(18px) saturate(1.06);
+}
+:root[data-scenic-theme="emerald-afterglow"] .composer-shell:focus-within,
+:root[data-scenic-theme="emerald-afterglow"] .composer-shell.is-file-drop-active { border-color: var(--emerald-focus); box-shadow: 0 0 0 1px rgba(159, 221, 169, 0.28), var(--ds-shadow-composer), inset 0 1px rgba(229, 250, 232, 0.2); }
+:root[data-scenic-theme="emerald-afterglow"] :is(.dialog, .menu, .popover, .settings-theme-menu, .tool-row-content, pre, .permission-card, .toast, .context-vault-modal, .work-panel-context-menu) { background: var(--emerald-safety-surface); color: var(--ds-text-primary); border-color: var(--emerald-border); }
+:root[data-scenic-theme="emerald-afterglow"] :is(.thread-item.active, .thread-item:hover, .project-group.active > .sidebar-session-group-header) { background: rgba(151, 221, 165, 0.18); border-color: rgba(215, 244, 220, 0.28); }
+:root[data-scenic-theme="emerald-afterglow"] .empty-hero-icon { display: none; }
+:root[data-scenic-theme="emerald-afterglow"] .empty-hero h1 { color: var(--ds-text-primary); text-shadow: 0 1px 18px rgba(183, 242, 194, 0.32); }
+
+/* Settings: transparent section and list parents; each independent row owns its tile. */
+:root[data-scenic-theme="emerald-afterglow"] .settings-shell-full .settings-card-block { background: transparent; border-color: transparent; box-shadow: none; }
+:root[data-scenic-theme="emerald-afterglow"] .settings-shell-full :is(.settings-panel, .settings-row, .shortcut-row, .provider-row, .model-provider-row, .agent-capability-row, .agent-capability-empty) { background: var(--emerald-raised-glass); border: 1px solid var(--emerald-border); box-shadow: inset 0 1px rgba(228, 250, 232, 0.09), 0 8px 24px rgba(0, 17, 9, 0.18); }
+:root[data-scenic-theme="emerald-afterglow"] .settings-shell-full :is(.settings-panel:has(> .settings-row), .settings-panel.shortcut-map, .settings-panel.provider-list-panel:has(> .provider-row-list), .settings-panel.model-provider-panel:has(> .model-provider-list), .settings-panel.agent-capability-panel) { background: transparent; border: 0; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; overflow: visible; }
+:root[data-scenic-theme="emerald-afterglow"] .settings-shell-full :is(.settings-search, .settings-theme-trigger, .settings-language-trigger, .settings-segment, .field-input, .field-select, .field-textarea, .settings-toggle) { background: var(--emerald-control-surface); color: var(--ds-text-primary); border-color: var(--emerald-border); }
+:root[data-scenic-theme="emerald-afterglow"] .settings-shell-full :is(.settings-theme-menu, .settings-language-menu, .settings-font-menu, .settings-search-results) { background: var(--emerald-safety-surface); color: var(--ds-text-primary); border-color: var(--emerald-border); }
+:root[data-scenic-theme="emerald-afterglow"] .settings-shell-full :is(.btn-primary, .btn-secondary, .btn-ghost, .icon-btn, .settings-text-action, .settings-icon-button, .shortcut-disable, .shortcut-reset) { color: var(--ds-text-primary); border-color: var(--emerald-border); background: rgba(25, 65, 42, 0.76); }
+:root[data-scenic-theme="emerald-afterglow"] .settings-shell-full .btn-primary { background: linear-gradient(180deg, rgba(196, 242, 204, 0.92), rgba(91, 160, 108, 0.82)); color: #06170d; }
+:root[data-scenic-theme="emerald-afterglow"] .settings-shell-full :is(.btn-secondary, .btn-ghost, .icon-btn, .settings-text-action, .settings-icon-button):hover:not(:disabled) { background: rgba(110, 189, 128, 0.34); }
+
+@media (prefers-reduced-transparency: reduce) {
+  :root[data-scenic-theme="emerald-afterglow"] :is(.sidebar, .sidebar-rail, .main-titlebar, .conversation-topbar, .window-controls, .settings-titlebar, .work-panel-header, .composer-shell) { backdrop-filter: none; -webkit-backdrop-filter: none; background-color: rgba(5, 25, 15, 0.97); }
+  :root[data-scenic-theme="emerald-afterglow"] .settings-shell-full :is(.settings-panel, .settings-row, .shortcut-row, .provider-row, .model-provider-row, .agent-capability-row, .agent-capability-empty) { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(17, 49, 31, 0.97); }
+}
+@supports not (backdrop-filter: blur(1px)) {
+  :root[data-scenic-theme="emerald-afterglow"] :is(.sidebar, .sidebar-rail, .main-titlebar, .conversation-topbar, .window-controls, .settings-titlebar, .work-panel-header, .composer-shell) { backdrop-filter: none; -webkit-backdrop-filter: none; background-color: rgba(5, 25, 15, 0.97); }
+  :root[data-scenic-theme="emerald-afterglow"] .settings-shell-full :is(.settings-panel, .settings-row, .shortcut-row, .provider-row, .model-provider-row, .agent-capability-row, .agent-capability-empty) { background: rgba(17, 49, 31, 0.97); }
+}

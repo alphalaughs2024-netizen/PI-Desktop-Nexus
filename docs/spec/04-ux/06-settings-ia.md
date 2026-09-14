@@ -59,15 +59,18 @@ treatment.
 - **Appearance** card:
   - **Theme**: a searchable picker row (same anchored-menu pattern as
     Language). The trigger fills the settings control column and shows the
-    current name. The menu pins System, Light, Dark, and the opt-in
-    **Twilight Mountains** and **Obsidian Horizon** scenic dark themes and
-    **Alpine Light** scenic light theme at the top, then lists plugin
-    themes after a divider with a "Provided by …" hint. Twilight Mountains uses
-    a bundled first-party backdrop with a layered blue-glass shell: navigation
-    and the composer are luminous glass while menus, dialogs, permissions,
-    code, tool output, and controls remain deliberately more opaque. Settings
-    uses a related readable blue-glass hierarchy: independently tiled rows,
-    neutral row-group parents, inputs,
+    current name. The menu offers System, Light, Dark, then plugin themes after
+    a divider with a "Provided by …" hint. First-party scenic themes are chosen
+    only from the Scenic themes destination.
+
+### Scenic themes
+- **Theme cards**: Twilight Mountains, Alpine Light, Obsidian Horizon, and
+  Emerald Afterglow appear in registry order and select immediately. Emerald
+  uses a bundled sunlit forest backdrop with deep-emerald glass; navigation and
+  composer surfaces are luminous glass while menus, dialogs, permissions, code,
+  tool output, and controls remain deliberately more opaque. Settings uses a
+  related readable hierarchy: independently tiled rows, neutral row-group
+  parents, inputs,
     segmented controls, picker menus, badges, and buttons remain distinct and
     legible, while inline paths and code remain plain text rather than dark
     rectangular surfaces. Its empty
@@ -349,7 +352,7 @@ skills remain portable under `<project>/.agents/skills`.
   rows remain separate tiles rather than appearing inside a second outer card.
   Portaled provider service pickers use the same opaque blue safety material as
   their originating Settings controls.
-- In Alpine Light and Obsidian Horizon, the same ownership contract applies:
+- In Alpine Light, Obsidian Horizon, and Emerald Afterglow, the same ownership contract applies:
   scenic styling may tint child tiles, but row-only list parents remain
   transparent so independent rows never acquire a second outer rectangle.
   Obsidian uses charcoal/navy safety surfaces and stronger opacity for fields,

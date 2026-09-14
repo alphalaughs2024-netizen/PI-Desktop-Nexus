@@ -18,3 +18,9 @@ test("scenic blur contract is numeric, bounded, and per-theme capable", () => {
   assert.match(types, /Math\.max\(0, Math\.min\(20/);
   assert.match(blur, /type="range"/);
 });
+
+test("Scenic Themes renders Emerald Afterglow after Obsidian Horizon", async () => {
+  const section = await readFile(new URL("../src/components/settings/ScenicThemesSection.tsx", import.meta.url), "utf8");
+  assert.match(section, /"obsidian-horizon": "obsidian-horizon\.png", "emerald-afterglow": "emerald-afterglow\.png"/);
+  assert.match(section, /"EmeraldAfterglow"/);
+});

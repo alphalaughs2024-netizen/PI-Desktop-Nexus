@@ -705,9 +705,14 @@ High-frequency workstation feedback must remain compositor-friendly and bounded:
 - Obsidian Horizon is a dark scenic implementation of the same contract. It
   uses a local moonlit backdrop, charcoal/navy material tiers, and a
   near-opaque safety tier for dense or security-sensitive surfaces. The shared
-  scenic blur preference affects only the image (2px/6px/12px for
-  Low/Medium/High); no transcript row, repeated list, code, or tool-output
-  element receives backdrop blur. Settings row-only parents remain transparent
+  scenic blur preference affects only the image; no transcript row, repeated
+  list, code, or tool-output element receives backdrop blur. Settings row-only
+  parents remain transparent.
+
+- Emerald Afterglow is a dark scenic implementation using a bundled sunlit
+  forest backdrop beneath deep-emerald and pine glass. It preserves visible
+  foliage and light shafts while menus, controls, code, and tool output use a
+  near-opaque forest-charcoal safety tier.
   and child rows own their tiles. Windows/Linux native controls and titlebar
   geometry remain unchanged; no macOS chrome is emulated.
 - Twilight native Window controls retain a bright resting glyph against their

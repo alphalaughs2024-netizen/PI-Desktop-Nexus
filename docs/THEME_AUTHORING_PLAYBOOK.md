@@ -7,7 +7,8 @@ the application. It records the architecture, decisions, visual lessons,
 failures, fixes, validation method, and delivery rules learned while building
 and polishing **Twilight Mountains**, Nexus's first opt-in first-party scenic
 theme, **Alpine Light**, its second scenic reference implementation, and
-**Obsidian Horizon**, its third scenic reference implementation.
+**Obsidian Horizon**, its third scenic reference implementation, and **Emerald
+Afterglow**, its fourth.
 
 Read this document before designing or implementing a theme. It is deliberately
 more detailed than an ordinary feature note: a new theme affects every visible
@@ -230,6 +231,22 @@ macOS chrome or outer-window geometry. Reduced-transparency and unsupported
 filter paths remove blur and increase opacity while preserving the same
 transparent-parent/opaque-child ownership model.
 
+## Emerald Afterglow case study
+
+Emerald Afterglow is the sunlit-forest dark scenic reference implementation.
+Its source image is copied unchanged to
+`apps/desktop/resources/themes/emerald-afterglow.png`; it resolves to the
+existing `dark` base and uses a registered deep emerald-charcoal native fallback
+on Windows/Linux. The forest remains visible through a restrained
+emerald/charcoal vignette, while deep pine navigation glass, raised moss glass,
+and an opaque forest-charcoal safety tier preserve contrast.
+
+Its default backdrop-image blur is `6px` through the shared per-theme `0px`
+through `20px` control. That control never changes material blur. It retains
+the same pointer-inert backdrop, Settings tile ownership, mascot-free localized
+empty home, native-control reservations, work-panel hit areas, and fallback
+rules as the existing scenic themes.
+
 Twilight is the reference implementation, but future themes should reuse its
 architecture rather than copy its exact colors, assets, or selector list.
 
@@ -243,7 +260,7 @@ At startup and whenever Settings change, `App.tsx`:
 4. sets `document.documentElement.dataset.theme` to the resolved base;
 5. mounts plugin CSS only for a valid plugin theme and removes it otherwise;
 6. sets `data-scenic-theme` to the selected registered scenic id (Twilight
-   Mountains, Alpine Light, or Obsidian Horizon), and deletes the marker for
+   Mountains, Alpine Light, Obsidian Horizon, or Emerald Afterglow), and deletes the marker for
    every other selection;
 7. calls the Electron main-process API with either the normal resolved base or
    the scenic id so the native window background does not flash an unrelated

@@ -23,9 +23,8 @@ test("Obsidian Horizon is registered as an isolated dark scenic theme", async ()
 test("Obsidian stylesheet is scoped, pointer-inert, cinematic, and Settings-safe", () => {
   assert.match(styles, /:root\[data-theme="dark"\]\[data-scenic-theme="obsidian-horizon"\]/);
   assert.match(styles, /\.app-scenic-backdrop[\s\S]*?pointer-events:\s*none/);
-  assert.match(styles, /data-scenic-backdrop-blur="low"[\s\S]*?2px/);
-  assert.match(styles, /data-scenic-backdrop-blur="medium"[\s\S]*?6px/);
-  assert.match(styles, /data-scenic-backdrop-blur="high"[\s\S]*?12px/);
+  assert.match(styles, /--obsidian-backdrop-blur:\s*var\(--scenic-backdrop-blur,\s*6px\)/);
+  assert.doesNotMatch(styles, /data-scenic-backdrop-blur="(?:low|medium|high)"/);
   assert.match(styles, /settings-card-block[\s\S]*?background:\s*transparent/);
   assert.match(styles, /settings-panel:has\(> \.settings-row\)[\s\S]*?background:\s*transparent/);
   assert.match(styles, /settings-panel\.shortcut-map[\s\S]*?background:\s*transparent/);

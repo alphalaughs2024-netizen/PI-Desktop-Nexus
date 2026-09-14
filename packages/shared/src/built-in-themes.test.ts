@@ -14,6 +14,7 @@ describe("built-in themes", () => {
       "twilight-mountains",
       "alpine-light",
       "obsidian-horizon",
+      "emerald-afterglow",
     ]);
     expect(builtInThemeBase("twilight-mountains")).toBe("dark");
     expect(isScenicBuiltInTheme("twilight-mountains")).toBe(true);
@@ -22,5 +23,7 @@ describe("built-in themes", () => {
     expect(isScenicBuiltInTheme("alpine-light")).toBe(true);
     expect(builtInThemeBase("obsidian-horizon")).toBe("dark");
     expect(isScenicBuiltInTheme("obsidian-horizon")).toBe(true);
+    expect(builtInThemeBase("emerald-afterglow")).toBe("dark");
+    expect(isScenicBuiltInTheme("emerald-afterglow")).toBe(true);
   });
 });

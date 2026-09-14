@@ -86,7 +86,7 @@ export const ChatSurface = memo(function ChatSurface() {
     activeSessionId && activeSession && !activeSession.projectPath?.trim(),
   );
   const isScenicMascotFree =
-    settings?.theme === "twilight-mountains" || settings?.theme === "alpine-light" || settings?.theme === "obsidian-horizon";
+    settings?.theme === "twilight-mountains" || settings?.theme === "alpine-light" || settings?.theme === "obsidian-horizon" || settings?.theme === "emerald-afterglow";
   const emptyTitleParts = useMemo(() => {
     const marker = "__PROJECT__";
     const template = t("chat.emptyTitleInProject", { project: marker });

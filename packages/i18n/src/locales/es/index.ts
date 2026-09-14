@@ -794,6 +794,8 @@ export const es = {
     "themeAlpineLightDesc": "Tema claro de cristal con paisaje.",
     "themeObsidianHorizon": "Horizonte de obsidiana",
     "themeObsidianHorizonDesc": "Tema oscuro de cristal con montañas iluminadas por la luna.",
+    "themeEmeraldAfterglow": "Emerald Afterglow",
+    "themeEmeraldAfterglowDesc": "Dark sunlit forest glass theme.",
     "twilightBackdropBlur": "Desenfoque del fondo del crepúsculo",
     "scenicBackdropBlur": "Desenfoque del fondo paisajístico",
     "twilightBackdropBlurDesc": "Ajusta el desenfoque solo del fondo del chat de Montañas del crepúsculo.",

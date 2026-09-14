@@ -10375,6 +10375,24 @@ existing three-failed-`Edit` recovery scenario remains unchanged.
   Reduced-transparency removes blur and keeps the same readable ownership.
   Switching away removes all scenic state and restores the selected base/plugin
   presentation and mascot behavior.
+#### E2E-EMERALD: Emerald Afterglow scenic theme and Settings ownership
+
+- **Steps**: Select Emerald Afterglow from Scenic themes, inspect Chat,
+  Settings General/AI/Shortcuts/Skills/Models/providers/MCP/Subagents,
+  Plugins, Context Vault, the work panel, menus, dialogs, permissions, and
+  tool output. Set its slider to `0px`, then `6px`, switch to another scenic
+  theme and return. Repeat with the sidebar and work panel open, at a narrow
+  window width, and with reduced transparency enabled.
+- **Expected**: Emerald resolves to the dark base and retains its sunlit local
+  forest backdrop beneath readable deep-emerald glass. Its per-theme slider
+  value restores on return and changes only the pointer-inert backdrop image.
+  Native controls, titlebar hit areas, work-panel actions, and Context Vault
+  remain interactive. The empty home alone suppresses the mascot in favor of
+  the localized build greeting. Settings list parents stay transparent and
+  individual rows own their tiles; menus, dialogs, permissions, code, and tool
+  output remain opaque and legible. Reduced-transparency removes blur without
+  changing ownership or contrast.
+
 # Reliability regression scenarios
 
 Desktop smoke coverage should verify that the work-panel header does not cover

@@ -9,7 +9,7 @@ const themeRowSource = await readFile(
   "utf8",
 );
 const twilightBackdropBlurRowSource = await readFile(
-  new URL("../src/components/settings/TwilightBackdropBlurRow.tsx", import.meta.url),
+  new URL("../src/components/settings/ScenicThemesSection.tsx", import.meta.url),
   "utf8",
 );
 const settingsPageSource = await readFile(
@@ -27,15 +27,14 @@ const styles = await loadStyles();
 
 test("Twilight Mountains is a first-party dark built-in theme", () => {
   assert.match(sharedTypes, /"twilight-mountains"/);
-  assert.match(themeRowSource, /BUILT_IN_THEMES\.map\(\(theme\) => theme\.id\)/);
-  assert.match(themeRowSource, /settings\.themeTwilightMountains/);
-  assert.match(themeRowSource, /settings\.themeTwilightMountainsDesc/);
+  assert.match(themeRowSource, /BUILT_IN_THEMES\.filter\(\(theme\) => !\("scenic" in theme && theme\.scenic\)\)/);
+  assert.match(themeRowSource, /const builtInThemeIds/);
 });
 
 test("Twilight resolves to dark while its scenic state mounts and clears independently", () => {
   const effect = appSource.slice(appSource.indexOf("const preference = settings?.theme"));
   assert.match(effect, /preference === "twilight-mountains"/);
-  assert.match(effect, /document\.documentElement\.dataset\.scenicTheme = preference/);
+  assert.match(effect, /document\.documentElement\.dataset\.scenicTheme = scenicPreference/);
   assert.match(effect, /document\.documentElement\.dataset\.scenicBackdropBlur/);
   assert.match(effect, /delete document\.documentElement\.dataset\.scenicTheme/);
   assert.match(effect, /delete document\.documentElement\.dataset\.scenicBackdropBlur/);
@@ -43,32 +42,26 @@ test("Twilight resolves to dark while its scenic state mounts and clears indepen
   assert.match(effect, /\.setWindowBackgroundColor\(/);
   assert.match(
     appSource,
-    /\}, \[settings\?\.theme, settings\?\.scenicBackdropBlur, settings\?\.twilightBackdropBlur, pluginThemes\]\);/,
+    /settings\?\.scenicBackdropBlurByTheme/,
   );
   assert.match(appSource, /className="app-scenic-backdrop"/);
 });
 
 test("Twilight backdrop blur is persisted, validated, and available only with the scenic theme", () => {
-  assert.match(sharedTypes, /type ScenicBackdropBlur = "low" \| "medium" \| "high"/);
-  assert.match(sharedTypes, /DEFAULT_TWILIGHT_BACKDROP_BLUR/);
-  assert.match(sharedTypes, /normalizeTwilightBackdropBlur/);
-  assert.match(apiSource, /normalizeTwilightBackdropBlur/);
-  assert.match(apiSource, /twilightBackdropBlur is invalid/);
-  assert.match(twilightBackdropBlurRowSource, /value: "low"/);
-  assert.match(twilightBackdropBlurRowSource, /value: "medium"/);
-  assert.match(twilightBackdropBlurRowSource, /value: "high"/);
-  assert.match(twilightBackdropBlurRowSource, /supportsScenicBackdropBlur/);
-  assert.match(twilightBackdropBlurRowSource, /disabled=\{!enabled\}/);
-  assert.match(twilightBackdropBlurRowSource, /showToast\(/);
+  assert.match(sharedTypes, /type ScenicBackdropBlur = number/);
+  assert.match(sharedTypes, /scenicBackdropBlurByTheme/);
+  assert.match(sharedTypes, /Math\.max\(0, Math\.min\(20/);
+  assert.match(twilightBackdropBlurRowSource, /type="range"/);
+  assert.match(twilightBackdropBlurRowSource, /scenicBackdropBlurByTheme/);
+  assert.match(twilightBackdropBlurRowSource, /scenic-blur-apply/);
   assert.match(settingsPageSource, /<ThemeRow settings=\{settings\} saveSettings=\{saveSettings\} \/>/);
-  assert.match(settingsPageSource, /<ScenicBackdropBlurRow settings=\{settings\} saveSettings=\{saveSettings\} \/>/);
+  assert.match(settingsPageSource, /<ScenicThemesSection settings=\{settings\} saveSettings=\{saveSettings\} \/>/);
 });
 
 test("Twilight maps the persisted blur strengths only to its backdrop image", () => {
   assert.match(twilightStyles, /filter:\s*saturate\(1\.12\) blur\(var\(--twilight-backdrop-blur, 2px\)\)/);
-  assert.match(twilightStyles, /\[data-scenic-backdrop-blur="low"\][\s\S]*?--twilight-backdrop-blur:\s*2px/);
-  assert.match(twilightStyles, /\[data-scenic-backdrop-blur="medium"\][\s\S]*?--twilight-backdrop-blur:\s*6px/);
-  assert.match(twilightStyles, /\[data-scenic-backdrop-blur="high"\][\s\S]*?--twilight-backdrop-blur:\s*12px/);
+  assert.match(twilightStyles, /--twilight-backdrop-blur:\s*var\(--scenic-backdrop-blur,\s*6px\)/);
+  assert.doesNotMatch(twilightStyles, /data-scenic-backdrop-blur="(?:low|medium|high)"/);
 });
 
 test("Twilight packages its backdrop and uses a navy native fallback", async () => {
@@ -89,9 +82,8 @@ test("Alpine Light is a first-party scenic light theme with its own backdrop con
   assert.match(appSource, /preference === "alpine-light"/);
   assert.match(alpineStyles, /data-scenic-theme="alpine-light"/);
   assert.match(alpineStyles, /alpine-light\.png/);
-  assert.match(alpineStyles, /data-scenic-backdrop-blur="low"[\s\S]*?4px/);
-  assert.match(alpineStyles, /data-scenic-backdrop-blur="medium"[\s\S]*?8px/);
-  assert.match(alpineStyles, /data-scenic-backdrop-blur="high"[\s\S]*?16px/);
+  assert.match(alpineStyles, /--alpine-backdrop-blur:\s*var\(--scenic-backdrop-blur,\s*8px\)/);
+  assert.doesNotMatch(alpineStyles, /data-scenic-backdrop-blur="(?:low|medium|high)"/);
   assert.match(alpineStyles, /pointer-events:\s*none/);
   assert.match(alpineStyles, /prefers-reduced-transparency/);
   assert.ok((await stat(new URL("../resources/themes/alpine-light.png", import.meta.url))).size > 0);

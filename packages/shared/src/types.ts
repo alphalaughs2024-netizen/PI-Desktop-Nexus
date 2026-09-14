@@ -1149,10 +1149,11 @@ export type ThemePreference =
   | "twilight-mountains"
   | "alpine-light"
   | "obsidian-horizon"
+  | "emerald-afterglow"
   | `plugin:${string}`;
 
 export type ScenicBackdropBlur = number;
-export type ScenicThemeId = "twilight-mountains" | "alpine-light" | "obsidian-horizon";
+export type ScenicThemeId = "twilight-mountains" | "alpine-light" | "obsidian-horizon" | "emerald-afterglow";
 /** @deprecated Use ScenicBackdropBlur. Kept for persisted Twilight settings compatibility. */
 export type TwilightBackdropBlur = "low" | "medium" | "high";
 
@@ -1181,6 +1182,7 @@ export function migrateScenicBackdropBlur(value: unknown, theme: ScenicThemeId):
     "twilight-mountains": { low: 2, medium: 6, high: 12 },
     "alpine-light": { low: 4, medium: 8, high: 16 },
     "obsidian-horizon": { low: 2, medium: 6, high: 12 },
+    "emerald-afterglow": { low: 2, medium: 6, high: 12 },
   };
   if (typeof value === "string" && value in defaults[theme]) return defaults[theme][value] ?? DEFAULT_SCENIC_BACKDROP_BLUR;
   return theme === "alpine-light" ? 8 : DEFAULT_SCENIC_BACKDROP_BLUR;

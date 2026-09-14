@@ -14,7 +14,8 @@ First-party built-in themes are registered centrally. A scenic theme declares a
 compatible base palette and keeps `data-theme` set to that base while applying
 its visual identity through a separate `data-scenic-theme` attribute.
 
-Twilight Mountains is the first implementation. It packages one local backdrop
+Twilight Mountains is the first implementation; Alpine Light, Obsidian Horizon,
+and Emerald Afterglow reuse the same first-party contract. Each packages one local backdrop
 asset, mounts one pointer-inert app-shell backdrop, and overrides only semantic
 design tokens. Glass blur is applied only to shell/floating surfaces. Reduced
 transparency and unsupported-filter paths use opaque token surfaces instead.
@@ -29,10 +30,10 @@ vibrancy behavior.
 
 - Existing light, dark, system, and plugin themes retain their behavior.
 - Plugin panels, native controls, color-scheme logic, and dark assets continue
-  to resolve as dark for Twilight Mountains.
+  to resolve through each scenic theme's registered base palette.
 - Future first-party scenic themes can reuse the registry, app-shell backdrop,
   and token architecture without component-by-component styling or authority
   expansion.
-- Scenic themes may declare support for the shared Low/Medium/High backdrop-image
-  blur preference. Each theme maps those levels to its own image blur scale;
-  glass-material blur remains theme-specific.
+- Scenic themes may declare support for the shared per-theme `0px` through
+  `20px` backdrop-image blur preference; glass-material blur remains
+  theme-specific.
