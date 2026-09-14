@@ -772,28 +772,28 @@
   gap: 12px;
   margin: calc(var(--ds-toolbar-height) + 10px) 16px 0;
   padding: 9px 12px;
-  border: 1px solid var(--border-default, var(--border-subtle));
+  border: 1px solid var(--ds-border-default, var(--ds-border-subtle));
   border-radius: var(--radius-md);
-  background: var(--bg-secondary);
-  color: var(--text-primary);
+  background: var(--ds-bg-secondary);
+  color: var(--ds-text-primary);
   font-size: var(--text-sm);
 }
 .active-workflow-copy { display: grid; flex: 1 1 240px; gap: 2px; min-width: 0; }
-.active-workflow-copy span { color: var(--text-secondary); text-transform: capitalize; }
+.active-workflow-copy span { color: var(--ds-text-secondary); text-transform: capitalize; }
 .active-workflow-actions { display: flex; flex: 0 1 auto; flex-wrap: wrap; gap: 6px; margin-left: auto; }
 .active-workflow-actions button {
   min-height: 28px;
   padding: 3px 8px;
-  border: 1px solid var(--border-default, var(--border-subtle));
+  border: 1px solid var(--ds-border-default, var(--ds-border-subtle));
   border-radius: var(--radius-sm);
-  background: var(--bg-tertiary);
-  color: var(--accent);
+  background: var(--ds-bg-tertiary);
+  color: var(--ds-accent);
   cursor: pointer;
   font: inherit;
 }
-.active-workflow-actions button:hover:not(:disabled) { background: var(--bg-hover); }
+.active-workflow-actions button:hover:not(:disabled) { background: var(--ds-bg-hover); }
 .active-workflow-actions button:focus-visible {
-  outline: 2px solid var(--focus-ring, var(--accent));
+  outline: 2px solid var(--focus-ring, var(--ds-accent));
   outline-offset: 2px;
 }
 .active-workflow-actions button:disabled { cursor: wait; opacity: 0.65; }
@@ -803,12 +803,12 @@
   overflow: auto;
   margin: 0;
   padding: 10px;
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--ds-border-subtle);
   border-radius: var(--radius-sm);
-  background: var(--bg-inset);
+  background: var(--ds-bg-inset);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
-  color: var(--text-primary);
+  color: var(--ds-text-primary);
   font: var(--font-mono);
 }
 
