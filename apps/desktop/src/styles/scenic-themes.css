@@ -8,6 +8,7 @@
 .scenic-theme-card.is-selected { border-color: var(--ds-accent); box-shadow: 0 0 0 2px color-mix(in oklab, var(--ds-accent) 55%, transparent), var(--ds-shadow-dialog); }
 .scenic-blur-slider { display: flex; align-items: center; gap: 12px; min-width: 240px; }
 .scenic-blur-slider input { width: 180px; accent-color: var(--ds-accent); }
+.scenic-blur-slider input:active { will-change: filter; }
 .scenic-blur-slider output { min-width: 42px; color: var(--ds-text-secondary); }
 :root[data-theme="light"] .scenic-theme-card-copy { background: rgba(20, 43, 75, .52); }
 :root[data-scenic-theme] .scenic-themes-page .settings-card-block { background: var(--ds-bg-secondary); border: 1px solid var(--ds-border-default); border-radius: var(--radius-xl); padding: 18px; }
