@@ -67,6 +67,30 @@ paths retain the same readable hierarchy without blur.
 
 ---
 
+## Alpine Light
+
+Alpine Light is a first-party light scenic workspace with an icy mountain
+backdrop, pale glass surfaces, and the same readable composer and workflow
+treatment as the rest of Nexus.
+
+<p align="center">
+  <img src="docs/image/readme/nexus/alpine-light-home.png" alt="Nexus home workspace with the Alpine Light theme" width="96%" />
+</p>
+
+---
+
+## Obsidian Horizon
+
+Obsidian Horizon is a first-party dark scenic workspace with a moonlit mountain
+backdrop, charcoal glass materials, and high-contrast surfaces for long coding
+sessions.
+
+<p align="center">
+  <img src="docs/image/readme/nexus/obsidian-horizon-home.png" alt="Nexus home workspace with the Obsidian Horizon theme" width="96%" />
+</p>
+
+---
+
 ## Workflow-native skills
 
 Nexus bundles workflows for the tasks coding agents face most often. The active
