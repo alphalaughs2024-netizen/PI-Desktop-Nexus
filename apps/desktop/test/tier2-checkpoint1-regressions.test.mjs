@@ -48,10 +48,14 @@ test("active workflow inspection has a dedicated, localized, full-width surface"
   );
 });
 
-test("active workflow card has a visible border in every base theme", () => {
+test("active workflow card uses a soft borderless semantic tile in every theme", () => {
   assert.match(
     overlays,
-    /\.active-workflow-card\s*\{[\s\S]*?border:\s*1px solid var\(--ds-border-default, var\(--ds-border-subtle\)\)/,
+    /\.active-workflow-card\s*\{[\s\S]*?border:\s*1px solid transparent/,
   );
-  assert.match(overlays, /\.active-workflow-card\s*\{[\s\S]*?background:\s*var\(--ds-bg-secondary\)/);
+  assert.match(overlays, /\.active-workflow-card\s*\{[\s\S]*?background:\s*color-mix\(in oklab, var\(--ds-bg-secondary\) 82%, transparent\)/);
+  assert.match(
+    twilight,
+    /\[data-scenic-theme="twilight-mountains"\] \.active-workflow-card[\s\S]*?border-color:\s*transparent/,
+  );
 });

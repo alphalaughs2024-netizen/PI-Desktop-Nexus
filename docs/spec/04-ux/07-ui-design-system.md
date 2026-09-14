@@ -1195,6 +1195,6 @@ viewport, keeping them out from underneath composited native work-panel views.
 
 ## Active workflow surface
 
-The active workflow card uses shared `--ds-*` surface, text, border, action,
-and focus tokens. Theme styles may refine its material, but every base and
-scenic theme must retain a visible semantic border and readable actions.
+The active workflow card uses a borderless, translucent shared `--ds-*` surface
+with readable text, actions, and focus treatment. Theme styles may refine its
+material, but no base or scenic theme may add a high-contrast outer outline.

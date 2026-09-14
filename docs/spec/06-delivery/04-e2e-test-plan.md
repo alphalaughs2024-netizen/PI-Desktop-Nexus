@@ -10385,7 +10385,7 @@ restricted constructs and confirm they are accepted while real violations are
 still rejected. Sandbox preload output must be self-contained and free of local
 runtime `require()` chunks.
 
-When an active workflow is shown, verify its card boundary, stage text, and
-actions are visible in System, Light, Dark, and every scenic theme. Twilight
-may add its luminous-glass treatment, but no other theme may degrade the card
-to unbounded floating text.
+When an active workflow is shown, verify its translucent borderless tile, stage
+text, and actions are visible in System, Light, Dark, and every scenic theme.
+No theme may add a high-contrast outer outline or degrade the card to unbounded
+floating text.
