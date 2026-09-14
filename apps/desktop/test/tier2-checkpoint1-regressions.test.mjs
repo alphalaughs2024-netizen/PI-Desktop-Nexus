@@ -47,3 +47,11 @@ test("active workflow inspection has a dedicated, localized, full-width surface"
     /\[data-scenic-theme="twilight-mountains"\] \.active-workflow-body[\s\S]*?var\(--twilight-safety-surface\)/,
   );
 });
+
+test("active workflow card has a visible border in every base theme", () => {
+  assert.match(
+    overlays,
+    /\.active-workflow-card\s*\{[\s\S]*?border:\s*1px solid var\(--ds-border-default, var\(--ds-border-subtle\)\)/,
+  );
+  assert.match(overlays, /\.active-workflow-card\s*\{[\s\S]*?background:\s*var\(--ds-bg-secondary\)/);
+});

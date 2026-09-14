@@ -1192,3 +1192,9 @@ Electron hit-tests the drag border box. Native plugin views remain mounted
 during divider resizing so their resize observers can track the live bounds.
 Context usage popovers are clamped to the conversation pane rather than the
 viewport, keeping them out from underneath composited native work-panel views.
+
+## Active workflow surface
+
+The active workflow card uses shared `--ds-*` surface, text, border, action,
+and focus tokens. Theme styles may refine its material, but every base and
+scenic theme must retain a visible semantic border and readable actions.
