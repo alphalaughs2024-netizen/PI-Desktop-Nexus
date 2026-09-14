@@ -13,6 +13,7 @@
 .scenic-blur-apply { min-width: 64px; padding: 6px 12px; border: 1px solid var(--ds-border-default); border-radius: var(--radius-md); background: var(--ds-bg-tertiary); color: var(--ds-text-primary); font: inherit; cursor: pointer; }
 .scenic-blur-apply:hover:not(:disabled), .scenic-blur-apply:focus-visible { border-color: var(--ds-accent); background: color-mix(in oklab, var(--ds-accent) 16%, var(--ds-bg-tertiary)); }
 .scenic-blur-apply:disabled { opacity: .5; cursor: default; }
+:root[data-scenic-blur-dragging] .app-scenic-backdrop { will-change: filter; }
 :root[data-theme="light"] .scenic-theme-card-copy { background: rgba(20, 43, 75, .52); }
 :root[data-scenic-theme] .scenic-themes-page .settings-card-block { background: var(--ds-bg-secondary); border: 1px solid var(--ds-border-default); border-radius: var(--radius-xl); padding: 18px; }
 @media (max-width: 720px) { .scenic-blur-slider { min-width: 0; width: 100%; flex-wrap: wrap; } .scenic-blur-slider label { flex: 1 1 160px; } .scenic-blur-slider input { width: 100%; } }
