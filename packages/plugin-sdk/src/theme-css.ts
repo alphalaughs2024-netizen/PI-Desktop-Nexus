@@ -13,12 +13,55 @@ export function decodeCssEscapes(css: string): string {
     if (typeof hex === "string") {
       const codePoint = Number.parseInt(hex, 16);
       if (codePoint === 0 || codePoint > 0x10ffff || (codePoint >= 0xd800 && codePoint <= 0xdfff)) {
-        return "�";
+      return "\ufffd";
       }
       return String.fromCodePoint(codePoint);
     }
     return typeof char === "string" ? char : match;
   });
+}
+
+type CssScanState = "code" | "comment" | "string" | "url";
+
+export function maskNonCodeCss(css: string): string {
+  const out: string[] = [];
+  let state: CssScanState = "code";
+  let quote = "";
+  let index = 0;
+  while (index < css.length) {
+    const ch = css.charAt(index);
+    if (state === "comment") {
+      if (ch === "*" && css.charAt(index + 1) === "/") {
+        out.push("  "); index += 2; state = "code"; continue;
+      }
+      out.push(" "); index += 1; continue;
+    }
+    if (state === "string") {
+      if (ch === "\\" && index + 1 < css.length) { out.push("  "); index += 2; continue; }
+      out.push(" "); index += 1;
+      if (ch === quote) { quote = ""; state = "code"; }
+      continue;
+    }
+    if (state === "url") {
+      if (quote) {
+        out.push(ch);
+        if (ch === "\\" && index + 1 < css.length) { out.push(css.charAt(index + 1)); index += 2; continue; }
+        if (ch === quote) quote = "";
+        index += 1; continue;
+      }
+      out.push(ch); index += 1;
+      if (ch === '"' || ch === "'") quote = ch;
+      else if (ch === ")") state = "code";
+      continue;
+    }
+    if (ch === "/" && css.charAt(index + 1) === "*") { out.push("  "); index += 2; state = "comment"; continue; }
+    if (ch === '"' || ch === "'") { quote = ch; out.push(" "); index += 1; state = "string"; continue; }
+    if ((ch === "u" || ch === "U") && css.slice(index, index + 4).toLowerCase() === "url(") {
+      out.push(css.slice(index, index + 4)); index += 4; state = "url"; continue;
+    }
+    out.push(ch); index += 1;
+  }
+  return out.join("");
 }
 
 function findThemeCssViolation(css: string): string | undefined {
@@ -66,8 +109,8 @@ export function sanitizeThemeCss(raw: string, maxBytes = THEME_CSS_MAX_BYTES): T
   }
   const decoded = decodeCssEscapes(css);
   const violation =
-    findThemeCssViolation(css) ??
-    (decoded !== css ? findThemeCssViolation(decoded) : undefined);
+    findThemeCssViolation(maskNonCodeCss(css)) ??
+    (decoded !== css ? findThemeCssViolation(maskNonCodeCss(decoded)) : undefined);
   if (violation) return { ok: false, error: violation };
   return { ok: true, css: css.trim() };
 }

@@ -1184,3 +1184,11 @@ Full component contract and usage rules: [08-component-spec.md §17](08-componen
   window instead of retaining D070's fixed 720px cap — the earlier in-shell
   200px rail and broad grouped directory are superseded
 - Light destination cards use white elevated plates (not flat gray fills)
+# Native control and context overlay geometry
+
+On Windows/Linux the work-panel header's native drag box terminates before the
+viewport-fixed window-control band; padding alone is insufficient because
+Electron hit-tests the drag border box. Native plugin views remain mounted
+during divider resizing so their resize observers can track the live bounds.
+Context usage popovers are clamped to the conversation pane rather than the
+viewport, keeping them out from underneath composited native work-panel views.

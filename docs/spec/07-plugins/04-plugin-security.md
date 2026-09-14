@@ -408,3 +408,11 @@ Not enforced yet:
   user unchecking them at install
 - A `userSelected` root does not survive a restart, so a plugin has to ask again
   each session
+# Theme CSS scanning
+
+Plugin theme CSS is scanned after masking comments and ordinary string
+literals; only executable CSS text is inspected for imports, markup, script
+expressions, and URL targets. `url(...)` arguments remain intact so non-`data:`
+references are still rejected. This prevents documentation comments or content
+strings from becoming false positives without weakening the remote-load or
+stylesheet-chaining boundary.

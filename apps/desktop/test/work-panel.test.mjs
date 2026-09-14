@@ -66,7 +66,7 @@ test("a viewport-fixed toggle is the sole pointer collapse control", () => {
   assert.doesNotMatch(panelSource, /work-panel-toolbar-collapse/);
   assert.match(
     globalStyles,
-    /\.app-work-panel-toggle \{[^}]*position:\s*fixed;[^}]*z-index:\s*30;/s,
+    /\.app-work-panel-toggle \{[^}]*position:\s*fixed;[^}]*z-index:\s*1000;/s,
   );
   assert.match(
     globalStyles,
@@ -74,7 +74,7 @@ test("a viewport-fixed toggle is the sole pointer collapse control", () => {
   );
   assert.match(
     globalStyles,
-    /:root\[data-platform="win32"\] \.work-panel-header,[\s\S]*:root\[data-platform="linux"\] \.work-panel-header\s*\{[^}]*padding-right:\s*calc\(var\(--ds-window-controls-width\) \+ 46px\);/,
+    /:root\[data-platform="win32"\] \.work-panel-header,[\s\S]*:root\[data-platform="linux"\] \.work-panel-header\s*\{[^}]*margin-right:\s*var\(--ds-window-controls-width\);/,
   );
   assert.doesNotMatch(
     globalStyles,
@@ -122,7 +122,7 @@ test("work panel uses the fixed-window internal dock", () => {
   // guest clamped to the plugin view is gone before the dock CSS animation.
   assert.match(
     panelSource,
-    /blocked=\{\s*exiting \|\| panelBlocked \|\| contextOpen \|\| isResizing/,
+    /blocked=\{\s*exiting \|\| panelBlocked \|\| contextOpen/,
   );
   assert.match(panelSource, /nativeSurfaceReadyForExit/);
   assert.match(panelSource, /is-exit-pending/);
@@ -209,7 +209,7 @@ test("work panel header exposes one unified menu with no duplicated entries", ()
   // them all.
   assert.match(
     panelSource,
-    /blocked=\{[\s\S]*exiting \|\| panelBlocked \|\| contextOpen \|\| isResizing[\s\S]*\}/,
+    /blocked=\{[\s\S]*exiting \|\| panelBlocked \|\| contextOpen[\s\S]*\}/,
   );
   assert.doesNotMatch(panelSource, /onContextMenu|createPortal|work-panel-tools-menu/);
   assert.match(
