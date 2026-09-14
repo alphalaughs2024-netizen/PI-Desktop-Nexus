@@ -18,6 +18,7 @@ import {
   calculateTokenRate,
   contextOccupancyTokens,
 } from "../lib/context-usage";
+import { placeContextInspector, type ContextInspectorPlacement } from "../lib/context-inspector-position";
 
 function formatTokenCount(value: number): string {
   if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(value >= 10_000_000 ? 0 : 1)}M`;
@@ -28,13 +29,6 @@ function formatTokenCount(value: number): string {
 
 const CONTEXT_RING_RADIUS = 9;
 const CONTEXT_RING_CIRCUMFERENCE = 2 * Math.PI * CONTEXT_RING_RADIUS;
-const CONTEXT_POPOVER_GAP = 8;
-const CONTEXT_VIEWPORT_MARGIN = 16;
-
-type ContextPopoverPosition = {
-  top: number;
-  left: number;
-};
 
 export function ContextUsageInspector({
   usage,
@@ -66,7 +60,7 @@ export function ContextUsageInspector({
   const popoverRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
   const [popoverPosition, setPopoverPosition] =
-    useState<ContextPopoverPosition | null>(null);
+    useState<ContextInspectorPlacement | null>(null);
   const context = calculateContextUsage(usage, contextWindow);
   // Occupancy, turn total, and provider cache/input/output are the last
   // model request. Summing every tool-loop call inflates cache read past
@@ -121,31 +115,19 @@ export function ContextUsageInspector({
       return;
     }
     const popoverRect = popover.getBoundingClientRect();
-    const maxLeft = Math.max(
-      CONTEXT_VIEWPORT_MARGIN,
-      window.innerWidth - popoverRect.width - CONTEXT_VIEWPORT_MARGIN,
-    );
-    const left = Math.min(
-      Math.max(CONTEXT_VIEWPORT_MARGIN, triggerRect.left),
-      maxLeft,
-    );
-    const above = triggerRect.top - popoverRect.height - CONTEXT_POPOVER_GAP;
-    const below = triggerRect.bottom + CONTEXT_POPOVER_GAP;
-    const maxTop = Math.max(
-      CONTEXT_VIEWPORT_MARGIN,
-      window.innerHeight - popoverRect.height - CONTEXT_VIEWPORT_MARGIN,
-    );
-    const top =
-      above >= CONTEXT_VIEWPORT_MARGIN && above <= maxTop
-        ? above
-        : below >= CONTEXT_VIEWPORT_MARGIN && below <= maxTop
-          ? below
-          : Math.min(Math.max(CONTEXT_VIEWPORT_MARGIN, below), maxTop);
+    const paneRect = trigger.closest(".main-pane")?.getBoundingClientRect();
+    const placement = placeContextInspector({
+      trigger: { left: triggerRect.left, top: triggerRect.top, bottom: triggerRect.bottom },
+      popover: { width: popoverRect.width, height: popoverRect.height },
+      pane: paneRect ? { left: paneRect.left, right: paneRect.right } : null,
+      viewport: { width: window.innerWidth, height: window.innerHeight },
+    });
+    if (!placement) { setOpen(false); setPopoverPosition(null); return; }
 
     setPopoverPosition((previous) =>
-      previous?.top === top && previous.left === left
+      previous?.top === placement.top && previous.left === placement.left && previous.maxWidth === placement.maxWidth
         ? previous
-        : { top, left },
+        : placement,
     );
   }, []);
 
@@ -237,6 +219,7 @@ export function ContextUsageInspector({
           ? {
               top: `${popoverPosition.top}px`,
               left: `${popoverPosition.left}px`,
+              maxWidth: `${popoverPosition.maxWidth}px`,
             }
           : undefined
       }
