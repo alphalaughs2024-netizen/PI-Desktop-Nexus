@@ -66,7 +66,7 @@ test("a viewport-fixed toggle is the sole pointer collapse control", () => {
   assert.doesNotMatch(panelSource, /work-panel-toolbar-collapse/);
   assert.match(
     globalStyles,
-    /\.app-work-panel-toggle \{[^}]*position:\s*fixed;[^}]*z-index:\s*30;/s,
+    /\.app-work-panel-toggle \{[^}]*position:\s*fixed;[^}]*z-index:\s*1000;/s,
   );
   assert.match(
     globalStyles,
