@@ -98,28 +98,30 @@ must preserve.
 | Theme type persisted in settings | `packages/shared/src/types.ts` | `ThemePreference` must include every built-in id. |
 | Built-in registry | `packages/shared/src/built-in-themes.ts` | Holds ordered built-ins, their base palette, and the scenic flag. |
 | Registry contract test | `packages/shared/src/built-in-themes.test.ts` | Locks picker order/base/scenic semantics. |
-| Settings picker | `apps/desktop/src/components/settings/ThemeRow.tsx` | Uses the registry, maps ids to translation keys, and keeps plugin themes in the same searchable picker. |
+| Base-theme picker | `apps/desktop/src/components/settings/ThemeRow.tsx` | Lists System, Light, Dark, and plugin themes; it deliberately excludes scenic themes. |
+| Scenic theme destination | `apps/desktop/src/components/settings/ScenicThemesSection.tsx` | Derives first-party scenic cards from the registry, owns their local preview assets and the per-theme blur control. |
 | Runtime resolution + marker | `apps/desktop/src/App.tsx` | Owns `data-theme`, `data-scenic-theme`, plugin CSS withdrawal, and native-window color updates. |
 | One shared scenic backdrop | `apps/desktop/src/App.tsx` and `apps/desktop/src/styles/base.css` | The backdrop is mounted once directly below application content. |
 | CSS import order | `apps/desktop/src/styles/globals.css` | Scenic CSS is intentionally after ordinary component CSS and before responsive overrides. |
 | Twilight reference implementation | `apps/desktop/src/styles/twilight-mountains.css` | Dark scenic material tiers, scoping, fallbacks, and interaction-safe Settings treatment. |
 | Alpine reference implementation | `apps/desktop/src/styles/alpine-light.css` | Light scenic materials, white-glass Settings surfaces, row-list parent neutralization, and fallbacks. |
 | Obsidian reference implementation | `apps/desktop/src/styles/obsidian-horizon.css` | Dark charcoal scenic materials, moonlit backdrop composition, and Settings ownership-safe fallbacks. |
+| Emerald reference implementation | `apps/desktop/src/styles/emerald-afterglow.css` | Sunlit forest composition, deep emerald dark glass, forest-charcoal safety surfaces, and protected Settings ownership. |
 | Empty-home theme variation | `apps/desktop/src/components/ChatSurface.tsx` | Shows how to make a presentation-only theme variation without changing normal-theme behavior. |
 | Renderer-to-main native API | `apps/desktop/src/lib/api.ts` | Defines the named native background values allowed from renderer code. |
 | Native window behavior | `apps/desktop/electron/main/index.ts` | Resolves Scenic-to-dark plugin/native appearance and applies Windows/Linux fallback colors. |
 | Packaged scenic assets | `apps/desktop/package.json` and `apps/desktop/resources/themes/` | Keeps first-party images local and available in production packages. |
-| Theme contract tests | `apps/desktop/test/twilight-mountains-theme.test.mjs`, `apps/desktop/test/alpine-settings-theme.test.mjs` | Contract-focused protection for scenic activation, materials, Settings ownership, and known regressions. |
+| Theme contract tests | `apps/desktop/test/*-theme.test.mjs` | Contract-focused protection for scenic activation, materials, Settings ownership, asset packaging, and known regressions. |
 | UX and component contracts | `docs/spec/04-ux/06-settings-ia.md`, `docs/spec/04-ux/07-ui-design-system.md`, `docs/spec/04-ux/08-component-spec.md` | Defines behavior and visual constraints that must remain true. |
-| User-visible manual scenario | `docs/spec/06-delivery/04-e2e-test-plan.md` | Contains Twilight and Settings-wide manual test coverage. |
+| User-visible manual scenario | `docs/spec/06-delivery/04-e2e-test-plan.md` | Contains scenic-theme and Settings-wide manual test coverage. |
 
 Useful commands to find all current theme touchpoints are:
 
 ```powershell
-rg -n 'twilight-mountains|data-scenic-theme|ThemePreference|BUILT_IN_THEMES' `
+rg -n 'twilight-mountains|alpine-light|obsidian-horizon|emerald-afterglow|data-scenic-theme|ThemePreference|BUILT_IN_THEMES' `
   apps/desktop packages/shared docs
 
-rg -n 'setWindowBackgroundColor|themeTwilightMountains' `
+rg -n 'setWindowBackgroundColor|nativeFallback|scenicBackdropBlurByTheme' `
   apps/desktop packages shared
 ```
 
@@ -158,13 +160,16 @@ export const BUILT_IN_THEMES = [
   { id: "twilight-mountains", base: "dark", scenic: true },
   { id: "alpine-light", base: "light", scenic: true },
   { id: "obsidian-horizon", base: "dark", scenic: true },
+  { id: "emerald-afterglow", base: "dark", scenic: true },
 ] as const;
 ```
 
-The picker derives its built-in order from that registry and appends plugin
-themes after a divider. When adding a theme, decide and document where it
-belongs. Do not hard-code a second list in `ThemeRow.tsx`; duplicated lists
-drift and lead to selectable-but-unresolvable themes.
+The base-theme picker derives its ordinary built-ins from that registry and
+appends plugin themes after a divider. `ScenicThemesSection` separately derives
+only scenic built-ins from the same registry. When adding a theme, decide and
+document where it belongs. Do not hard-code a second list in `ThemeRow.tsx` or
+the Scenic Themes page; duplicated lists drift and lead to
+selectable-but-unresolvable themes.
 
 ### Dark or light is still mandatory
 
@@ -192,7 +197,7 @@ A theme must not:
 
 Themes are visual packages. They do not have their own runtime authority.
 
-## The Twilight Mountains implementation map
+## Scenic implementation reference maps
 
 ## Obsidian Horizon case study
 
@@ -207,7 +212,8 @@ shell glass, deep navigation glass, raised slate glass, and near-opaque safety
 surfaces. The safety tier is required for menus, dialogs, permissions, code,
 tool output, search, Settings controls, and Context Vault. Blur is limited to
 large stable shells and the single pointer-inert backdrop. Obsidian maps the
-shared image-only blur preference to Low/Medium/High = `2px`/`6px`/`12px`.
+shared per-theme numeric backdrop-image blur control with a `6px` first-use
+default.
 
 The empty home suppresses the mascot only while the Obsidian marker is present
 and reuses the localized `chat.emptyTitle` greeting. Switching to any base or
@@ -271,6 +277,64 @@ The deletion step is as important as activation. A theme can appear to work
 until the user switches away; then stale data attributes, old backgrounds, or
 plugin style nodes create a half-applied UI. Every new theme requires explicit
 tests for activation **and removal**.
+
+### Registry-derived scenic state and TypeScript narrowing
+
+The scenic runtime is registry-driven, but TypeScript still sees a persisted
+`ThemePreference` as including `plugin:${string}`. Do not pass that broad value
+to helpers that require a `BuiltInThemeId`. First prove it is one of the known
+scenic ids, retain that narrowed `scenicPreference`, then use it for:
+
+- `builtInThemeMetadata` and `isScenicBuiltInTheme`;
+- the `data-scenic-theme` marker;
+- the per-theme entry in `scenicBackdropBlurByTheme`;
+- the named `nativeFallback` passed to the validated Electron API.
+
+This keeps plugin-theme fallback safe and prevents a new scenic theme from
+creating a type escape that hides a runtime mistake. When a metadata union also
+contains ordinary base entries, narrow `nativeFallback` before reading it;
+System, Light, and Dark do not own that property.
+
+### Scenic Themes cards, translations, and derived order
+
+Scenic themes are selected from `ScenicThemesSection`, not from the General
+theme picker. The card list must be derived from `BUILT_IN_THEMES` by the
+registered `scenic` flag, so registry order is the visible order. A new theme
+therefore needs all four of these changes together:
+
+1. add the registry entry and `ScenicThemeId` union member;
+2. add its packaged asset to the card asset map;
+3. add the stable translation-key suffix used by the card title and description
+   in every shipped locale;
+4. add a source contract assertion that the asset map and card key include it
+   after the preceding registry theme.
+
+Do not re-add scenic choices to `ThemeRow`. General intentionally offers only
+base themes and compatible plugin themes; duplicating scenic options creates
+two controls with conflicting information architecture.
+
+### Numeric per-theme backdrop blur: the current contract
+
+`scenicBackdropBlurByTheme` is the persisted source of truth. Each value is a
+whole number from `0` through `20`, and `0px` means no image blur. New scenic
+themes default to their reference-tuned value when no per-theme value exists;
+Emerald Afterglow uses `6px`. The legacy `scenicBackdropBlur` and
+`twilightBackdropBlur` fields are migration inputs only and must not become a
+second runtime source of truth.
+
+The active value reaches only `--scenic-backdrop-blur`, which only the one
+`.app-scenic-backdrop` image may consume. Theme styles can alias it to a
+theme-local variable such as `--emerald-backdrop-blur`, but must not attach it
+to glass surfaces, rows, code, tool output, menus, dialogs, or permissions.
+The card/page implementation deliberately separates immediate visual preview
+from persistence: it stages the image-only CSS variable locally and persists a
+confirmed per-theme value through its explicit Apply action. Do not turn range
+`input` events into repeated settings IPC writes.
+
+When updating old tests or docs, remove assertions for the retired
+`data-scenic-backdrop-blur="low|medium|high"` selector scheme. Assert the
+numeric `0–20px` setting, the theme-local variable fallback, per-theme
+restoration, and the absence of named-level selectors instead.
 
 ### Backdrop architecture
 
@@ -359,6 +423,29 @@ fallback that is:
 
 Do not accept raw colors from renderer state. A fixed named theme-to-color map
 in the trusted main process keeps the boundary narrow and auditable.
+
+### Emerald Afterglow lessons: a bright asset can still support a dark theme
+
+Emerald Afterglow establishes the fourth scenic visual reference: a supplied
+bright, sunlit forest asset can remain visibly luminous while its application
+contract remains `dark`. The successful balance is not a blanket black overlay.
+Instead:
+
+- keep the asset unchanged and choose a cover focal point that preserves the
+  sun shafts, depth, and foliage;
+- use restrained top and lower charcoal/emerald vignettes to support reading
+  without erasing the forest;
+- use dark pine navigation glass and a dark emerald composer for stable
+  working surfaces;
+- reserve raised moss/slate glass for Settings rows and related content;
+- use near-opaque forest-charcoal for code, tool output, permissions, menus,
+  dialogs, inputs, and other safety-critical surfaces;
+- select the Windows/Linux fallback from the deepest stable shell tint rather
+  than sampling the brightest part of the image.
+
+The important test is contrast across both the sunlit and shaded regions of the
+actual backdrop. A dark theme is defined by its stable semantic surfaces and
+native compatibility, not by making every pixel of its artwork dark.
 
 ## Material system: design semantic tiers before writing selectors
 
@@ -1140,9 +1227,10 @@ persisted in `AppSettings.theme`.
    ```
 
 3. Extend the built-in registry test with expected order/base/scenic status.
-4. Update the Settings picker mapping in `ThemeRow.tsx` so the new id uses
-   localized title and description keys. Prefer evolving the mapping/registry
-   interface if multiple new themes make hard-coded ternaries unwieldy.
+4. Add the localized title and description mapping in the correct Settings
+   destination. Ordinary themes belong in `ThemeRow.tsx`; scenic built-ins
+   belong in `ScenicThemesSection.tsx` and its local asset map. Keep scenic
+   options out of General so selection has one clear home.
 5. Add the new strings to every shipped Nexus locale, following the actual
    i18n package structure in the current revision. The visible name and short
    description must be translated consistently.
@@ -1197,9 +1285,11 @@ persisted in `AppSettings.theme`.
    Use `cover`, a documented focal position, `pointer-events: none`, and only
    modest filter/transform work. Use pseudo-element overlays for atmosphere,
    not nested components or per-row backgrounds.
-5. Apply blur only to a small set of large composited shell surfaces. Do not
-   blur the background image itself excessively, repeated lists, transcript
-   rows, code, or tool output.
+5. Apply material blur only to a small set of large composited shell surfaces.
+   The one shared backdrop image may use the numeric
+   `--scenic-backdrop-blur` value from the Scenic Themes control; no repeated
+   lists, transcript rows, code, tool output, menus, dialogs, or permissions
+   may consume that dynamic value.
 6. Give native chrome, sidebar/rail, major canvas, work panel, Plugins, and
    composer their intended material roles. Change paint, not layout.
 
@@ -1517,6 +1607,11 @@ run broad recursive deletion commands against a workspace root or guessed path.
 
 - [ ] Named material tiers exist and semantic design tokens are mapped.
 - [ ] Backdrop is a single local, pointer-inert app-shell layer.
+- [ ] Scenic cards are registry-derived, use only packaged local assets, and
+      General contains no duplicate scenic choice.
+- [ ] The per-theme blur is an integer `0` through `20`, changes only the
+      backdrop image, restores per-theme values, and persists only through the
+      explicit Apply action.
 - [ ] Image composition and overlays reveal intended visual anchors.
 - [ ] Sidebar, title bars, canvas, composer, work panel, Settings, Plugins,
       menus, dialogs, permissions, code, and tool output have appropriate
@@ -1642,13 +1737,16 @@ normal and fallback opacity before visual sign-off.
 ### Reusable scenic backdrop blur contract
 
 Backdrop-image blur is a shared scenic capability, not a Twilight feature. The
-persisted `scenicBackdropBlur` value has `low`, `medium`, and `high` levels;
-legacy `twilightBackdropBlur` values are read for compatibility. Each scenic
-theme maps those levels to its own image blur scale while its glass-material
-blur remains fixed by the theme stylesheet. Alpine Light uses 4px, 8px, and
-16px; Twilight uses 2px, 6px, and 12px. The control is shown only for scenic
-themes that declare support, and reduced-transparency/no-filter fallbacks remove
-both kinds of blur in favor of readable opaque surfaces.
+persisted `scenicBackdropBlurByTheme` map stores an integer `0px` through
+`20px` value for each scenic id, while legacy `scenicBackdropBlur` and
+`twilightBackdropBlur` values are read only for migration compatibility. Each
+theme has a tuned first-use default—Twilight `6px`, Alpine `8px`, Obsidian
+`6px`, and Emerald `6px`—while its glass-material blur remains fixed by the
+theme stylesheet. The Scenic Themes page previews the image locally and writes
+the displayed per-theme value only through its Apply action. The control is
+shown only for scenic themes that declare support, and
+reduced-transparency/no-filter fallbacks remove image/material blur in favor of
+readable opaque surfaces.
 
 Alpine Settings is a full-page continuation of the same material system: the
 Settings rail, content shell, cards, row tiles, fields, segmented controls,
