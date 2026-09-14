@@ -13,12 +13,14 @@ export function ScenicThemesSection({ settings, saveSettings }: { settings: AppS
   const showToast = useAppStore((state) => state.showToast);
   const activeTheme = SCENIC.includes(settings.theme as ScenicThemeId) ? settings.theme as ScenicThemeId : "twilight-mountains";
   const [draftValue, setDraftValue] = useState(() => resolveScenicBackdropBlur(settings, activeTheme));
+  const draftValueRef = useRef(draftValue);
   const confirmedRef = useRef(draftValue);
   const frameRef = useRef<number | null>(null);
   const applyVisual = (value: number) => { if (frameRef.current !== null) cancelAnimationFrame(frameRef.current); frameRef.current = requestAnimationFrame(() => { document.documentElement.style.setProperty("--scenic-backdrop-blur", `${clamp(value)}px`); document.documentElement.dataset.scenicBackdropBlur = String(clamp(value)); frameRef.current = null; }); };
   useEffect(() => { const value = resolveScenicBackdropBlur(settings, activeTheme); confirmedRef.current = value; setDraftValue(value); applyVisual(value); return () => { if (frameRef.current !== null) cancelAnimationFrame(frameRef.current); }; }, [activeTheme, settings.scenicBackdropBlur, settings.scenicBackdropBlurByTheme]);
-  const updateBlur = (raw: number) => { const value = clamp(raw); setDraftValue(value); applyVisual(value); };
-  const applyBlur = () => { const value = clamp(draftValue); void saveSettings({ scenicBackdropBlurByTheme: { ...settings.scenicBackdropBlurByTheme, [activeTheme]: value } }).then(() => { confirmedRef.current = value; }).catch((error) => { setDraftValue(confirmedRef.current); applyVisual(confirmedRef.current); showToast(error instanceof Error ? error.message : String(error), { variant: "error" }); }); };
+  const updateBlur = (raw: number) => { const value = clamp(raw); draftValueRef.current = value; setDraftValue(value); applyVisual(value); };
+  const setDragging = (dragging: boolean) => { document.documentElement.toggleAttribute("data-scenic-blur-dragging", dragging); };
+  const applyBlur = () => { const value = clamp(draftValueRef.current); void saveSettings({ scenicBackdropBlurByTheme: { ...settings.scenicBackdropBlurByTheme, [activeTheme]: value } }).then(() => { confirmedRef.current = value; }).catch((error) => { draftValueRef.current = confirmedRef.current; setDraftValue(confirmedRef.current); applyVisual(confirmedRef.current); showToast(error instanceof Error ? error.message : String(error), { variant: "error" }); }); };
   const choose = (theme: ThemePreference) => void saveSettings({ theme }).catch((error) => showToast(error instanceof Error ? error.message : String(error), { variant: "error" }));
   return (
     <div className="scenic-themes-page">
@@ -39,7 +41,7 @@ export function ScenicThemesSection({ settings, saveSettings }: { settings: AppS
         <div className="settings-row">
           <div className="settings-row-copy"><div className="settings-row-title">{t("settings.scenicBackdropBlur")}</div><div className="settings-row-desc">{t("settings.scenicBackdropBlurDesc")}</div></div>
           <div className="scenic-blur-slider">
-            <label htmlFor="scenic-backdrop-blur"><span className="sr-only">{t("settings.scenicBackdropBlur")}</span><input id="scenic-backdrop-blur" type="range" min={0} max={20} step={1} value={draftValue} onChange={(event) => updateBlur(Number(event.target.value))} /></label>
+            <label htmlFor="scenic-backdrop-blur"><span className="sr-only">{t("settings.scenicBackdropBlur")}</span><input id="scenic-backdrop-blur" type="range" min={0} max={20} step={1} value={draftValue} onPointerDown={() => setDragging(true)} onPointerUp={() => setDragging(false)} onPointerCancel={() => setDragging(false)} onChange={(event) => updateBlur(Number(event.target.value))} /></label>
             <output htmlFor="scenic-backdrop-blur">{draftValue}px</output>
             <button className="scenic-blur-apply" type="button" onClick={applyBlur} disabled={draftValue === confirmedRef.current}>{t("settings.scenicApply")}</button>
           </div>
