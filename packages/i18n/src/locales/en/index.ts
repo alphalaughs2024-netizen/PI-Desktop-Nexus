@@ -561,6 +561,7 @@ export const en = {
     groupSystem: "System",
     nav: {
       general: "General",
+      scenicThemes: "Scenic themes",
       ai: "AI",
       shortcuts: "Shortcuts",
       instructions: "Instructions",
@@ -573,6 +574,9 @@ export const en = {
       info: "Info",
     },
     general: "General",
+    scenicThemes: "Scenic themes",
+    scenicThemesDesc: "Choose a scenic glass theme and tune its backdrop blur.",
+    scenicEffects: "Effects",
     ai: "AI",
     shortcuts: "Shortcuts",
     instructions: "Instructions",

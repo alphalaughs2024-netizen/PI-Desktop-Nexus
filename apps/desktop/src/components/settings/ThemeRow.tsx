@@ -17,7 +17,7 @@ import { IconCheck, IconChevronDown, IconSearch } from "../icons";
 import { AnchoredMenu } from "./AnchoredMenu";
 import { useAppStore } from "../../stores/app-store";
 
-const builtInThemeIds = BUILT_IN_THEMES.map((theme) => theme.id);
+const builtInThemeIds = BUILT_IN_THEMES.filter((theme) => !("scenic" in theme && theme.scenic)).map((theme) => theme.id);
 
 type ThemeOption = {
   id: ThemePreference;

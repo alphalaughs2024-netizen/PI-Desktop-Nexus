@@ -557,6 +557,7 @@ export const es = {
     "groupSystem": "Sistema",
     "nav": {
       "general": "General",
+      "scenicThemes": "Temas escénicos",
       "ai": "AI",
       "shortcuts": "Atajos",
       "instructions": "Instrucciones",
@@ -569,6 +570,9 @@ export const es = {
       "info": "Información"
     },
     "general": "General",
+    "scenicThemes": "Temas escénicos",
+    "scenicThemesDesc": "Elige un tema de cristal escénico y ajusta el desenfoque del fondo.",
+    "scenicEffects": "Efectos",
     "ai": "AI",
     "shortcuts": "Atajos",
     "instructions": "Instrucciones",

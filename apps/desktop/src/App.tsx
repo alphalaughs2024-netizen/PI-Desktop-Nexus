@@ -517,14 +517,16 @@ function AppShell() {
     const builtinMetadata = !pluginTheme && (preference === "twilight-mountains" || preference === "alpine-light" || preference === "obsidian-horizon")
       ? builtInThemeMetadata(preference)
       : undefined;
-    if (builtinMetadata?.scenic && isScenicBuiltInTheme(preference)) {
+    if (builtinMetadata && isScenicBuiltInTheme(preference)) {
       document.documentElement.dataset.scenicTheme = preference;
-      document.documentElement.dataset.scenicBackdropBlur =
-        settings?.scenicBackdropBlur ?? settings?.twilightBackdropBlur ?? "low";
+      const blur = settings?.scenicBackdropBlurByTheme?.[preference as "twilight-mountains" | "alpine-light" | "obsidian-horizon"] ?? (typeof settings?.scenicBackdropBlur === "number" ? settings.scenicBackdropBlur : preference === "alpine-light" ? 8 : 6);
+      document.documentElement.dataset.scenicBackdropBlur = String(blur);
+      document.documentElement.style.setProperty("--scenic-backdrop-blur", `${blur}px`);
     } else {
       delete document.documentElement.dataset.scenicTheme;
       delete document.documentElement.dataset.scenicBackdropBlur;
       delete document.documentElement.dataset.twilightBackdropBlur;
+      document.documentElement.style.removeProperty("--scenic-backdrop-blur");
     }
     const mq = window.matchMedia("(prefers-color-scheme: light)");
     const apply = () => {

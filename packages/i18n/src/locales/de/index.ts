@@ -564,6 +564,7 @@ export const de = {
     "groupSystem": "System",
     "nav": {
       "general": "Allgemein",
+      "scenicThemes": "Szenische Themen",
       "ai": "KI",
       "shortcuts": "Verknüpfungen",
       "instructions": "Anweisungen",
@@ -576,6 +577,9 @@ export const de = {
       "info": "Informationen"
     },
     "general": "Allgemein",
+    "scenicThemes": "Szenische Themen",
+    "scenicThemesDesc": "Wähle ein szenisches Glasthema und passe die Hintergrundunschärfe an.",
+    "scenicEffects": "Effekte",
     "ai": "AI",
     "shortcuts": "Verknüpfungen",
     "instructions": "Anweisungen",

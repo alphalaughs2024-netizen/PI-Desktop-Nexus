@@ -7,6 +7,7 @@
 
 export type SettingsTabId =
   | "general"
+  | "scenic-themes"
   | "ai"
   | "shortcuts"
   | "instructions"
@@ -67,6 +68,13 @@ export const SETTINGS_NAV: SettingsNavEntry[] = [
       "settings.proxyCustom",
       "settings.proxyUrl",
     ],
+  },
+  {
+    id: "scenic-themes",
+    labelKey: "settings.nav.scenicThemes",
+    titleKey: "settings.scenicThemes",
+    group: "preferences",
+    keywordKeys: ["settings.scenicThemes", "settings.scenicThemesDesc", "settings.scenicBackdropBlur"],
   },
   {
     id: "ai",

@@ -1151,21 +1151,38 @@ export type ThemePreference =
   | "obsidian-horizon"
   | `plugin:${string}`;
 
-export type ScenicBackdropBlur = "low" | "medium" | "high";
+export type ScenicBackdropBlur = number;
+export type ScenicThemeId = "twilight-mountains" | "alpine-light" | "obsidian-horizon";
 /** @deprecated Use ScenicBackdropBlur. Kept for persisted Twilight settings compatibility. */
-export type TwilightBackdropBlur = ScenicBackdropBlur;
+export type TwilightBackdropBlur = "low" | "medium" | "high";
 
-export const DEFAULT_SCENIC_BACKDROP_BLUR: ScenicBackdropBlur = "low";
+export const DEFAULT_SCENIC_BACKDROP_BLUR: ScenicBackdropBlur = 6;
 /** @deprecated Use DEFAULT_SCENIC_BACKDROP_BLUR. */
-export const DEFAULT_TWILIGHT_BACKDROP_BLUR: TwilightBackdropBlur = DEFAULT_SCENIC_BACKDROP_BLUR;
+export const DEFAULT_TWILIGHT_BACKDROP_BLUR: TwilightBackdropBlur = "low";
 
 export function normalizeScenicBackdropBlur(value: unknown): ScenicBackdropBlur {
-  return value === "medium" || value === "high" ? value : DEFAULT_SCENIC_BACKDROP_BLUR;
+  if (typeof value === "number" && Number.isInteger(value)) return Math.max(0, Math.min(20, value));
+  return DEFAULT_SCENIC_BACKDROP_BLUR;
+}
+
+export function scenicBackdropBlurDefault(theme: ScenicThemeId): number {
+  return theme === "alpine-light" ? 8 : 6;
+}
+
+export function migrateScenicBackdropBlur(value: unknown, theme: ScenicThemeId): number {
+  if (typeof value === "number" && Number.isInteger(value)) return normalizeScenicBackdropBlur(value);
+  const defaults: Record<ScenicThemeId, Record<string, number>> = {
+    "twilight-mountains": { low: 2, medium: 6, high: 12 },
+    "alpine-light": { low: 4, medium: 8, high: 16 },
+    "obsidian-horizon": { low: 2, medium: 6, high: 12 },
+  };
+  if (typeof value === "string" && value in defaults[theme]) return defaults[theme][value] ?? DEFAULT_SCENIC_BACKDROP_BLUR;
+  return theme === "alpine-light" ? 8 : DEFAULT_SCENIC_BACKDROP_BLUR;
 }
 
 /** @deprecated Use normalizeScenicBackdropBlur. */
 export function normalizeTwilightBackdropBlur(value: unknown): TwilightBackdropBlur {
-  return normalizeScenicBackdropBlur(value);
+  return value === "medium" || value === "high" ? value : "low";
 }
 
 /**
@@ -1189,6 +1206,7 @@ export type AppSettings = {
   theme: ThemePreference;
   /** Blur strength for the active scenic theme's backdrop image. */
   scenicBackdropBlur?: ScenicBackdropBlur;
+  scenicBackdropBlurByTheme?: Partial<Record<ScenicThemeId, ScenicBackdropBlur>>;
   /** @deprecated Read for migration compatibility; new writes use scenicBackdropBlur. */
   twilightBackdropBlur?: TwilightBackdropBlur;
   /** UI language; `auto` (and absent) follows the OS locale. */

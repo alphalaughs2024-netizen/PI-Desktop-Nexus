@@ -557,6 +557,7 @@ export const fr = {
     "groupSystem": "Système",
     "nav": {
       "general": "Général",
+      "scenicThemes": "Thèmes panoramiques",
       "ai": "IA",
       "shortcuts": "Raccourcis",
       "instructions": "Instructions",
@@ -569,6 +570,9 @@ export const fr = {
       "info": "Informations"
     },
     "general": "Général",
+    "scenicThemes": "Thèmes panoramiques",
+    "scenicThemesDesc": "Choisissez un thème de verre panoramique et réglez le flou du fond.",
+    "scenicEffects": "Effets",
     "ai": "AI",
     "shortcuts": "Raccourcis",
     "instructions": "Instructions",

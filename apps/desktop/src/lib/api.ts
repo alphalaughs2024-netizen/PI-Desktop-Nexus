@@ -201,10 +201,7 @@ export function normalizeSettings(settings: AppSettings): AppSettings {
       (settings as { largePasteThreshold?: unknown }).largePasteThreshold,
     ),
     fontScale: resolveFontScale(settings),
-    scenicBackdropBlur: normalizeScenicBackdropBlur(
-      (settings as { scenicBackdropBlur?: unknown; twilightBackdropBlur?: unknown }).scenicBackdropBlur ??
-        (settings as { twilightBackdropBlur?: unknown }).twilightBackdropBlur,
-    ),
+    scenicBackdropBlur: normalizeScenicBackdropBlur((settings as { scenicBackdropBlur?: unknown }).scenicBackdropBlur),
     networkProxy: normalizeNetworkProxy(
       (settings as { networkProxy?: unknown }).networkProxy,
     ),
