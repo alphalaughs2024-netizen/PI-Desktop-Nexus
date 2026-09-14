@@ -1,4 +1,5 @@
 import { contextBridge, ipcRenderer, webUtils } from "electron";
+import { builtinWindowBackground } from "@pi-desktop/shared/theme";
 import {
   PLUGIN_PANEL_TITLEBAR_HEIGHT,
   PLUGIN_PANEL_CHROME_META_NAME,
@@ -102,7 +103,7 @@ function pageColor(property: "backgroundColor" | "color", fallback: string): str
 }
 
 function pageSurface(theme: PluginPanelTheme): string {
-  return pageColor("backgroundColor", theme === "light" ? "#ffffff" : "#181818");
+  return pageColor("backgroundColor", builtinWindowBackground(theme));
 }
 
 function publishTitlebarHeight(): void {

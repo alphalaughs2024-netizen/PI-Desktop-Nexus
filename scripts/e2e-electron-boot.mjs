@@ -8,7 +8,7 @@
  * (target/debug or target/release, or PI_DESKTOP_HOST_BIN).
  */
 import { spawn } from "node:child_process";
-import { mkdtempSync, rmSync, existsSync } from "node:fs";
+import { mkdtempSync, rmSync, existsSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -28,6 +28,17 @@ if (!existsSync(join(appDir, "out/main/index.js"))) {
 if (!existsSync(electronBin)) {
   console.error("Electron binary missing:", electronBin);
   process.exit(1);
+}
+
+for (const preloadPath of [join(appDir, "out/preload/index.cjs"), join(appDir, "out/preload/plugin-panel.js")]) {
+  if (!existsSync(preloadPath)) {
+    console.error("preload output missing:", preloadPath);
+    process.exit(1);
+  }
+  if (/require\(["']\.\//.test(readFileSync(preloadPath, "utf8"))) {
+    console.error("sandbox preload must not require a local runtime chunk:", preloadPath);
+    process.exit(1);
+  }
 }
 
 const dataDir = mkdtempSync(join(tmpdir(), "pi-desktop-boot-"));
