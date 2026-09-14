@@ -1198,3 +1198,10 @@ viewport, keeping them out from underneath composited native work-panel views.
 The active workflow card uses a borderless, translucent shared `--ds-*` surface
 with readable text, actions, and focus treatment. Theme styles may refine its
 material, but no base or scenic theme may add a high-contrast outer outline.
+
+## Scenic theme card copy
+
+Scenic theme selection cards use a dark translucent copy tile with an explicit
+cool-white title and description hierarchy. Card copy must not inherit the
+currently active theme's general text token, because the cards preview themes
+other than the active one and their image backgrounds vary in brightness.
