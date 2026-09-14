@@ -74,6 +74,66 @@
   -webkit-backdrop-filter: blur(18px) saturate(1.04);
 }
 
+/* Composer focal surface: translucent icy glass with a compact, readable
+   control row. These overrides intentionally keep all base geometry intact. */
+:root[data-scenic-theme="alpine-light"] .composer-shell {
+  background: rgba(176, 207, 244, 0.56);
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  box-shadow: 0 12px 34px rgba(56, 86, 132, 0.22), inset 0 1px rgba(255, 255, 255, 0.72);
+}
+:root[data-scenic-theme="alpine-light"] .composer-shell:focus-within {
+  background: rgba(186, 216, 250, 0.64);
+  border-color: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 14px 38px rgba(56, 86, 132, 0.26), 0 0 0 2px rgba(255, 255, 255, 0.22), inset 0 1px rgba(255, 255, 255, 0.86);
+}
+:root[data-scenic-theme="alpine-light"] .composer-shell.is-file-drop-active {
+  box-shadow: 0 0 0 2px rgba(63, 117, 188, 0.7), 0 14px 38px rgba(56, 86, 132, 0.24), inset 0 1px rgba(255, 255, 255, 0.86);
+}
+:root[data-scenic-theme="alpine-light"] .composer-input {
+  color: var(--ds-text-primary);
+  caret-color: #244e84;
+}
+:root[data-scenic-theme="alpine-light"] .composer-placeholder {
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0 1px 3px rgba(37, 65, 105, 0.3);
+}
+:root[data-scenic-theme="alpine-light"] .composer-toolbar {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent);
+}
+:root[data-scenic-theme="alpine-light"] .composer-toolbar .icon-btn,
+:root[data-scenic-theme="alpine-light"] .composer-toolbar .mode-chip,
+:root[data-scenic-theme="alpine-light"] .composer-toolbar .context-inspector-trigger,
+:root[data-scenic-theme="alpine-light"] .composer-toolbar .composer-model-thinking-chip {
+  color: rgba(248, 252, 255, 0.96) !important;
+  background: rgba(42, 83, 139, 0.32);
+  border: 1px solid rgba(255, 255, 255, 0.34);
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.18);
+}
+:root[data-scenic-theme="alpine-light"] .composer-toolbar .icon-btn:hover:not(:disabled),
+:root[data-scenic-theme="alpine-light"] .composer-toolbar .icon-btn.active {
+  background: rgba(37, 77, 132, 0.52);
+  border-color: rgba(255, 255, 255, 0.62);
+}
+:root[data-scenic-theme="alpine-light"] .composer-toolbar .composer-model-thinking-model,
+:root[data-scenic-theme="alpine-light"] .composer-toolbar .composer-model-thinking-level {
+  color: rgba(248, 252, 255, 0.96);
+}
+:root[data-scenic-theme="alpine-light"] .composer-permission-menu,
+:root[data-scenic-theme="alpine-light"] .composer-model-menu,
+:root[data-scenic-theme="alpine-light"] .composer-model-thinking-menu {
+  background: rgba(248, 252, 255, 0.96);
+  color: var(--ds-text-primary);
+  border: 1px solid rgba(255, 255, 255, 0.86);
+  box-shadow: 0 18px 42px rgba(53, 81, 122, 0.22);
+}
+:root[data-scenic-theme="alpine-light"] .composer-plus-item {
+  color: var(--ds-text-primary);
+}
+:root[data-scenic-theme="alpine-light"] .composer-plus-item:hover,
+:root[data-scenic-theme="alpine-light"] .composer-plus-item.active {
+  background: rgba(108, 153, 211, 0.18);
+}
+
 :root[data-scenic-theme="alpine-light"] :is(.dialog, .menu, .popover, .settings-theme-menu, .tool-row-content, pre, .permission-card, .toast) {
   background: var(--alpine-safety-surface);
   color: var(--ds-text-primary);
