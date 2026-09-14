@@ -38,6 +38,7 @@ import {
   IconDownload,
   IconFileText,
   IconInfo,
+  IconImage,
   IconKeyboard,
   IconSearch,
   IconServer,
@@ -50,7 +51,7 @@ import { FontFamilyRow } from "../components/settings/FontFamilyRow";
 import { FontSizeRow } from "../components/settings/FontSizeRow";
 import { LanguageRow } from "../components/settings/LanguageRow";
 import { ThemeRow } from "../components/settings/ThemeRow";
-import { ScenicBackdropBlurRow } from "../components/settings/TwilightBackdropBlurRow";
+import { ScenicThemesSection } from "../components/settings/ScenicThemesSection";
 import { NetworkProxySection } from "../components/settings/NetworkProxySection";
 import { ReleaseNotesDialog } from "../components/ReleaseNotesDialog";
 import { ProjectsPage } from "./ProjectsPage";
@@ -1236,6 +1237,7 @@ export function SettingsPage() {
       // Semantic Lucide glyphs for the settings destinations.
       general: <IconSliders size={14} />,
       ai: <IconSparkles size={14} />,
+      "scenic-themes": <IconImage size={14} />,
       shortcuts: <IconKeyboard size={14} />,
       instructions: <IconFileText size={14} />,
       agent: <IconBot size={14} />,
@@ -1364,7 +1366,6 @@ export function SettingsPage() {
             <div className="settings-stack">
               <SettingsCard title={t("settings.appearance")}>
                 <ThemeRow settings={settings} saveSettings={saveSettings} />
-                <ScenicBackdropBlurRow settings={settings} saveSettings={saveSettings} />
                 <LanguageRow settings={settings} saveSettings={saveSettings} />
                 <FontFamilyRow settings={settings} saveSettings={saveSettings} />
                 <FontSizeRow settings={settings} saveSettings={saveSettings} />
@@ -1375,6 +1376,7 @@ export function SettingsPage() {
               {platform !== "darwin" && <CloseBehaviorSection />}
             </div>
           )}
+          {tab === "scenic-themes" && settings && <ScenicThemesSection settings={settings} saveSettings={saveSettings} />}
 
           {tab === "ai" && settings && (
             <div className="settings-stack">

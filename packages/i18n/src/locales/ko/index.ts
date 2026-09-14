@@ -567,6 +567,7 @@ export const ko = {
     groupSystem: "시스템",
     nav: {
       general: "일반",
+      scenicThemes: "장면 테마",
       ai: "AI",
       shortcuts: "단축키",
       instructions: "지침",
@@ -579,6 +580,9 @@ export const ko = {
       info: "정보",
     },
     general: "일반",
+    scenicThemes: "장면 테마",
+    scenicThemesDesc: "장면 유리 테마를 선택하고 배경 흐림을 조정합니다.",
+    scenicEffects: "효과",
     ai: "AI",
     shortcuts: "단축키",
     instructions: "지침",

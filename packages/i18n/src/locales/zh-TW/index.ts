@@ -563,6 +563,7 @@ export const zhTW = {
     groupSystem: "系統",
     nav: {
       general: "常規",
+      scenicThemes: "場景主題",
       ai: "AI",
       shortcuts: "快捷鍵",
       instructions: "指令",
@@ -575,6 +576,9 @@ export const zhTW = {
       info: "資訊",
     },
     general: "常規",
+    scenicThemes: "場景主題",
+    scenicThemesDesc: "選擇場景玻璃主題並調整背景模糊程度。",
+    scenicEffects: "效果",
     ai: "全域性 AI",
     shortcuts: "快捷鍵",
     instructions: "指令",

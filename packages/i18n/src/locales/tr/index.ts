@@ -567,6 +567,7 @@ export const tr = {
     groupSystem: "Sistem",
     nav: {
       general: "Genel",
+      scenicThemes: "Sahne temaları",
       ai: "AI",
       shortcuts: "Kısayollar",
       instructions: "Yönergeler",
@@ -579,6 +580,9 @@ export const tr = {
       info: "Bilgi",
     },
     general: "Genel",
+    scenicThemes: "Sahne temaları",
+    scenicThemesDesc: "Bir sahne cam teması seçin ve arka plan bulanıklığını ayarlayın.",
+    scenicEffects: "Efektler",
     ai: "AI",
     shortcuts: "Kısayollar",
     instructions: "Yönergeler",

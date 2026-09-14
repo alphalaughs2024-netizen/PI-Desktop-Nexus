@@ -559,6 +559,7 @@ export const zhCN = {
     groupSystem: "系统",
     nav: {
       general: "常规",
+      scenicThemes: "场景主题",
       ai: "AI",
       shortcuts: "快捷键",
       instructions: "指令",
@@ -571,6 +572,9 @@ export const zhCN = {
       info: "信息",
     },
     general: "常规",
+    scenicThemes: "场景主题",
+    scenicThemesDesc: "选择场景玻璃主题并调整背景模糊度。",
+    scenicEffects: "效果",
     ai: "全局 AI",
     shortcuts: "快捷键",
     instructions: "指令",

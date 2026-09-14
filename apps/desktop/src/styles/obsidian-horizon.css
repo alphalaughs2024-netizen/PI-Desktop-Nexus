@@ -41,9 +41,7 @@
   filter: saturate(0.92) contrast(1.04) blur(var(--obsidian-backdrop-blur, 2px));
   transform: scale(1.03);
 }
-:root[data-scenic-theme="obsidian-horizon"][data-scenic-backdrop-blur="low"] { --obsidian-backdrop-blur: 2px; }
-:root[data-scenic-theme="obsidian-horizon"][data-scenic-backdrop-blur="medium"] { --obsidian-backdrop-blur: 6px; }
-:root[data-scenic-theme="obsidian-horizon"][data-scenic-backdrop-blur="high"] { --obsidian-backdrop-blur: 12px; }
+:root[data-scenic-theme="obsidian-horizon"] { --obsidian-backdrop-blur: var(--scenic-backdrop-blur, 6px); }
 :root[data-scenic-theme="obsidian-horizon"] .app-scenic-backdrop::after {
   content: "";
   position: absolute;
