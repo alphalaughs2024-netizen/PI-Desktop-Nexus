@@ -3,8 +3,8 @@
 .scenic-theme-card { position: relative; min-height: 132px; display: flex; align-items: flex-end; justify-content: space-between; padding: 22px; border: 1px solid var(--ds-border-default); border-radius: var(--radius-xl); background-position: center; background-size: cover; color: var(--ds-text-primary); text-align: left; box-shadow: var(--ds-shadow-dialog); cursor: pointer; }
 .scenic-theme-card::before { content: ""; position: absolute; }
 .scenic-theme-card-copy { display: grid; gap: 5px; padding: 10px 14px; border-radius: var(--radius-lg); background: rgba(5, 12, 24, .62); backdrop-filter: blur(8px); }
-.scenic-theme-card-copy strong { font-size: var(--text-lg); }
-.scenic-theme-card-copy span { color: rgba(240, 247, 255, .88); }
+.scenic-theme-card-copy strong { color: #f4f8ff; font-size: var(--text-lg); }
+.scenic-theme-card-copy span { color: #e7f0ff; }
 .scenic-theme-card.is-selected { border-color: var(--ds-accent); box-shadow: 0 0 0 2px color-mix(in oklab, var(--ds-accent) 55%, transparent), var(--ds-shadow-dialog); }
 .scenic-blur-slider { display: flex; align-items: center; gap: 12px; min-width: 280px; }
 .scenic-blur-slider input { width: 180px; accent-color: var(--ds-accent); }

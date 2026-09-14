@@ -7,6 +7,7 @@ const runtime = await readFile(new URL("../../../packages/agent-runtime/src/runt
 const card = await readFile(new URL("../src/components/ActiveWorkflowCard.tsx", import.meta.url), "utf8");
 const overlays = await readFile(new URL("../src/styles/overlays.css", import.meta.url), "utf8");
 const twilight = await readFile(new URL("../src/styles/twilight-mountains.css", import.meta.url), "utf8");
+const scenicThemes = await readFile(new URL("../src/styles/scenic-themes.css", import.meta.url), "utf8");
 const responsePatch = await readFile(
   new URL("../../../patches/@earendil-works__pi-ai@0.85.1.patch", import.meta.url),
   "utf8",
@@ -58,4 +59,10 @@ test("active workflow card uses a soft borderless semantic tile in every theme",
     twilight,
     /\[data-scenic-theme="twilight-mountains"\] \.active-workflow-card[\s\S]*?border-color:\s*transparent/,
   );
+});
+
+test("scenic card copy keeps titles and descriptions readable across themes", () => {
+  assert.match(scenicThemes, /\.scenic-theme-card-copy\s*\{[\s\S]*?background:\s*rgba\(5, 12, 24, \.62\)/);
+  assert.match(scenicThemes, /\.scenic-theme-card-copy strong\s*\{[^}]*color:\s*#f4f8ff/);
+  assert.match(scenicThemes, /\.scenic-theme-card-copy span\s*\{[^}]*color:\s*#e7f0ff/);
 });
