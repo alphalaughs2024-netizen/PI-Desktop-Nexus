@@ -90,7 +90,7 @@
 }
 
 :root[data-scenic-theme="twilight-mountains"] .active-workflow-card {
-  border-color: var(--twilight-luminous-border);
+  border-color: transparent;
   background: var(--twilight-raised-glass);
   box-shadow: inset 0 1px rgba(239, 248, 255, 0.16), 0 10px 28px rgba(0, 9, 35, 0.18);
   backdrop-filter: blur(14px) saturate(1.08);
