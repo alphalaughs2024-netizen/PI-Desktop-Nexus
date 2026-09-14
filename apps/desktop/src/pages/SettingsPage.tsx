@@ -1226,7 +1226,15 @@ export function SettingsPage() {
     const nextSettings = { ...settings, ...patch };
     await api.setSettings(nextSettings);
     useAppStore.setState({ settings: nextSettings });
-    await refreshProviders();
+    // Theme and scenic presentation changes do not affect provider discovery.
+    // Avoid reloading providers, sessions, settings, and onboarding on every
+    // scenic card click; those four IPC calls made theme switching feel laggy.
+    const presentationOnly =
+      Object.keys(patch).length > 0 &&
+      Object.keys(patch).every(
+        (key) => key === "theme" || key === "scenicBackdropBlurByTheme" || key === "scenicBackdropBlur",
+      );
+    if (!presentationOnly) await refreshProviders();
   };
 
   // Nav structure comes from the shared settings index (lib/settings-search)
