@@ -71,4 +71,12 @@ describe("sanitizeThemeCss", () => {
     const result = sanitizeThemeCss(`/*${"字".repeat(40)}*/:root{}`, 64);
     expect(result.ok).toBe(false);
   });
+
+  it("ignores banned tokens in comments and strings", () => {
+    expect(sanitizeThemeCss("/* @import url(https://x) */\n.a{content:\"url(https://x)\"}").ok).toBe(true);
+  });
+
+  it("still rejects real code after masked text", () => {
+    expect(error('/* @import */\n@import "x.css";')).toMatch(/@import/);
+  });
 });
