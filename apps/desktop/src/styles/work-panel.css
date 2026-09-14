@@ -153,7 +153,7 @@
 
 :root[data-platform="win32"] .work-panel-header,
 :root[data-platform="linux"] .work-panel-header {
-  padding-right: calc(var(--ds-window-controls-width) + 46px);
+  margin-right: var(--ds-window-controls-width);
 }
 
 /* The header follows a "context on the left, actions on the right" model:

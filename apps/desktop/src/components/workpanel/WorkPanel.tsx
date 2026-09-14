@@ -740,7 +740,7 @@ export function WorkPanel({
                     sessionId={activeSessionId ?? undefined}
                     location={activeTab.location}
                     blocked={
-                      exiting || panelBlocked || contextOpen || isResizing
+                      exiting || panelBlocked || contextOpen
                     }
                   />
                 </div>
