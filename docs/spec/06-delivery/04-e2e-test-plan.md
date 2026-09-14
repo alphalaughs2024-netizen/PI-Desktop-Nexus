@@ -10375,3 +10375,12 @@ existing three-failed-`Edit` recovery scenario remains unchanged.
   Reduced-transparency removes blur and keeps the same readable ownership.
   Switching away removes all scenic state and restores the selected base/plugin
   presentation and mascot behavior.
+# Reliability regression scenarios
+
+Desktop smoke coverage should verify that the work-panel header does not cover
+Windows/Linux native controls, plugin views remain visible while resizing, and
+the context inspector stays within the conversation pane when the work panel is
+open. Plugin theme CSS fixtures should include comments and strings naming
+restricted constructs and confirm they are accepted while real violations are
+still rejected. Sandbox preload output must be self-contained and free of local
+runtime `require()` chunks.
