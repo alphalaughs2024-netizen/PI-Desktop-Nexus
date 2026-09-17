@@ -61,6 +61,7 @@ import {
 import { BrandLogo } from "./BrandLogo";
 import { NotificationCenter } from "./NotificationCenter";
 import { ProjectRenameDialog, SessionRenameDialog } from "./SessionRenameDialog";
+import { ProjectGroupCreateDialog } from "./ProjectGroupCreateDialog";
 import { useUpdateState } from "../hooks/use-update-state";
 import {
   IconArchive,
@@ -275,6 +276,7 @@ export function Sidebar({
   const [sessionMenu, setSessionMenu] = useState<string | null>(null);
   const [renameFor, setRenameFor] = useState<SessionSummary | null>(null);
   const [renameProjectFor, setRenameProjectFor] = useState<ProjectEntry | null>(null);
+  const [createGroupOpen, setCreateGroupOpen] = useState(false);
   const [projectMenu, setProjectMenu] = useState<string | null>(null);
   const [sectionMenu, setSectionMenu] = useState<"sessions" | "projects" | null>(null);
   const [menuPosition, setMenuPosition] = useState<{
@@ -1838,10 +1840,7 @@ export function Sidebar({
           }}
         >
           <span className="sidebar-list-label">{t("nav.projects")}</span>
-          <TooltipButton type="button" className="sidebar-toolbar-button" tooltip={t("nav.newProjectGroup", { defaultValue: "New project group" })} ariaLabel={t("nav.newProjectGroup", { defaultValue: "New project group" })} onClick={() => {
-            const name = window.prompt(t("nav.projectGroupName", { defaultValue: "Project group name" }));
-            if (name) createProjectGroup(name);
-          }}>+</TooltipButton>
+          <TooltipButton type="button" className="sidebar-toolbar-button" tooltip={t("nav.newProjectGroup", { defaultValue: "New project group" })} ariaLabel={t("nav.newProjectGroup", { defaultValue: "New project group" })} onClick={() => setCreateGroupOpen(true)}><IconPlus size={14} /></TooltipButton>
           <TooltipButton
             type="button"
             className="sidebar-toolbar-button"
@@ -1965,6 +1964,7 @@ export function Sidebar({
           onError={reportError}
         />
       ) : null}
+      {createGroupOpen ? <ProjectGroupCreateDialog onClose={() => setCreateGroupOpen(false)} onSave={createProjectGroup} /> : null}
       <div
         className={cx("sidebar-resize-handle no-drag", sidebarResizing && "is-resizing")}
         role="separator"
