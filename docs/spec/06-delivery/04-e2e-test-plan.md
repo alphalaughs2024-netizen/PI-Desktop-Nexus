@@ -10409,6 +10409,8 @@ No theme may add a high-contrast outer outline or degrade the card to unbounded
 floating text.
 
 On the Scenic themes page, verify every preview card's name and description
-remain legible while each of Twilight, Alpine, and Obsidian is active. The copy
-tile owns its cool-white foreground rather than inheriting the selected theme's
-general text color.
+remain legible while each of Twilight, Alpine, Obsidian, and Emerald is active.
+In a packaged production build, every card must retain its own bundled backdrop
+rather than resolving a renderer-relative resource path or showing the active
+page backdrop through a failed card image. The copy tile owns its cool-white
+foreground rather than inheriting the selected theme's general text color.

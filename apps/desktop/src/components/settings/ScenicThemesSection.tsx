@@ -3,9 +3,13 @@ import { useTranslation } from "react-i18next";
 import { BUILT_IN_THEMES, resolveScenicBackdropBlur, type AppSettings, type ScenicThemeId, type ThemePreference } from "@pi-desktop/shared";
 import { IconCheck } from "../icons";
 import { useAppStore } from "../../stores/app-store";
+import twilightMountainsPreviewUrl from "../../../resources/themes/twilight-mountains.png";
+import alpineLightPreviewUrl from "../../../resources/themes/alpine-light.png";
+import obsidianHorizonPreviewUrl from "../../../resources/themes/obsidian-horizon.png";
+import emeraldAfterglowPreviewUrl from "../../../resources/themes/emerald-afterglow.png";
 
 const SCENIC = BUILT_IN_THEMES.filter((theme) => "scenic" in theme && theme.scenic).map((theme) => theme.id) as ScenicThemeId[];
-const ASSETS: Record<ScenicThemeId, string> = { "twilight-mountains": "twilight-mountains.png", "alpine-light": "alpine-light.png", "obsidian-horizon": "obsidian-horizon.png", "emerald-afterglow": "emerald-afterglow.png" };
+const ASSETS: Record<ScenicThemeId, string> = { "twilight-mountains": twilightMountainsPreviewUrl, "alpine-light": alpineLightPreviewUrl, "obsidian-horizon": obsidianHorizonPreviewUrl, "emerald-afterglow": emeraldAfterglowPreviewUrl };
 const clamp = (value: number) => Math.max(0, Math.min(20, Math.round(value)));
 
 export function ScenicThemesSection({ settings, saveSettings }: { settings: AppSettings; saveSettings: (patch: Partial<AppSettings>) => Promise<void> }) {
@@ -29,7 +33,7 @@ export function ScenicThemesSection({ settings, saveSettings }: { settings: AppS
         {SCENIC.map((id) => {
           const key = id === "twilight-mountains" ? "TwilightMountains" : id === "alpine-light" ? "AlpineLight" : id === "obsidian-horizon" ? "ObsidianHorizon" : "EmeraldAfterglow";
           return (
-            <button key={id} type="button" role="option" aria-selected={settings.theme === id} className={`scenic-theme-card${settings.theme === id ? " is-selected" : ""}`} style={{ backgroundImage: `url("../../resources/themes/${ASSETS[id]}")` }} onClick={() => choose(id)}>
+            <button key={id} type="button" role="option" aria-selected={settings.theme === id} className={`scenic-theme-card${settings.theme === id ? " is-selected" : ""}`} style={{ backgroundImage: `url(${ASSETS[id]})` }} onClick={() => choose(id)}>
               <span className="scenic-theme-card-copy"><strong>{t(`settings.theme${key}`)}</strong><span>{t(`settings.theme${key}Desc`)}</span></span>
               {settings.theme === id ? <IconCheck size={18} aria-hidden /> : null}
             </button>

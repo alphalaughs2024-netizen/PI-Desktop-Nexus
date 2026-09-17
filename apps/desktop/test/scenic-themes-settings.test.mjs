@@ -21,6 +21,16 @@ test("scenic blur contract is numeric, bounded, and per-theme capable", () => {
 
 test("Scenic Themes renders Emerald Afterglow after Obsidian Horizon", async () => {
   const section = await readFile(new URL("../src/components/settings/ScenicThemesSection.tsx", import.meta.url), "utf8");
-  assert.match(section, /"obsidian-horizon": "obsidian-horizon\.png", "emerald-afterglow": "emerald-afterglow\.png"/);
+  assert.match(section, /"obsidian-horizon": obsidianHorizonPreviewUrl, "emerald-afterglow": emeraldAfterglowPreviewUrl/);
   assert.match(section, /"EmeraldAfterglow"/);
+});
+
+test("scenic preview cards use Vite-resolved packaged assets instead of runtime-relative resource paths", async () => {
+  const section = await readFile(new URL("../src/components/settings/ScenicThemesSection.tsx", import.meta.url), "utf8");
+  assert.ok(section.includes('import twilightMountainsPreviewUrl from "../../../resources/themes/twilight-mountains.png";'));
+  assert.ok(section.includes('import alpineLightPreviewUrl from "../../../resources/themes/alpine-light.png";'));
+  assert.ok(section.includes('import obsidianHorizonPreviewUrl from "../../../resources/themes/obsidian-horizon.png";'));
+  assert.ok(section.includes('import emeraldAfterglowPreviewUrl from "../../../resources/themes/emerald-afterglow.png";'));
+  assert.match(section, /style=\{\{ backgroundImage: `url\(\$\{ASSETS\[id\]\}\)` \}\}/);
+  assert.doesNotMatch(section, /\.\.\/\.\.\/resources\/themes\/\$\{ASSETS\[id\]\}/);
 });
