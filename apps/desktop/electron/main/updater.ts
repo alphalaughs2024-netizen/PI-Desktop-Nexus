@@ -165,7 +165,7 @@ export class AppUpdaterController {
       // Auto checks fail quietly (offline, private repo, rate limits);
       // the renderer only surfaces errors when `manual` is set.
       this.logger.app("updater", "warn", "updater error", { data: String(error) });
-      this.setState({ status: "error", error: error.message });
+      this.setState({ status: "error", error: "Unable to check for updates" });
     });
   }
 

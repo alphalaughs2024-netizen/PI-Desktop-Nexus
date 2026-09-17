@@ -3612,7 +3612,8 @@ Each scenario is documented in this format:
   or `downloaded`; inspect the ambient banner and Settings Updates row, then
   reopen Release notes. 4) Switch UI language to zh-CN, then zh-TW, then ko and
   re-inspect without invoking a new check. 5) Repeat the compact update path
-  with a version absent from the catalog.
+  with a version absent from the catalog. 6) Force a failed manual update check
+  whose transport error contains a long response body or headers.
 - **Expected**: `UpdateState.releaseNotes` is plain multi-line product
   highlights selected by Main from the shipped-locale catalog — never a
   renderer-supplied URL. Both surfaces show a localized "What's new" block
@@ -3621,7 +3622,9 @@ Each scenario is documented in this format:
   updater state and opens a localized, newest-first modal containing every
   shipped stable entry, with current and available versions identified when
   present. The modal traps focus, restores it after close, and does not expose
-  a new IPC domain or feed configuration.
+  a new IPC domain or feed configuration. A failed manual check shows concise
+  product-owned error copy without rendering transport bodies or headers; the
+  full diagnostic remains available only in local logs.
 - **Specs linked**: `04-ux/06-settings-ia.md`, `04-ux/09-interaction-patterns.md`,
   `05-security/01-security.md`, `06-delivery/06-release-runbook.md`,
   `08-meta/decisions-log.md` (D164), ADR 0022

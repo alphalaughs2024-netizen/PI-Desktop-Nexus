@@ -471,7 +471,9 @@ may be retained while exactly one workspace supplies the visible shell context.
   staying pinned to the same prerelease channel.
 - Settings → Info and application-menu checks share one typed update state.
   Manual checks expose up-to-date or error feedback; automatic failures do not
-  open a toast or ambient banner.
+  open a toast or ambient banner. Renderer-visible errors use a concise
+  product-owned message; transport responses and headers remain in local logs
+  and never expand the Settings layout.
 - Manual delivery (`darwin`, non-AppImage Linux, and Windows portable runs
   with `PORTABLE_EXECUTABLE_FILE`) stops at `available` and
   offers the fixed GitHub Releases page. In-app delivery (Windows NSIS and

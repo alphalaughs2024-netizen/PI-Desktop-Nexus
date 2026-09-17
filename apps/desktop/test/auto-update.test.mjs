@@ -135,6 +135,16 @@ test("updater gates delivery mode by platform and delivery policy", () => {
     /status === "checking"[\s\S]*status: "idle"/,
     "a timed-out auto-check must leave checking so the next interval can run",
   );
+  assert.doesNotMatch(
+    updaterSource,
+    /this\.setState\(\{ status: "error", error: error\.message \}\)/,
+    "raw updater transport failures must not be rendered in Settings",
+  );
+  assert.match(
+    updaterSource,
+    /this\.setState\(\{ status: "error", error: "Unable to check for updates" \}\)/,
+    "the renderer receives a concise safe update failure message",
+  );
 });
 
 test("renderer exposes the updates API, banner and settings row", () => {
