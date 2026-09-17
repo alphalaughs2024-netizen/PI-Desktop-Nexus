@@ -36,7 +36,9 @@ test("settings owns the project archive destination", () => {
   assert.match(settingsSearchSource, /titleKey: "settings\.projectArchive"/);
   assert.match(settingsPageSource, /projects: <IconArchive/);
   assert.match(settingsPageSource, /tab === "projects" && <ProjectsPage/);
-  const navOrder = ["general", "agent", "import", "projects", "about"].map(
+  assert.match(settingsSearchSource, /id: "workspaces"/);
+  assert.match(settingsPageSource, /tab === "workspaces"/);
+  const navOrder = ["general", "agent", "import", "projects", "workspaces", "about"].map(
     (id) => settingsSearchSource.indexOf(`id: "${id}"`),
   );
   assert.ok(navOrder.every((index) => index >= 0));

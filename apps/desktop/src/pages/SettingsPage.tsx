@@ -55,6 +55,7 @@ import { ScenicThemesSection } from "../components/settings/ScenicThemesSection"
 import { NetworkProxySection } from "../components/settings/NetworkProxySection";
 import { ReleaseNotesDialog } from "../components/ReleaseNotesDialog";
 import { ProjectsPage } from "./ProjectsPage";
+import { WorkspacesPage } from "./WorkspacesPage";
 import { AgentSkillsPage } from "../components/settings/AgentSkillsPage";
 import { AgentMcpPage } from "../components/settings/AgentMcpPage";
 import { AgentSubagentsPage } from "../components/settings/AgentSubagentsPage";
@@ -1254,6 +1255,7 @@ export function SettingsPage() {
       subagents: <IconBot size={14} />,
       import: <IconDownload size={14} />,
       projects: <IconArchive size={14} />,
+      workspaces: <IconArchive size={14} />,
       about: <IconInfo size={14} />,
     };
     return SETTINGS_NAV.map((entry) => ({
@@ -1489,6 +1491,7 @@ export function SettingsPage() {
           {tab === "import" && <ImportSection />}
 
           {tab === "projects" && <ProjectsPage />}
+          {tab === "workspaces" && <WorkspacesPage />}
 
           {tab === "about" && (
             <div className="settings-stack">
