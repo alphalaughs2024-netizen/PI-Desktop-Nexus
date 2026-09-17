@@ -108,6 +108,8 @@ type RuntimeParams = {
   scratchDir?: string;
   /** Session-bound workspace root supplied by Electron main. */
   projectPath?: string;
+  /** False only when the host resolved the session to direct-folder mode. */
+  gitWorktreeEnabled?: boolean;
   projectInstructions?: ProjectInstructions;
   compactionSettings?: ContextCompactionSettings;
   attachmentsDir?: string;
@@ -331,6 +333,7 @@ async function runtimeFor(
     subagentProviders,
     projectInstructions: params.projectInstructions,
     projectPath: params.projectPath,
+    gitWorktreeEnabled: params.gitWorktreeEnabled,
     commandShell: params.commandShell,
   })
     ? existing
@@ -387,6 +390,7 @@ async function runtimeFor(
     subagents,
     subagentProviders,
     projectPath: params.projectPath,
+    gitWorktreeEnabled: params.gitWorktreeEnabled,
     projectInstructions: params.projectInstructions,
     scratchDir:
       typeof params.scratchDir === "string" && params.scratchDir

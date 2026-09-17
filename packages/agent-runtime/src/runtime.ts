@@ -513,6 +513,19 @@ const AGENT_CORE_TOOL_NAMES = new Set([
   SKILL_TOOL_NAME,
   WORKFLOW_TOOL_NAME,
 ]);
+
+const GIT_WORKTREE_HARD_FAILURE_CODES = new Set([
+  "WORKSPACE_MISSING",
+  "SESSION_LOOKUP_FAILED",
+  "WORKSPACE_PATH_UNAVAILABLE",
+  "ACCESS_DENIED",
+  "NOT_A_GIT_REPOSITORY",
+  "GIT_EXECUTABLE_UNAVAILABLE",
+  "UPSTREAM_CHECKOUT_PROTECTED",
+  "DIRTY_REPOSITORY",
+  "BRANCH_CONFLICT",
+  "WORKTREE_CONFLICT",
+]);
 const MAX_ON_DEMAND_TOOL_PROMPT_ENTRIES = 64;
 const MAX_TOOL_SEARCH_RESULT_NAMES = 24;
 
@@ -758,6 +771,8 @@ export type AgentRuntimeOptions = {
   systemPrompt?: string;
   /** Session-bound workspace root used for path-scoped instruction requests. */
   projectPath?: string;
+  /** Host-owned workspace readiness decides whether managed Git isolation is available. */
+  gitWorktreeEnabled?: boolean;
   /** Instructions resolved from the session's workspace. */
   projectInstructions?: ProjectInstructions;
   /** Persisted transcript to seed the agent with (session isolation: each
@@ -811,6 +826,7 @@ export type RuntimeMatchConfig = {
   trustedExtensions?: TrustedExtensionSpec[];
   projectInstructions?: ProjectInstructions;
   projectPath?: string;
+  gitWorktreeEnabled?: boolean;
   commandShell: CommandShellOption;
   subagents?: SubagentDefinition[];
   subagentProviders?: Record<string, RuntimeProviderConfig>;
@@ -1506,6 +1522,10 @@ export class DesktopAgentRuntime {
   private repeatedToolCall?: { fingerprint: string; toolName: string; count: number };
   /** Why the identical-call guard ended the turn, pending one visible error row. */
   private pendingRepeatedToolTermination?: { toolName: string; count: number };
+  /** A semantic Git preflight failure blocks all further lifecycle attempts in
+   * this turn, including different operations or branch names. */
+  private gitWorktreeFailureCode?: string;
+  private readonly gitWorktreeEnabled: boolean;
   private terminatingToolCalls = new Set<string>();
   private fullEntries: MessageEntry[];
   private activeCompaction?: ContextCompactionRecord;
@@ -1560,6 +1580,7 @@ export class DesktopAgentRuntime {
     this.commandShell = opts.commandShell;
     this.scratchDir = opts.scratchDir;
     this.projectPath = opts.projectPath?.trim() || undefined;
+    this.gitWorktreeEnabled = opts.gitWorktreeEnabled ?? true;
     this.baseProjectInstructions = opts.projectInstructions;
     this.projectInstructions = opts.projectInstructions;
     this.compactionEnabled = compactionEnabled(opts.compactionSettings);
@@ -1969,6 +1990,7 @@ export class DesktopAgentRuntime {
       safeJson(this.baseProjectInstructions ?? null) ===
         safeJson(config.projectInstructions ?? null) &&
       (this.projectPath ?? "") === (config.projectPath?.trim() ?? "") &&
+      this.gitWorktreeEnabled === (config.gitWorktreeEnabled ?? true) &&
       // Enabling a source document or renaming an instruction
       // changes the catalog digest, which retires the runtime and its stale
       // prompt. Bodies are excluded: the Skill tool always reads them fresh.
@@ -2475,6 +2497,17 @@ export class DesktopAgentRuntime {
         signal,
         onUpdate,
       ) => {
+        if (toolName === "GitWorktree" && this.gitWorktreeFailureCode) {
+          return {
+            content: [{
+              type: "text",
+              text: `GIT_WORKTREE_BLOCKED: ${this.gitWorktreeFailureCode}. Do not retry Git worktree operations this turn; explain the recovery action or wait for the user to change the project and start a new turn.`,
+            }],
+            details: { errorCode: this.gitWorktreeFailureCode },
+            isError: true,
+            terminate: true,
+          };
+        }
         if (participatesInRepeatGuard(toolName, params)) {
           const fingerprint = canonicalToolCallFingerprint(toolName, params);
           const previous = this.repeatedToolCall;
@@ -2765,10 +2798,18 @@ export class DesktopAgentRuntime {
           text = JSON.stringify(rawContent, null, 2);
         }
         if (!result.ok) this.failedHostToolCalls.add(toolCallId);
+        const terminateAfterGitWorktreeFailure =
+          toolName === "GitWorktree" &&
+          typeof result.errorCode === "string" &&
+          GIT_WORKTREE_HARD_FAILURE_CODES.has(result.errorCode);
+        if (terminateAfterGitWorktreeFailure) {
+          this.gitWorktreeFailureCode = result.errorCode;
+          this.terminatingToolCalls.add(toolCallId);
+        }
         return {
           content: [{ type: "text", text }, ...imageBlocks],
           details,
-          ...(terminateAfterMutationFailure ? { terminate: true } : {}),
+          ...(terminateAfterMutationFailure || terminateAfterGitWorktreeFailure ? { terminate: true } : {}),
           isError: result.isError === true || result.ok === false,
         };
       };
@@ -2960,7 +3001,7 @@ export class DesktopAgentRuntime {
       ...subagentTools,
       ...contextTools,
       ...extensionTools,
-    ];
+    ].filter((tool) => this.gitWorktreeEnabled || tool.name !== "GitWorktree");
   }
 
   /**
@@ -6422,6 +6463,7 @@ export class DesktopAgentRuntime {
     this.pendingUserMessageId = undefined;
     this.gracefulStopRequested = false;
     this.runCancelled = false;
+    this.gitWorktreeFailureCode = undefined;
     this.resetRunRecoveryState();
     this.turnEpoch += 1;
     this.abortDelegationsFromPreviousTurns();
@@ -6495,6 +6537,7 @@ export class DesktopAgentRuntime {
     this.gracefulStopRequested = false;
     this.runCancelled = false;
     this.turnSubagentUsage = undefined;
+    this.gitWorktreeFailureCode = undefined;
     // Capabilities and path-scoped instruction claims belong to one prompt.
     this.resetDeferredToolsForPrompt();
     // Tool pre-activation only inspects the user's typed words. `promptContent`

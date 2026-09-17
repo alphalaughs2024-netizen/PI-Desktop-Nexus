@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { createRequire } from "node:module";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -19,7 +19,70 @@ const {
   validateManagedRecord,
   getGitBlocker,
   clearGitBlocker,
+  inspectGitWorkspace,
+  getGitWorkspaceMode,
+  setGitWorkspaceMode,
 } = loadTypeScript(join(desktopRoot, "electron/main/git-worktrees.ts"));
+
+test("persists direct-folder mode without changing the selected folder", () => {
+  const root = mkdtempSync(join(tmpdir(), "nexus-git-mode-"));
+  try {
+    setGitWorkspaceMode(root, "session-direct", "direct-folder");
+    assert.equal(getGitWorkspaceMode(root, "session-direct"), "direct-folder");
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("reports a non-Git source copy as direct-folder ready without mutating it", async () => {
+  const root = mkdtempSync(join(tmpdir(), "nexus-git-readiness-"));
+  const sourceCopy = join(root, "source-copy");
+  mkdirSync(sourceCopy);
+  try {
+    const readiness = await inspectGitWorkspace(join(root, "profile"), sourceCopy);
+    assert.equal(readiness.ready, false);
+    assert.equal(readiness.workspaceMode, "direct-folder");
+    assert.equal(readiness.category, "NOT_A_GIT_REPOSITORY");
+    assert.equal(readiness.recoveryAction, "work-directly");
+    assert.equal(existsSync(join(sourceCopy, ".git")), false);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("clears a session blocker when its selected project changes", async () => {
+  const root = mkdtempSync(join(tmpdir(), "nexus-git-workspace-change-"));
+  const sourceCopy = join(root, "source-copy");
+  const repository = join(root, "repository");
+  mkdirSync(sourceCopy);
+  mkdirSync(repository);
+  try {
+    git(repository, "init");
+    git(repository, "config", "user.email", "nexus-test@example.invalid");
+    git(repository, "config", "user.name", "Nexus test");
+    writeFileSync(join(repository, "README.md"), "base\n");
+    git(repository, "add", "README.md");
+    git(repository, "commit", "-m", "base");
+    let selected = sourceCopy;
+    const deps = {
+      dataDir: join(root, "profile"),
+      resolveWorkspace: async () => selected,
+      confirm: async () => false,
+    };
+    await assert.rejects(
+      () => runGitWorktreeOperation(deps, "project-change", { operation: "status", branch: "nexus/one" }),
+      /not a git repository/i,
+    );
+    assert.equal(getGitBlocker("project-change").category, "NOT_A_GIT_REPOSITORY");
+    selected = repository;
+    const status = await runGitWorktreeOperation(deps, "project-change", { operation: "status", branch: "nexus/one" });
+    assert.match(status, /"repositoryPath"/);
+    assert.equal(getGitBlocker("project-change"), undefined);
+  } finally {
+    clearGitBlocker("project-change");
+    rmSync(root, { recursive: true, force: true });
+  }
+});
 
 test("classifies missing workspaces and blocks branch-changing retries", async () => {
   clearGitBlocker("missing-session");

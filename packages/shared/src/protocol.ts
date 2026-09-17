@@ -97,6 +97,14 @@ export const IPC = {
     sessionListRevisions: "pi-desktop/session/listRevisions",
     sessionActivateRevision: "pi-desktop/session/activateRevision",
     sessionGetScratchPath: "pi-desktop/session/getScratchPath",
+    /** Read-only host-owned readiness for managed Git isolation. */
+    gitWorkspaceStatus: "pi-desktop/gitWorkspace/status",
+    /** Explicit per-session workspace mode; managed isolation requires readiness. */
+    gitWorkspaceModeSet: "pi-desktop/gitWorkspace/modeSet",
+    gitWorktreesList: "pi-desktop/gitWorkspace/list",
+    gitWorktreeReveal: "pi-desktop/gitWorkspace/reveal",
+    gitWorktreeOpenSession: "pi-desktop/gitWorkspace/openSession",
+    gitWorktreeCleanup: "pi-desktop/gitWorkspace/cleanup",
     contextVaultList: "pi-desktop/contextVault/list",
     contextVaultCreate: "pi-desktop/contextVault/create",
     contextVaultUpdate: "pi-desktop/contextVault/update",

@@ -1,6 +1,6 @@
 import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync, statSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, unlinkSync, writeFileSync, statSync } from "node:fs";
 import { basename, dirname, isAbsolute, join, resolve } from "node:path";
 
 export type ManagedWorktreeRecord = {
@@ -20,7 +20,13 @@ export type ManagedWorktreeStatus = {
   mergedIntoCurrent?: boolean;
 };
 
+export type ManagedWorktreeInventoryRow = ManagedWorktreeStatus & {
+  createdAt: string;
+};
+
 export type GitWorktreeOperation = "status" | "create" | "merge" | "cleanup";
+export type GitWorkspaceMode = "managed-isolation" | "direct-folder";
+export type GitWorkspaceRecoveryAction = "create-isolation" | "work-directly" | "choose-project" | "inspect-git" | "retry";
 
 export type GitFailureCategory =
   | "WORKSPACE_MISSING"
@@ -43,6 +49,26 @@ export type GitBlocker = {
   attempts: number;
   timestamp: string;
   recovery: string;
+};
+
+/** Read-only host-owned readiness state. This is intentionally broader than
+ * one managed branch's lifecycle status and never changes Git state. */
+export type GitWorkspaceStatus = {
+  workspacePath?: string;
+  workspaceIdentity: string;
+  workspaceExists: boolean;
+  accessible: boolean;
+  gitAvailable: boolean;
+  ready: boolean;
+  workspaceMode: GitWorkspaceMode;
+  category?: GitFailureCategory;
+  explanation: string;
+  recovery: string;
+  recoveryAction: GitWorkspaceRecoveryAction;
+  repositoryPath?: string;
+  branch?: string;
+  clean?: boolean;
+  managedWorktrees: ManagedWorktreeRecord[];
 };
 
 export class GitWorkflowError extends Error {
@@ -138,8 +164,108 @@ function runGit(cwd: string, args: string[]): Promise<GitResult> {
   });
 }
 
-function comparablePath(path: string): string {
+export function comparablePath(path: string): string {
   return resolve(path).replaceAll("\\", "/").toLowerCase();
+}
+
+export function listManagedWorktreeRecords(dataDir: string, repositoryPath?: string): ManagedWorktreeRecord[] {
+  try {
+    const root = recordsRoot(dataDir);
+    if (!existsSync(root)) return [];
+    return readdirSync(root, { withFileTypes: true })
+      .filter((entry) => entry.isFile() && entry.name.endsWith(".json"))
+      .flatMap((entry) => {
+        try {
+          const record = JSON.parse(readFileSync(join(root, entry.name), "utf8")) as ManagedWorktreeRecord;
+          return !repositoryPath || comparablePath(record.repositoryPath) === comparablePath(repositoryPath) ? [record] : [];
+        } catch { return []; }
+      });
+  } catch { return []; }
+}
+
+/** Inventory is profile-recorded only: arbitrary user worktrees are never
+ * discovered, displayed, or eligible for Nexus cleanup. */
+export async function listManagedWorktreeInventory(dataDir: string): Promise<ManagedWorktreeInventoryRow[]> {
+  const records = listManagedWorktreeRecords(dataDir);
+  const rows = await Promise.all(records.map(async (record) => {
+    try {
+      const status = await inspectManagedWorktree(dataDir, record.repositoryPath, record.branch);
+      if (!status.managed || status.worktreePath !== record.worktreePath) return undefined;
+      return { ...status, createdAt: record.createdAt };
+    } catch {
+      return undefined;
+    }
+  }));
+  return rows.filter((row): row is ManagedWorktreeInventoryRow => Boolean(row));
+}
+
+export function recordedManagedWorktree(
+  dataDir: string,
+  repositoryPath: string,
+  branch: string,
+  worktreePath: string,
+): ManagedWorktreeRecord | undefined {
+  const record = readRecord(dataDir, resolve(repositoryPath), branch);
+  return validateManagedRecord(record, {
+    repositoryPath: resolve(repositoryPath),
+    branch,
+    worktreePath: resolve(worktreePath),
+  }) ? record : undefined;
+}
+
+function readinessFailure(workspacePath: string | null | undefined, category: GitFailureCategory, explanation: string): GitWorkspaceStatus {
+  const action: GitWorkspaceRecoveryAction = category === "NOT_A_GIT_REPOSITORY"
+    ? "work-directly"
+    : category === "WORKSPACE_MISSING" || category === "WORKSPACE_PATH_UNAVAILABLE" || category === "ACCESS_DENIED"
+      ? "choose-project"
+      : category === "TRANSIENT_GIT_FAILURE" ? "retry" : "inspect-git";
+  return {
+    ...(workspacePath ? { workspacePath } : {}),
+    workspaceIdentity: workspacePath ? comparablePath(workspacePath) : "none",
+    workspaceExists: Boolean(workspacePath && existsSync(workspacePath)),
+    accessible: category !== "ACCESS_DENIED",
+    gitAvailable: category !== "GIT_EXECUTABLE_UNAVAILABLE",
+    ready: false,
+    workspaceMode: "direct-folder",
+    category,
+    explanation,
+    recovery: recoveryFor(category),
+    recoveryAction: action,
+    managedWorktrees: [],
+  };
+}
+
+/** Inspect workspace readiness without initializing Git, choosing a branch, or
+ * creating a worktree. Safe for source copies and experimental folders. */
+export async function inspectGitWorkspace(dataDir: string, workspacePath: string | null | undefined): Promise<GitWorkspaceStatus> {
+  if (!workspacePath?.trim()) return readinessFailure(null, "WORKSPACE_MISSING", "No project is selected.");
+  const selected = workspacePath.trim();
+  try {
+    const repositoryPath = await repositoryRoot(selected);
+    const [branch, porcelain] = await Promise.all([
+      gitOrThrow(repositoryPath, ["branch", "--show-current"]),
+      gitOrThrow(repositoryPath, ["status", "--porcelain=v1", "--untracked-files=all"]),
+    ]);
+    return {
+      workspacePath: selected,
+      workspaceIdentity: comparablePath(selected),
+      workspaceExists: true,
+      accessible: true,
+      gitAvailable: true,
+      ready: true,
+      workspaceMode: "managed-isolation",
+      explanation: "This project is ready for Nexus-managed Git isolation.",
+      recovery: "Create an isolated workspace when this task needs one.",
+      recoveryAction: "create-isolation",
+      repositoryPath,
+      ...(branch ? { branch } : {}),
+      clean: porcelain === "",
+      managedWorktrees: listManagedWorktreeRecords(dataDir, repositoryPath),
+    };
+  } catch (error) {
+    const category = classifyGitError(error, error instanceof GitWorkflowError ? error.category : "TRANSIENT_GIT_FAILURE");
+    return readinessFailure(selected, category, error instanceof Error ? error.message : String(error));
+  }
 }
 
 async function gitOrThrow(cwd: string, args: string[]): Promise<string> {
@@ -153,6 +279,29 @@ async function gitOrThrow(cwd: string, args: string[]): Promise<string> {
 
 function recordsRoot(dataDir: string): string {
   return join(dataDir, "agent-capabilities", "git-worktrees");
+}
+
+function workspaceModePath(dataDir: string, sessionId: string): string {
+  const digest = createHash("sha256").update(sessionId).digest("hex");
+  return join(dataDir, "agent-capabilities", "git-workspace-modes", `${digest}.json`);
+}
+
+export function getGitWorkspaceMode(dataDir: string, sessionId: string): GitWorkspaceMode | undefined {
+  try {
+    const value = JSON.parse(readFileSync(workspaceModePath(dataDir, sessionId), "utf8")) as { mode?: unknown };
+    return value.mode === "managed-isolation" || value.mode === "direct-folder" ? value.mode : undefined;
+  } catch { return undefined; }
+}
+
+export function setGitWorkspaceMode(dataDir: string, sessionId: string, mode: GitWorkspaceMode): void {
+  const path = workspaceModePath(dataDir, sessionId);
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(path, JSON.stringify({ mode }, null, 2), "utf8");
+}
+
+export function clearGitWorkspaceMode(dataDir: string, sessionId: string): void {
+  const path = workspaceModePath(dataDir, sessionId);
+  if (existsSync(path)) unlinkSync(path);
 }
 
 function recordPath(dataDir: string, repositoryPath: string, branch: string): string {
@@ -277,13 +426,7 @@ async function runGitWorktreeOperationInternal(
   const rawBranch = typeof input.branch === "string" ? input.branch.trim() : "";
   const valid = validateManagedBranch(rawBranch);
   if (!valid.ok) throw new Error(`GitWorktree: ${valid.error}.`);
-  const existingBlocker = blockers.get(sessionId);
-  if (existingBlocker && existingBlocker.category !== "TRANSIENT_GIT_FAILURE") {
-    throw workflowError(existingBlocker.category, existingBlocker.recovery);
-  }
-  if (existingBlocker?.category === "TRANSIENT_GIT_FAILURE" && existingBlocker.attempts >= 2) {
-    throw workflowError(existingBlocker.category, existingBlocker.recovery);
-  }
+  let existingBlocker = blockers.get(sessionId);
   let workspacePath: string | null;
   try {
     workspacePath = await deps.resolveWorkspace(sessionId);
@@ -293,9 +436,25 @@ async function runGitWorktreeOperationInternal(
     throw workflowError(blocker.category, error instanceof Error ? error.message : "session lookup failed");
   }
   if (!workspacePath) {
+    if (existingBlocker && existingBlocker.category !== "TRANSIENT_GIT_FAILURE") {
+      throw workflowError(existingBlocker.category, existingBlocker.recovery);
+    }
     const blocker = { sessionId, operation, category: "WORKSPACE_MISSING" as const, workspaceIdentity: "none", attempts: (existingBlocker?.attempts ?? 0) + 1, timestamp: new Date().toISOString(), recovery: recoveryFor("WORKSPACE_MISSING") };
     blockers.set(sessionId, blocker);
     throw workflowError(blocker.category, "no workspace is open");
+  }
+  // A task can be rebound to another project after a blocker. The blocker is
+  // meaningful only for the workspace that produced it; never strand a valid
+  // replacement repository behind a stale session-wide failure.
+  if (existingBlocker && existingBlocker.workspaceIdentity !== comparablePath(workspacePath)) {
+    clearGitBlocker(sessionId);
+    existingBlocker = undefined;
+  }
+  if (existingBlocker && existingBlocker.category !== "TRANSIENT_GIT_FAILURE") {
+    throw workflowError(existingBlocker.category, existingBlocker.recovery);
+  }
+  if (existingBlocker?.category === "TRANSIENT_GIT_FAILURE" && existingBlocker.attempts >= 2) {
+    throw workflowError(existingBlocker.category, existingBlocker.recovery);
   }
   const canonicalBranch = `nexus/${valid.shortName}`;
   let repositoryPath: string;
@@ -315,7 +474,13 @@ async function runGitWorktreeOperationInternal(
   }
 
   if (operation === "create") {
-    await ensureClean(repositoryPath, "the source repository");
+    try {
+      await ensureClean(repositoryPath, "the source repository");
+    } catch (error) {
+      const category = classifyGitError(error, "TRANSIENT_GIT_FAILURE");
+      blockers.set(sessionId, { sessionId, operation, category, workspaceIdentity: comparablePath(workspacePath), attempts: 1, timestamp: new Date().toISOString(), recovery: recoveryFor(category) });
+      throw error;
+    }
     if (await branchExists(repositoryPath, canonicalBranch)) {
       throw workflowError("BRANCH_CONFLICT", `branch ${canonicalBranch} already exists`);
     }
