@@ -1841,17 +1841,10 @@ export function Sidebar({
           }}
         >
           <span className="sidebar-list-label">{t("nav.projects")}</span>
-          <TooltipButton type="button" className="sidebar-toolbar-button" tooltip={t("nav.newProjectGroup", { defaultValue: "New project group" })} ariaLabel={t("nav.newProjectGroup", { defaultValue: "New project group" })} onClick={() => setCreateGroupOpen(true)}><IconPlus size={14} /></TooltipButton>
-          <TooltipButton
-            type="button"
-            className="sidebar-toolbar-button"
-            data-action="new-project"
-            tooltip={t("nav.newProject")}
-            ariaLabel={t("nav.newProject")}
-            onClick={() => void openProjectPicker()}
-          >
-            <IconNewProject size={14} />
-          </TooltipButton>
+          <div className="sidebar-toolbar-actions">
+            <TooltipButton type="button" className="sidebar-toolbar-button" tooltip={t("nav.newProjectGroup", { defaultValue: "New project group" })} ariaLabel={t("nav.newProjectGroup", { defaultValue: "New project group" })} onClick={() => setCreateGroupOpen(true)}><IconPlus size={14} /></TooltipButton>
+            <TooltipButton type="button" className="sidebar-toolbar-button" data-action="new-project" tooltip={t("nav.newProject")} ariaLabel={t("nav.newProject")} onClick={() => void openProjectPicker()}><IconNewProject size={14} /></TooltipButton>
+          </div>
         </div>
 
         <div

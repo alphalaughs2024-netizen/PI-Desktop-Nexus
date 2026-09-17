@@ -1,0 +1,9 @@
+.sidebar-toolbar-actions { display: inline-flex; align-items: center; gap: 2px; }
+.project-group-modal-backdrop { position: fixed; inset: 0; z-index: 80; display: grid; place-items: center; padding: 24px; background: color-mix(in oklab, var(--ds-bg-primary) 78%, transparent); }
+.project-group-modal { width: min(420px, 100%); padding: 20px; border: 1px solid var(--ds-border-default); border-radius: var(--radius-lg); background: var(--ds-bg-elevated-opaque); box-shadow: var(--ds-shadow-dialog); color: var(--ds-text-primary); }
+.project-group-modal h2 { margin: 0 0 16px; font-size: var(--text-lg); }
+.project-group-modal label { display: grid; gap: 6px; color: var(--ds-text-muted); font-size: var(--text-sm); }
+.project-group-modal input { width: 100%; padding: 8px 10px; border: 1px solid var(--ds-border-default); border-radius: var(--radius-sm); background: var(--ds-bg-input); color: var(--ds-text-primary); }
+.project-group-modal footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
+.project-group-modal button { padding: 7px 12px; border: 1px solid var(--ds-border-default); border-radius: var(--radius-sm); background: var(--ds-bg-elevated); color: var(--ds-text-primary); }
+.project-group-modal button[type="submit"] { background: var(--ds-accent); color: var(--ds-text-on-accent); }
