@@ -24,6 +24,7 @@ import type {
   PluginViewMeta,
   PermissionMode,
   ProjectWorkspace,
+  ProjectGroup,
   ProposalKind,
   ProviderPublic,
   ReviewRollbackResult,
@@ -88,6 +89,7 @@ import {
   projectIsPinned,
   projectWorkspaceFromPath,
   saveSidebarPreferences,
+  type SidebarPreferences,
   sessionIsArchived,
   sessionIsPinned,
   sortProjects,
@@ -816,6 +818,7 @@ export type AppState = {
   projectMeta: Record<string, ProjectMeta>;
   /** Kept as a flat map for lightweight consumers (Sidebar). */
   projectCollapsed: Record<string, boolean>;
+  projectGroups: ProjectGroup[];
   projectSort: ProjectSort;
   activeSessionId?: string;
   /** Composer toolbar choices retained on the draft while it has no session
@@ -971,6 +974,10 @@ export type AppState = {
   toggleProjectCollapsed: (path: string) => void;
   closeProject: (path: string) => Promise<void>;
   setProjectSort: (sort: ProjectSort) => void;
+  createProjectGroup: (name: string) => void;
+  renameProjectGroup: (id: string, name: string) => void;
+  moveProjectToGroup: (path: string, groupId: string | null) => void;
+  setProjectGroupCollapsed: (id: string, collapsed?: boolean) => void;
   getVisibleSessions: (options?: {
     projectPath?: string | null;
     includeArchived?: boolean;
@@ -1181,6 +1188,7 @@ function preferencesFromState(state: Pick<
   | "projectSort"
   | "sessionView"
   | "openProjectPaths"
+  | "projectGroups"
 >) {
   return {
     sessionMeta: state.sessionMeta,
@@ -1188,6 +1196,7 @@ function preferencesFromState(state: Pick<
     projectSort: state.projectSort,
     sessionView: state.sessionView,
     openProjectPaths: state.openProjectPaths,
+    projectGroups: state.projectGroups,
   };
 }
 
@@ -1316,6 +1325,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       .filter(([, meta]) => meta.collapsed === true)
       .map(([path]) => [path, true]),
   ),
+  projectGroups: initialSidebarPreferences.projectGroups,
   subagentPanel: null,
   workPanelOpen: false,
   workPanelTabs: [],
@@ -3334,6 +3344,29 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   setProjectSort: (sort) => {
     set({ projectSort: sort });
+    persistCurrentSidebar(get);
+  },
+
+  createProjectGroup: (name) => {
+    const normalized = name.trim().slice(0, 80);
+    if (!normalized) return;
+    set((state) => ({ projectGroups: [...state.projectGroups, { id: crypto.randomUUID(), name: normalized, projectPaths: [], collapsed: false, order: state.projectGroups.length }] }));
+    persistCurrentSidebar(get);
+  },
+  renameProjectGroup: (id, name) => {
+    const normalized = name.trim().slice(0, 80);
+    if (!normalized) return;
+    set((state) => ({ projectGroups: state.projectGroups.map((group) => group.id === id ? { ...group, name: normalized } : group) }));
+    persistCurrentSidebar(get);
+  },
+  moveProjectToGroup: (path, groupId) => {
+    const key = normalizeProjectPath(path);
+    if (!key || (groupId && !get().projectGroups.some((group) => group.id === groupId))) return;
+    set((state) => ({ projectGroups: state.projectGroups.map((group) => ({ ...group, projectPaths: group.id === groupId ? [...group.projectPaths.filter((item) => item !== key), key] : group.projectPaths.filter((item) => item !== key) })) }));
+    persistCurrentSidebar(get);
+  },
+  setProjectGroupCollapsed: (id, collapsed) => {
+    set((state) => ({ projectGroups: state.projectGroups.map((group) => group.id === id ? { ...group, collapsed: collapsed ?? !group.collapsed } : group) }));
     persistCurrentSidebar(get);
   },
 

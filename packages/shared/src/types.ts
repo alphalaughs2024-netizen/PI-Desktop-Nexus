@@ -2155,3 +2155,20 @@ export type ContextVaultClaim = ContextVaultClaimInput & {
   createdAt: number;
   updatedAt: number;
 };
+
+/** User-defined sidebar grouping. Projects remain authoritative by path. */
+export type ProjectGroup = {
+  id: string;
+  name: string;
+  projectPaths: string[];
+  collapsed: boolean;
+  order: number;
+};
+
+/** Bounded, project-owned Context Vault projection for prompt assembly. */
+export type ProjectMemoryView = {
+  projectPath: string;
+  claims: ContextVaultClaim[];
+  /** Claims are already reviewed, deterministically ordered, and size-bounded. */
+  contextText: string;
+};

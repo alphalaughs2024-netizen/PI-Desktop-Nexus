@@ -1,4 +1,4 @@
-import type { ProjectWorkspace, SessionSummary } from "@pi-desktop/shared";
+import type { ProjectGroup, ProjectWorkspace, SessionSummary } from "@pi-desktop/shared";
 
 /** Local copy keeps this pure module runnable in Node's TS test loader. */
 export function normalizeProjectPath(projectPath?: string | null): string | null {
@@ -38,6 +38,7 @@ export type SidebarPreferences = {
   projectSort: ProjectSort;
   sessionView: { sort: SessionSort; archived: boolean };
   openProjectPaths: string[];
+  projectGroups: ProjectGroup[];
 };
 
 export const SIDEBAR_PREFERENCES_KEY = "pi.desktop.sidebarPreferences";
@@ -146,6 +147,25 @@ function cleanPaths(value: unknown): string[] {
   }
   return output;
 }
+
+function cleanProjectGroups(value: unknown): ProjectGroup[] {
+  if (!Array.isArray(value)) return [];
+  const seenGroups = new Set<string>();
+  const seenProjects = new Set<string>();
+  const groups: ProjectGroup[] = [];
+  for (const raw of value) {
+    if (!object(raw) || typeof raw.id !== "string" || !raw.id.trim() || seenGroups.has(raw.id)) continue;
+    if (typeof raw.name !== "string" || !raw.name.trim()) continue;
+    const paths: string[] = [];
+    if (Array.isArray(raw.projectPaths)) for (const item of raw.projectPaths) {
+      const path = typeof item === "string" ? normalizeProjectPath(item) : null;
+      if (path && !seenProjects.has(path)) { seenProjects.add(path); paths.push(path); }
+    }
+    seenGroups.add(raw.id);
+    groups.push({ id: raw.id, name: raw.name.trim().slice(0, 80), projectPaths: paths, collapsed: raw.collapsed === true, order: typeof raw.order === "number" && Number.isFinite(raw.order) ? raw.order : groups.length });
+  }
+  return groups.sort((a, b) => a.order - b.order || a.id.localeCompare(b.id));
+}
 function sessionSort(value: unknown): SessionSort {
   return value === "created" || value === "oldest" || value === "name" || value === "manual"
     ? value
@@ -175,6 +195,7 @@ export function loadSidebarPreferences(): SidebarPreferences {
             : false,
     },
     openProjectPaths: cleanPaths(root.openProjectPaths),
+    projectGroups: cleanProjectGroups(root.projectGroups),
   };
   // Migrate the old pin-only preferences once. Do not re-apply them after
   // the new record has been written, otherwise an explicit unpin is lost.
@@ -209,6 +230,7 @@ export function saveSidebarPreferences(value: SidebarPreferences): void {
       archived: value.sessionView.archived === true,
     },
     openProjectPaths: cleanPaths(value.openProjectPaths),
+    projectGroups: cleanProjectGroups(value.projectGroups),
   });
 }
 

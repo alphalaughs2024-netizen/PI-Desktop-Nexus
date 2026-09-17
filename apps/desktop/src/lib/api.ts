@@ -405,6 +405,8 @@ export const api = {
     invoke<{ content: string }>(IPC.invoke.gitWorktreeCleanup, row),
   listContextVault: (projectPath: string, query?: string) =>
     invoke<{ claims: ContextVaultClaim[] }>(IPC.invoke.contextVaultList, { projectPath, query }),
+  getProjectMemory: (projectPath: string, query = "") =>
+    invoke<{ claims: Array<ContextVaultClaim | { claim: ContextVaultClaim; disposition: string }>; contextText?: string }>(IPC.invoke.contextVaultMemory, { projectPath, query }),
   createContextVaultClaim: (projectPath: string, claim: ContextVaultClaimInput) =>
     invoke<{ status: string; claim?: ContextVaultClaim }>(IPC.invoke.contextVaultCreate, { projectPath, claim }),
   updateContextVaultClaim: (projectPath: string, id: string, claim: ContextVaultClaimInput) =>
