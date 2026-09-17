@@ -2,6 +2,13 @@ import type { ChangelogEntry } from "./changelog.js";
 
 export const frEntries: ChangelogEntry[] = [
   {
+    "version": "0.15.0",
+    "date": "2026-09-17",
+    "highlights": [
+      "Ajoute un inventaire des espaces de travail gérés et des contrôles de préparation, ainsi que des améliorations des thèmes panoramiques Alpine, Obsidian, Emerald et Twilight.",
+    ],
+  },
+  {
     "version": "0.14.6",
     "date": "2026-09-10",
     "highlights": [

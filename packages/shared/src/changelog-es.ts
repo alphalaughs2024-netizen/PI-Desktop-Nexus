@@ -2,6 +2,13 @@ import type { ChangelogEntry } from "./changelog.js";
 
 export const esEntries: ChangelogEntry[] = [
   {
+    "version": "0.15.0",
+    "date": "2026-09-17",
+    "highlights": [
+      "Añade un inventario de espacios de trabajo administrados y comprobaciones de preparación, además de mejoras en los temas escénicos Alpine, Obsidian, Emerald y Twilight.",
+    ],
+  },
+  {
     "version": "0.14.6",
     "date": "2026-09-10",
     "highlights": [

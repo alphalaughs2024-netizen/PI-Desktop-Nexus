@@ -2,6 +2,13 @@ import type { ChangelogEntry } from "./changelog.js";
 
 export const koEntries: ChangelogEntry[] = [
   {
+    version: "0.15.0",
+    date: "2026-09-17",
+    highlights: [
+      "관리형 워크스페이스 목록과 준비 상태 검사를 추가하고 Alpine, Obsidian, Emerald, Twilight 풍경 테마를 다듬습니다.",
+    ],
+  },
+  {
     version: "0.14.6",
     date: "2026-09-10",
     highlights: [

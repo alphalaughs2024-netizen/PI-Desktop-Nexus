@@ -29,6 +29,13 @@ export type ChangelogEntry = {
 
 const enEntries: ChangelogEntry[] = [
   {
+    version: "0.15.0",
+    date: "2026-09-17",
+    highlights: [
+      "Add managed workspace inventory and readiness checks, plus Alpine, Obsidian, Emerald, and Twilight scenic theme refinements.",
+    ],
+  },
+  {
     version: "0.14.6",
     date: "2026-09-10",
     highlights: [
@@ -744,6 +751,13 @@ const enEntries: ChangelogEntry[] = [
 
 const zhCNEntries: ChangelogEntry[] = [
   {
+    version: "0.15.0",
+    date: "2026-09-17",
+    highlights: [
+      "新增受管工作区清单和就绪检查，并完善 Alpine、Obsidian、Emerald 与 Twilight 风景主题。",
+    ],
+  },
+  {
     version: "0.14.6",
     date: "2026-09-10",
     highlights: [
@@ -1457,6 +1471,13 @@ const zhCNEntries: ChangelogEntry[] = [
 ];
 
 const zhTWEntries: ChangelogEntry[] = [
+  {
+    version: "0.15.0",
+    date: "2026-09-17",
+    highlights: [
+      "新增受管理工作區清單和就緒檢查，並完善 Alpine、Obsidian、Emerald 與 Twilight 風景主題。",
+    ],
+  },
   {
     version: "0.14.6",
     date: "2026-09-10",

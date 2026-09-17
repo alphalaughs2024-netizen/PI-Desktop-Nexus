@@ -131,6 +131,10 @@ Nexus preserves the practical PI Desktop foundation:
 The goal is simple: make strong AI coding workflows safer to steer and easier
 to understand without taking control away from the person using the app.
 
+## Project status
+
+The current **0.15.x** release line includes the desktop shell, streaming agent runtime, Agent / Plan / Goal workflows, permissioned workspace tools, projects and sessions, session import, local MCP control, MCP / Skills / subagents, background delegation, multi-provider model configuration, plugins and marketplace, context checkpoints, notifications, and cross-platform packaging.
+
 ---
 
 ## Development

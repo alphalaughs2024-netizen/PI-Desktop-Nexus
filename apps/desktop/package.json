@@ -1,6 +1,6 @@
 {
   "name": "@pi-desktop/desktop",
-  "version": "0.14.6",
+  "version": "0.15.0",
   "desktopName": "pi-desktop-nexus.desktop",
   "private": true,
   "description": "PI Desktop Nexus fork test application",

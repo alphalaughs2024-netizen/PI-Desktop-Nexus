@@ -2,6 +2,13 @@ import type { ChangelogEntry } from "./changelog.js";
 
 export const trEntries: ChangelogEntry[] = [
   {
+    "version": "0.15.0",
+    "date": "2026-09-17",
+    "highlights": [
+      "Yönetilen çalışma alanı envanteri ve hazırlık denetimleri ekler; Alpine, Obsidian, Emerald ve Twilight manzara temalarını iyileştirir.",
+    ],
+  },
+  {
     "version": "0.14.6",
     "date": "2026-09-10",
     "highlights": [

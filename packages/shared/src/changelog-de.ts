@@ -2,6 +2,13 @@ import type { ChangelogEntry } from "./changelog.js";
 
 export const deEntries: ChangelogEntry[] = [
   {
+    "version": "0.15.0",
+    "date": "2026-09-17",
+    "highlights": [
+      "Fügt eine verwaltete Arbeitsbereichsübersicht und Bereitschaftsprüfungen sowie Verfeinerungen der Landschaftsthemen Alpine, Obsidian, Emerald und Twilight hinzu.",
+    ],
+  },
+  {
     "version": "0.14.6",
     "date": "2026-09-10",
     "highlights": [
