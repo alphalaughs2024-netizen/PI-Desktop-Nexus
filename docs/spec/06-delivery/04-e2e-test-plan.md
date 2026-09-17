@@ -10395,6 +10395,19 @@ existing three-failed-`Edit` recovery scenario remains unchanged.
 
 # Reliability regression scenarios
 
+#### E2E-GIT-WORKSPACE-READINESS: managed isolation and direct-folder recovery
+
+- **Steps**: Open a Git-ready project, inspect readiness, propose and confirm a
+  `nexus/<short-name>` worktree, then merge and clean it up. Open a copied
+  non-Git folder in a separate task and choose direct-folder mode. Change a
+  blocked task to a Git-ready project and refresh readiness. Open Settings →
+  Workspaces and verify recorded worktree actions.
+- **Expected**: A ready project exposes only the confirmed, local managed
+  lifecycle. A source copy is never initialized and has no Git worktree tool or
+  workflow guidance. A hard lifecycle failure ends Git attempts for that turn;
+  changing project clears the old blocker. The inventory excludes arbitrary user
+  worktrees and cleanup refuses unknown, dirty, or unmerged records.
+
 Desktop smoke coverage should verify that the work-panel header does not cover
 Windows/Linux native controls, plugin views remain visible while resizing, and
 the context inspector stays within the conversation pane when the work panel is

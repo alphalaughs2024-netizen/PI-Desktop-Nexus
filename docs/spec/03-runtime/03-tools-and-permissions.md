@@ -367,11 +367,17 @@ Initial denylist (extensible):
 
 ## 6. Permission Model
 
-### 5a. Managed Git worktree lifecycle (ADR 0223)
+### 5a. Managed Git worktree lifecycle (ADR 0233)
 
 `GitWorktree` is an Agent-mode Electron-local tool for a narrow local Git
 lifecycle. It is not a general Git command executor and does not replace the
 host permission boundary for ordinary file or shell work.
+
+The host exposes it only after a read-only readiness check succeeds and the
+session is in managed-isolation mode. Direct-folder sessions retain their normal
+workspace tools but receive neither this tool nor Git-isolation workflow
+guidance. A hard typed Git failure ends further Git worktree calls for that
+turn; only a transient failure can receive one retry.
 
 - The only accepted branch shape is `nexus/<short-name>`; a user or model
   cannot choose another namespace.

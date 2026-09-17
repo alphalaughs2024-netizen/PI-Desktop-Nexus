@@ -13,7 +13,8 @@
 > updated values: sidebar 240–520px (275px default), toolbar 46px (not 44px),
 > composer placeholder per D094/D066, home empty stack and bottom composer per
 > D111/D204/D206,
-> Projects index table per D066/D133, settings full-page shell per D063 with the
+> Projects index table per D066/D133, Workspaces inventory (profile-recorded
+> Nexus worktrees only), settings full-page shell per D063 with the
 > compact eight-destination directory from D090/D133/D166, and retained path-keyed
 > project groups per D093 (which preserves D088's Temporary/exact-path boundary
 > while restoring scoped project and conversation organization actions), and

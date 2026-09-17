@@ -1834,6 +1834,19 @@ The named tools cover the common Agent workflow:
 - `pi_plans_pending`, `pi_plans_resolve`
 - `pi_workspace_diff`, `pi_fs_list`, `pi_fs_read`
 
+## 14. Git workspace readiness
+
+`pi-desktop/gitWorkspace/status` is a read-only Electron-main contract for the
+session's selected project. It reports Git readiness, current branch and clean
+state where available, a typed failure category, a concise recovery action, and
+only Nexus-recorded managed worktrees. It never initializes Git.
+
+`pi-desktop/gitWorkspace/modeSet` persists either `managed-isolation` or
+`direct-folder` for that session. Switching to managed isolation is refused
+unless readiness succeeds. `list`, `reveal`, `openSession`, and `cleanup` are
+host-owned inventory actions; each validates a profile-recorded worktree again.
+Cleanup uses the existing native confirmation and clean/merged checks.
+
 `pi_control_describe` returns the reviewed operation catalog. `pi_desktop_invoke`
 accepts an operation id and positional IPC arguments:
 
