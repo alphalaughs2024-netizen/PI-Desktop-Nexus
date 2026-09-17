@@ -10430,3 +10430,9 @@ In a packaged production build, every card must retain its own bundled backdrop
 rather than resolving a renderer-relative resource path or showing the active
 page backdrop through a failed card image. The copy tile owns its cool-white
 foreground rather than inheriting the selected theme's general text color.
+# Productivity upgrades
+
+- Sidebar project groups persist names, membership, ordering, and collapsed
+  state without changing project paths or session ownership.
+- Context Vault project memory remains scoped to the active project and only
+  exposes reviewed, fresh claims in deterministic bounded form.

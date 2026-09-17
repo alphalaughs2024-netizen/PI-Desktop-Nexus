@@ -54,7 +54,7 @@ export function ContextVaultTab() {
   useEffect(() => {
     if (!projectPath) { setMemoryText(""); return; }
     void api.getProjectMemory(projectPath, query).then((result) => {
-      const usable = result.claims.map((item) => "claim" in item ? item.claim : item).filter((claim) => claim.verification.state === "reviewed" && claim.freshness === "fresh");
+      const usable = result.claims.map((item) => "disposition" in item ? item.claim : item).filter((claim) => claim.verification.state === "reviewed" && claim.freshness === "fresh");
       setMemoryText(usable.map((claim) => `[${claim.category}] ${claim.claim}`).join("\n"));
     }).catch(() => setMemoryText(""));
   }, [projectPath, query]);
