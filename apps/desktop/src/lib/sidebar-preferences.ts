@@ -182,6 +182,7 @@ function projectSort(value: unknown): ProjectSort {
 export function loadSidebarPreferences(): SidebarPreferences {
   const raw = read(SIDEBAR_PREFERENCES_KEY);
   const root = object(raw) ? raw : {};
+  const hasLegacyGroups = Array.isArray(root.projectGroups) && root.projectGroups.length > 0;
   const view = object(root.sessionView) ? root.sessionView : {};
   const result: SidebarPreferences = {
     sessionMeta: cleanSessionMeta(root.sessionMeta),
@@ -196,7 +197,10 @@ export function loadSidebarPreferences(): SidebarPreferences {
             ? view.showArchived
             : false,
     },
-    openProjectPaths: cleanPaths(root.openProjectPaths),
+    // The first collection release could leave stale project tabs alongside
+    // legacy group records. Clear only the remembered sidebar tabs during
+    // migration; project folders and sessions are never touched.
+    openProjectPaths: hasLegacyGroups ? [] : cleanPaths(root.openProjectPaths),
     // Collections are canonical. Legacy groups are migrated into them once;
     // keeping a second active model caused stale empty groups to return after
     // every restart.
