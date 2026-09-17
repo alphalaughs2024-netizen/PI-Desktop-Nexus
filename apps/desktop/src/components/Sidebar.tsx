@@ -80,6 +80,7 @@ import {
   IconNewProject,
   IconPin,
   IconPencil,
+  IconPlus,
   IconSidebar,
   IconSettings,
   IconStar,
