@@ -13,18 +13,30 @@ export type ChangelogEntry = {
 };
 
 const enEntries: ChangelogEntry[] = [{
+  version: "0.0.2",
+  date: "2026-09-18",
+  highlights: ["Keeps update failures readable with concise in-app feedback while preserving diagnostic details in local logs."],
+}, {
   version: "0.0.1",
   date: "2026-09-17",
   highlights: ["Establish PI Desktop Nexus as an independent local-first AI coding workspace with managed workspaces, workflow packages, Context Vault, and scenic themes."],
 }];
 
 const zhCNEntries: ChangelogEntry[] = [{
+  version: "0.0.2",
+  date: "2026-09-18",
+  highlights: ["更新失败时显示简洁易懂的应用内提示，同时将诊断细节保留在本地日志中。"],
+}, {
   version: "0.0.1",
   date: "2026-09-17",
   highlights: ["将 PI Desktop Nexus 确立为独立的本地优先 AI 编程工作区，提供受管工作区、工作流包、Context Vault 和风景主题。"],
 }];
 
 const zhTWEntries: ChangelogEntry[] = [{
+  version: "0.0.2",
+  date: "2026-09-18",
+  highlights: ["更新失敗時顯示簡潔易懂的應用程式內提示，同時將診斷細節保留在本機記錄中。"],
+}, {
   version: "0.0.1",
   date: "2026-09-17",
   highlights: ["將 PI Desktop Nexus 確立為獨立的本機優先 AI 程式設計工作區，提供受管理工作區、工作流程套件、Context Vault 與風景主題。"],
