@@ -2172,3 +2172,16 @@ export type ProjectMemoryView = {
   /** Claims are already reviewed, deterministically ordered, and size-bounded. */
   contextText: string;
 };
+
+export type ProjectCollection = {
+  id: string;
+  name: string;
+  order: number;
+  collapsed: boolean;
+};
+
+export type ProjectCollectionMembership = {
+  collectionId: string;
+  projectPath: string;
+  order: number;
+};

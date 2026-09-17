@@ -62,6 +62,7 @@ import { BrandLogo } from "./BrandLogo";
 import { NotificationCenter } from "./NotificationCenter";
 import { ProjectRenameDialog, SessionRenameDialog } from "./SessionRenameDialog";
 import { ProjectGroupCreateDialog } from "./ProjectGroupCreateDialog";
+import { ProjectCollectionPicker } from "./ProjectCollectionPicker";
 import { useUpdateState } from "../hooks/use-update-state";
 import {
   IconArchive,
@@ -237,6 +238,8 @@ export function Sidebar({
   const sessionView = useAppStore((s) => s.sessionView);
   const projectSort = useAppStore((s) => s.projectSort);
   const projectGroups = useAppStore((s) => s.projectGroups);
+  const projectCollections = useAppStore((s) => s.projectCollections);
+  const projectCollectionMemberships = useAppStore((s) => s.projectCollectionMemberships);
   const runningSessions = useAppStore((s) => s.runningSessions);
   const sessionOutcomes = useAppStore((s) => s.sessionOutcomes);
   const pendingPermissions = useAppStore((s) => s.pendingPermissions);
@@ -266,6 +269,8 @@ export function Sidebar({
   const setProjectCollapsed = useAppStore((s) => s.setProjectCollapsed);
   const setProjectSort = useAppStore((s) => s.setProjectSort);
   const createProjectGroup = useAppStore((s) => s.createProjectGroup);
+  const addProjectToCollection = useAppStore((s) => s.addProjectToCollection);
+  const removeProjectFromCollection = useAppStore((s) => s.removeProjectFromCollection);
   const setProjectGroupCollapsed = useAppStore((s) => s.setProjectGroupCollapsed);
   const showToast = useAppStore((s) => s.showToast);
   const version = useAppStore((s) => s.version);
@@ -278,6 +283,7 @@ export function Sidebar({
   const [renameFor, setRenameFor] = useState<SessionSummary | null>(null);
   const [renameProjectFor, setRenameProjectFor] = useState<ProjectEntry | null>(null);
   const [createGroupOpen, setCreateGroupOpen] = useState(false);
+  const [collectionPickerFor, setCollectionPickerFor] = useState<ProjectEntry | null>(null);
   const [projectMenu, setProjectMenu] = useState<string | null>(null);
   const [sectionMenu, setSectionMenu] = useState<"sessions" | "projects" | null>(null);
   const [menuPosition, setMenuPosition] = useState<{
@@ -1600,6 +1606,18 @@ export function Sidebar({
             <button
               type="button"
               role="menuitem"
+              data-action="manage-project-collections"
+              onClick={() => {
+                closeMenus(false);
+                setCollectionPickerFor(entry);
+              }}
+            >
+              <IconFolder size={14} />
+              {t("project.manageCollections", { defaultValue: "Manage collections" })}
+            </button>
+            <button
+              type="button"
+              role="menuitem"
               data-action="toggle-project-pin"
               onClick={() => toggleProjectPin(entry)}
             >
@@ -1866,11 +1884,12 @@ export function Sidebar({
           }}
         >
           {projectEntries.length > 0 ? (() => {
-            const grouped = new Set(projectGroups.flatMap((group) => group.projectPaths));
+            const memberships = projectCollectionMemberships.length ? projectCollectionMemberships : projectGroups.flatMap((group) => group.projectPaths.map((projectPath, order) => ({ collectionId: group.id, projectPath, order })));
+            const grouped = new Set(memberships.map((item) => item.projectPath));
             const ungrouped = projectEntries.filter((entry) => !grouped.has(entry.key));
             return <>
-              {projectGroups.map((group) => {
-                const entries = projectEntries.filter((entry) => group.projectPaths.includes(entry.key));
+              {(projectCollections.length ? projectCollections : projectGroups.map((group) => ({ id: group.id, name: group.name, order: group.order, collapsed: group.collapsed }))).map((group) => {
+                const entries = projectEntries.filter((entry) => memberships.some((item) => item.collectionId === group.id && item.projectPath === entry.key));
                 return <section key={group.id} className="sidebar-project-group-folder" data-sidebar-project-folder={group.id}>
                   <button type="button" className="sidebar-session-group-title" aria-expanded={!group.collapsed} onClick={() => setProjectGroupCollapsed(group.id)}><IconFolder size={13} /><span>{group.name}</span></button>
                   {!group.collapsed ? (entries.length ? entries.map(renderProjectGroup) : <div className="sidebar-session-empty">{t("nav.noProjectsInGroup", { defaultValue: "No projects in this group" })}</div>) : null}
@@ -1958,6 +1977,7 @@ export function Sidebar({
         />
       ) : null}
       {createGroupOpen ? <ProjectGroupCreateDialog onClose={() => setCreateGroupOpen(false)} onSave={createProjectGroup} /> : null}
+      {collectionPickerFor ? <ProjectCollectionPicker projectPath={collectionPickerFor.path} collections={projectCollections} selected={projectCollectionMemberships.filter((item) => item.projectPath === collectionPickerFor.key).map((item) => item.collectionId)} onClose={() => setCollectionPickerFor(null)} onToggle={(id, checked) => checked ? addProjectToCollection(collectionPickerFor.path, id) : removeProjectFromCollection(collectionPickerFor.path, id)} onCreate={(name) => { createCollection(name); }} /> : null}
       <div
         className={cx("sidebar-resize-handle no-drag", sidebarResizing && "is-resizing")}
         role="separator"
