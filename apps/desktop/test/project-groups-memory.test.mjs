@@ -19,6 +19,8 @@ test("sidebar exposes group actions and keeps memory project scoped", () => {
   const sidebar = read("src/components/Sidebar.tsx");
   assert.match(sidebar, /createProjectGroup|renameProjectGroup|moveProjectToGroup/);
   assert.match(sidebar, /ProjectGroupCreateDialog/);
+  assert.match(sidebar, /IconPlus/);
+  assert.match(sidebar, /IconPlus[\s\S]*from "\.\/icons"/);
   assert.doesNotMatch(sidebar, /window\.prompt\(/);
   const vault = read("src/components/workpanel/ContextVaultTab.tsx");
   assert.match(vault, /projectPath/);
