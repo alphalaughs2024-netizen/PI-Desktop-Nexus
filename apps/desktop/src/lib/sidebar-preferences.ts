@@ -1,4 +1,4 @@
-import type { ProjectGroup, ProjectWorkspace, SessionSummary } from "@pi-desktop/shared";
+import type { ProjectCollection, ProjectCollectionMembership, ProjectGroup, ProjectWorkspace, SessionSummary } from "@pi-desktop/shared";
 
 /** Local copy keeps this pure module runnable in Node's TS test loader. */
 export function normalizeProjectPath(projectPath?: string | null): string | null {
@@ -39,6 +39,8 @@ export type SidebarPreferences = {
   sessionView: { sort: SessionSort; archived: boolean };
   openProjectPaths: string[];
   projectGroups: ProjectGroup[];
+  projectCollections: ProjectCollection[];
+  projectCollectionMemberships: ProjectCollectionMembership[];
 };
 
 export const SIDEBAR_PREFERENCES_KEY = "pi.desktop.sidebarPreferences";
@@ -196,6 +198,8 @@ export function loadSidebarPreferences(): SidebarPreferences {
     },
     openProjectPaths: cleanPaths(root.openProjectPaths),
     projectGroups: cleanProjectGroups(root.projectGroups),
+    projectCollections: Array.isArray(root.projectCollections) ? root.projectCollections as ProjectCollection[] : cleanProjectGroups(root.projectGroups).map((group) => ({ id: group.id, name: group.name, order: group.order, collapsed: group.collapsed })),
+    projectCollectionMemberships: Array.isArray(root.projectCollectionMemberships) ? root.projectCollectionMemberships as ProjectCollectionMembership[] : cleanProjectGroups(root.projectGroups).flatMap((group) => group.projectPaths.map((projectPath, order) => ({ collectionId: group.id, projectPath, order }))),
   };
   // Migrate the old pin-only preferences once. Do not re-apply them after
   // the new record has been written, otherwise an explicit unpin is lost.
@@ -231,6 +235,8 @@ export function saveSidebarPreferences(value: SidebarPreferences): void {
     },
     openProjectPaths: cleanPaths(value.openProjectPaths),
     projectGroups: cleanProjectGroups(value.projectGroups),
+    projectCollections: value.projectCollections,
+    projectCollectionMemberships: value.projectCollectionMemberships,
   });
 }
 

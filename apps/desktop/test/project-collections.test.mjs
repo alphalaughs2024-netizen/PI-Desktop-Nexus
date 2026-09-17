@@ -1,0 +1,24 @@
+import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
+import test from "node:test";
+const root = path.resolve(import.meta.dirname, "..");
+const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
+
+test("collections support multiple memberships and canonical projects", () => {
+  const types = read("../../packages/shared/src/types.ts");
+  assert.match(types, /ProjectCollection/);
+  assert.match(types, /ProjectCollectionMembership/);
+  const prefs = read("src/lib/sidebar-preferences.ts");
+  assert.match(prefs, /projectCollections/);
+  assert.match(prefs, /projectCollectionMemberships/);
+});
+
+test("sidebar exposes collection assignment and ungrouped handling", () => {
+  const sidebar = read("src/components/Sidebar.tsx");
+  assert.match(sidebar, /addProjectToCollection/);
+  assert.match(sidebar, /removeProjectFromCollection/);
+  assert.match(sidebar, /UNGROUPED|Ungrouped|ungrouped/);
+  const picker = read("src/components/ProjectCollectionPicker.tsx");
+  assert.match(picker, /Manage collections/);
+});

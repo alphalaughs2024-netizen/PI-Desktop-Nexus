@@ -25,6 +25,8 @@ import type {
   PermissionMode,
   ProjectWorkspace,
   ProjectGroup,
+  ProjectCollection,
+  ProjectCollectionMembership,
   ProposalKind,
   ProviderPublic,
   ReviewRollbackResult,
@@ -819,6 +821,8 @@ export type AppState = {
   /** Kept as a flat map for lightweight consumers (Sidebar). */
   projectCollapsed: Record<string, boolean>;
   projectGroups: ProjectGroup[];
+  projectCollections: ProjectCollection[];
+  projectCollectionMemberships: ProjectCollectionMembership[];
   projectSort: ProjectSort;
   activeSessionId?: string;
   /** Composer toolbar choices retained on the draft while it has no session
@@ -975,6 +979,9 @@ export type AppState = {
   closeProject: (path: string) => Promise<void>;
   setProjectSort: (sort: ProjectSort) => void;
   createProjectGroup: (name: string) => void;
+  createCollection: (name: string) => void;
+  addProjectToCollection: (path: string, collectionId: string) => void;
+  removeProjectFromCollection: (path: string, collectionId: string) => void;
   renameProjectGroup: (id: string, name: string) => void;
   moveProjectToGroup: (path: string, groupId: string | null) => void;
   setProjectGroupCollapsed: (id: string, collapsed?: boolean) => void;
@@ -1189,6 +1196,8 @@ function preferencesFromState(state: Pick<
   | "sessionView"
   | "openProjectPaths"
   | "projectGroups"
+  | "projectCollections"
+  | "projectCollectionMemberships"
 >) {
   return {
     sessionMeta: state.sessionMeta,
@@ -1197,6 +1206,8 @@ function preferencesFromState(state: Pick<
     sessionView: state.sessionView,
     openProjectPaths: state.openProjectPaths,
     projectGroups: state.projectGroups,
+    projectCollections: state.projectCollections,
+    projectCollectionMemberships: state.projectCollectionMemberships,
   };
 }
 
@@ -1326,6 +1337,8 @@ export const useAppStore = create<AppState>((set, get) => ({
       .map(([path]) => [path, true]),
   ),
   projectGroups: initialSidebarPreferences.projectGroups,
+  projectCollections: initialSidebarPreferences.projectCollections,
+  projectCollectionMemberships: initialSidebarPreferences.projectCollectionMemberships,
   subagentPanel: null,
   workPanelOpen: false,
   workPanelTabs: [],
@@ -3350,7 +3363,37 @@ export const useAppStore = create<AppState>((set, get) => ({
   createProjectGroup: (name) => {
     const normalized = name.trim().slice(0, 80);
     if (!normalized) return;
-    set((state) => ({ projectGroups: [...state.projectGroups, { id: crypto.randomUUID(), name: normalized, projectPaths: [], collapsed: false, order: state.projectGroups.length }] }));
+    set((state) => {
+      const id = crypto.randomUUID();
+      const group = { id, name: normalized, projectPaths: [], collapsed: false, order: state.projectGroups.length };
+      return {
+        projectGroups: [...state.projectGroups, group],
+        projectCollections: [...state.projectCollections, { id, name: normalized, collapsed: false, order: state.projectCollections.length }],
+      };
+    });
+    persistCurrentSidebar(get);
+  },
+  createCollection: (name) => get().createProjectGroup(name),
+  addProjectToCollection: (path, collectionId) => {
+    const key = normalizeProjectPath(path);
+    if (!key || !get().projectCollections.some((collection) => collection.id === collectionId)) return;
+    set((state) => {
+      if (state.projectCollectionMemberships.some((item) => item.collectionId === collectionId && item.projectPath === key)) return state;
+      const membership = { collectionId, projectPath: key, order: state.projectCollectionMemberships.filter((item) => item.collectionId === collectionId).length };
+      return {
+        projectCollectionMemberships: [...state.projectCollectionMemberships, membership],
+        projectGroups: state.projectGroups.map((group) => group.id === collectionId && !group.projectPaths.includes(key) ? { ...group, projectPaths: [...group.projectPaths, key] } : group),
+      };
+    });
+    persistCurrentSidebar(get);
+  },
+  removeProjectFromCollection: (path, collectionId) => {
+    const key = normalizeProjectPath(path);
+    if (!key) return;
+    set((state) => ({
+      projectCollectionMemberships: state.projectCollectionMemberships.filter((item) => !(item.collectionId === collectionId && item.projectPath === key)),
+      projectGroups: state.projectGroups.map((group) => group.id === collectionId ? { ...group, projectPaths: group.projectPaths.filter((item) => item !== key) } : group),
+    }));
     persistCurrentSidebar(get);
   },
   renameProjectGroup: (id, name) => {
