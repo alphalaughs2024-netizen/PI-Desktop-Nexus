@@ -234,6 +234,7 @@ export function Sidebar({
   const sessionMeta = useAppStore((s) => s.sessionMeta);
   const sessionView = useAppStore((s) => s.sessionView);
   const projectSort = useAppStore((s) => s.projectSort);
+  const projectGroups = useAppStore((s) => s.projectGroups);
   const runningSessions = useAppStore((s) => s.runningSessions);
   const sessionOutcomes = useAppStore((s) => s.sessionOutcomes);
   const pendingPermissions = useAppStore((s) => s.pendingPermissions);
@@ -262,6 +263,8 @@ export function Sidebar({
   const restoreProject = useAppStore((s) => s.restoreProject);
   const setProjectCollapsed = useAppStore((s) => s.setProjectCollapsed);
   const setProjectSort = useAppStore((s) => s.setProjectSort);
+  const createProjectGroup = useAppStore((s) => s.createProjectGroup);
+  const setProjectGroupCollapsed = useAppStore((s) => s.setProjectGroupCollapsed);
   const showToast = useAppStore((s) => s.showToast);
   const version = useAppStore((s) => s.version);
   const setSettingsTab = useAppStore((s) => s.setSettingsTab);
@@ -1835,6 +1838,10 @@ export function Sidebar({
           }}
         >
           <span className="sidebar-list-label">{t("nav.projects")}</span>
+          <TooltipButton type="button" className="sidebar-toolbar-button" tooltip={t("nav.newProjectGroup", { defaultValue: "New project group" })} ariaLabel={t("nav.newProjectGroup", { defaultValue: "New project group" })} onClick={() => {
+            const name = window.prompt(t("nav.projectGroupName", { defaultValue: "Project group name" }));
+            if (name) createProjectGroup(name);
+          }}>+</TooltipButton>
           <TooltipButton
             type="button"
             className="sidebar-toolbar-button"
@@ -1865,7 +1872,21 @@ export function Sidebar({
             openSectionMenu("projects", event.clientX, event.clientY);
           }}
         >
-          {projectEntries.length > 0 ? projectEntries.map(renderProjectGroup) : (
+          {projectEntries.length > 0 ? (() => {
+            const grouped = new Set(projectGroups.flatMap((group) => group.projectPaths));
+            const ungrouped = projectEntries.filter((entry) => !grouped.has(entry.key));
+            return <>
+              {projectGroups.map((group) => {
+                const entries = projectEntries.filter((entry) => group.projectPaths.includes(entry.key));
+                if (!entries.length) return null;
+                return <section key={group.id} className="sidebar-project-group-folder" data-sidebar-project-folder={group.id}>
+                  <button type="button" className="sidebar-session-group-title" aria-expanded={!group.collapsed} onClick={() => setProjectGroupCollapsed(group.id)}><IconFolder size={13} /><span>{group.name}</span></button>
+                  {!group.collapsed ? entries.map(renderProjectGroup) : null}
+                </section>;
+              })}
+              {ungrouped.map(renderProjectGroup)}
+            </>;
+          })() : (
             <section className="sidebar-session-group" aria-labelledby="sidebar-project-group-label">
               <div className="sidebar-session-group-header">
                 <button type="button" id="sidebar-project-group-label" className="sidebar-session-group-title" onClick={() => void openProjectPicker()}>

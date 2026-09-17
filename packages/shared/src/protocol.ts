@@ -106,6 +106,7 @@ export const IPC = {
     gitWorktreeOpenSession: "pi-desktop/gitWorkspace/openSession",
     gitWorktreeCleanup: "pi-desktop/gitWorkspace/cleanup",
     contextVaultList: "pi-desktop/contextVault/list",
+    contextVaultMemory: "pi-desktop/contextVault/memory",
     contextVaultCreate: "pi-desktop/contextVault/create",
     contextVaultUpdate: "pi-desktop/contextVault/update",
     contextVaultDelete: "pi-desktop/contextVault/delete",

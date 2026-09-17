@@ -43,6 +43,7 @@ export function ContextVaultTab() {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [importSheet, setImportSheet] = useState<ImportSheet | null>(null);
   const [selectedImportIndexes, setSelectedImportIndexes] = useState<number[]>([]);
+  const [memoryText, setMemoryText] = useState("");
 
   const refresh = useCallback(async () => {
     if (!projectPath) { setClaims([]); return; }
@@ -50,6 +51,13 @@ export function ContextVaultTab() {
     catch (reason) { setError(statusMessage(reason)); }
   }, [projectPath, query]);
   useEffect(() => { void refresh(); }, [refresh]);
+  useEffect(() => {
+    if (!projectPath) { setMemoryText(""); return; }
+    void api.getProjectMemory(projectPath, query).then((result) => {
+      const usable = result.claims.map((item) => "claim" in item ? item.claim : item).filter((claim) => claim.verification.state === "reviewed" && claim.freshness === "fresh");
+      setMemoryText(usable.map((claim) => `[${claim.category}] ${claim.claim}`).join("\n"));
+    }).catch(() => setMemoryText(""));
+  }, [projectPath, query]);
   useEffect(() => { setCategory("all"); setTag(null); setSelected(null); setCreating(false); setConfirmDelete(false); }, [projectPath]);
 
   const health = useMemo(() => ({
@@ -130,6 +138,7 @@ export function ContextVaultTab() {
       </aside>
       <div className="context-vault-main">
         <header className="context-vault-toolbar"><label className="context-vault-search-shell"><IconSearch size={15} aria-hidden="true" /><input className="context-vault-search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t("contextVault.search")} /></label><div className="context-vault-actions"><button className="context-vault-action context-vault-action-secondary" disabled={busy !== null} onClick={() => void exportVault()}>{t("contextVault.export")}</button><button className="context-vault-action context-vault-action-secondary" disabled={busy !== null} onClick={() => void previewImport()}>{t("contextVault.import")}</button><button className="context-vault-action context-vault-action-primary" disabled={busy !== null} onClick={startClaim}><IconPlus size={15} aria-hidden="true" />{t("contextVault.newClaim")}</button></div></header>
+        {memoryText ? <div className="context-vault-project-memory" role="status"><strong>{t("contextVault.projectMemory", { defaultValue: "Approved project memory" })}</strong><pre>{memoryText}</pre></div> : null}
         {error && <p className="context-vault-message context-vault-error" role="alert">{error}</p>}{notice && <p className="context-vault-message context-vault-notice" role="status">{notice}</p>}
         {!isEditing && !visibleClaims.length ? <div className="context-vault-empty"><div className="context-vault-empty-orbit" aria-hidden="true"><span /><span /><span /><div className="context-vault-empty-icon"><IconBookOpen size={32} /></div></div><h2>{t("contextVault.emptyTitle")}</h2><p>{t("contextVault.emptyBody")}</p><button className="context-vault-action context-vault-action-primary context-vault-empty-action" onClick={startClaim}><IconPlus size={15} aria-hidden="true" />{t("contextVault.addFirst")}</button><div className="context-vault-empty-tools"><button className="context-vault-action context-vault-action-secondary" onClick={startUserDecision}>{t("contextVault.userDecision")}</button><button className="context-vault-action context-vault-action-secondary" onClick={() => void previewImport()}>{t("contextVault.import")}</button></div><div className="context-vault-purpose-cards"><span>{t("contextVault.purposeArchitecture")}</span><span>{t("contextVault.purposeDecisions")}</span><span>{t("contextVault.purposeGotchas")}</span></div></div> : <div className={`context-vault-grid${isEditing ? " is-editing" : ""}`}>
           <aside className="context-vault-list" aria-label={t("contextVault.claimList")}>{visibleClaims.map((claim) => <button key={claim.id} className={`context-vault-claim${selected?.id === claim.id ? " active" : ""}`} onClick={() => select(claim)}><b>{t(`contextVault.categories.${claim.category}`)}</b><span>{claim.claim}</span><small>{t(`contextVault.freshness.${claim.freshness}`)} · {t(`contextVault.review.${claim.verification.state}`)}</small></button>)}{!visibleClaims.length && <WorkTabEmpty icon={IconBookOpen} title={t("contextVault.noMatchingClaims")} body={t("contextVault.emptyBody")} />}</aside>

@@ -6730,6 +6730,10 @@ function registerIpc() {
     if (!host) throw new Error("host unavailable");
     return host.call("contextVault.list", { projectPath: input.projectPath, query: input.query ?? "" });
   });
+  handle(IPC.invoke.contextVaultMemory, async (input: { projectPath: string; query?: string }) => {
+    if (!host) throw new Error("host unavailable");
+    return host.call("contextVault.brief", { projectPath: input.projectPath, query: input.query ?? "" });
+  });
   handle(IPC.invoke.contextVaultCreate, async (input: { projectPath: string; claim: unknown }) => {
     if (!host) throw new Error("host unavailable");
     return host.call("contextVault.create", { projectPath: input.projectPath, claim: input.claim, agent: false });
