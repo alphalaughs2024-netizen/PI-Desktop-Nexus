@@ -35,3 +35,9 @@ test("preference writes retire the legacy project-group payload", () => {
   assert.match(prefs, /projectGroups: \[\]/);
   assert.match(prefs, /Collections are canonical/);
 });
+
+test("legacy group migration clears remembered tabs once", () => {
+  const prefs = read("src/lib/sidebar-preferences.ts");
+  assert.match(prefs, /hasLegacyGroups/);
+  assert.match(prefs, /openProjectPaths: hasLegacyGroups/);
+});
