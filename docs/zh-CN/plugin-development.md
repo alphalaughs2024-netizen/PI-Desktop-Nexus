@@ -780,7 +780,7 @@ commit 并给出警告。插件相对仓库根目录的路径也会被记录，�
 9. 在发布工件旁边记录打印的 SHA-256。
 
 对于官方市场，请将包和目录元数据提交至
-[`vastsa/pi-desktop-plugins`](https://github.com/vastsa/pi-desktop-plugins) 和
+[PI Desktop Nexus 仓库](https://github.com/alphalaughs2024-netizen/PI-Desktop-Nexus) 和
 遵循该存储库的 `CONTRIBUTING.md`。市场目录是
 单独的存储库；在这里添加插件不会发布它。
 
@@ -807,7 +807,7 @@ commit 并给出警告。插件相对仓库根目录的路径也会被记录，�
 
 ## 12.参考图
 
-- [示例插件](https://github.com/vastsa/PI-Desktop/tree/main/examples/plugins)
+- [示例插件](../../examples/plugins)
 - [插件系统概述](/zh-CN/spec/07-plugins/01-plugin-system)
 - [Manifest Schema](/zh-CN/spec/07-plugins/02-plugin-manifest-schema)
 - [主机 API](/zh-CN/spec/07-plugins/03-plugin-api)
@@ -815,4 +815,4 @@ commit 并给出警告。插件相对仓库根目录的路径也会被记录，�
 - [包装](/zh-CN/spec/07-plugins/06-plugin-packaging)
 - [开发者体验](/zh-CN/spec/07-plugins/10-plugin-devex)
 - [权限](/zh-CN/spec/07-plugins/13-plugin-permissions-matrix)
-- [Hello 参考插件](https://github.com/vastsa/PI-Desktop/tree/main/examples/plugins/hello)
+- [Hello 参考插件](../../examples/plugins/hello)

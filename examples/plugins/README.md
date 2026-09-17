@@ -45,7 +45,7 @@ Panel chrome contract:
 
 ## Official marketplace repository
 
-Published plugins live in [`vastsa/pi-desktop-plugins`](https://github.com/vastsa/pi-desktop-plugins).
+Published plugins can be released from the PI Desktop Nexus repository.
 
 Local examples here remain useful for development loading (`Load dev plugin`).
 Marketplace installs should come from that repository's `catalog.json` + `packages/*.piplug`.
@@ -55,5 +55,5 @@ Marketplace installs should come from that repository's `catalog.json` + `packag
 
 Prefer the official warehouse template:
 
-- https://github.com/vastsa/pi-desktop-plugins/tree/main/plugins/demo.workspace-summary
-- Contribution guide: https://github.com/vastsa/pi-desktop-plugins/blob/main/CONTRIBUTING.md
+- [Nexus repository](https://github.com/alphalaughs2024-netizen/PI-Desktop-Nexus)
+- Contribution guide: [CONTRIBUTING.md](../../CONTRIBUTING.md)

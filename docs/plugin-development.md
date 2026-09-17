@@ -872,7 +872,7 @@ Before sharing a package:
 9. Record the printed SHA-256 next to the release artifact.
 
 For the official marketplace, submit the package and catalog metadata to
-[`vastsa/pi-desktop-plugins`](https://github.com/vastsa/pi-desktop-plugins) and
+[the PI Desktop Nexus repository](https://github.com/alphalaughs2024-netizen/PI-Desktop-Nexus) and
 follow that repository's `CONTRIBUTING.md`. The marketplace catalog is a
 separate repository; adding a plugin here does not publish it.
 
@@ -901,7 +901,7 @@ for roadmap details.
 
 ## 12. Reference map
 
-- [Example plugins](https://github.com/vastsa/PI-Desktop/tree/main/examples/plugins)
+- [Example plugins](../examples/plugins)
 - [Plugin system overview](spec/07-plugins/01-plugin-system.md)
 - [Manifest schema](spec/07-plugins/02-plugin-manifest-schema.md)
 - [Host API](spec/07-plugins/03-plugin-api.md)
@@ -909,4 +909,4 @@ for roadmap details.
 - [Packaging](spec/07-plugins/06-plugin-packaging.md)
 - [Developer experience](spec/07-plugins/10-plugin-devex.md)
 - [Permissions](spec/07-plugins/13-plugin-permissions-matrix.md)
-- [Hello reference plugin](https://github.com/vastsa/PI-Desktop/tree/main/examples/plugins/hello)
+- [Hello reference plugin](../examples/plugins/hello)

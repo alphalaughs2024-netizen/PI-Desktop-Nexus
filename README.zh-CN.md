@@ -1,8 +1,8 @@
 <div align="center">
 
-<img src="docs/image/readme/logo.png" alt="PI-Desktop" width="112" />
+<img src="docs/image/readme/logo.png" alt="PI Desktop Nexus" width="112" />
 
-# PI-Desktop
+# PI Desktop Nexus
 
 ### 本地优先的 AI 编程智能体桌面工作区。
 
@@ -12,17 +12,14 @@
 
 <br />
 
-[![Release](https://img.shields.io/github/v/release/vastsa/PI-Desktop?label=release)](https://github.com/vastsa/PI-Desktop/releases/latest)
-[![Downloads](https://img.shields.io/github/downloads/vastsa/PI-Desktop/total?label=downloads)](https://github.com/vastsa/PI-Desktop/releases)
-[![Stars](https://img.shields.io/github/stars/vastsa/PI-Desktop?style=flat\&label=stars)](https://github.com/vastsa/PI-Desktop/stargazers)
-[![CI](https://github.com/vastsa/PI-Desktop/actions/workflows/ci.yml/badge.svg)](https://github.com/vastsa/PI-Desktop/actions/workflows/ci.yml)
-[![License](https://img.shields.io/github/license/vastsa/PI-Desktop)](LICENSE)
+[![Release](https://img.shields.io/github/v/release/alphalaughs2024-netizen/PI-Desktop-Nexus?label=release)](https://github.com/alphalaughs2024-netizen/PI-Desktop-Nexus/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/alphalaughs2024-netizen/PI-Desktop-Nexus/total?label=downloads)](https://github.com/alphalaughs2024-netizen/PI-Desktop-Nexus/releases)
+[![Stars](https://img.shields.io/github/stars/alphalaughs2024-netizen/PI-Desktop-Nexus?style=flat\&label=stars)](https://github.com/alphalaughs2024-netizen/PI-Desktop-Nexus/stargazers)
+[![CI](https://github.com/alphalaughs2024-netizen/PI-Desktop-Nexus/actions/workflows/ci.yml/badge.svg)](https://github.com/alphalaughs2024-netizen/PI-Desktop-Nexus/actions/workflows/ci.yml)
+[![License](https://img.shields.io/github/license/alphalaughs2024-netizen/PI-Desktop-Nexus)](LICENSE)
 ![Platforms](https://img.shields.io/badge/platform-macOS%20%C2%B7%20Windows%20%C2%B7%20Linux-4c8dd8)
 
-<a href="https://trendshift.io/repositories/178787?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-178787" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/178787" alt="vastsa/PI-Desktop | Trendshift" width="250" height="55"/></a>
-<a href="https://www.producthunt.com/products/pi-desktop?embed=true&amp;utm_source=badge-featured&amp;utm_medium=badge&amp;utm_campaign=badge-pi-desktop" target="_blank" rel="noopener noreferrer"><img alt="PI-Desktop - Your local-first desktop workspace for AI coding agents | Product Hunt" width="250" height="54" src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1245457&amp;theme=dark&amp;t=1788955688339"/></a>
-
-**[下载 PI-Desktop](https://github.com/vastsa/PI-Desktop/releases/latest)** ·
+**[下载 PI Desktop Nexus](https://github.com/alphalaughs2024-netizen/PI-Desktop-Nexus/releases/latest)** ·
 [文档](https://pi-docs.aiuo.net/) ·
 [界面截图](docs/zh-CN/guide/screenshots.md) ·
 [English](README.md)
@@ -299,7 +296,7 @@ PI-Desktop 是 **本地优先**，不是“永远不碰网络”。
 
 ## 下载
 
-从 **[GitHub Releases](https://github.com/vastsa/PI-Desktop/releases/latest)** 下载最新构建。
+从 **[GitHub Releases](https://github.com/alphalaughs2024-netizen/PI-Desktop-Nexus/releases/latest)** 下载最新构建。
 
 | 平台 | 架构 | 安装包 |
 | -------- | ------------- | -------------------- |
@@ -376,7 +373,7 @@ flowchart TB
 
 PI-Desktop 处于积极开发中的早期预览阶段。
 
-当前 **0.15.x** 版本线包含：桌面外壳、流式智能体运行时、智能体 / 规划 / 目标工作流、带权限的工作区工具、项目与会话、会话导入、本地 MCP 控制、MCP / Skills / 子智能体、后台委派、多服务商模型配置、插件与市场、上下文检查点、通知、更新日志，以及跨平台打包。
+当前 **0.0.x** 版本线包含：桌面外壳、流式智能体运行时、智能体 / 规划 / 目标工作流、带权限的工作区工具、项目与会话、会话导入、本地 MCP 控制、MCP / Skills / 子智能体、后台委派、多服务商模型配置、插件与市场、上下文检查点、通知、更新日志，以及跨平台打包。
 
 当前优先事项包括：
 
@@ -403,8 +400,8 @@ PI-Desktop 处于积极开发中的早期预览阶段。
 ### 本地运行
 
 ```bash
-git clone https://github.com/vastsa/PI-Desktop.git
-cd PI-Desktop
+git clone https://github.com/alphalaughs2024-netizen/PI-Desktop-Nexus.git
+cd PI-Desktop-Nexus
 
 pnpm install
 
@@ -452,8 +449,8 @@ pnpm docs:check
 
 在仓库中工作时，请从 [AGENTS.md](AGENTS.md) 和[规格索引](docs/zh-CN/spec/README.md)开始。
 
-[报告问题](https://github.com/vastsa/PI-Desktop/issues/new/choose) ·
-[查看未关闭的 issue](https://github.com/vastsa/PI-Desktop/issues)
+[报告问题](https://github.com/alphalaughs2024-netizen/PI-Desktop-Nexus/issues/new/choose) ·
+[查看未关闭的 issue](https://github.com/alphalaughs2024-netizen/PI-Desktop-Nexus/issues)
 
 ---
 
@@ -509,7 +506,7 @@ PI-Desktop 建立在优秀的开源生态之上。
 
 ## 许可证
 
-PI-Desktop 采用 **GNU Lesser General Public License v3.0** 授权。
+PI Desktop Nexus 采用 **GNU Lesser General Public License v3.0** 授权。
 
 详见 [LICENSE](LICENSE)。
 
@@ -519,7 +516,7 @@ PI-Desktop 采用 **GNU Lesser General Public License v3.0** 授权。
 
 ### 用你想要的模型构建。把工作流留在自己手里。
 
-**[下载 PI-Desktop](https://github.com/vastsa/PI-Desktop/releases/latest)**
+**[下载 PI Desktop Nexus](https://github.com/alphalaughs2024-netizen/PI-Desktop-Nexus/releases/latest)**
 
 <sub>macOS · Windows · Linux</sub>
 

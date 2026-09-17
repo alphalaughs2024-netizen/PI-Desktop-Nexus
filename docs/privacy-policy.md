@@ -2,9 +2,9 @@
 
 **Effective date: 2026-09-10**
 
-This Privacy Policy describes how PI-Desktop handles information when you use
-the PI-Desktop desktop application. PI-Desktop is a local-first, open-source
-project maintained by contributors to [vastsa/PI-Desktop](https://github.com/vastsa/PI-Desktop).
+This Privacy Policy describes how PI Desktop Nexus handles information when you use
+the PI Desktop Nexus desktop application. PI Desktop Nexus is a local-first, open-source
+project maintained by Ryan.
 
 This policy describes the current application behavior. It is not legal advice;
 operators who distribute a modified build or offer an additional hosted service
@@ -190,7 +190,7 @@ delete personal information, contact the maintainers first. Because PI-Desktop
 is local-first, the maintainers generally do not possess your local project,
 transcript, or credential data and may be unable to retrieve or delete it for
 you. You can contact the project through the
-[GitHub repository](https://github.com/vastsa/PI-Desktop); do not post personal
+[GitHub repository](https://github.com/alphalaughs2024-netizen/PI-Desktop-Nexus); do not post personal
 or confidential information in a public issue.
 
 ## 9. Children
@@ -207,6 +207,6 @@ will be communicated through the repository or release notes when practical.
 
 ## 11. Contact
 
-For privacy questions, use the [PI-Desktop GitHub repository](https://github.com/vastsa/PI-Desktop).
+For privacy questions, use the [PI Desktop Nexus GitHub repository](https://github.com/alphalaughs2024-netizen/PI-Desktop-Nexus).
 For security vulnerabilities, follow the repository's security reporting
 instructions rather than disclosing sensitive details in a public issue.

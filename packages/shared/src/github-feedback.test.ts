@@ -49,7 +49,7 @@ describe("GitHub feedback issue URL", () => {
     ).toThrow(/origin/);
     expect(() =>
       assertFeedbackIssueUrl(
-        "https://github.com/vastsa/PI-Desktop/issues/new?template=feature_request.yml",
+        "https://github.com/alphalaughs2024-netizen/PI-Desktop-Nexus/issues/new?template=feature_request.yml",
       ),
     ).toThrow(/template/);
   });

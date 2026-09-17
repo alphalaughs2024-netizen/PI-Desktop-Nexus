@@ -32,9 +32,9 @@ import {
 
 const { autoUpdater } = electronUpdaterPkg;
 
-/** The fork must never discover or install official PI-Desktop releases. */
+/** Nexus discovers releases from its own GitHub repository. */
 export const RELEASES_URL =
-  "https://github.com/alphalaughs2024-netizen/PI-Desktop-fork/releases/latest";
+  "https://github.com/alphalaughs2024-netizen/PI-Desktop-Nexus/releases/latest";
 
 const AUTO_CHECK_INITIAL_DELAY_MS = 15_000;
 const AUTO_CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000;

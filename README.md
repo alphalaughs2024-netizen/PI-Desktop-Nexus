@@ -6,18 +6,14 @@
 
 ### A workflow-native, local-first AI coding workspace.
 
-Nexus is an independent PI Desktop fork. It keeps the desktop foundation for
-local projects, providers, permissions, plugins, MCP, and subagents, then adds
-integrated workflows that make capable AI coding work easier to steer, inspect,
-and repeat.
+Nexus is an independent local-first AI coding workspace for projects,
+providers, permissions, plugins, MCP, subagents, and integrated workflows.
 
 <br />
 
-[![Fork](https://img.shields.io/badge/fork-PI%20Desktop-315b9b)](https://github.com/vastsa/PI-Desktop)
-[![License](https://img.shields.io/github/license/alphalaughs2024-netizen/PI-Desktop-fork)](LICENSE)
+[![Release](https://img.shields.io/github/v/release/alphalaughs2024-netizen/PI-Desktop-Nexus?label=release)](https://github.com/alphalaughs2024-netizen/PI-Desktop-Nexus/releases/latest)
+[![License](https://img.shields.io/github/license/alphalaughs2024-netizen/PI-Desktop-Nexus)](LICENSE)
 ![Platforms](https://img.shields.io/badge/platform-macOS%20%C2%B7%20Windows%20%C2%B7%20Linux-4c8dd8)
-
-**Nexus is a separate fork, not the real/upstream PI Desktop application.**
 
 </div>
 
@@ -25,8 +21,8 @@ and repeat.
 
 ## Why Nexus?
 
-PI Desktop provides a solid local desktop agent workspace. Nexus builds on it
-with a first-class workflow system and a more deliberate engineering loop.
+Nexus provides a local desktop agent workspace with a first-class workflow
+system and a deliberate engineering loop.
 
 Instead of treating skills as passive Markdown instructions, Nexus treats them
 as **versioned, capability-aware workflow packages**. A workflow can be matched
@@ -44,8 +40,7 @@ remain bounded by the same tools and permissions Nexus already provides.
 | **Twilight Mountains** | An optional first-party blue-glass scenic theme with a bundled local backdrop and readable safety surfaces. |
 
 Nexus is model-agnostic and guidance-first. Workflows never grant tools,
-bypass confirmations, weaken plugin isolation, or alter the upstream PI Desktop
-checkout.
+bypass confirmations, weaken plugin isolation, or alter the current checkout.
 
 ---
 
@@ -133,15 +128,15 @@ to understand without taking control away from the person using the app.
 
 ## Project status
 
-The current **0.15.x** release line includes the desktop shell, streaming agent runtime, Agent / Plan / Goal workflows, permissioned workspace tools, projects and sessions, session import, local MCP control, MCP / Skills / subagents, background delegation, multi-provider model configuration, plugins and marketplace, context checkpoints, notifications, and cross-platform packaging.
+The current **0.0.x** release line includes the desktop shell, streaming agent runtime, Agent / Plan / Goal workflows, permissioned workspace tools, projects and sessions, session import, local MCP control, MCP / Skills / subagents, background delegation, multi-provider model configuration, plugins and marketplace, context checkpoints, notifications, and cross-platform packaging.
 
 ---
 
 ## Development
 
 ```bash
-git clone https://github.com/alphalaughs2024-netizen/PI-Desktop-fork.git
-cd PI-Desktop-fork
+git clone https://github.com/alphalaughs2024-netizen/PI-Desktop-Nexus.git
+cd PI-Desktop-Nexus
 pnpm install
 pnpm dev
 ```
@@ -149,13 +144,13 @@ pnpm dev
 For PowerShell development with an isolated Nexus data directory:
 
 ```powershell
-Set-Location "C:\path\to\PI-Desktop-fork"
+Set-Location "C:\path\to\PI-Desktop-Nexus"
 $env:PI_DESKTOP_DATA_DIR = "$env:USERPROFILE\.pi-desktop-nexus-dev"
 pnpm dev
 ```
 
 The separate data directory keeps a development Nexus instance isolated from
-the real PI Desktop application's local data.
+your normal Nexus application data.
 
 ## Documentation
 
@@ -165,10 +160,6 @@ the real PI Desktop application's local data.
 - [Plugin development](docs/plugin-development.md)
 - [Repository development rules](AGENTS.md)
 
-## Upstream and license
+## License
 
-Nexus is built on the open-source PI Desktop project. Credit for the original
-desktop workspace and its ecosystem belongs to the upstream project and its
-contributors.
-
-This fork is licensed under the [GNU Lesser General Public License v3.0](LICENSE).
+Nexus is licensed under the [GNU Lesser General Public License v3.0](LICENSE).

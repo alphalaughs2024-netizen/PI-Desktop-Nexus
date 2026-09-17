@@ -152,7 +152,7 @@ const enNav: DefaultTheme.NavItem[] = [
   { text: 'ADRs', link: '/adr/README' },
   { text: 'Plugin guide', link: '/plugin-development' },
   { text: 'Privacy policy', link: '/privacy-policy' },
-  { text: 'GitHub', link: 'https://github.com/vastsa/PI-Desktop' },
+  { text: 'GitHub', link: 'https://github.com/alphalaughs2024-netizen/PI-Desktop-Nexus' },
 ]
 
 const zhNav: DefaultTheme.NavItem[] = [
@@ -161,12 +161,12 @@ const zhNav: DefaultTheme.NavItem[] = [
   { text: 'ADR', link: '/zh-CN/adr/' },
   { text: '插件开发', link: '/zh-CN/plugin-development' },
   { text: '隐私政策（英文）', link: '/privacy-policy' },
-  { text: 'GitHub', link: 'https://github.com/vastsa/PI-Desktop' },
+  { text: 'GitHub', link: 'https://github.com/alphalaughs2024-netizen/PI-Desktop-Nexus' },
 ]
 
 export default defineConfig({
-  title: 'PI-Desktop',
-  description: 'Local-first AI coding agent documentation',
+  title: 'PI Desktop Nexus',
+  description: 'PI Desktop Nexus documentation',
   appearance: true,
   cleanUrls: true,
   lastUpdated: true,
@@ -181,8 +181,8 @@ export default defineConfig({
     'zh-CN': {
       label: '简体中文',
       lang: 'zh-CN',
-      title: 'PI-Desktop 文档',
-      description: '本地优先的 AI 编程代理文档',
+        title: 'PI Desktop Nexus 文档',
+        description: 'PI Desktop Nexus 本地优先 AI 编程代理文档',
       themeConfig: {
         nav: zhNav,
         sidebar: zhSidebar,
@@ -194,8 +194,8 @@ export default defineConfig({
         sidebarMenuLabel: '目录',
         darkModeSwitchLabel: '外观',
         langMenuLabel: '切换语言',
-        editLink: { pattern: 'https://github.com/vastsa/PI-Desktop/edit/main/docs/:path', text: '在 GitHub 上编辑此页' },
-        footer: { message: '为本地优先开发而构建。 <a href="https://aiuo.net" target="_blank" rel="noreferrer">AIUO.NET</a>', copyright: 'Copyright © 2026 PI-Desktop 贡献者' },
+        editLink: { pattern: 'https://github.com/alphalaughs2024-netizen/PI-Desktop-Nexus/edit/main/docs/:path', text: '在 GitHub 上编辑此页' },
+        footer: { message: '为本地优先开发而构建。', copyright: 'Copyright © 2026 Ryan' },
       },
     },
   },
@@ -206,13 +206,13 @@ export default defineConfig({
   },
   themeConfig: {
     logo: '/app-icon.png',
-    siteTitle: 'PI-Desktop',
+    siteTitle: 'PI Desktop Nexus',
     search: { provider: 'local' },
-    socialLinks: [{ icon: 'github', link: 'https://github.com/vastsa/PI-Desktop' }],
-    editLink: { pattern: 'https://github.com/vastsa/PI-Desktop/edit/main/docs/:path', text: 'Edit this page on GitHub' },
+    socialLinks: [{ icon: 'github', link: 'https://github.com/alphalaughs2024-netizen/PI-Desktop-Nexus' }],
+    editLink: { pattern: 'https://github.com/alphalaughs2024-netizen/PI-Desktop-Nexus/edit/main/docs/:path', text: 'Edit this page on GitHub' },
     outline: { level: 'deep', label: 'On this page' },
     docFooter: { prev: 'Previous', next: 'Next' },
-    footer: { message: 'Built for local-first development. <a href="https://aiuo.net" target="_blank" rel="noreferrer">AIUO.NET</a>', copyright: 'Copyright © 2026 PI-Desktop contributors' },
+    footer: { message: 'Built for local-first development.', copyright: 'Copyright © 2026 Ryan' },
     nav: enNav,
     sidebar: enSidebar,
   },

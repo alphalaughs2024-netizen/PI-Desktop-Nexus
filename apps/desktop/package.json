@@ -1,13 +1,12 @@
 {
   "name": "@pi-desktop/desktop",
-  "version": "0.15.0",
+  "version": "0.0.1",
   "desktopName": "pi-desktop-nexus.desktop",
   "private": true,
-  "description": "PI Desktop Nexus fork test application",
-  "homepage": "https://github.com/alphalaughs2024-netizen/PI-Desktop-fork",
+  "description": "PI Desktop Nexus local-first AI coding workspace",
+  "homepage": "https://github.com/alphalaughs2024-netizen/PI-Desktop-Nexus",
   "author": {
-    "name": "vastsa",
-    "email": "hhxk666@gmail.com"
+    "name": "Ryan"
   },
   "main": "./out/main/index.js",
   "type": "module",
@@ -80,7 +79,7 @@
       {
         "provider": "github",
         "owner": "alphalaughs2024-netizen",
-        "repo": "PI-Desktop-fork"
+        "repo": "PI-Desktop-Nexus"
       }
     ],
     "files": [

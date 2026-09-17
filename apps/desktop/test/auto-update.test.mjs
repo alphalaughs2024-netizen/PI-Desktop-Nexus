@@ -105,7 +105,7 @@ test("updater gates delivery mode by platform and delivery policy", () => {
   assert.match(updaterSource, /autoUpdater\.on\("error"/);
   assert.match(
     updaterSource,
-    /github\.com\/alphalaughs2024-netizen\/PI-Desktop-fork\/releases/,
+    /github\.com\/alphalaughs2024-netizen\/PI-Desktop-Nexus\/releases/,
     "releases fallback URL",
   );
   assert.match(
@@ -204,7 +204,7 @@ test("packaging publishes an electron-updater feed for GitHub Releases", () => {
   assert.ok(pkg.dependencies["electron-updater"], "electron-updater dependency");
   assert.equal(pkg.build.publish[0].provider, "github");
   assert.equal(pkg.build.publish[0].owner, "alphalaughs2024-netizen");
-  assert.equal(pkg.build.publish[0].repo, "PI-Desktop-fork");
+  assert.equal(pkg.build.publish[0].repo, "PI-Desktop-Nexus");
   const macTargets = pkg.build.mac.target.map((entry) => entry.target);
   assert.ok(macTargets.includes("zip"), "mac zip target (Squirrel.Mac feed)");
   // electron-builder must never self-publish (implicit tag publishing would
@@ -255,7 +255,7 @@ test("shared shipped-locale changelog is the in-app notes source of truth", () =
   assert.match(changelogSource, /formatChangelogNotes/);
   assert.match(changelogSource, /"zh-CN"/);
   assert.match(changelogSource, /"zh-TW"/);
-  assert.match(changelogSource, /version: "0\.2\.7"/);
+  assert.match(changelogSource, /version: "0\.0\.1"/);
   assert.match(
     mainSource,
     /getLocale:\s*\(\)\s*=>\s*updaterLocale/,
