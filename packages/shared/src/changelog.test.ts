@@ -30,11 +30,11 @@ describe("changelog catalog", () => {
     }
   });
 
-  it("lists the independent Nexus release from 0.0.1", () => {
+  it("lists the independent Nexus releases from 0.0.2", () => {
     const versions = CHANGELOG.en.map((e) => e.version);
-    expect(versions[0]).toBe("0.0.1");
+    expect(versions[0]).toBe("0.0.2");
     expect(versions.at(-1)).toBe(STABLE_FROM);
-    expect(versions).toEqual(["0.0.1"]);
+    expect(versions).toEqual(["0.0.2", "0.0.1"]);
     for (const version of versions) {
       expect(version).not.toMatch(/-/);
     }
@@ -57,12 +57,12 @@ describe("changelog catalog", () => {
   });
 
   it("looks up and formats notes with English fallback", () => {
-    const entry = getChangelogEntry("v0.0.1", "en");
-    expect(entry?.version).toBe("0.0.1");
-    const notes = formatChangelogNotes("0.0.1", "en");
+    const entry = getChangelogEntry("v0.0.2", "en");
+    expect(entry?.version).toBe("0.0.2");
+    const notes = formatChangelogNotes("0.0.2", "en");
     expect(notes).toMatch(/^• /);
     expect(notes?.split("\n").length).toBe(
-      getChangelogEntry("0.0.1", "en")?.highlights.length,
+      getChangelogEntry("0.0.2", "en")?.highlights.length,
     );
     expect(formatChangelogNotes("9.9.9", "en")).toBeUndefined();
     expect(formatChangelogNotes("0.2.0-rc.6", "en")).toBeUndefined();
