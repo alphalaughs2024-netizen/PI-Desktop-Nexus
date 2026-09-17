@@ -22,6 +22,7 @@ test("sidebar exposes group actions and keeps memory project scoped", () => {
   assert.match(sidebar, /IconPlus/);
   assert.match(sidebar, /IconPlus[\s\S]*from "\.\/icons"/);
   assert.match(sidebar, /sidebar-toolbar-actions/);
+  assert.doesNotMatch(sidebar, /if \(!entries\.length\) return null/);
   const globals = read("src/styles/globals.css");
   assert.match(globals, /project-groups\.css/);
   assert.doesNotMatch(sidebar, /window\.prompt\(/);

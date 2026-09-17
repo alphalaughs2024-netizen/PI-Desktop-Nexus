@@ -1871,10 +1871,9 @@ export function Sidebar({
             return <>
               {projectGroups.map((group) => {
                 const entries = projectEntries.filter((entry) => group.projectPaths.includes(entry.key));
-                if (!entries.length) return null;
                 return <section key={group.id} className="sidebar-project-group-folder" data-sidebar-project-folder={group.id}>
                   <button type="button" className="sidebar-session-group-title" aria-expanded={!group.collapsed} onClick={() => setProjectGroupCollapsed(group.id)}><IconFolder size={13} /><span>{group.name}</span></button>
-                  {!group.collapsed ? entries.map(renderProjectGroup) : null}
+                  {!group.collapsed ? (entries.length ? entries.map(renderProjectGroup) : <div className="sidebar-session-empty">{t("nav.noProjectsInGroup", { defaultValue: "No projects in this group" })}</div>) : null}
                 </section>;
               })}
               {ungrouped.map(renderProjectGroup)}
