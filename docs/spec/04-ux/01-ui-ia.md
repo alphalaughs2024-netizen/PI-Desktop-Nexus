@@ -39,7 +39,9 @@ destination, chat as the home surface, tools and permissions inline.
   collapsed independently. Project and conversation rows expose
   non-destructive pin/archive actions, an independent conversation-branch
   command, and sortable views. Projects not retained in the sidebar remain
-  discoverable through Settings → Project archive.
+    discoverable through Settings → Project archive. Settings → Workspaces,
+    immediately after Project archive, inventories only Nexus-managed local Git
+    worktrees and offers open, reveal, refresh, and confirmed safe cleanup.
   Collapsible to an icon rail (Cmd/Ctrl+B). When expanded, its right edge is a
   drag handle for a persisted 240–520px width (275px by default).
 - **Product identity**: runtime shell copy uses `PI-Desktop`; the home hero and

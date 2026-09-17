@@ -196,7 +196,15 @@ import {
   setWorkflowPackageEnabled,
   updateWorkflowPackage,
 } from "./workflow-packages";
-import { GitWorkflowError, runGitWorktreeOperation } from "./git-worktrees";
+import {
+  GitWorkflowError,
+  getGitWorkspaceMode,
+  inspectGitWorkspace,
+  listManagedWorktreeInventory,
+  recordedManagedWorktree,
+  runGitWorktreeOperation,
+  setGitWorkspaceMode,
+} from "./git-worktrees";
 import { loadScopedPluginGuidance } from "./plugin-guidance";
 import { registerPluginDevTools } from "./plugin-dev-tools";
 import { PluginPanelHost } from "./plugin-panel-host";
@@ -1585,6 +1593,8 @@ async function resolveAgentRuntimeLaunch(
     typeof session.projectPath === "string" && session.projectPath.trim()
       ? session.projectPath.trim()
       : undefined;
+  const gitReadiness = await inspectGitWorkspace(dataDir, projectPath);
+  const workspaceMode = getGitWorkspaceMode(dataDir, sessionId) ?? gitReadiness.workspaceMode;
   // Most launch inputs come from independent stores. Start them together so a
   // slow capability registry or MCP refresh does not serialize shell, model,
   // provider, and instruction loading before the first provider request.
@@ -1698,7 +1708,7 @@ async function resolveAgentRuntimeLaunch(
         plugins.listLoaded().map((loaded) => loaded.path),
       ),
     },
-    capabilities: ["core-agent-tools", "skill-loader", "plugin-development-tools", "file-tools", "terminal-tools", "test-execution", "git-worktree-operations", "subagent-orchestration"],
+    capabilities: ["core-agent-tools", "skill-loader", "plugin-development-tools", "file-tools", "terminal-tools", "test-execution", ...(workspaceMode === "managed-isolation" && gitReadiness.ready ? ["git-worktree-operations"] : []), "subagent-orchestration"],
     globalDisabledIds: globalDisabledWorkflowIds(dataDir),
     projectOverrides: projectWorkflowOverrides(dataDir, projectPath),
     session: storedWorkflow,
@@ -1917,6 +1927,7 @@ async function resolveAgentRuntimeLaunch(
       scratchDir: join(dataDir, "scratch", sessionId),
       attachmentsDir: join(dataDir, "attachments"),
       projectPath,
+      gitWorktreeEnabled: workspaceMode === "managed-isolation" && gitReadiness.ready,
       projectInstructions,
       provider: {
         id: provider.id,
@@ -1995,6 +2006,8 @@ async function workflowStatusForSession(sessionId: string) {
   const projectPath = typeof session.projectPath === "string" && session.projectPath.trim()
     ? session.projectPath.trim()
     : undefined;
+  const gitReadiness = await inspectGitWorkspace(dataDir, projectPath);
+  const workspaceMode = getGitWorkspaceMode(dataDir, sessionId) ?? gitReadiness.workspaceMode;
   let stored = loadWorkflowSession(dataDir, sessionId);
   // Host-core never replays approved executions after a restart. A workflow
   // record outlives its sidecar, so convert any in-flight/proposed lifecycle
@@ -2011,7 +2024,10 @@ async function workflowStatusForSession(sessionId: string) {
   const resolution = resolveWorkflows({
     mode,
     workspace: { isPluginWorkspace: isPluginWorkspace(projectPath, plugins.listLoaded().map((loaded) => loaded.path)) },
-    capabilities: ["core-agent-tools", "skill-loader", "plugin-development-tools", "file-tools", "terminal-tools", "test-execution", "git-worktree-operations", "subagent-orchestration"],
+    capabilities: [
+      "core-agent-tools", "skill-loader", "plugin-development-tools", "file-tools", "terminal-tools", "test-execution", "subagent-orchestration",
+      ...(workspaceMode === "managed-isolation" && gitReadiness.ready ? ["git-worktree-operations"] : []),
+    ],
     globalDisabledIds: globalDisabledWorkflowIds(dataDir),
     projectOverrides: projectWorkflowOverrides(dataDir, projectPath),
     session: stored,
@@ -5388,6 +5404,7 @@ async function startSidecar(): Promise<void> {
       return {
         ok: false,
         isError: true,
+        errorCode: error instanceof GitWorkflowError ? error.category : "TRANSIENT_GIT_FAILURE",
         content: `GitWorktree: ${detail}${recovery ? `\n\nRecovery: ${recovery}` : ""}`,
       };
     }
@@ -6772,6 +6789,118 @@ function registerIpc() {
     if (openError) throw new Error(openError);
     return { ok: true, path: scratchPath };
   });
+  handle(IPC.invoke.gitWorkspaceStatus, async (input: { sessionId?: string } = {}) => {
+    const sessionId = String(input?.sessionId ?? "").trim();
+    if (!sessionId || !host) return inspectGitWorkspace(dataDir, null);
+    try {
+      const result = await host.call<{ session?: { projectPath?: string } }>("session.get", { id: sessionId });
+      return inspectGitWorkspace(dataDir, result?.session?.projectPath?.trim() || null);
+    } catch {
+      return inspectGitWorkspace(dataDir, null);
+    }
+  });
+  handle(
+    IPC.invoke.gitWorkspaceModeSet,
+    async (input: { sessionId?: string; mode?: unknown } = {}) => {
+      const sessionId = String(input?.sessionId ?? "").trim();
+      const mode = input?.mode;
+      if (!host || !sessionId || (mode !== "managed-isolation" && mode !== "direct-folder")) {
+        throw Object.assign(new Error("A valid session and workspace mode are required"), {
+          errorCode: ErrorCodes.INVALID_ARGUMENT,
+        });
+      }
+      const result = await host.call<{ session?: { projectPath?: string } }>("session.get", { id: sessionId });
+      const readiness = await inspectGitWorkspace(dataDir, result?.session?.projectPath?.trim() || null);
+      if (mode === "managed-isolation" && !readiness.ready) {
+        throw new GitWorkflowError(
+          readiness.category ?? "NOT_A_GIT_REPOSITORY",
+          readiness.explanation,
+          readiness.recovery,
+        );
+      }
+      setGitWorkspaceMode(dataDir, sessionId, mode);
+      sendToRenderer(IPC.event.workflowChanged, { sessionId });
+      return { ...readiness, workspaceMode: mode };
+    },
+  );
+  handle(IPC.invoke.gitWorktreesList, async () => {
+    const [worktrees, sessions] = await Promise.all([
+      listManagedWorktreeInventory(dataDir),
+      host?.call<{ sessions?: Array<{ projectPath?: string }> }>("session.list") ?? { sessions: [] },
+    ]);
+    return {
+      worktrees: worktrees.map((row) => ({
+        ...row,
+        linkedSessionCount: (sessions.sessions ?? []).filter(
+          (session) => session.projectPath && resolve(session.projectPath) === resolve(row.worktreePath),
+        ).length,
+      })),
+    };
+  });
+  handle(
+    IPC.invoke.gitWorktreeReveal,
+    async (input: { repositoryPath?: string; branch?: string; worktreePath?: string } = {}) => {
+      const repositoryPath = String(input.repositoryPath ?? "").trim();
+      const branch = String(input.branch ?? "").trim();
+      const worktreePath = String(input.worktreePath ?? "").trim();
+      const record = recordedManagedWorktree(dataDir, repositoryPath, branch, worktreePath);
+      if (!record || !existsSync(record.worktreePath)) {
+        throw Object.assign(new Error("Nexus-managed worktree not found"), { errorCode: ErrorCodes.NOT_FOUND });
+      }
+      const openError = await shell.openPath(stripWinLongPrefix(record.worktreePath));
+      if (openError) throw new Error(openError);
+      return { ok: true, path: record.worktreePath };
+    },
+  );
+  handle(
+    IPC.invoke.gitWorktreeOpenSession,
+    async (input: { repositoryPath?: string; branch?: string; worktreePath?: string } = {}) => {
+      if (!host) throw new Error("host unavailable");
+      const record = recordedManagedWorktree(
+        dataDir,
+        String(input.repositoryPath ?? "").trim(),
+        String(input.branch ?? "").trim(),
+        String(input.worktreePath ?? "").trim(),
+      );
+      if (!record || !existsSync(record.worktreePath)) {
+        throw Object.assign(new Error("Nexus-managed worktree not found"), { errorCode: ErrorCodes.NOT_FOUND });
+      }
+      const result = await host.call<{ session?: RuntimeSession | null }>("session.create", {
+        projectPath: record.worktreePath,
+      });
+      if (!result.session) return result;
+      const { providers, defaults } = await sessionCapabilityContext();
+      return { ...result, session: enrichSession(result.session, providers, defaults) };
+    },
+  );
+  handle(
+    IPC.invoke.gitWorktreeCleanup,
+    async (input: { repositoryPath?: string; branch?: string; worktreePath?: string } = {}) => {
+      const record = recordedManagedWorktree(
+        dataDir,
+        String(input.repositoryPath ?? "").trim(),
+        String(input.branch ?? "").trim(),
+        String(input.worktreePath ?? "").trim(),
+      );
+      if (!record) throw Object.assign(new Error("Nexus-managed worktree not found"), { errorCode: ErrorCodes.NOT_FOUND });
+      return {
+        content: await runGitWorktreeOperation(
+          {
+            dataDir,
+            resolveWorkspace: async () => record.repositoryPath,
+            confirm: async (title, detail) => {
+              const result = mainWindow
+                ? await dialog.showMessageBox(mainWindow, { type: "warning", title, message: title, detail, buttons: ["Cancel", "Continue"], defaultId: 0, cancelId: 0, noLink: true })
+                : await dialog.showMessageBox({ type: "warning", title, message: title, detail, buttons: ["Cancel", "Continue"], defaultId: 0, cancelId: 0, noLink: true });
+              return result.response === 1;
+            },
+          },
+          `settings:${record.repositoryPath}:${record.branch}`,
+          { operation: "cleanup", branch: record.branch },
+        ),
+      };
+    },
+  );
   handle(
     IPC.invoke.sessionConfigure,
     async (

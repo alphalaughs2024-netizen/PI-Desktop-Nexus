@@ -138,6 +138,7 @@ function createRuntime(
     compactionSettings: ContextCompactionSettings;
     compactionStrategy: CompactionStrategy;
     projectPath: string;
+    gitWorktreeEnabled: boolean;
     scratchDir: string;
     projectInstructions: import("./project-instructions.js").ProjectInstructions;
     pluginTools: PluginToolDef[];
@@ -164,6 +165,7 @@ function createRuntime(
     compactionSettings: overrides.compactionSettings,
     compactionStrategy: overrides.compactionStrategy,
     projectPath: overrides.projectPath,
+    gitWorktreeEnabled: overrides.gitWorktreeEnabled,
     scratchDir: overrides.scratchDir,
     pluginTools: overrides.pluginTools,
     subagents: overrides.subagents,
@@ -212,6 +214,7 @@ function runtimeMatches(
     activeWorkflow: (runtime as any).activeWorkflow,
     projectInstructions: (runtime as any).baseProjectInstructions,
     projectPath: (runtime as any).projectPath,
+    gitWorktreeEnabled: (runtime as any).gitWorktreeEnabled,
     commandShell: (runtime as any).commandShell,
     subagents: (runtime as any).subagents,
     subagentProviders: (runtime as any).subagentProviders,
@@ -1509,6 +1512,43 @@ describe("DesktopAgentRuntime live activity", () => {
 });
 
 describe("DesktopAgentRuntime deferred tool catalog", () => {
+  it("omits GitWorktree when the host resolved direct-folder mode", async () => {
+    const runtime = createRuntime({ gitWorktreeEnabled: false });
+    const names = ((runtime as any).agent.state.tools as Array<{ name: string }>).map(
+      (tool) => tool.name,
+    );
+
+    expect(names).not.toContain("GitWorktree");
+    expect((runtime as any).toolCatalog.has("GitWorktree")).toBe(false);
+    await runtime.dispose();
+  });
+
+  it("terminates the turn after a hard Git worktree failure even when the next operation differs", async () => {
+    const host = {
+      call: vi.fn(async (method: string) => {
+        if (method === "tools.execute") {
+          return {
+            ok: false,
+            isError: true,
+            errorCode: "NOT_A_GIT_REPOSITORY",
+            content: "GitWorktree: This project is not a Git repository.",
+          };
+        }
+        return undefined;
+      }),
+      onNotification: vi.fn(() => () => {}),
+    };
+    const runtime = createRuntime({ host });
+    const git = (runtime as any).agent.state.tools.find((tool: any) => tool.name === "GitWorktree");
+    const first = await git.execute("git-status", { operation: "status", branch: "nexus/one" });
+    expect(first.terminate).toBe(true);
+    const second = await git.execute("git-create", { operation: "create", branch: "nexus/two" });
+    expect(second.isError).toBe(true);
+    expect(second.content[0].text).toContain("GIT_WORKTREE_BLOCKED");
+    expect(host.call.mock.calls.filter(([method]: [string]) => method === "tools.execute")).toHaveLength(1);
+    await runtime.dispose();
+  });
+
   it("keeps the first agent request on core tools plus discovery", async () => {
     const runtime = createRuntime({
       pluginTools: [

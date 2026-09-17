@@ -17,6 +17,7 @@ export type SettingsTabId =
   | "subagents"
   | "import"
   | "projects"
+  | "workspaces"
   | "about";
 
 export type SettingsNavGroupId =
@@ -216,6 +217,13 @@ export const SETTINGS_NAV: SettingsNavEntry[] = [
       "project.archive",
       "project.restore",
     ],
+  },
+  {
+    id: "workspaces",
+    labelKey: "settings.nav.workspaces",
+    titleKey: "settings.workspaces",
+    group: "workspace",
+    keywordKeys: ["settings.workspaces", "settings.workspacesDesc", "settings.workspaceDirectFolder"],
   },
   {
     id: "about",

@@ -92,6 +92,19 @@ import type {
   TrustedExtensionUiPrompt,
   TrustedExtensionUiPromptResponse,
 } from "@pi-desktop/shared";
+
+export type GitWorkspaceMode = "managed-isolation" | "direct-folder";
+export type ManagedWorktreeInventoryRow = {
+  repositoryPath: string;
+  branch: string;
+  worktreePath: string;
+  createdAt: string;
+  managed: boolean;
+  exists: boolean;
+  clean?: boolean;
+  mergedIntoCurrent?: boolean;
+  linkedSessionCount: number;
+};
 import {
   defaultCommandShellForPlatform,
   IPC,
@@ -372,6 +385,24 @@ export const api = {
     invoke<{ ok: boolean; path: string }>(IPC.invoke.sessionOpenScratchPath, {
       sessionId,
     }),
+  getGitWorkspaceStatus: (sessionId: string) =>
+    invoke<{
+      ready: boolean;
+      workspaceMode: GitWorkspaceMode;
+      explanation: string;
+      recovery: string;
+      category?: string;
+    }>(IPC.invoke.gitWorkspaceStatus, { sessionId }),
+  setGitWorkspaceMode: (sessionId: string, mode: GitWorkspaceMode) =>
+    invoke<{ ready: boolean; workspaceMode: GitWorkspaceMode }>(IPC.invoke.gitWorkspaceModeSet, { sessionId, mode }),
+  listManagedWorktrees: () =>
+    invoke<{ worktrees: ManagedWorktreeInventoryRow[] }>(IPC.invoke.gitWorktreesList),
+  revealManagedWorktree: (row: Pick<ManagedWorktreeInventoryRow, "repositoryPath" | "branch" | "worktreePath">) =>
+    invoke<{ ok: boolean; path: string }>(IPC.invoke.gitWorktreeReveal, row),
+  openManagedWorktreeSession: (row: Pick<ManagedWorktreeInventoryRow, "repositoryPath" | "branch" | "worktreePath">) =>
+    invoke<{ session?: SessionSummary }>(IPC.invoke.gitWorktreeOpenSession, row),
+  cleanupManagedWorktree: (row: Pick<ManagedWorktreeInventoryRow, "repositoryPath" | "branch" | "worktreePath">) =>
+    invoke<{ content: string }>(IPC.invoke.gitWorktreeCleanup, row),
   listContextVault: (projectPath: string, query?: string) =>
     invoke<{ claims: ContextVaultClaim[] }>(IPC.invoke.contextVaultList, { projectPath, query }),
   createContextVaultClaim: (projectPath: string, claim: ContextVaultClaimInput) =>
