@@ -22,3 +22,16 @@ test("sidebar exposes collection assignment and ungrouped handling", () => {
   const picker = read("src/components/ProjectCollectionPicker.tsx");
   assert.match(picker, /Manage collections/);
 });
+
+test("sidebar renders canonical collections and does not resurrect legacy empty groups", () => {
+  const sidebar = read("src/components/Sidebar.tsx");
+  assert.match(sidebar, /const visibleCollections/);
+  assert.match(sidebar, /Only canonical collections/);
+  assert.doesNotMatch(sidebar, /projectCollections\.length \? projectCollections : projectGroups/);
+});
+
+test("preference writes retire the legacy project-group payload", () => {
+  const prefs = read("src/lib/sidebar-preferences.ts");
+  assert.match(prefs, /projectGroups: \[\]/);
+  assert.match(prefs, /Collections are canonical/);
+});

@@ -237,7 +237,6 @@ export function Sidebar({
   const sessionMeta = useAppStore((s) => s.sessionMeta);
   const sessionView = useAppStore((s) => s.sessionView);
   const projectSort = useAppStore((s) => s.projectSort);
-  const projectGroups = useAppStore((s) => s.projectGroups);
   const projectCollections = useAppStore((s) => s.projectCollections);
   const projectCollectionMemberships = useAppStore((s) => s.projectCollectionMemberships);
   const runningSessions = useAppStore((s) => s.runningSessions);
@@ -269,6 +268,7 @@ export function Sidebar({
   const setProjectCollapsed = useAppStore((s) => s.setProjectCollapsed);
   const setProjectSort = useAppStore((s) => s.setProjectSort);
   const createProjectGroup = useAppStore((s) => s.createProjectGroup);
+  const createCollection = useAppStore((s) => s.createCollection);
   const addProjectToCollection = useAppStore((s) => s.addProjectToCollection);
   const removeProjectFromCollection = useAppStore((s) => s.removeProjectFromCollection);
   const setProjectGroupCollapsed = useAppStore((s) => s.setProjectGroupCollapsed);
@@ -1884,18 +1884,26 @@ export function Sidebar({
           }}
         >
           {projectEntries.length > 0 ? (() => {
-            const memberships = projectCollectionMemberships.length ? projectCollectionMemberships : projectGroups.flatMap((group) => group.projectPaths.map((projectPath, order) => ({ collectionId: group.id, projectPath, order })));
+            // Only canonical collections with at least one live project are
+            // rendered; stale empty legacy groups must not reappear.
+            const visibleCollections = projectCollections.filter((collection) =>
+              projectCollectionMemberships.some((item) => item.collectionId === collection.id && projectEntries.some((entry) => entry.key === item.projectPath)),
+            );
+            const memberships = projectCollectionMemberships;
             const grouped = new Set(memberships.map((item) => item.projectPath));
             const ungrouped = projectEntries.filter((entry) => !grouped.has(entry.key));
             return <>
-              {(projectCollections.length ? projectCollections : projectGroups.map((group) => ({ id: group.id, name: group.name, order: group.order, collapsed: group.collapsed }))).map((group) => {
+              {visibleCollections.map((group) => {
                 const entries = projectEntries.filter((entry) => memberships.some((item) => item.collectionId === group.id && item.projectPath === entry.key));
                 return <section key={group.id} className="sidebar-project-group-folder" data-sidebar-project-folder={group.id}>
                   <button type="button" className="sidebar-session-group-title" aria-expanded={!group.collapsed} onClick={() => setProjectGroupCollapsed(group.id)}><IconFolder size={13} /><span>{group.name}</span></button>
-                  {!group.collapsed ? (entries.length ? entries.map(renderProjectGroup) : <div className="sidebar-session-empty">{t("nav.noProjectsInGroup", { defaultValue: "No projects in this group" })}</div>) : null}
+                  {!group.collapsed ? entries.map(renderProjectGroup) : null}
                 </section>;
               })}
-              {ungrouped.map(renderProjectGroup)}
+              {ungrouped.length ? <section className="sidebar-project-group-folder sidebar-project-group-ungrouped" data-sidebar-project-folder="ungrouped">
+                <div className="sidebar-session-group-title" aria-hidden="true"><IconFolder size={13} /><span>{t("nav.ungroupedProjects", { defaultValue: "Ungrouped" })}</span></div>
+                {ungrouped.map(renderProjectGroup)}
+              </section> : null}
             </>;
           })() : (
             <section className="sidebar-session-group" aria-labelledby="sidebar-project-group-label">

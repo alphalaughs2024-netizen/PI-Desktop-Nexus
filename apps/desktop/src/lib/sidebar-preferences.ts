@@ -197,9 +197,27 @@ export function loadSidebarPreferences(): SidebarPreferences {
             : false,
     },
     openProjectPaths: cleanPaths(root.openProjectPaths),
-    projectGroups: cleanProjectGroups(root.projectGroups),
-    projectCollections: Array.isArray(root.projectCollections) ? root.projectCollections as ProjectCollection[] : cleanProjectGroups(root.projectGroups).map((group) => ({ id: group.id, name: group.name, order: group.order, collapsed: group.collapsed })),
-    projectCollectionMemberships: Array.isArray(root.projectCollectionMemberships) ? root.projectCollectionMemberships as ProjectCollectionMembership[] : cleanProjectGroups(root.projectGroups).flatMap((group) => group.projectPaths.map((projectPath, order) => ({ collectionId: group.id, projectPath, order }))),
+    // Collections are canonical. Legacy groups are migrated into them once;
+    // keeping a second active model caused stale empty groups to return after
+    // every restart.
+    projectGroups: [],
+    projectCollections: Array.isArray(root.projectCollections)
+      ? root.projectCollections as ProjectCollection[]
+      : cleanProjectGroups(root.projectGroups).map((group) => ({
+          id: group.id,
+          name: group.name,
+          order: group.order,
+          collapsed: group.collapsed,
+        })),
+    projectCollectionMemberships: Array.isArray(root.projectCollectionMemberships)
+      ? root.projectCollectionMemberships as ProjectCollectionMembership[]
+      : cleanProjectGroups(root.projectGroups).flatMap((group) =>
+          group.projectPaths.map((projectPath, order) => ({
+            collectionId: group.id,
+            projectPath,
+            order,
+          })),
+        ),
   };
   // Migrate the old pin-only preferences once. Do not re-apply them after
   // the new record has been written, otherwise an explicit unpin is lost.
@@ -234,7 +252,9 @@ export function saveSidebarPreferences(value: SidebarPreferences): void {
       archived: value.sessionView.archived === true,
     },
     openProjectPaths: cleanPaths(value.openProjectPaths),
-    projectGroups: cleanProjectGroups(value.projectGroups),
+    // Do not write the legacy group model back. It is retained in the type
+    // only so older callers can be migrated without losing their data.
+    projectGroups: [],
     projectCollections: value.projectCollections,
     projectCollectionMemberships: value.projectCollectionMemberships,
   });

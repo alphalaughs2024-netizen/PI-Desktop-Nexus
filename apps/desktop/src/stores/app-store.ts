@@ -3365,9 +3365,8 @@ export const useAppStore = create<AppState>((set, get) => ({
     if (!normalized) return;
     set((state) => {
       const id = crypto.randomUUID();
-      const group = { id, name: normalized, projectPaths: [], collapsed: false, order: state.projectGroups.length };
+      const group = { id, name: normalized, projectPaths: [], collapsed: false, order: state.projectCollections.length };
       return {
-        projectGroups: [...state.projectGroups, group],
         projectCollections: [...state.projectCollections, { id, name: normalized, collapsed: false, order: state.projectCollections.length }],
       };
     });
@@ -3382,7 +3381,6 @@ export const useAppStore = create<AppState>((set, get) => ({
       const membership = { collectionId, projectPath: key, order: state.projectCollectionMemberships.filter((item) => item.collectionId === collectionId).length };
       return {
         projectCollectionMemberships: [...state.projectCollectionMemberships, membership],
-        projectGroups: state.projectGroups.map((group) => group.id === collectionId && !group.projectPaths.includes(key) ? { ...group, projectPaths: [...group.projectPaths, key] } : group),
       };
     });
     persistCurrentSidebar(get);
@@ -3392,24 +3390,28 @@ export const useAppStore = create<AppState>((set, get) => ({
     if (!key) return;
     set((state) => ({
       projectCollectionMemberships: state.projectCollectionMemberships.filter((item) => !(item.collectionId === collectionId && item.projectPath === key)),
-      projectGroups: state.projectGroups.map((group) => group.id === collectionId ? { ...group, projectPaths: group.projectPaths.filter((item) => item !== key) } : group),
     }));
     persistCurrentSidebar(get);
   },
   renameProjectGroup: (id, name) => {
     const normalized = name.trim().slice(0, 80);
     if (!normalized) return;
-    set((state) => ({ projectGroups: state.projectGroups.map((group) => group.id === id ? { ...group, name: normalized } : group) }));
+    set((state) => ({ projectCollections: state.projectCollections.map((collection) => collection.id === id ? { ...collection, name: normalized } : collection) }));
     persistCurrentSidebar(get);
   },
   moveProjectToGroup: (path, groupId) => {
     const key = normalizeProjectPath(path);
-    if (!key || (groupId && !get().projectGroups.some((group) => group.id === groupId))) return;
-    set((state) => ({ projectGroups: state.projectGroups.map((group) => ({ ...group, projectPaths: group.id === groupId ? [...group.projectPaths.filter((item) => item !== key), key] : group.projectPaths.filter((item) => item !== key) })) }));
+    if (!key || (groupId && !get().projectCollections.some((collection) => collection.id === groupId))) return;
+    set((state) => ({
+      projectCollectionMemberships: state.projectCollectionMemberships.filter((item) => item.projectPath !== key || item.collectionId === groupId),
+      ...(groupId && !state.projectCollectionMemberships.some((item) => item.projectPath === key && item.collectionId === groupId)
+        ? { projectCollectionMemberships: [...state.projectCollectionMemberships.filter((item) => item.projectPath !== key), { collectionId: groupId, projectPath: key, order: 0 }] }
+        : {}),
+    }));
     persistCurrentSidebar(get);
   },
   setProjectGroupCollapsed: (id, collapsed) => {
-    set((state) => ({ projectGroups: state.projectGroups.map((group) => group.id === id ? { ...group, collapsed: collapsed ?? !group.collapsed } : group) }));
+    set((state) => ({ projectCollections: state.projectCollections.map((collection) => collection.id === id ? { ...collection, collapsed: collapsed ?? !collection.collapsed } : collection) }));
     persistCurrentSidebar(get);
   },
 
