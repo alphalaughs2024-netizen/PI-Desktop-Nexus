@@ -60,3 +60,16 @@ test("Full access confirmation is portaled outside the bottom composer dock", ()
   assert.match(composerSource, /document\.body/);
   assert.match(composerSource, /composer-full-access-overlay/);
 });
+
+test("Full access confirmation action keeps readable text on the danger fill", async () => {
+  const styles = await readFile(
+    new URL("../src/styles/composer-menus.css", import.meta.url),
+    "utf8",
+  );
+  const dangerRule = styles.slice(
+    styles.indexOf(".composer-full-access-actions button.danger {"),
+    styles.indexOf(".composer-full-access-actions button.danger:hover"),
+  );
+  assert.match(dangerRule, /background: var\(--ds-error\)/);
+  assert.match(dangerRule, /color: #fff/);
+});
