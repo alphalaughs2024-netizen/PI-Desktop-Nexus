@@ -1381,7 +1381,8 @@ membership when dropped on Ungrouped.
 - **Expected**: Full access is session-scoped, persisted only after explicit
   confirmation, and changes real host authorization without bypassing contract
   mode, containment, canonicalization, administrator, platform, remote-control,
-  timeout, or audit restrictions.
+  timeout, or audit restrictions. The confirmation action label remains readable
+  against its danger fill in dark, light, and scenic appearances.
 - **Specs linked**: `04-ux/03-permission-ux.md`, `03-runtime/03-tools-and-permissions.md`,
   `docs/adr/0220-composer-agent-full-access-permission.md`
 - **Acceptance**: E (Write/Edit/Bash trigger confirmation)
