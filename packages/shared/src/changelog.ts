@@ -13,6 +13,16 @@ export type ChangelogEntry = {
 };
 
 const enEntries: ChangelogEntry[] = [{
+  version: "0.0.3",
+  date: "2026-09-18",
+  highlights: [
+    "Reduced sidebar indentation between groups, projects, and sessions while preserving hierarchy, focus states, chevrons, themes, drop indicators, and compact rows.",
+    "Added project groups, persistent ordering, many-to-many membership, scoped project memory, empty-group assignment, and anchored project organization panels.",
+    "Added safe drag-and-drop project organization with explicit handles, keyboard/menu alternatives, and actions for rename, reorder, membership, and deletion without deleting project data.",
+    "Added drag-and-drop session movement between projects with confirmation for non-empty sessions, Shift-drag bypass, immediate empty-session moves, running-session protection, and preserved session identity and transcripts.",
+    "Removed persistent project-path tooltips that obstructed the sidebar.",
+  ],
+}, {
   version: "0.0.2",
   date: "2026-09-18",
   highlights: ["Keeps update failures readable with concise in-app feedback while preserving diagnostic details in local logs."],
@@ -23,6 +33,16 @@ const enEntries: ChangelogEntry[] = [{
 }];
 
 const zhCNEntries: ChangelogEntry[] = [{
+  version: "0.0.3",
+  date: "2026-09-18",
+  highlights: [
+    "减少侧边栏中分组、项目和会话之间的缩进，同时保留层级、焦点状态、折叠箭头、主题和放置指示器。",
+    "新增项目分组、持久排序、多项目归属、项目级记忆、空分组分配以及停靠式项目管理面板。",
+    "新增安全的项目拖放整理，并保留明确拖动手柄、键盘/菜单替代操作，以及重命名、排序、成员管理和删除项目关系的操作。",
+    "新增项目间会话拖放，非空会话移动需确认，按住 Shift 可跳过确认，空会话立即移动；运行中的会话受到保护，会话身份和转录保持不变。",
+    "移除会遮挡侧边栏的持久项目路径提示。",
+  ],
+}, {
   version: "0.0.2",
   date: "2026-09-18",
   highlights: ["更新失败时显示简洁易懂的应用内提示，同时将诊断细节保留在本地日志中。"],
@@ -33,6 +53,16 @@ const zhCNEntries: ChangelogEntry[] = [{
 }];
 
 const zhTWEntries: ChangelogEntry[] = [{
+  version: "0.0.3",
+  date: "2026-09-18",
+  highlights: [
+    "減少側邊欄中群組、專案與工作階段之間的縮排，同時保留階層、焦點狀態、摺疊箭頭、主題與放置指示器。",
+    "新增專案群組、持久排序、多專案歸屬、專案級記憶、空群組指派與停靠式專案管理面板。",
+    "新增安全的專案拖放整理，並保留明確拖曳控制、鍵盤/選單替代操作，以及重新命名、排序、成員管理與關係刪除操作。",
+    "新增專案間工作階段拖放；非空工作階段移動需確認，按住 Shift 可略過確認，空工作階段立即移動；執行中的工作階段受到保護，身分與轉錄保持不變。",
+    "移除會遮擋側邊欄的持久專案路徑提示。",
+  ],
+}, {
   version: "0.0.2",
   date: "2026-09-18",
   highlights: ["更新失敗時顯示簡潔易懂的應用程式內提示，同時將診斷細節保留在本機記錄中。"],
