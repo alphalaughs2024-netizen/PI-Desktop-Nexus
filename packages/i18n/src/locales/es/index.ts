@@ -149,6 +149,7 @@ export const es = {
     "toggleSidebar": "Alternar barra lateral",
     "toggleWorkPanel": "Alternar panel de trabajo",
     "sessions": "Sesiones",
+    "standaloneSessions": "Sesiones independientes",
     "commandPalette": "Paleta de comandos",
     "back": "Atrás",
     "forward": "Adelante",

@@ -149,6 +149,7 @@ export const fr = {
     "toggleSidebar": "Basculer la barre latérale",
     "toggleWorkPanel": "Basculer le panneau de travail",
     "sessions": "Sessions",
+    "standaloneSessions": "Sessions autonomes",
     "commandPalette": "Palette de commandes",
     "back": "Retour",
     "forward": "Suivant",

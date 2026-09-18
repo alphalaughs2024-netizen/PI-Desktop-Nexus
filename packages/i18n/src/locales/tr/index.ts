@@ -158,6 +158,7 @@ export const tr = {
     toggleSidebar: "Kenar çubuğunu aç/kapat",
     toggleWorkPanel: "Çalışma panelini aç/kapat",
     sessions: "Oturumlar",
+    standaloneSessions: "Bağımsız oturumlar",
     commandPalette: "Komut paleti",
     back: "Geri",
     forward: "İleri",

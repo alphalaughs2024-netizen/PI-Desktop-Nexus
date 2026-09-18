@@ -791,8 +791,10 @@ export function Sidebar({
     for (const session of filtered) {
       const sessionPath = normalizeProjectPath(session.projectPath);
       if (!sessionPath) continue;
-      // A closed project remains discoverable in Projects, but its historical
-      // sessions must not recreate a sidebar tab that the user just closed.
+      // Historical sessions keep their project visible even when that project
+      // is not currently open. This is what makes the sidebar a complete
+      // project -> sessions hierarchy instead of silently flattening them.
+      add(sessionPath, undefined, undefined, false);
       const entry = byPath.get(sessionPath);
       if (entry) entry.sessions.push(session);
     }
@@ -1933,7 +1935,7 @@ export function Sidebar({
             }}
           >
             <span id="sidebar-standalone-sessions-label" className="sidebar-list-label">
-              {t("nav.sessions", { defaultValue: "Sessions" })}
+              {t("nav.standaloneSessions", { defaultValue: "Standalone sessions" })}
             </span>
             <div className="sidebar-toolbar-actions">
               <div className="sidebar-menu-wrap">

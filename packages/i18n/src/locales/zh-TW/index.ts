@@ -151,6 +151,7 @@ export const zhTW = {
     toggleSidebar: "切換側邊欄",
     toggleWorkPanel: "切換工作面板",
     sessions: "會話",
+    standaloneSessions: "獨立會話",
     commandPalette: "命令面板",
     back: "後退",
     forward: "前進",

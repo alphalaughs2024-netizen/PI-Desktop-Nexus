@@ -148,3 +148,10 @@ test("sessions can move between projects with confirmation-aware drag targets", 
   assert.match(api, /moveSessionProject:/);
   assert.match(protocol, /sessionMoveProject/);
 });
+
+test("sidebar builds project hierarchy from every session project and labels standalone sessions", () => {
+  const sidebar = read("src/components/Sidebar.tsx");
+  assert.match(sidebar, /add\(sessionPath, undefined, undefined, false\)/);
+  assert.match(sidebar, /nav\.standaloneSessions/);
+  assert.match(sidebar, /data-sidebar-session-project=\{entry\.path\}/);
+});

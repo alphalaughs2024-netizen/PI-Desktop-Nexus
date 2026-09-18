@@ -152,6 +152,7 @@ export const en = {
     toggleSidebar: "Toggle sidebar",
     toggleWorkPanel: "Toggle work panel",
     sessions: "Sessions",
+    standaloneSessions: "Standalone sessions",
     commandPalette: "Command palette",
     back: "Back",
     forward: "Forward",

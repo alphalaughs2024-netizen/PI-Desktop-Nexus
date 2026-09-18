@@ -156,6 +156,7 @@ export const de = {
     "toggleSidebar": "Seitenleiste umschalten",
     "toggleWorkPanel": "Arbeitspanel umschalten",
     "sessions": "Sitzungen",
+    "standaloneSessions": "Eigenständige Sitzungen",
     "commandPalette": "Befehlspalette",
     "back": "Zurück",
     "forward": "Vorwärts",
