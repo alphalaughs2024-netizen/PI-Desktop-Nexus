@@ -4,12 +4,12 @@ use serde::Serialize;
 use serde_json::Value;
 use std::path::{Path, PathBuf};
 
-/// Storage schema v16: SQLite holds
+/// Storage schema v17: SQLite holds
 /// index data only; transcript content lives in per-session JSONL files
 /// (D119, `transcripts.rs`). v11 adds the Plan/Goal approval kind (D198).
 /// v12 added A2A broker tables (ADR 0147); v13 drops them (ADR 0165).
 /// v14 adds plugin session ownership and the soft-delete marker (D367).
-pub const SCHEMA_VERSION: i64 = 16;
+pub const SCHEMA_VERSION: i64 = 17;
 
 /// Absolute approval deadline for a newly submitted Plan or Goal proposal.
 pub const PLAN_APPROVAL_TIMEOUT_MS: i64 = 30 * 60 * 1000;
@@ -180,7 +180,7 @@ CREATE TABLE sessions (
                 CHECK (thinking_level IN ('off', 'minimal', 'low', 'medium',
                                           'high', 'xhigh', 'max')),
   permission_mode TEXT NOT NULL DEFAULT 'inherit'
-                CHECK (permission_mode IN ('inherit', 'ask', 'accept-edits', 'auto')),
+                CHECK (permission_mode IN ('inherit', 'ask', 'accept-edits', 'auto', 'full-access')),
   source      TEXT,
   deleted_at  INTEGER,
   pinned      INTEGER NOT NULL DEFAULT 0,
@@ -519,27 +519,35 @@ impl Database {
                     )
                 })?;
                 migrate_v8_to_v16(&conn, path)?;
+                migrate_v16_to_v17(&conn, path)?;
             }
             8 => {
                 migrate_v8_to_v16(&conn, path)?;
+                migrate_v16_to_v17(&conn, path)?;
             }
             9 => {
                 migrate_v9_to_v16(&conn, path)?;
+                migrate_v16_to_v17(&conn, path)?;
             }
             10 => {
                 migrate_v10_to_v16(&conn, path)?;
+                migrate_v16_to_v17(&conn, path)?;
             }
             11 => {
                 migrate_v11_to_v16(&conn, path)?;
+                migrate_v16_to_v17(&conn, path)?;
             }
             12 => {
                 migrate_v12_to_v16(&conn, path)?;
+                migrate_v16_to_v17(&conn, path)?;
             }
             13 => {
                 migrate_v13_to_v16(&conn, path)?;
+                migrate_v16_to_v17(&conn, path)?;
             }
             14 => {
                 migrate_v14_to_v16(&conn, path)?;
+                migrate_v16_to_v17(&conn, path)?;
             }
             legacy @ 1..=6 => {
                 let _ = conn.execute_batch("PRAGMA wal_checkpoint(TRUNCATE);");
@@ -547,7 +555,8 @@ impl Database {
                 archive_legacy_db(path, legacy)?;
                 return Self::open(path);
             }
-            15 => migrate_v15_to_v16(&conn, path)?,
+            15 => migrate_v15_to_v17(&conn, path)?,
+            16 => migrate_v16_to_v17(&conn, path)?,
             SCHEMA_VERSION => {}
             other => {
                 return Err(anyhow!(
@@ -1463,6 +1472,74 @@ fn migrate_v15_to_v16(conn: &Connection, path: &Path) -> Result<()> {
     Ok(())
 }
 
+fn migrate_v16_to_v17_tx(tx: &rusqlite::Transaction<'_>) -> Result<()> {
+    tx.execute_batch(
+        r#"
+        CREATE TABLE sessions_v17 (
+          id          TEXT PRIMARY KEY,
+          title       TEXT NOT NULL DEFAULT '',
+          project_id  INTEGER REFERENCES projects(id) ON DELETE SET NULL,
+          provider_id TEXT,
+          model_id    TEXT,
+          mode        TEXT NOT NULL DEFAULT 'agent',
+          thinking_level TEXT NOT NULL DEFAULT 'off'
+                CHECK (thinking_level IN ('off', 'minimal', 'low', 'medium',
+                                          'high', 'xhigh', 'max')),
+          permission_mode TEXT NOT NULL DEFAULT 'inherit'
+                CHECK (permission_mode IN ('inherit', 'ask', 'accept-edits', 'auto', 'full-access')),
+          source      TEXT,
+          deleted_at  INTEGER,
+          pinned      INTEGER NOT NULL DEFAULT 0,
+          last_seq    INTEGER NOT NULL DEFAULT 0,
+          created_at  INTEGER NOT NULL,
+          updated_at  INTEGER NOT NULL
+        );
+        INSERT INTO sessions_v17
+          (id, title, project_id, provider_id, model_id, mode, thinking_level,
+           permission_mode, source, deleted_at, pinned, last_seq, created_at, updated_at)
+        SELECT id, title, project_id, provider_id, model_id, mode, thinking_level,
+               permission_mode, source, deleted_at, pinned, last_seq, created_at, updated_at
+          FROM sessions;
+        DROP INDEX IF EXISTS idx_sessions_updated;
+        DROP INDEX IF EXISTS idx_sessions_project;
+        DROP INDEX IF EXISTS idx_sessions_deleted;
+        DROP TABLE sessions;
+        ALTER TABLE sessions_v17 RENAME TO sessions;
+        CREATE INDEX idx_sessions_updated ON sessions(updated_at DESC);
+        CREATE INDEX idx_sessions_project ON sessions(project_id) WHERE project_id IS NOT NULL;
+        CREATE INDEX idx_sessions_deleted ON sessions(deleted_at) WHERE deleted_at IS NOT NULL;
+        "#,
+    )?;
+    tx.pragma_update(None, "user_version", 17i64)?;
+    Ok(())
+}
+
+fn migrate_v16_to_v17(conn: &Connection, path: &Path) -> Result<()> {
+    let backup = create_migration_backup(conn, path, 16)?;
+    conn.execute_batch("PRAGMA foreign_keys = OFF;")?;
+    let tx = conn.unchecked_transaction()?;
+    let result = migrate_v16_to_v17_tx(&tx);
+    match result {
+        Ok(()) => {
+            tx.commit().with_context(|| {
+                format!("commit schema v16 to v17 migration; backup {} remains", backup.display())
+            })?;
+            conn.execute_batch("PRAGMA foreign_keys = ON;")?;
+            Ok(())
+        }
+        Err(error) => {
+            drop(tx);
+            let _ = conn.execute_batch("PRAGMA foreign_keys = ON;");
+            Err(error)
+        }
+    }
+}
+
+fn migrate_v15_to_v17(conn: &Connection, path: &Path) -> Result<()> {
+    migrate_v15_to_v16(conn, path)?;
+    migrate_v16_to_v17(conn, path)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1585,6 +1662,24 @@ mod tests {
             )
             .unwrap();
         assert_eq!(thinking_column, ("thinking_level".into(), "'off'".into()));
+
+        db.conn()
+            .execute(
+                "INSERT INTO sessions
+                   (id, mode, permission_mode, created_at, updated_at)
+                 VALUES ('full-access-session', 'agent', 'full-access', 1, 1)",
+                [],
+            )
+            .unwrap();
+        let mode: String = db
+            .conn()
+            .query_row(
+                "SELECT permission_mode FROM sessions WHERE id = 'full-access-session'",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(mode, "full-access");
 
         let index_count: i64 = db
             .conn()
