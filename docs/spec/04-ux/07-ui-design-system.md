@@ -1232,3 +1232,8 @@ by viewport-safe padding on narrow windows. Both surfaces use readable opaque
 or tinted theme tokens over scenic backdrops; scenic pointer-inert behavior,
 plugin-theme isolation, native controls, and work-panel ownership are
 preserved.
+
+Project-group and project-row ordering uses manual drag on the row surfaces;
+dedicated visible reorder-handle icons are not rendered. The movement
+threshold preserves normal click behavior, while drag/drop indicators and
+overflow-menu actions remain available.

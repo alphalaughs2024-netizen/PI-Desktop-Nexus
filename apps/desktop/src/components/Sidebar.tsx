@@ -72,7 +72,6 @@ import { useUpdateState } from "../hooks/use-update-state";
 import {
   IconArchive,
   IconArchiveRestore,
-  IconArrowUpDown,
   IconArrowUp,
   IconArrowDown,
   IconPlug,
@@ -311,6 +310,7 @@ export function Sidebar({
 
   const startCollectionDrag = useCallback((event: ReactPointerEvent, payload: { kind: "project" | "collection"; path?: string; collectionId?: string | null }) => {
     if (event.button !== 0) return;
+    if ((event.target as HTMLElement).closest("button, a, input, textarea, select")) return;
     event.currentTarget.setPointerCapture(event.pointerId);
     collectionDragRef.current = { ...payload, pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, armed: false };
   }, []);
@@ -2043,12 +2043,11 @@ export function Sidebar({
               {visibleCollections.map((group) => {
                 const entries = projectEntries.filter((entry) => memberships.some((item) => item.collectionId === group.id && item.projectPath === entry.key));
                 return <section key={group.id} className="sidebar-project-group-folder" data-sidebar-project-folder={group.id} onPointerMove={moveCollectionDrag} onPointerUp={finishCollectionDrop} onPointerCancel={endCollectionDrag}>
-                  <div className="sidebar-project-group-header" data-drop-position={draggedCollection === group.id ? "group" : undefined}>
-                    <button type="button" className="sidebar-collection-drag-handle" data-action="collection-drag-handle" aria-label={t("nav.reorderProjectGroup", { defaultValue: "Reorder project group" })} onPointerDown={(event) => startCollectionDrag(event, { kind: "collection", collectionId: group.id })} onClick={(event) => event.preventDefault()}><IconArrowUpDown size={13} /></button>
+                  <div className="sidebar-project-group-header" data-drop-position={draggedCollection === group.id ? "group" : undefined} onPointerDown={(event) => startCollectionDrag(event, { kind: "collection", collectionId: group.id })}>
                     <button type="button" className="sidebar-session-group-title" aria-expanded={!group.collapsed} onClick={() => setProjectGroupCollapsed(group.id)}><IconChevronDown size={13} className={`sidebar-disclosure-icon ${group.collapsed ? "collapsed" : ""}`} /><IconFolder size={13} /><span>{group.name}</span><span className="sidebar-project-group-count">{entries.length}</span></button>
                     <TooltipButton type="button" className="thread-item-more project-group-more" data-action="collection-menu" tooltip={t("nav.groupActions", { defaultValue: "Project group actions" })} ariaLabel={t("nav.groupActions", { defaultValue: "Project group actions" })} aria-haspopup="menu" aria-expanded={collectionMenu === group.id} onClick={(event) => { event.stopPropagation(); const rect = event.currentTarget.getBoundingClientRect(); openCollectionRowMenu(group.id, event.currentTarget); setMenuPosition({ top: Math.min(window.innerHeight - 220, rect.bottom + 4), left: Math.min(window.innerWidth - 240, rect.right + 4) }); }}><IconMore size={14} /></TooltipButton>
                   </div>
-                  {!group.collapsed ? (entries.length ? entries.map((entry) => <div key={entry.key} className="sidebar-project-collection-row" data-project-collection-row={entry.key} data-drop-position={draggedProject?.path === entry.path ? "project" : undefined}><button type="button" className="sidebar-project-drag-handle" data-action="project-collection-drag-handle" aria-label={t("nav.reorderProject", { defaultValue: "Reorder project" })} onPointerDown={(event) => startCollectionDrag(event, { kind: "project", path: entry.path, collectionId: group.id })} onClick={(event) => event.preventDefault()}><IconArrowUpDown size={12} /></button>{renderProjectGroup(entry)}</div>) : <button type="button" className="sidebar-project-group-empty-action" onClick={(event) => { collectionPickerReturnFocusRef.current = event.currentTarget; setCollectionPickerAnchor(event.currentTarget); setCollectionAssignmentFor(group.id); }}>{t("nav.addProjectToGroup", { defaultValue: "Add project" })}</button>) : null}
+                  {!group.collapsed ? (entries.length ? entries.map((entry) => <div key={entry.key} className="sidebar-project-collection-row" data-project-collection-row={entry.key} data-drop-position={draggedProject?.path === entry.path ? "project" : undefined} onPointerDown={(event) => startCollectionDrag(event, { kind: "project", path: entry.path, collectionId: group.id })}>{renderProjectGroup(entry)}</div>) : <button type="button" className="sidebar-project-group-empty-action" onClick={(event) => { collectionPickerReturnFocusRef.current = event.currentTarget; setCollectionPickerAnchor(event.currentTarget); setCollectionAssignmentFor(group.id); }}>{t("nav.addProjectToGroup", { defaultValue: "Add project" })}</button>) : null}
                 </section>;
               })}
               {ungrouped.length ? <section className="sidebar-project-group-folder sidebar-project-group-ungrouped" data-sidebar-project-folder="ungrouped" onPointerMove={moveCollectionDrag} onPointerUp={finishCollectionDrop} onPointerCancel={endCollectionDrag}>

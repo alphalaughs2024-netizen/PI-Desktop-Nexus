@@ -84,12 +84,23 @@ test("group headers expose actions and safe drag targets", () => {
   const sidebar = read("src/components/Sidebar.tsx");
   assert.match(sidebar, /data-sidebar-project-folder/);
   assert.match(sidebar, /data-action=\"collection-menu\"/);
-  assert.match(sidebar, /data-action=\"collection-drag-handle\"/);
-  assert.match(sidebar, /data-action=\"project-collection-drag-handle\"/);
+  assert.match(sidebar, /sidebar-project-group-header[^>]*onPointerDown=\{\(event\) => startCollectionDrag/);
+  assert.match(sidebar, /data-project-collection-row=\{entry\.key\}[^>]*onPointerDown=\{\(event\) => startCollectionDrag/);
   assert.match(sidebar, /onPointerDown/);
   assert.match(sidebar, /projectCollectionDragShouldArm/);
   assert.match(sidebar, /data-drop-position/);
   assert.match(sidebar, /Ungrouped/);
+});
+
+test("group and project rows use their full surface for manual drag without visible reorder icons", () => {
+  const sidebar = read("src/components/Sidebar.tsx");
+  const styles = read("src/styles/project-groups.css");
+  assert.match(sidebar, /IconArrowUpDown/); // The remaining instance is the project-sort control, not a drag handle.
+  assert.doesNotMatch(sidebar, /sidebar-collection-drag-handle/);
+  assert.doesNotMatch(sidebar, /sidebar-project-drag-handle/);
+  assert.match(sidebar, /sidebar-project-group-header[^>]*onPointerDown=\{\(event\) => startCollectionDrag/);
+  assert.match(sidebar, /data-project-collection-row=\{entry\.key\}[^>]*onPointerDown=\{\(event\) => startCollectionDrag/);
+  assert.doesNotMatch(styles, /sidebar-collection-drag-handle|sidebar-project-drag-handle/);
 });
 
 test("collection drag controller preserves click until the movement threshold", () => {

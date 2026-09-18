@@ -10519,3 +10519,18 @@ foreground rather than inheriting the selected theme's general text color.
 - **Status**: Source-contract and placement-unit covered by
   `project-sidebar-positioning.test.mjs`; rendered desktop journey remains
   manual/E2E validation.
+
+#### E2E-Project-Organization-Drag-Surfaces: Handle-free project ordering
+
+- **Preconditions**: The expanded sidebar contains at least two project groups
+  and two projects in one group.
+- **Steps**: 1) Inspect group and project rows at the minimum supported sidebar
+  width. 2) Confirm no visible reorder-handle icons consume row width. 3) Click
+  a group or project row without moving the pointer. 4) Drag a group or project
+  beyond the drag threshold and drop it at another valid position.
+- **Expected**: Rows remain compact and readable. Clicks retain their normal
+  collapse/select behavior. Manual drag reorders groups/projects, shows the
+  existing drop indicator, and does not expose broken Move up/Move down icon
+  controls. The project sort control remains available separately.
+- **Status**: Source-contract covered by `project-collections.test.mjs`;
+  rendered narrow-sidebar validation remains manual/E2E validation.
