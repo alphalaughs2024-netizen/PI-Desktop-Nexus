@@ -84,10 +84,27 @@ test("group headers expose actions and safe drag targets", () => {
   const sidebar = read("src/components/Sidebar.tsx");
   assert.match(sidebar, /data-sidebar-project-folder/);
   assert.match(sidebar, /data-action=\"collection-menu\"/);
-  assert.match(sidebar, /draggable/);
-  assert.match(sidebar, /onDragOver/);
-  assert.match(sidebar, /onDrop/);
+  assert.match(sidebar, /data-action=\"collection-drag-handle\"/);
+  assert.match(sidebar, /data-action=\"project-collection-drag-handle\"/);
+  assert.match(sidebar, /onPointerDown/);
+  assert.match(sidebar, /projectCollectionDragShouldArm/);
+  assert.match(sidebar, /data-drop-position/);
   assert.match(sidebar, /Ungrouped/);
+});
+
+test("collection drag controller preserves click until the movement threshold", () => {
+  const controller = read("src/lib/sidebar-project-collection-drag.ts");
+  assert.match(controller, /PROJECT_COLLECTION_DRAG_ARM_PX/);
+  assert.match(controller, /projectCollectionDragShouldArm/);
+  assert.match(controller, /projectCollectionInsertAfter/);
+  assert.match(controller, /Escape/);
+});
+
+test("dragging between groups adds membership without removing the source", () => {
+  const store = read("src/stores/app-store.ts");
+  const move = store.slice(store.indexOf("moveProjectToCollection: (path, sourceCollectionId"), store.indexOf("moveProjectToGroup:", store.indexOf("moveProjectToCollection: (path, sourceCollectionId")));
+  assert.doesNotMatch(move, /sourceCollectionId && item\.collectionId/);
+  assert.match(move, /targetItems\.splice/);
 });
 
 test("assignment panel has distinct project and group modes", () => {
@@ -103,4 +120,10 @@ test("project actions can remove individual memberships without deleting project
   assert.match(sidebar, /remove-project-from-collection/);
   assert.match(sidebar, /removeProjectFromCollection\(entry\.path, membership\.collectionId\)/);
   assert.doesNotMatch(sidebar, /deleteProjectCollection\(entry\.path/);
+});
+
+test("project menus expose membership ordering alternatives", () => {
+  const sidebar = read("src/components/Sidebar.tsx");
+  assert.match(sidebar, /data-action=\"move-project-up\"/);
+  assert.match(sidebar, /data-action=\"move-project-down\"/);
 });

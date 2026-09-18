@@ -985,6 +985,11 @@ Each scenario is documented in this format:
 - **Status**: Source-level regression covered (`project-collections.test.mjs`);
   full UI scenario Draft
 
+The drag portion uses the visible group/project handles, requires movement
+past the controller threshold before changing state, adds cross-group
+memberships without removing existing ones, and removes only the source
+membership when dropped on Ungrouped.
+
 - **Preconditions**: Provider configured; at least one retained project is
   visible in the sidebar; the current conversation may be idle or streaming.
 - **Steps**: 1) Click the project group's New session control. 2) Wait for the

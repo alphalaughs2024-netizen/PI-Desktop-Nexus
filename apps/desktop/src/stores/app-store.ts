@@ -3455,12 +3455,11 @@ export const useAppStore = create<AppState>((set, get) => ({
       return;
     }
     set((state) => {
-      const without = state.projectCollectionMemberships.filter((item) => !(sourceCollectionId && item.collectionId === sourceCollectionId && item.projectPath === key));
-      if (without.some((item) => item.collectionId === targetCollectionId && item.projectPath === key)) return state;
-      const targetItems = without.filter((item) => item.collectionId === targetCollectionId);
+      if (state.projectCollectionMemberships.some((item) => item.collectionId === targetCollectionId && item.projectPath === key)) return state;
+      const targetItems = state.projectCollectionMemberships.filter((item) => item.collectionId === targetCollectionId);
       const insertAt = Math.max(0, Math.min(targetItems.length, Math.round(targetIndex ?? targetItems.length)));
       targetItems.splice(insertAt, 0, { collectionId: targetCollectionId, projectPath: key, order: 0 });
-      const others = without.filter((item) => item.collectionId !== targetCollectionId);
+      const others = state.projectCollectionMemberships.filter((item) => item.collectionId !== targetCollectionId);
       return { projectCollectionMemberships: [...others, ...targetItems.map((item, order) => ({ ...item, order }))] };
     });
     persistCurrentSidebar(get);

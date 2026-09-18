@@ -14,6 +14,11 @@ keyboard/menu alternatives. The panel and drag layer must not alter native
 window hit areas, work-panel geometry, scenic backdrop ownership, permissions,
 or plugin isolation.
 
+Reordering uses explicit drag handles with an 8px movement threshold so normal
+row activation remains a click. Dragging a project into another group adds a
+membership and preserves its other memberships; dragging to Ungrouped removes
+only the active membership. Group and membership ordering remain independent.
+
 ## Context
 
 The earlier compatibility model called these records `ProjectGroup` and mixed
