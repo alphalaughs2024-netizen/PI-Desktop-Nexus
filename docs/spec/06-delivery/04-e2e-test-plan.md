@@ -10534,3 +10534,21 @@ foreground rather than inheriting the selected theme's general text color.
   controls. The project sort control remains available separately.
 - **Status**: Source-contract covered by `project-collections.test.mjs`;
   rendered narrow-sidebar validation remains manual/E2E validation.
+
+#### E2E-Project-Organization-Compact-Indentation: Narrow sidebar hierarchy spacing
+
+- **Preconditions**: The expanded sidebar contains a project group with a
+  project and at least one project session, plus one standalone session.
+- **Steps**: 1) Inspect the hierarchy at the minimum supported sidebar width
+  in each supported theme. 2) Compare the left edges of the group content,
+  project row, nested project session, and standalone session. 3) Collapse and
+  expand the group and project, keyboard-focus each row, and drag a group or
+  project across a valid drop target.
+- **Expected**: Group content starts at `0px`, project rows at `12px`, nested
+  project sessions at `24px`, and standalone sessions at `12px`; the offsets
+  do not compound through wrappers. Group/project/session hierarchy remains
+  visually distinct without excessive indentation in a narrow sidebar. Themes,
+  focus rings, chevrons, row hit areas, manual row-surface dragging, and drop
+  indicators remain functional, and no visible reorder handles appear.
+- **Status**: Source-contract covered by `project-collections.test.mjs`;
+  rendered narrow-sidebar validation remains manual/E2E validation.

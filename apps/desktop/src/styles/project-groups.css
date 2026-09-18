@@ -12,10 +12,10 @@
 .sidebar-project-group-folder { margin: 4px 2px 8px; border-radius: var(--radius-sm); }
 .sidebar-project-group-folder.is-drop-target { outline: 1px solid var(--ds-accent); background: var(--ds-bg-hover); }
 .sidebar-project-group-header { display: flex; align-items: center; min-height: 30px; }
-.sidebar-project-collection-row { position: relative; display: flex; align-items: stretch; padding-left: 20px; }
-.sidebar-project-row { padding-left: 20px; }
-.sidebar-session-project-row { padding-left: 40px; }
-.sidebar-standalone-session-row { padding-left: 20px; }
+.sidebar-project-collection-row { position: relative; display: flex; align-items: stretch; padding-left: 12px; }
+.sidebar-project-row { padding-left: 12px; }
+.sidebar-session-project-row { padding-left: 24px; }
+.sidebar-standalone-session-row { padding-left: 12px; }
 .sidebar-project-collection-row > [data-sidebar-project-group] { flex: 1; min-width: 0; }
 .sidebar-project-collection-row[data-drop-position="project"]::before { position: absolute; top: -1px; right: 4px; left: 28px; height: 2px; border-radius: 2px; background: var(--ds-accent); content: ""; pointer-events: none; }
 .sidebar-project-group-header .sidebar-session-group-title { flex: 1; min-width: 0; }

@@ -109,6 +109,15 @@ test("the project sort control keeps its icon dependency after drag handles are 
   assert.match(sidebar, /data-action="session-sort"[\s\S]*IconArrowUpDown/);
 });
 
+test("project hierarchy uses compact depth spacing for narrow sidebars", () => {
+  const styles = read("src/styles/project-groups.css");
+  assert.match(styles, /\.sidebar-project-collection-row\s*\{[^}]*padding-left:\s*12px/);
+  assert.match(styles, /\.sidebar-project-row\s*\{[^}]*padding-left:\s*12px/);
+  assert.match(styles, /\.sidebar-session-project-row\s*\{[^}]*padding-left:\s*24px/);
+  assert.match(styles, /\.sidebar-standalone-session-row\s*\{[^}]*padding-left:\s*12px/);
+  assert.doesNotMatch(styles, /\.sidebar-session-project-row\s*\{[^}]*padding-left:\s*40px/);
+});
+
 test("collection drag controller preserves click until the movement threshold", () => {
   const controller = read("src/lib/sidebar-project-collection-drag.ts");
   assert.match(controller, /PROJECT_COLLECTION_DRAG_ARM_PX/);

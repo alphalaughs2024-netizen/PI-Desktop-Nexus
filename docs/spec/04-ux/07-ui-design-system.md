@@ -1218,6 +1218,14 @@ sessions remain in their own section. Group, project, and session markers use
 dedicated classes and theme tokens; generic tag selectors must not leak into
 these surfaces.
 
+Sidebar hierarchy depth uses a compact rhythm that remains readable at the
+minimum supported width: group content starts at `0px`, project rows at
+`12px`, sessions inside projects at `24px`, and standalone sessions at
+`12px`. These offsets are applied directly to the semantic rows without
+compounded wrapper padding, so the hierarchy remains distinct without wasting
+narrow-sidebar width. The spacing applies equally across themes and does not
+change row hit areas, focus treatment, chevrons, or drag/drop indicators.
+
 The project assignment control is a non-blocking, opaque anchored side panel.
 It is rendered through the body portal, uses viewport-relative
 `getBoundingClientRect()` placement, prefers the main-content side, flips only
