@@ -1,6 +1,16 @@
 import type { ChangelogEntry } from "./changelog.js";
 
 export const esEntries: ChangelogEntry[] = [{
+  version: "0.0.3",
+  date: "2026-09-18",
+  highlights: [
+    "Reduce la sangría de la barra lateral y conserva la jerarquía, el foco, los temas y los indicadores de colocación.",
+    "Añade grupos de proyectos, orden persistente, pertenencia a varios proyectos, memoria por proyecto y paneles de organización anclados.",
+    "Añade organización segura de proyectos y sesiones mediante arrastrar y soltar, con confirmación para sesiones no vacías y protección de sesiones en ejecución.",
+    "Elimina los tooltips persistentes de rutas de proyecto que obstruían la barra lateral.",
+    "Conserva los identificadores y las transcripciones de las sesiones al cambiar su proyecto.",
+  ],
+}, {
   version: "0.0.2",
   date: "2026-09-18",
   highlights: ["Muestra mensajes claros cuando falla la actualización y conserva los detalles de diagnóstico en los registros locales."],

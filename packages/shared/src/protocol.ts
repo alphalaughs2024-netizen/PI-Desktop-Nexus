@@ -3,7 +3,7 @@ export const SCHEMA_VERSION = 16 as const;
 /** Separate identity for the forked test build; never shares official app state. */
 export const APP_ID = "com.akshay.pi-desktop-nexus";
 export const APP_NAME = "PI Desktop Nexus";
-export const APP_VERSION = "0.0.2";
+export const APP_VERSION = "0.0.3";
 
 export const APP_MENU_COMMANDS = [
   "newTask",

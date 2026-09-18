@@ -30,11 +30,11 @@ describe("changelog catalog", () => {
     }
   });
 
-  it("lists the independent Nexus releases from 0.0.2", () => {
+  it("lists the independent Nexus releases from 0.0.3", () => {
     const versions = CHANGELOG.en.map((e) => e.version);
-    expect(versions[0]).toBe("0.0.2");
+    expect(versions[0]).toBe("0.0.3");
     expect(versions.at(-1)).toBe(STABLE_FROM);
-    expect(versions).toEqual(["0.0.2", "0.0.1"]);
+    expect(versions).toEqual(["0.0.3", "0.0.2", "0.0.1"]);
     for (const version of versions) {
       expect(version).not.toMatch(/-/);
     }
