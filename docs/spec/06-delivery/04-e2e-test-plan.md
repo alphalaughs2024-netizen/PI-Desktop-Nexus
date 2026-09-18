@@ -4192,6 +4192,29 @@ membership when dropped on Ungrouped.
 - **Status**: Unit-covered (`keyboard-shortcuts.test.ts`,
   `settings-keyboard-shortcuts.test.mjs`, host settings RPC test); rendered scenario Draft
 
+#### E2E-072A: Summon-window shortcut registration reports recovery state
+
+- **Preconditions**: App running; Settings → Shortcuts is available; the
+  configured summon-window binding can be claimed or deliberately occupied by
+  another native application.
+- **Steps**: 1) Open Settings → Shortcuts and inspect Summon Window. 2) Force
+  registration to fail, then refresh settings and apply the same settings again.
+  3) Read the row status and local diagnostics. 4) Record a different valid
+  binding, reset it to the default, and disable it.
+- **Expected**: The row distinguishes the configured binding from its native
+  registration state and shows concise recovery copy when unavailable. The
+  status query/event uses `SHORTCUT_CONFLICT` or `SHORTCUT_UNAVAILABLE`; the
+  app never silently changes the user's binding. Repeating the same collision
+  for the same platform/accelerator does not create duplicate diagnostic log
+  records. Choosing another binding, restoring the default, or disabling the
+  shortcut updates the status without restarting the app.
+- **Specs linked**: `03-runtime/07-process-model.md`,
+  `04-ux/06-settings-ia.md`
+- **Acceptance**: A (app startup), Quality
+- **Milestone**: M5
+- **Status**: Unit/source-contract covered (`summon-shortcut-status.test.mjs`);
+  native collision journey Draft
+
 #### E2E-073a: Developer mode gates the developer-tools console
 
 - **Preconditions**: App running on macOS and on one Windows/Linux target;

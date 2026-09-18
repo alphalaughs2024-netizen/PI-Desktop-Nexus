@@ -243,6 +243,15 @@ sidecar/host shutdown sequence runs before the updater replaces the app.
   not spam the renderer or logs; manual checks always produce a visible
   result.
 
+The summon-window global shortcut is also Main-owned. Its current binding,
+Electron accelerator, registration boolean, and optional
+`SHORTCUT_CONFLICT`/`SHORTCUT_UNAVAILABLE` code are exposed through a
+read-only IPC query and change event. Settings keeps the configured binding
+distinct from registration state: a collision does not silently substitute a
+different shortcut, and the existing recorder, reset, and disable actions are
+the recovery path. Identical collision diagnostics are logged once per
+accelerator/platform pair.
+
 ## 7. Remote target topology (post-MVP)
 
 Remote control does not add a public listener to Rust host-core or the current

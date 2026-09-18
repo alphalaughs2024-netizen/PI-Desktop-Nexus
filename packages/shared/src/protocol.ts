@@ -55,6 +55,7 @@ export const IPC = {
     appHealth: "pi-desktop/app/health",
     appGetOnboarding: "pi-desktop/app/getOnboarding",
     appDismissOnboarding: "pi-desktop/app/dismissOnboarding",
+    summonShortcutGetStatus: "pi-desktop/shortcut/summon/getStatus",
     /** Installed system font families, resolved by Electron main. */
     systemFontsList: "pi-desktop/app/systemFonts",
     updatesGetState: "pi-desktop/updates/getState",
@@ -286,6 +287,7 @@ export const IPC = {
     plansChanged: "pi-desktop/plans/event/changed",
     providersOauth: "pi-desktop/providers/oauth/event",
     updatesState: "pi-desktop/updates/event/state",
+    summonShortcutStatus: "pi-desktop/shortcut/summon/event/status",
   },
 } as const;
 

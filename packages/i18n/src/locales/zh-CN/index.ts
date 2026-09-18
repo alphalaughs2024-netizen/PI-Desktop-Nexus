@@ -607,6 +607,8 @@ export const zhCN = {
     shortcutReserved: "该组合键由操作系统或编辑器保留。",
     shortcutConflict: "已分配给“{{action}}”。",
     shortcutSaveFailed: "无法保存快捷键。",
+    shortcutUnavailable: "快捷键不可用。请选择其他快捷键或恢复默认设置。",
+    shortcutConflictRecovery: "快捷键已被其他应用占用。请选择其他快捷键或恢复默认设置。",
     shortcutUnbound: "未绑定",
     shortcutDisable: "禁用“{{action}}”快捷键",
     shortcutGroup: {

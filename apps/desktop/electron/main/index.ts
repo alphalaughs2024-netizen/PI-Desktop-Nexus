@@ -95,6 +95,7 @@ import {
   type ShortcutPlatform,
   type ThinkingLevel,
   type HostStatusEvent,
+  type SummonShortcutStatus,
   type UiMessage,
   type MessageUsage,
   addUsage,
@@ -264,6 +265,12 @@ import {
 } from "./importers";
 import { installApplicationMenu } from "./application-menu";
 import { AppUpdaterController } from "./updater";
+import {
+  emptySummonShortcutStatus,
+  sameSummonShortcutStatus,
+  shouldReportSummonShortcutFailure,
+  summonShortcutFailureKey,
+} from "./summon-shortcut";
 import { catalogs, resolveLocale } from "@pi-desktop/i18n";
 import {
   baseWindowBounds,
@@ -390,6 +397,8 @@ let pluginLauncherCreationPromise: Promise<BrowserWindow> | null = null;
 let pluginLauncherAccelerator: string | null = null;
 let pluginLauncherBinding: string | null = null;
 let summonWindowAccelerator: string | null = null;
+let summonShortcutStatus: SummonShortcutStatus = emptySummonShortcutStatus();
+let lastSummonShortcutFailureKey: string | null = null;
 let windowCreationPromise: Promise<void> | null = null;
 let applicationBooted = false;
 const isDevelopmentBuild =
@@ -2983,17 +2992,53 @@ function applySummonWindowShortcut(keybindings?: KeybindingOverrides) {
     summonWindowAccelerator = null;
   }
 
-  if (!accelerator || accelerator === summonWindowAccelerator) return;
-  const registered = globalShortcut.register(accelerator, () => {
-    restoreMainWindow();
-  });
-  if (registered) {
-    summonWindowAccelerator = accelerator;
-  } else {
-    logger.app("diagnostics", "warn", "summon window shortcut unavailable", {
-      data: { accelerator, platform: process.platform },
+  if (!accelerator) {
+    lastSummonShortcutFailureKey = null;
+    updateSummonShortcutStatus({ binding: null, accelerator: null, registered: false });
+    return;
+  }
+  if (accelerator === summonWindowAccelerator) {
+    updateSummonShortcutStatus({ binding, accelerator, registered: true });
+    return;
+  }
+
+  try {
+    const registered = globalShortcut.register(accelerator, () => {
+      restoreMainWindow();
+    });
+    if (registered) {
+      summonWindowAccelerator = accelerator;
+      lastSummonShortcutFailureKey = null;
+      updateSummonShortcutStatus({ binding, accelerator, registered: true });
+      return;
+    }
+    const failureKey = summonShortcutFailureKey(accelerator, process.platform);
+    if (shouldReportSummonShortcutFailure(lastSummonShortcutFailureKey, failureKey)) {
+      logger.app("diagnostics", "warn", "summon window shortcut unavailable", {
+        code: "SHORTCUT_CONFLICT",
+      });
+      lastSummonShortcutFailureKey = failureKey;
+    }
+    updateSummonShortcutStatus({
+      binding,
+      accelerator,
+      registered: false,
+      errorCode: "SHORTCUT_CONFLICT",
+    });
+  } catch {
+    updateSummonShortcutStatus({
+      binding,
+      accelerator,
+      registered: false,
+      errorCode: "SHORTCUT_UNAVAILABLE",
     });
   }
+}
+
+function updateSummonShortcutStatus(next: SummonShortcutStatus): void {
+  if (sameSummonShortcutStatus(summonShortcutStatus, next)) return;
+  summonShortcutStatus = next;
+  sendToRenderer(IPC.event.summonShortcutStatus, next);
 }
 
 async function createWindow() {
@@ -6300,6 +6345,8 @@ function registerIpc() {
     if (!host) throw new Error("host unavailable");
     return host.call("app.health");
   });
+
+  handle(IPC.invoke.summonShortcutGetStatus, async () => summonShortcutStatus);
 
   handle(IPC.invoke.appGetOnboarding, async () => {
     if (!host) throw new Error("host unavailable");
@@ -10170,6 +10217,10 @@ app.on("before-quit", (event) => {
   if (summonWindowAccelerator) {
     globalShortcut.unregister(summonWindowAccelerator);
     summonWindowAccelerator = null;
+    updateSummonShortcutStatus({
+      ...summonShortcutStatus,
+      registered: false,
+    });
   }
   shutdownPromise = (async () => {
     // Replies still streaming are stopped through the sidecar first so their

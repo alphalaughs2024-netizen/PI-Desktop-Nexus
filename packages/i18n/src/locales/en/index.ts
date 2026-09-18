@@ -624,6 +624,8 @@ export const en = {
     shortcutReserved: "Reserved by the operating system or editor.",
     shortcutConflict: "Already assigned to {{action}}.",
     shortcutSaveFailed: "Could not save the shortcut.",
+    shortcutUnavailable: "Unavailable. Choose another shortcut or restore the default.",
+    shortcutConflictRecovery: "Unavailable because another app claimed it. Choose another shortcut or restore the default.",
     shortcutUnbound: "Unbound",
     shortcutDisable: "Disable shortcut for {{action}}",
     shortcutGroup: {

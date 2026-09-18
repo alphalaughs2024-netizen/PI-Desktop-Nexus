@@ -1,4 +1,9 @@
-import { useMemo, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+  type KeyboardEvent as ReactKeyboardEvent,
+} from "react";
 import { useTranslation } from "react-i18next";
 import {
   KEYBOARD_SHORTCUTS,
@@ -14,7 +19,9 @@ import {
   type KeyboardShortcutGroup,
   type KeyboardShortcutId,
   type ShortcutPlatform,
+  type SummonShortcutStatus,
 } from "@pi-desktop/shared";
+import { api } from "../../lib/api";
 import { IconPower, IconSnapshot } from "../icons";
 import { TooltipButton } from "../ui";
 
@@ -70,6 +77,22 @@ export function KeyboardShortcutsSection({ settings, platform, saveSettings }: P
   const [error, setError] = useState<{ id: KeyboardShortcutId; message: string } | null>(
     null,
   );
+  const [summonStatus, setSummonStatus] = useState<SummonShortcutStatus | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    void api
+      .getSummonShortcutStatus()
+      .then((status) => {
+        if (active) setSummonStatus(status);
+      })
+      .catch(() => undefined);
+    const off = api.onSummonShortcutStatus((status) => setSummonStatus(status));
+    return () => {
+      active = false;
+      off();
+    };
+  }, []);
 
   const groups = useMemo(
     () =>
@@ -197,6 +220,18 @@ export function KeyboardShortcutsSection({ settings, platform, saveSettings }: P
                     {rowError ? (
                       <div className="shortcut-error" role="alert">
                         {rowError}
+                      </div>
+                    ) : null}
+                    {shortcut.id === "summonWindow" &&
+                    summonStatus &&
+                    !summonStatus.registered &&
+                    summonStatus.binding ? (
+                      <div className="shortcut-error" role="status">
+                        {t(
+                          summonStatus.errorCode === "SHORTCUT_UNAVAILABLE"
+                            ? "settings.shortcutUnavailable"
+                            : "settings.shortcutConflictRecovery",
+                        )}
                       </div>
                     ) : null}
                   </div>

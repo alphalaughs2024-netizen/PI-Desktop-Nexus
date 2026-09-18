@@ -1879,6 +1879,14 @@ export type HostHealth = {
   uptimeMs: number;
 };
 
+/** Main-owned registration state for the global summon-window shortcut. */
+export type SummonShortcutStatus = {
+  binding: string | null;
+  accelerator: string | null;
+  registered: boolean;
+  errorCode?: "SHORTCUT_CONFLICT" | "SHORTCUT_UNAVAILABLE";
+};
+
 /** Payload of the `hostStatus` push event (backend supervision state). */
 export type HostStatusEvent = {
   ok: boolean;

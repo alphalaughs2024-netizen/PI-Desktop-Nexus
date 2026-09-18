@@ -37,6 +37,7 @@ import type {
   FsIndexResult,
   FsReadResult,
   HostHealth,
+  SummonShortcutStatus,
   HostStatusEvent,
   ModelInfo,
   McpServerInput,
@@ -328,6 +329,8 @@ function normalizePlansChangedEvent(value: unknown): PlanningStateEvent {
 export const api = {
   getVersion: () => invoke<AppVersionInfo>(IPC.invoke.appGetVersion),
   health: () => invoke<HostHealth>(IPC.invoke.appHealth),
+  getSummonShortcutStatus: () =>
+    invoke<SummonShortcutStatus>(IPC.invoke.summonShortcutGetStatus),
   getOnboarding: () => invoke<OnboardingState>(IPC.invoke.appGetOnboarding),
   dismissOnboarding: () => invoke(IPC.invoke.appDismissOnboarding),
   updatesGetState: () => invoke<UpdateState>(IPC.invoke.updatesGetState),
@@ -1113,6 +1116,12 @@ export const api = {
     if (!window.piDesktop?.on) return () => undefined;
     return window.piDesktop.on(IPC.event.updatesState, (payload) =>
       listener(payload as UpdateState),
+    );
+  },
+  onSummonShortcutStatus: (listener: (status: SummonShortcutStatus) => void) => {
+    if (!window.piDesktop?.on) return () => undefined;
+    return window.piDesktop.on(IPC.event.summonShortcutStatus, (payload) =>
+      listener(payload as SummonShortcutStatus),
     );
   },
   onPluginChanged: (
