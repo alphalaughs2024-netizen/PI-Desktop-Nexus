@@ -85,6 +85,7 @@ import {
   IconTarget,
   IconX,
 } from "./icons";
+import { createPortal } from "react-dom";
 
 const COMPOSER_MIN_HEIGHT_PX = 28;
 const COMPOSER_MAX_VISIBLE_ROWS = 7;
@@ -2783,7 +2784,8 @@ export function Composer({
               )}
             </div>
           </div>
-          {fullAccessConfirmOpen ? (
+          {fullAccessConfirmOpen && typeof document !== "undefined"
+            ? createPortal(
             <div className="overlay composer-full-access-overlay" role="presentation">
               <div className="dialog composer-full-access-dialog" role="dialog" aria-modal="true" aria-labelledby="composer-full-access-title">
                 <h2 id="composer-full-access-title">{t("chat.permissionFullAccessTitle")}</h2>
@@ -2821,8 +2823,10 @@ export function Composer({
                   </button>
                 </div>
               </div>
-            </div>
-          ) : null}
+            </div>,
+            document.body,
+          )
+            : null}
         </div>
       </div>
     </div>

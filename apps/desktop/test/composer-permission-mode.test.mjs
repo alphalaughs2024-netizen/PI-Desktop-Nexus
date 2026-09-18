@@ -54,3 +54,9 @@ test("Agent permission menu offers Full access while Plan does not", () => {
   assert.match(composerSource, /fullAccess/);
   assert.match(composerSource, /: \(\["ask", "accept-edits", "auto"\] as const\)/);
 });
+
+test("Full access confirmation is portaled outside the bottom composer dock", () => {
+  assert.match(composerSource, /createPortal\(/);
+  assert.match(composerSource, /document\.body/);
+  assert.match(composerSource, /composer-full-access-overlay/);
+});
