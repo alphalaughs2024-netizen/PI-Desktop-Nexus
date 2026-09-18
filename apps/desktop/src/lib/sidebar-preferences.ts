@@ -43,6 +43,28 @@ export type SidebarPreferences = {
   projectCollectionMemberships: ProjectCollectionMembership[];
 };
 
+function normalizeCollectionRecords(collections: unknown, memberships: unknown): { collections: ProjectCollection[]; memberships: ProjectCollectionMembership[] } {
+  const seen = new Set<string>();
+  const result: ProjectCollection[] = [];
+  if (Array.isArray(collections)) for (const raw of collections) {
+    if (!object(raw) || typeof raw.id !== "string" || !raw.id.trim() || seen.has(raw.id)) continue;
+    const name = normalizeProjectName(raw.name) ?? "Project group";
+    seen.add(raw.id);
+    result.push({ id: raw.id, name, collapsed: raw.collapsed === true, order: result.length });
+  }
+  const membershipSeen = new Set<string>();
+  const cleanMemberships: ProjectCollectionMembership[] = [];
+  if (Array.isArray(memberships)) for (const raw of memberships) {
+    if (!object(raw) || typeof raw.collectionId !== "string" || typeof raw.projectPath !== "string") continue;
+    const projectPath = normalizeProjectPath(raw.projectPath);
+    const key = `${raw.collectionId}\0${projectPath}`;
+    if (!projectPath || !seen.has(raw.collectionId) || membershipSeen.has(key)) continue;
+    membershipSeen.add(key);
+    cleanMemberships.push({ collectionId: raw.collectionId, projectPath, order: cleanMemberships.filter((item) => item.collectionId === raw.collectionId).length });
+  }
+  return { collections: result, memberships: cleanMemberships };
+}
+
 export const SIDEBAR_PREFERENCES_KEY = "pi.desktop.sidebarPreferences";
 export const SIDEBAR_WIDTH_KEY = "pi.desktop.sidebarWidth";
 export const SIDEBAR_WIDTH_MIN = 240;
@@ -184,6 +206,10 @@ export function loadSidebarPreferences(): SidebarPreferences {
   const root = object(raw) ? raw : {};
   const hasLegacyGroups = Array.isArray(root.projectGroups) && root.projectGroups.length > 0;
   const view = object(root.sessionView) ? root.sessionView : {};
+  const normalizedCollections = normalizeCollectionRecords(
+    Array.isArray(root.projectCollections) ? root.projectCollections : cleanProjectGroups(root.projectGroups).map((group) => ({ id: group.id, name: group.name, order: group.order, collapsed: group.collapsed })),
+    Array.isArray(root.projectCollectionMemberships) ? root.projectCollectionMemberships : cleanProjectGroups(root.projectGroups).flatMap((group) => group.projectPaths.map((projectPath, order) => ({ collectionId: group.id, projectPath, order }))),
+  );
   const result: SidebarPreferences = {
     sessionMeta: cleanSessionMeta(root.sessionMeta),
     projectMeta: cleanProjectMeta(root.projectMeta),
@@ -205,23 +231,8 @@ export function loadSidebarPreferences(): SidebarPreferences {
     // keeping a second active model caused stale empty groups to return after
     // every restart.
     projectGroups: [],
-    projectCollections: Array.isArray(root.projectCollections)
-      ? root.projectCollections as ProjectCollection[]
-      : cleanProjectGroups(root.projectGroups).map((group) => ({
-          id: group.id,
-          name: group.name,
-          order: group.order,
-          collapsed: group.collapsed,
-        })),
-    projectCollectionMemberships: Array.isArray(root.projectCollectionMemberships)
-      ? root.projectCollectionMemberships as ProjectCollectionMembership[]
-      : cleanProjectGroups(root.projectGroups).flatMap((group) =>
-          group.projectPaths.map((projectPath, order) => ({
-            collectionId: group.id,
-            projectPath,
-            order,
-          })),
-        ),
+    projectCollections: normalizedCollections.collections,
+    projectCollectionMemberships: normalizedCollections.memberships,
   };
   // Migrate the old pin-only preferences once. Do not re-apply them after
   // the new record has been written, otherwise an explicit unpin is lost.

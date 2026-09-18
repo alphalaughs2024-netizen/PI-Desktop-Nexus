@@ -64,3 +64,43 @@ test("collection picker is an anchored sidebar popover, not a centered modal", (
   assert.match(styles, /\.collection-picker-popover/);
   assert.doesNotMatch(styles, /project-group-modal-backdrop \{[^}]*place-items: center/);
 });
+
+test("canonical collection operations and ordering are exposed", () => {
+  const store = read("src/stores/app-store.ts");
+  for (const operation of [
+    "createProjectCollection",
+    "renameProjectCollection",
+    "deleteProjectCollection",
+    "toggleProjectCollectionCollapsed",
+    "moveProjectCollection",
+    "moveProjectWithinCollection",
+    "moveProjectToCollection",
+  ]) {
+    assert.match(store, new RegExp(`${operation}:`));
+  }
+});
+
+test("group headers expose actions and safe drag targets", () => {
+  const sidebar = read("src/components/Sidebar.tsx");
+  assert.match(sidebar, /data-sidebar-project-folder/);
+  assert.match(sidebar, /data-action=\"collection-menu\"/);
+  assert.match(sidebar, /draggable/);
+  assert.match(sidebar, /onDragOver/);
+  assert.match(sidebar, /onDrop/);
+  assert.match(sidebar, /Ungrouped/);
+});
+
+test("assignment panel has distinct project and group modes", () => {
+  const picker = read("src/components/ProjectCollectionPicker.tsx");
+  assert.match(picker, /Organize project/);
+  assert.match(picker, /Add projects to/);
+  assert.match(picker, /Create project group/);
+  assert.match(picker, /aria-modal=\"true\"/);
+});
+
+test("project actions can remove individual memberships without deleting projects", () => {
+  const sidebar = read("src/components/Sidebar.tsx");
+  assert.match(sidebar, /remove-project-from-collection/);
+  assert.match(sidebar, /removeProjectFromCollection\(entry\.path, membership\.collectionId\)/);
+  assert.doesNotMatch(sidebar, /deleteProjectCollection\(entry\.path/);
+});

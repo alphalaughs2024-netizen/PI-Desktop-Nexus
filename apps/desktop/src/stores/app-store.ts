@@ -979,10 +979,17 @@ export type AppState = {
   closeProject: (path: string) => Promise<void>;
   setProjectSort: (sort: ProjectSort) => void;
   createProjectGroup: (name: string) => void;
+  createProjectCollection: (name: string) => void;
   createCollection: (name: string) => void;
   addProjectToCollection: (path: string, collectionId: string) => void;
   removeProjectFromCollection: (path: string, collectionId: string) => void;
   renameProjectGroup: (id: string, name: string) => void;
+  renameProjectCollection: (id: string, name: string) => void;
+  deleteProjectCollection: (id: string) => void;
+  toggleProjectCollectionCollapsed: (id: string, collapsed?: boolean) => void;
+  moveProjectCollection: (id: string, targetIndex: number) => void;
+  moveProjectWithinCollection: (path: string, collectionId: string, targetIndex: number) => void;
+  moveProjectToCollection: (path: string, sourceCollectionId: string | null, targetCollectionId: string, targetIndex?: number) => void;
   moveProjectToGroup: (path: string, groupId: string | null) => void;
   setProjectGroupCollapsed: (id: string, collapsed?: boolean) => void;
   getVisibleSessions: (options?: {
@@ -3372,7 +3379,8 @@ export const useAppStore = create<AppState>((set, get) => ({
     });
     persistCurrentSidebar(get);
   },
-  createCollection: (name) => get().createProjectGroup(name),
+  createProjectCollection: (name) => get().createProjectGroup(name),
+  createCollection: (name) => get().createProjectCollection(name),
   addProjectToCollection: (path, collectionId) => {
     const key = normalizeProjectPath(path);
     if (!key || !get().projectCollections.some((collection) => collection.id === collectionId)) return;
@@ -3397,6 +3405,64 @@ export const useAppStore = create<AppState>((set, get) => ({
     const normalized = name.trim().slice(0, 80);
     if (!normalized) return;
     set((state) => ({ projectCollections: state.projectCollections.map((collection) => collection.id === id ? { ...collection, name: normalized } : collection) }));
+    persistCurrentSidebar(get);
+  },
+  renameProjectCollection: (id, name) => get().renameProjectGroup(id, name),
+  deleteProjectCollection: (id) => {
+    if (!get().projectCollections.some((collection) => collection.id === id)) return;
+    set((state) => ({
+      projectCollections: state.projectCollections
+        .filter((collection) => collection.id !== id)
+        .map((collection, order) => ({ ...collection, order })),
+      projectCollectionMemberships: state.projectCollectionMemberships.filter((item) => item.collectionId !== id),
+    }));
+    persistCurrentSidebar(get);
+  },
+  toggleProjectCollectionCollapsed: (id, collapsed) => get().setProjectGroupCollapsed(id, collapsed),
+  moveProjectCollection: (id, targetIndex) => {
+    set((state) => {
+      const from = state.projectCollections.findIndex((collection) => collection.id === id);
+      if (from < 0) return state;
+      const target = Math.max(0, Math.min(state.projectCollections.length - 1, Math.round(targetIndex)));
+      const next = [...state.projectCollections];
+      const [item] = next.splice(from, 1);
+      next.splice(target, 0, item);
+      return { projectCollections: next.map((collection, order) => ({ ...collection, order })) };
+    });
+    persistCurrentSidebar(get);
+  },
+  moveProjectWithinCollection: (path, collectionId, targetIndex) => {
+    const key = normalizeProjectPath(path);
+    if (!key) return;
+    set((state) => {
+      const current = state.projectCollectionMemberships.filter((item) => item.collectionId === collectionId);
+      const from = current.findIndex((item) => item.projectPath === key);
+      if (from < 0) return state;
+      const target = Math.max(0, Math.min(current.length - 1, Math.round(targetIndex)));
+      const next = [...current];
+      const [item] = next.splice(from, 1);
+      next.splice(target, 0, item);
+      const others = state.projectCollectionMemberships.filter((item) => item.collectionId !== collectionId);
+      return { projectCollectionMemberships: [...others, ...next.map((item, order) => ({ ...item, order }))] };
+    });
+    persistCurrentSidebar(get);
+  },
+  moveProjectToCollection: (path, sourceCollectionId, targetCollectionId, targetIndex) => {
+    const key = normalizeProjectPath(path);
+    if (!key || !get().projectCollections.some((collection) => collection.id === targetCollectionId)) return;
+    if (sourceCollectionId === targetCollectionId) {
+      get().moveProjectWithinCollection(key, targetCollectionId, targetIndex ?? 0);
+      return;
+    }
+    set((state) => {
+      const without = state.projectCollectionMemberships.filter((item) => !(sourceCollectionId && item.collectionId === sourceCollectionId && item.projectPath === key));
+      if (without.some((item) => item.collectionId === targetCollectionId && item.projectPath === key)) return state;
+      const targetItems = without.filter((item) => item.collectionId === targetCollectionId);
+      const insertAt = Math.max(0, Math.min(targetItems.length, Math.round(targetIndex ?? targetItems.length)));
+      targetItems.splice(insertAt, 0, { collectionId: targetCollectionId, projectPath: key, order: 0 });
+      const others = without.filter((item) => item.collectionId !== targetCollectionId);
+      return { projectCollectionMemberships: [...others, ...targetItems.map((item, order) => ({ ...item, order }))] };
+    });
     persistCurrentSidebar(get);
   },
   moveProjectToGroup: (path, groupId) => {

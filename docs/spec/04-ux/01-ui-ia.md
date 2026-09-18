@@ -149,6 +149,19 @@ destination, chat as the home surface, tools and permissions inline.
 
 ### 3.2 Sidebar project groups
 
+Project groups are lightweight, user-created containers over the canonical
+normalized project path. A project may belong to multiple groups; membership
+changes never duplicate or delete projects, sessions, folders, or Context Vault
+data. Group headers provide collapse, project count, drag reorder, and an
+overflow menu for rename, add projects, move, and container-only deletion.
+Empty groups remain visible until explicitly deleted and expose an Add project
+action. Assignment uses a searchable, multi-select, collision-aware side panel
+anchored beside the invoking row; it is non-modal to the application and never
+covers titlebar, resize, work-panel, or native-control hit areas. Drag and drop
+is supplemented by keyboard/menu movement commands. Collection and membership
+orders are normalized on load and persisted independently; the legacy
+`projectGroups` payload is migration-only.
+
 - **Sections**: the compact `Sessions` heading precedes `Projects` and owns
   path-less conversation creation plus the existing sort/archive-view menu. Its
   toolbar places sorting before new-session creation. Both headings keep quiet

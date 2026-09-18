@@ -1699,6 +1699,24 @@ Assert that maximize/restore and Context Vault clicks reach their actions,
 native IPC failures produce feedback, and scenic layers remain non-interactive.
 A screenshot showing a button is not evidence that the button works.
 
+### Project-group surfaces and overlays
+
+Project groups are shared product UI, not a scenic-theme-specific component.
+Theme authors must style the named group surfaces through design-system tokens:
+group headers, project rows, overflow menus, drag insertion indicators, empty
+states, and the anchored assignment panel. Do not style generic `button`,
+`section`, `div`, or shell-child selectors. Keep group headers and project rows
+visually distinct while allowing each theme's semantic surface, border, text,
+focus, selected, hover, and danger tokens to provide the color direction.
+
+The assignment panel is an opaque/readable, collision-aware surface anchored
+beside the invoking sidebar row. It must close on Escape/outside click, restore
+focus, remain inside the viewport, and never cover titlebar controls, resize
+edges, work-panel controls, or native hit areas. The scenic backdrop remains a
+single pointer-inert layer below it. Empty groups must remain readable over
+scenic images and must not gain an accidental outer rectangle around their
+independent project rows.
+
 Twilight Mountains ultimately achieved the intended blue-glass, mountain-horizon
 atmosphere by treating the visual reference as a hierarchy of materials rather
 than a wallpaper:

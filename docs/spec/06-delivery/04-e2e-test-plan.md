@@ -963,6 +963,28 @@ Each scenario is documented in this format:
 
 #### E2E-011b: Create a new session from a retained project group
 
+#### E2E-011d: Organize projects with project groups
+
+- **Preconditions**: At least three retained projects and two project groups,
+  including one empty group.
+- **Steps**: Create, rename, collapse, reorder, and delete a group; use the
+  anchored group assignment panel to assign one project to two groups; drag a
+  project into another group and back to Ungrouped; repeat the same operations
+  with keyboard/menu actions; restart the app.
+- **Expected**: Group headers and project rows remain visually distinct and
+  theme-readable. Empty groups remain visible. Membership changes preserve one
+  canonical project, sessions, project folders, and Context Vault data. Group
+  deletion removes only the container. Orders and collapsed state persist.
+  The assignment surface closes on Escape/outside click, restores focus, and
+  never intercepts titlebar, resize, work-panel, Context Vault, Browser, or
+  Files controls.
+- **Specs linked**: `04-ux/01-ui-ia.md` (§3.2),
+  `04-ux/08-component-spec.md`, `06-delivery/03-ai-development-workflow.md`
+- **Acceptance**: C (sidebar organization and interaction safety)
+- **Milestone**: M2
+- **Status**: Source-level regression covered (`project-collections.test.mjs`);
+  full UI scenario Draft
+
 - **Preconditions**: Provider configured; at least one retained project is
   visible in the sidebar; the current conversation may be idle or streaming.
 - **Steps**: 1) Click the project group's New session control. 2) Wait for the
