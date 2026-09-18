@@ -224,8 +224,11 @@ sidecar/host shutdown sequence runs before the updater replaces the app.
 - agent sidecar runs the bundled `agent-runtime/sidecar.js` on the Electron
   binary itself with `ELECTRON_RUN_AS_NODE=1` — no separate Node runtime is
   shipped (resolves **D008**)
-- `Resources/agent-runtime/sidecar.js` is the sidecar's only independent
-  release entry. ASAR does not carry a second complete
+- `Resources/agent-runtime/sidecar.js` is the sidecar's independent release
+  entry and is shipped beside `Resources/agent-runtime/package.json` with
+  `type: "module"`. The adjacent boundary is required because Electron runs
+  the bundled entry as ESM in a clean installation; the package file is not a
+  second complete runtime tree. ASAR does not carry a second complete
   `@pi-desktop/agent-runtime` package tree; Electron Main may inline the
   pure-JS helpers it calls without changing process or protocol ownership
 - renderer dependencies ship through Vite output rather than duplicate raw

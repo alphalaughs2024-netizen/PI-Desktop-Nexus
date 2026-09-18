@@ -105,3 +105,16 @@ test("workspace packages keep their tsbuildinfo inside the output directory", as
     );
   }
 });
+
+test("agent runtime bundle declares its ESM module boundary", async () => {
+  const runtimePackageUrl = new URL(
+    "../../../packages/agent-runtime/package.json",
+    import.meta.url,
+  );
+  const runtimePackage = JSON.parse(await readFile(runtimePackageUrl, "utf8"));
+  assert.match(
+    runtimePackage.scripts?.bundle ?? "",
+    /write-sidecar-package\.mjs/,
+    "bundle must create an adjacent ESM package boundary",
+  );
+});

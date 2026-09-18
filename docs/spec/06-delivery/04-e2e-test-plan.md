@@ -282,6 +282,24 @@ Each scenario is documented in this format:
 
 ### Boot & Healthcheck
 
+#### E2E-001a: Packaged agent sidecar starts with an explicit ESM boundary
+
+- **Preconditions**: A packaged desktop artifact is unpacked into a clean
+  profile with no parent `package.json`.
+- **Steps**: 1) Inspect `Resources/agent-runtime/`. 2) Start the bundled
+  sidecar through Electron's `ELECTRON_RUN_AS_NODE=1` path. 3) Send a bounded
+  health request and inspect stderr.
+- **Expected**: `sidecar.js` and its sibling `package.json` are present;
+  `package.json` declares `type: "module"`; the sidecar reaches its ready
+  state without `MODULE_TYPELESS_PACKAGE_JSON`, CommonJS parse errors, or a
+  second runtime tree.
+- **Specs linked**: `03-runtime/07-process-model.md`,
+  `06-delivery/06-release-runbook.md`
+- **Acceptance**: A (boot), Release & Packaging
+- **Milestone**: M2
+- **Status**: Automated source/package contract; clean installed-artifact
+  probe pending on release runners
+
 #### E2E-001: App launches and shows main window
 
 - **Preconditions**: macOS arm64 or Intel x64; no prior `~/.pi-desktop` profile. For the

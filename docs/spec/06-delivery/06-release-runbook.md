@@ -63,8 +63,10 @@ when macOS `iconutil` is available, without overwriting the canonical source.
   linked to the MSVC CRT, so a clean Windows x64 or Windows 11 ARM64
   (x64-emulated) installation does not need a separate Visual C++
   Redistributable before the local service can start.
-- `Resources/agent-runtime/` — bundled sidecar, executed with
-  `ELECTRON_RUN_AS_NODE=1` (no separate Node shipped).
+- `Resources/agent-runtime/` — bundled ESM sidecar and its adjacent
+  `package.json` module boundary, executed with `ELECTRON_RUN_AS_NODE=1` (no
+  separate Node shipped). A clean install must contain both
+  `sidecar.js` and `package.json` with `type: "module"`.
 - `Resources/licenses/` — notices that must remain distributable when the
   corresponding dependency's build-only source tree is pruned.
 - `Resources/app.asar` — Electron Main, preload, renderer output, and only the
@@ -318,8 +320,9 @@ until reviewed.
 
 The package inventory must confirm:
 
-- exactly one `Resources/agent-runtime/sidecar.js` and one target-native Rust
-  host binary
+- exactly one `Resources/agent-runtime/sidecar.js`, its adjacent ESM
+  `Resources/agent-runtime/package.json`, and one target-native Rust host
+  binary
 - no raw renderer packages such as Mermaid, Shiki, React, KaTeX, or Lucide
   under packaged `node_modules`
 - no dependency `*.map`, test, example, declaration, or second agent-runtime

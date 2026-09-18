@@ -212,6 +212,26 @@ test("packaging keeps only shipped locales and excludes non-runtime artifacts", 
   assert.doesNotMatch(JSON.stringify(packageJson.build), /node-pty/);
 });
 
+test("packaged agent runtime includes the ESM module boundary", async () => {
+  const runtimePackageUrl = new URL(
+    "../../../packages/agent-runtime/package.json",
+    import.meta.url,
+  );
+  const runtimePackage = JSON.parse(await readFile(runtimePackageUrl, "utf8"));
+  assert.match(
+    runtimePackage.scripts?.bundle ?? "",
+    /write-sidecar-package\.mjs/,
+    "the bundle command must create the module boundary",
+  );
+
+  const boundaryUrl = new URL(
+    "../../../packages/agent-runtime/dist-bundle/package.json",
+    import.meta.url,
+  );
+  const boundary = JSON.parse(await readFile(boundaryUrl, "utf8"));
+  assert.deepEqual(boundary, { type: "module" });
+});
+
 test("macOS targets follow the native architecture selected by the runner", () => {
   const macTargets = packageJson.build.mac.target;
   assert.deepEqual(
