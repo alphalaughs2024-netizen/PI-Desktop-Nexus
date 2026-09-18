@@ -2758,12 +2758,18 @@ async fn handle_request(
                                     .and_then(|v| v.as_str())
                                     .map(str::to_string)
                             })
-                            .filter(|m| sessions::is_valid_permission_mode(m) && m != "inherit")
+                            .filter(|m| {
+                                sessions::is_valid_permission_mode(m)
+                                    && *m != "inherit"
+                                    && *m != "full-access"
+                            })
                             .unwrap_or_else(|| "ask".to_string()),
                     };
                     let effective_pm = match p.permission_scope.as_deref() {
                         Some(scope)
-                            if sessions::is_valid_permission_mode(scope) && scope != "inherit" =>
+                            if sessions::is_valid_permission_mode(scope)
+                                && scope != "inherit"
+                                && scope != "full-access" =>
                         {
                             scope.to_string()
                         }
@@ -3284,7 +3290,9 @@ async fn handle_request(
                                 .get("defaultPermissionMode")
                                 .and_then(|value| value.as_str())
                                 .filter(|value| {
-                                    sessions::is_valid_permission_mode(value) && *value != "inherit"
+                                    sessions::is_valid_permission_mode(value)
+                                        && *value != "inherit"
+                                        && *value != "full-access"
                                 })
                                 .map(str::to_string)
                         })

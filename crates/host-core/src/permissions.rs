@@ -234,7 +234,7 @@ impl PermissionManager {
         }
 
         if requires_external_path_permission {
-            if permission_mode == "auto" {
+            if matches!(permission_mode, "auto" | "full-access") {
                 return Some(PermissionDecision::AllowOnce);
             }
             if session_grants
@@ -252,7 +252,7 @@ impl PermissionManager {
             return Some(PermissionDecision::AllowOnce);
         }
         let mode_allows = match permission_mode {
-            "auto" => true,
+            "auto" | "full-access" => true,
             "accept-edits" => matches!(tool_name, "Write" | "Edit"),
             _ => false,
         };
@@ -507,6 +507,30 @@ mod tests {
                 "{tool} should auto-allow"
             );
         }
+    }
+
+    #[test]
+    fn full_access_allows_agent_actions_but_not_contract_denied_tools() {
+        let pm = PermissionManager::default();
+        for tool in ["Write", "Edit", "Bash", "plugin_x_run", "mcp_x_run"] {
+            let d = pm.evaluate_auto_with_permission_mode(
+                "s", tool, "agent", "full-access", &no_grants(),
+            );
+            assert_eq!(d, Some(PermissionDecision::AllowOnce), "{tool}");
+        }
+        let denied = pm.evaluate_auto_with_permission_mode(
+            "s", "Write", "plan", "full-access", &no_grants(),
+        );
+        assert_eq!(denied, Some(PermissionDecision::Deny));
+    }
+
+    #[test]
+    fn full_access_allows_external_agent_paths() {
+        let pm = PermissionManager::default();
+        let d = pm.evaluate_auto_with_permission_mode_and_risk_and_path(
+            "s", "Read", "agent", "full-access", &no_grants(), None, true, None,
+        );
+        assert_eq!(d, Some(PermissionDecision::AllowOnce));
     }
 
     #[test]

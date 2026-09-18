@@ -61,6 +61,16 @@
   color: var(--ds-text-primary);
 }
 
+.composer-full-access-overlay { align-items: center; justify-content: center; }
+.composer-full-access-dialog { width: min(440px, calc(100vw - 32px)); padding: 20px; border: 1px solid color-mix(in oklab, var(--ds-danger) 55%, var(--ds-border-default)); }
+.composer-full-access-dialog h2 { margin: 0 0 10px; }
+.composer-full-access-dialog p { margin: 0 0 12px; color: var(--ds-text-secondary); }
+.composer-full-access-dialog ul { margin: 0 0 18px; padding-left: 20px; color: var(--ds-text-secondary); }
+.composer-full-access-dialog li + li { margin-top: 6px; }
+.composer-full-access-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.composer-full-access-actions button { border: 1px solid var(--ds-border-default); border-radius: var(--radius-md); padding: 7px 12px; background: var(--ds-bg-elevated); color: var(--ds-text-primary); }
+.composer-full-access-actions button.danger { border-color: var(--ds-error); background: var(--ds-error); color: var(--ds-bg-primary); }
+
 .composer-model-menu {
   position: absolute;
   right: 0;

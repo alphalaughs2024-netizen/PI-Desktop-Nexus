@@ -2,6 +2,12 @@
 
 ## 1. Goal
 
+Agent Composer offers Ask for approval, Approve routine actions (the existing
+`auto` policy), and Full access. Full access is a session-scoped Agent-only
+policy and requires explicit danger-styled confirmation. It does not bypass
+Plan/Goal hard denies or host policy, containment, canonicalization, remote
+control, administrator, platform, timeout, or audit restrictions.
+
 Make high-risk local actions visible, interruptible, and predictable.
 
 ## 2. Mode matrix

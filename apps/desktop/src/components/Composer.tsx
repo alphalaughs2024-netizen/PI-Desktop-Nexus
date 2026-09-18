@@ -85,6 +85,7 @@ import {
   IconTarget,
   IconX,
 } from "./icons";
+import { createPortal } from "react-dom";
 
 const COMPOSER_MIN_HEIGHT_PX = 28;
 const COMPOSER_MAX_VISIBLE_ROWS = 7;
@@ -537,6 +538,7 @@ const PERMISSION_MODE_I18N_KEYS: Record<PermissionMode, string> = {
   ask: "chat.permissionAsk",
   "accept-edits": "chat.permissionAcceptEdits",
   auto: "chat.permissionAuto",
+  "full-access": "chat.permissionFullAccess",
 };
 
 /**
@@ -695,6 +697,7 @@ export function Composer({
     `${variant}:${activeSessionId ?? HOME_DRAFT_KEY}`,
   );
   const [permissionOpen, setPermissionOpen] = useState(false);
+  const [fullAccessConfirmOpen, setFullAccessConfirmOpen] = useState(false);
   const permissionRef = useRef<HTMLDivElement>(null);
   const [modelThinkingOpen, setModelThinkingOpen] = useState(false);
   const [modelThinkingView, setModelThinkingView] =
@@ -1191,6 +1194,10 @@ export function Composer({
       : sessionPermissionMode;
   const composerPermissionMode: Exclude<PermissionMode, "inherit"> =
     mode === "goal" ? "auto" : effectivePermissionMode;
+  const composerPermissionOptions =
+    mode === "agent"
+      ? (["ask", "auto", "full-access"] as const)
+      : (["ask", "accept-edits", "auto"] as const);
   const provider = providers.find(
     (candidate) =>
       candidate.id ===
@@ -2402,7 +2409,7 @@ export function Composer({
                   </TooltipButton>
                   {permissionOpen && mode !== "goal" && (
                     <div className="composer-permission-menu" role="menu">
-                      {(["ask", "accept-edits", "auto"] as const).map(
+                      {composerPermissionOptions.map(
                         (candidate) => (
                           <button
                             key={candidate}
@@ -2415,6 +2422,10 @@ export function Composer({
                             }`}
                             onClick={async () => {
                               setPermissionOpen(false);
+                              if (candidate === "full-access") {
+                                setFullAccessConfirmOpen(true);
+                                return;
+                              }
                               try {
                                 await configureActiveSession({
                                   mode,
@@ -2773,6 +2784,49 @@ export function Composer({
               )}
             </div>
           </div>
+          {fullAccessConfirmOpen && typeof document !== "undefined"
+            ? createPortal(
+            <div className="overlay composer-full-access-overlay" role="presentation">
+              <div className="dialog composer-full-access-dialog" role="dialog" aria-modal="true" aria-labelledby="composer-full-access-title">
+                <h2 id="composer-full-access-title">{t("chat.permissionFullAccessTitle")}</h2>
+                <p>{t("chat.permissionFullAccessDescription")}</p>
+                <ul>
+                  <li>{t("chat.permissionFullAccessFiles")}</li>
+                  <li>{t("chat.permissionFullAccessTerminal")}</li>
+                  <li>{t("chat.permissionFullAccessInternet")}</li>
+                  <li>{t("chat.permissionFullAccessSensitiveData")}</li>
+                  <li>{t("chat.permissionFullAccessPromptInjection")}</li>
+                </ul>
+                <div className="composer-full-access-actions">
+                  <button type="button" onClick={() => setFullAccessConfirmOpen(false)}>
+                    {t("common.cancel")}
+                  </button>
+                  <button
+                    type="button"
+                    className="danger"
+                    onClick={async () => {
+                      try {
+                        await configureActiveSession({
+                          mode,
+                          providerId: provider?.id,
+                          modelId,
+                          thinkingLevel,
+                          permissionMode: "full-access",
+                        });
+                        setFullAccessConfirmOpen(false);
+                      } catch (e) {
+                        showToast(e instanceof Error ? e.message : String(e), { variant: "error" });
+                      }
+                    }}
+                  >
+                    {t("chat.permissionFullAccessConfirm")}
+                  </button>
+                </div>
+              </div>
+            </div>,
+            document.body,
+          )
+            : null}
         </div>
       </div>
     </div>

@@ -452,6 +452,12 @@ May be added later:
 
 ### Permission Modes (D115/D132)
 
+The local Agent Composer also supports the session-only `full-access` mode.
+It is not a global default, remote-control mode, or Plan/Goal approval mode.
+In Agent, it auto-allows eligible operations that would normally require a
+permission card, while all independent host restrictions and contract-mode
+hard denies remain authoritative.
+
 How high-risk tool calls get approved is governed by a **permission mode**:
 
 | Mode | Write/Edit | Bash / plugin tools |

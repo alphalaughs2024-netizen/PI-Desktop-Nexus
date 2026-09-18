@@ -52,7 +52,13 @@ fn default_thinking_level() -> String {
 
 /// Per-session permission mode (D115). `inherit` defers to the global
 /// default in settings; the rest override it for this session only.
-pub const PERMISSION_MODES: [&str; 4] = ["inherit", "ask", "accept-edits", "auto"];
+pub const PERMISSION_MODES: [&str; 5] = [
+    "inherit",
+    "ask",
+    "accept-edits",
+    "auto",
+    "full-access",
+];
 
 pub fn is_valid_permission_mode(mode: &str) -> bool {
     PERMISSION_MODES.contains(&mode)
@@ -1471,6 +1477,9 @@ pub fn configure_session_with_thinking(
         return Err(anyhow!("mode must be plan or agent"));
     }
     let mode = normalize_mode(Some(mode));
+    if permission_mode == Some("full-access") && mode != "agent" {
+        return Err(anyhow!("full-access is only valid for Agent sessions"));
+    }
     if let Some(level) = thinking_level {
         validate_thinking_level(level)?;
     }
