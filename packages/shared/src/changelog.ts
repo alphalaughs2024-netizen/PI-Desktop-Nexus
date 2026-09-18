@@ -13,6 +13,14 @@ export type ChangelogEntry = {
 };
 
 const enEntries: ChangelogEntry[] = [{
+  version: "0.0.4",
+  date: "2026-09-18",
+  highlights: [
+    "Added an explicitly confirmed Full access permission mode for trusted Agent sessions while preserving host security restrictions and permission-card behavior.",
+    "Added database schema v16 → v17 migration with a backup, preserving existing sessions, transcripts, and indexes.",
+    "Fixed startup compatibility for data created by the Full access experimental build.",
+  ],
+}, {
   version: "0.0.3",
   date: "2026-09-18",
   highlights: [
@@ -33,6 +41,14 @@ const enEntries: ChangelogEntry[] = [{
 }];
 
 const zhCNEntries: ChangelogEntry[] = [{
+  version: "0.0.4",
+  date: "2026-09-18",
+  highlights: [
+    "新增需要明确确认的完全访问模式，供可信的 Agent 会话使用，同时保留主机安全限制。",
+    "新增带备份的数据架构 v16 → v17 迁移，并保留现有会话、转录和索引。",
+    "修复使用实验性完全访问构建生成的数据时的启动兼容性问题。",
+  ],
+}, {
   version: "0.0.3",
   date: "2026-09-18",
   highlights: [
@@ -53,6 +69,14 @@ const zhCNEntries: ChangelogEntry[] = [{
 }];
 
 const zhTWEntries: ChangelogEntry[] = [{
+  version: "0.0.4",
+  date: "2026-09-18",
+  highlights: [
+    "新增需要明確確認的完整存取模式，供可信任的 Agent 工作階段使用，同時保留主機安全限制。",
+    "新增含備份的資料庫結構 v16 → v17 遷移，並保留現有工作階段、轉錄與索引。",
+    "修正使用實驗性完整存取建置所產生資料時的啟動相容性問題。",
+  ],
+}, {
   version: "0.0.3",
   date: "2026-09-18",
   highlights: [

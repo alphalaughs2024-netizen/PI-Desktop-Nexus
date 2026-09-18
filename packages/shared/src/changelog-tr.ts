@@ -1,6 +1,14 @@
 import type { ChangelogEntry } from "./changelog.js";
 
 export const trEntries: ChangelogEntry[] = [{
+  version: "0.0.4",
+  date: "2026-09-18",
+  highlights: [
+    "Güvenilen Agent oturumları için açık onay gerektiren Tam erişim modunu ekler ve host güvenlik kısıtlamalarını korur.",
+    "Yedeklemeli veritabanı şeması v16 → v17 geçişini ekler; oturumları, dökümleri ve dizinleri korur.",
+    "Deneysel Tam erişim derlemesiyle oluşturulan verilerle başlangıç uyumluluğunu düzeltir.",
+  ],
+}, {
   version: "0.0.3",
   date: "2026-09-18",
   highlights: [

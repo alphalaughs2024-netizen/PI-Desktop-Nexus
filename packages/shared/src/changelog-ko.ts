@@ -1,6 +1,14 @@
 import type { ChangelogEntry } from "./changelog.js";
 
 export const koEntries: ChangelogEntry[] = [{
+  version: "0.0.4",
+  date: "2026-09-18",
+  highlights: [
+    "신뢰할 수 있는 Agent 세션을 위한 명시적 확인 기반 전체 액세스 모드를 추가하고 호스트 보안 제한을 유지합니다.",
+    "백업을 포함한 데이터베이스 스키마 v16 → v17 마이그레이션을 추가하며 세션, 대화 기록과 인덱스를 보존합니다.",
+    "실험용 전체 액세스 빌드에서 생성된 데이터로 시작할 때의 호환성 문제를 수정합니다.",
+  ],
+}, {
   version: "0.0.3",
   date: "2026-09-18",
   highlights: [

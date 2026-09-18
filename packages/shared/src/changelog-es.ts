@@ -1,6 +1,14 @@
 import type { ChangelogEntry } from "./changelog.js";
 
 export const esEntries: ChangelogEntry[] = [{
+  version: "0.0.4",
+  date: "2026-09-18",
+  highlights: [
+    "Añade un modo de acceso total con confirmación explícita para sesiones de agente de confianza y conserva las restricciones de seguridad del host.",
+    "Añade la migración del esquema de base de datos v16 a v17 con copia de seguridad, preservando sesiones, transcripciones e índices.",
+    "Corrige la compatibilidad de inicio con datos creados por la compilación experimental de acceso total.",
+  ],
+}, {
   version: "0.0.3",
   date: "2026-09-18",
   highlights: [
