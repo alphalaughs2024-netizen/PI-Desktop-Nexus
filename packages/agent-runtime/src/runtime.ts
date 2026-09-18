@@ -1027,6 +1027,63 @@ const TOOL_PARAM_ALIASES: Record<string, Record<string, string>> = {
   Glob: { query: "pattern" },
   Grep: { query: "pattern" },
 };
+const TOOL_REQUIRED_PARAMS: Record<string, readonly string[]> = {
+  Read: ["path"],
+  Glob: ["pattern"],
+  Grep: ["pattern"],
+  Bash: ["command"],
+};
+
+type ToolValidationDetails = {
+  kind: "tool-validation";
+  tool: string;
+  purpose: string;
+  missing?: string[];
+  example: Record<string, unknown>;
+  suggestedTool?: string;
+};
+
+const TOOL_VALIDATION_RECOVERY: Record<
+  string,
+  { purpose: string; example: Record<string, unknown>; suggestedTool?: string }
+> = {
+  Read: {
+    purpose: "Read a bounded window from an existing regular text file",
+    example: { path: "src/index.ts" },
+  },
+  Glob: {
+    purpose: "List files by glob pattern",
+    example: { pattern: "**/*.ts" },
+  },
+  Grep: {
+    purpose: "Search file contents with a regular expression",
+    example: { pattern: "TODO", path: "." },
+  },
+  Bash: {
+    purpose: "Run a non-interactive command through the active shell",
+    example: { command: "pwd" },
+  },
+};
+
+function toolValidationDetails(
+  toolName: string,
+  missing?: string[],
+): ToolValidationDetails {
+  const recovery = TOOL_VALIDATION_RECOVERY[toolName] ?? {
+    purpose: `${toolName} tool`,
+    example: {},
+  };
+  return {
+    kind: "tool-validation",
+    tool: toolName,
+    purpose: recovery.purpose,
+    ...(missing && missing.length > 0 ? { missing } : {}),
+    example: recovery.example,
+    ...(recovery.suggestedTool
+      ? { suggestedTool: recovery.suggestedTool }
+      : {}),
+  };
+}
 const TOOL_OUTPUT_UPDATE_THROTTLE_MS = 100;
 const MAX_TOOL_PROGRESS_CHARS = 64 * 1024;
 const TOOL_PROGRESS_TRUNCATION_MARKER =
@@ -1106,14 +1163,18 @@ function aliasParam(canonical: string) {
  */
 function requireAliasedParams(toolName: string, params: unknown): void {
   const aliases = TOOL_PARAM_ALIASES[toolName];
-  if (!aliases || !isRecord(params)) return;
-  for (const canonical of new Set(Object.values(aliases))) {
+  const required = TOOL_REQUIRED_PARAMS[toolName];
+  if ((!aliases && !required) || !isRecord(params)) return;
+  for (const canonical of new Set(required ?? Object.values(aliases ?? {}))) {
     if (params[canonical] !== undefined) continue;
     throw Object.assign(
       new Error(
         `Invalid arguments for ${toolName}: \`${canonical}\` is required`,
       ),
-      { errorCode: "INVALID_ARGUMENT" },
+      {
+        errorCode: "INVALID_ARGUMENT",
+        details: toolValidationDetails(toolName, [canonical]),
+      },
     );
   }
 }
@@ -1168,19 +1229,25 @@ function commandTimeoutMs(params: unknown): number {
     !Number.isFinite(timeout) ||
     timeout < MIN_COMMAND_TIMEOUT_SECONDS
   ) {
-    throw Object.assign(
+      throw Object.assign(
       new Error(
         `Invalid timeout: must be a finite number of seconds between ${MIN_COMMAND_TIMEOUT_SECONDS} and ${MAX_COMMAND_TIMEOUT_SECONDS}`,
       ),
-      { errorCode: "INVALID_ARGUMENT" },
+      {
+        errorCode: "INVALID_ARGUMENT",
+        details: toolValidationDetails("Bash", ["timeout"]),
+      },
     );
   }
   if (timeout > MAX_COMMAND_TIMEOUT_SECONDS) {
-    throw Object.assign(
+      throw Object.assign(
       new Error(
         `Invalid timeout: maximum is ${MAX_COMMAND_TIMEOUT_SECONDS} seconds`,
       ),
-      { errorCode: "INVALID_ARGUMENT" },
+      {
+        errorCode: "INVALID_ARGUMENT",
+        details: toolValidationDetails("Bash", ["timeout"]),
+      },
     );
   }
   const timeoutMs = Math.ceil(timeout * 1000);

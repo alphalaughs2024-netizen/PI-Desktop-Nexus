@@ -50,7 +50,7 @@ registered; reserved codes in §3.8 remain intentionally absent from
 | `AGENT_UNAVAILABLE` | yes | pi sidecar not running/reachable |
 | `APP_DEGRADED` | yes | app running with limited capabilities |
 | `INTERNAL` | maybe | unexpected internal failure |
-| `INVALID_ARGUMENT` | no | request schema/args invalid, including a native-tool path of the wrong file/directory kind |
+| `INVALID_ARGUMENT` | no | request schema/args invalid, including a native-tool path of the wrong file/directory kind; model-facing core-tool failures may include bounded `details.kind: "tool-validation"` metadata with missing fields and a minimal example |
 | `INVALID_PARAMS` | no | host-core RPC parameter validation failed (numeric `1002`); the sidecar and renderer surface it unchanged |
 | `UNAUTHORIZED` | no | capability/auth boundary rejected call |
 | `NOT_FOUND` | no | entity not found |

@@ -67,6 +67,13 @@ In Agent mode, `Skill` is core whenever the current instruction catalog is non-e
 
 ## 3. Common Tool Constraints
 
+When a core tool call is malformed before host execution, the sidecar returns
+`INVALID_ARGUMENT` with a bounded `details` object of kind `tool-validation`.
+It names the tool, its purpose, missing canonical fields, and one minimal valid
+example. An optional `suggestedTool` is advisory only; the runtime never
+silently invokes another tool. The details never contain arbitrary arguments,
+file content, credentials, or session text.
+
 Every non-interactive execution tool must have:
 
 1. JSON schema / typebox parameter definition

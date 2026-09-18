@@ -1145,6 +1145,38 @@ describe("DesktopAgentRuntime configuration matching", () => {
     await runtime.dispose();
   });
 
+  it("returns bounded recovery metadata for missing core tool arguments", async () => {
+    const host = {
+      call: vi.fn().mockResolvedValue({ ok: true, content: "done" }),
+    };
+    const runtime = createRuntime({ host });
+    const tool = (name: string) => (runtime as any).toolCatalog.get(name);
+
+    for (const [name, params, missing, example] of [
+      ["Read", { limit: 5 }, ["path"], { path: "src/index.ts" }],
+      ["Glob", { path: "." }, ["pattern"], { pattern: "**/*.ts" }],
+      ["Grep", { path: "." }, ["pattern"], { pattern: "TODO", path: "." }],
+      ["Bash", {}, ["command"], { command: "pwd" }],
+    ] as const) {
+      await expect(
+        tool(name).execute(`missing-${name}`, params),
+      ).rejects.toMatchObject({
+        errorCode: "INVALID_ARGUMENT",
+        details: {
+          kind: "tool-validation",
+          tool: name,
+          missing,
+          example,
+        },
+      });
+    }
+    expect(host.call).not.toHaveBeenCalledWith(
+      "tools.execute",
+      expect.anything(),
+    );
+    await runtime.dispose();
+  });
+
   it("routes matching Bash output through throttled progress and aborts", async () => {
     vi.useFakeTimers();
     try {

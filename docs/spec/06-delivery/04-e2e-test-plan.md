@@ -97,6 +97,25 @@ Each scenario is documented in this format:
 
 ### Runtime Resource Governance
 
+#### E2E-097a: Malformed core tool calls return safe recovery hints
+
+- **Preconditions**: An Agent session has the core `Read`, `Glob`, `Grep`, and
+  `Bash` tools available.
+- **Steps**: 1) Issue each tool without its required canonical field. 2)
+  Inspect the model-visible error details. 3) Repeat with an alias where one is
+  supported.
+- **Expected**: Each call fails closed with `INVALID_ARGUMENT`, names the
+  missing field and a minimal valid example, and never executes a host tool.
+  Aliases still normalize successfully. Any alternate-tool suggestion is
+  advisory and no tool is invoked implicitly; details contain no arbitrary
+  arguments or project content.
+- **Specs linked**: `03-runtime/03-tools-and-permissions.md`,
+  `03-runtime/08-error-codes.md`
+- **Acceptance**: E (tool execution and recovery), H (stable errors)
+- **Milestone**: M5
+- **Status**: Unit-covered (`packages/agent-runtime/src/runtime.test.ts`);
+  live Electron journey pending
+
 #### E2E-097: Tool burst is bounded and recovers after host restart
 
 - **Preconditions**: Host-core is healthy; one session has a workspace; the
