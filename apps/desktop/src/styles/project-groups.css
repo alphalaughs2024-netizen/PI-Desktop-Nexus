@@ -1,6 +1,6 @@
 .sidebar-toolbar-actions { display: inline-flex; align-items: center; gap: 2px; }
-.project-group-modal-backdrop { position: fixed; inset: 0; z-index: 80; }
-.project-group-modal { width: min(420px, 100%); padding: 20px; border: 1px solid var(--ds-border-default); border-radius: var(--radius-lg); background: var(--ds-bg-elevated-opaque); box-shadow: var(--ds-shadow-dialog); color: var(--ds-text-primary); }
+.project-group-modal-backdrop { position: fixed; inset: 0; z-index: 80; display: grid; place-items: center; padding: max(46px, 5vh) 16px 24px; background: color-mix(in srgb, var(--ds-bg-primary) 48%, transparent); }
+.project-group-modal { box-sizing: border-box; width: min(420px, 100%); max-height: min(640px, calc(100vh - 70px)); overflow: auto; padding: 20px; border: 1px solid var(--ds-border-default); border-radius: var(--radius-lg); background: var(--ds-bg-elevated-opaque); box-shadow: var(--ds-shadow-dialog); color: var(--ds-text-primary); }
 .project-group-modal h2 { margin: 0 0 16px; font-size: var(--text-lg); }
 .project-group-modal label { display: grid; gap: 6px; color: var(--ds-text-muted); font-size: var(--text-sm); }
 .project-group-modal input { width: 100%; padding: 8px 10px; border: 1px solid var(--ds-border-default); border-radius: var(--radius-sm); background: var(--ds-bg-input); color: var(--ds-text-primary); }
@@ -16,7 +16,10 @@
 .sidebar-project-group-header:hover .sidebar-collection-drag-handle, .sidebar-project-group-header:focus-within .sidebar-collection-drag-handle, .sidebar-project-collection-row:hover .sidebar-project-drag-handle, .sidebar-project-collection-row:focus-within .sidebar-project-drag-handle { opacity: 1; }
 .sidebar-collection-drag-handle:active, .sidebar-project-drag-handle:active { cursor: grabbing; }
 .sidebar-collection-drag-handle:hover, .sidebar-project-drag-handle:hover, .sidebar-collection-drag-handle:focus-visible, .sidebar-project-drag-handle:focus-visible { background: var(--ds-bg-hover); color: var(--ds-text-primary); opacity: 1; }
-.sidebar-project-collection-row { position: relative; display: flex; align-items: stretch; }
+.sidebar-project-collection-row { position: relative; display: flex; align-items: stretch; padding-left: 20px; }
+.sidebar-project-row { padding-left: 20px; }
+.sidebar-session-project-row { padding-left: 40px; }
+.sidebar-standalone-session-row { padding-left: 20px; }
 .sidebar-project-collection-row > [data-sidebar-project-group] { flex: 1; min-width: 0; }
 .sidebar-project-collection-row[data-drop-position="project"]::before { position: absolute; top: -1px; right: 4px; left: 28px; height: 2px; border-radius: 2px; background: var(--ds-accent); content: ""; pointer-events: none; }
 .sidebar-project-group-header .sidebar-session-group-title { flex: 1; min-width: 0; }
@@ -24,7 +27,7 @@
 .project-group-more { opacity: 0; }
 .sidebar-project-group-header:hover .project-group-more, .sidebar-project-group-header:focus-within .project-group-more, .project-group-more[aria-expanded="true"] { opacity: 1; }
 .sidebar-project-group-ungrouped { border-top: 1px solid var(--ds-border-subtle); padding-top: 4px; }
-.collection-picker-popover { position: fixed; z-index: 90; width: min(340px, calc(100vw - 24px)); max-height: min(560px, calc(100vh - 24px)); overflow: auto; padding: 16px; border: 1px solid var(--ds-border-default); border-radius: var(--radius-lg); background: var(--ds-bg-elevated-opaque); box-shadow: var(--ds-shadow-dialog); color: var(--ds-text-primary); transform: translateY(-8px); }
+.collection-picker-popover { position: fixed; z-index: 90; width: min(340px, calc(100vw - 24px)); max-height: min(560px, calc(100vh - 70px)); overflow: auto; padding: 16px; border: 1px solid var(--ds-border-default); border-radius: var(--radius-lg); background: var(--ds-bg-elevated-opaque); box-shadow: var(--ds-shadow-dialog); color: var(--ds-text-primary); }
 .collection-picker-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
 .collection-picker-header p { overflow-wrap: anywhere; }
 .collection-picker-close { border: 0; background: transparent; color: var(--ds-text-muted); font-size: 20px; cursor: pointer; }

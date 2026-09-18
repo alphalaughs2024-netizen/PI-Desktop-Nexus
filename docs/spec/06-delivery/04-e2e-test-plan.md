@@ -10495,3 +10495,27 @@ foreground rather than inheriting the selected theme's general text color.
   sessions move immediately, and running sessions remain immovable.
 - Verify session movement remains independent of collection ordering when a
   project appears in multiple groups.
+#### E2E-Project-Organization-Positioning: Project hierarchy and viewport-safe surfaces
+
+- **Preconditions**: The expanded sidebar contains two project groups, an
+  empty group, projects with sessions, and at least one standalone session.
+- **Steps**: 1) Inspect the tree at default and minimum sidebar widths. 2)
+  Confirm group headers contain indented project rows and project rows contain
+  further-indented sessions; standalone sessions remain separate. 3) Open
+  **Add projects** from a group near the left edge, then resize the window,
+  open/close the work panel, scroll the sidebar, and filter the list. 4) Move
+  the anchor near the top, bottom, and right edges. 5) Open **Create project
+  group** from the sidebar toolbar.
+- **Expected**: The assignment panel is an opaque non-blocking body-portal
+  surface beside the sidebar toward main content, never covers the invoking
+  row/sidebar list/native titlebar/work-panel controls, flips and clamps safely,
+  remains internally scrollable, and restores focus on Escape/outside click.
+  The create-group dialog is a fully visible viewport-centered portal dialog,
+  independent of sidebar coordinates, with focused input and safe narrow-window
+  bounds. Cancel/Escape do not change state; trimmed nonblank creation persists
+  immediately and empty groups remain visible.
+- **Boundaries**: Do not modify project folders, sessions, transcripts, Context
+  Vault data, plugin authority, scenic pointer behavior, or native controls.
+- **Status**: Source-contract and placement-unit covered by
+  `project-sidebar-positioning.test.mjs`; rendered desktop journey remains
+  manual/E2E validation.

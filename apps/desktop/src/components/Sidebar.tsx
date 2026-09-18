@@ -299,7 +299,9 @@ export function Sidebar({
   const [createGroupOpen, setCreateGroupOpen] = useState(false);
   const [collectionPickerFor, setCollectionPickerFor] = useState<ProjectEntry | null>(null);
   const [collectionAssignmentFor, setCollectionAssignmentFor] = useState<string | null>(null);
-  const [collectionPickerAnchor, setCollectionPickerAnchor] = useState<{ top: number; left: number } | undefined>();
+  const [collectionPickerAnchor, setCollectionPickerAnchor] = useState<HTMLElement | null>(null);
+  const collectionPickerReturnFocusRef = useRef<HTMLElement | null>(null);
+  const createGroupReturnFocusRef = useRef<HTMLElement | null>(null);
   const [projectMenu, setProjectMenu] = useState<string | null>(null);
   const [collectionMenu, setCollectionMenu] = useState<string | null>(null);
   const [draggedProject, setDraggedProject] = useState<{ path: string; collectionId: string | null } | null>(null);
@@ -1271,7 +1273,7 @@ export function Sidebar({
     return (
       <div
         key={session.id}
-        className={`thread-item ${active ? "active" : ""} ${archived ? "archived" : ""}`}
+        className={`thread-item ${options?.projectPath ? "sidebar-session-project-row project-group" : "sidebar-standalone-session-row"} ${active ? "active" : ""} ${archived ? "archived" : ""}`}
         data-sidebar-session-row={session.id}
         onContextMenu={(event) => {
           event.preventDefault();
@@ -1410,7 +1412,7 @@ export function Sidebar({
     return (
       <section
         key={entry.key}
-        className={`sidebar-session-group project-group ${entry.active ? "active" : ""} ${entry.meta.archived ? "archived" : ""}`}
+        className={`sidebar-session-group sidebar-project-row project-group ${entry.active ? "active" : ""} ${entry.meta.archived ? "archived" : ""}`}
         data-sidebar-session-project={entry.path}
         onDragOver={(event) => {
           if (event.dataTransfer.types.includes("application/x-nexus-session") || event.dataTransfer.types.includes("text/plain")) {
@@ -1738,8 +1740,8 @@ export function Sidebar({
               data-action="manage-project-collections"
               onClick={(event) => {
                 closeMenus(false);
-                const rect = event.currentTarget.getBoundingClientRect();
-                setCollectionPickerAnchor({ top: Math.min(window.innerHeight - 16, rect.top), left: rect.right + 8 });
+                collectionPickerReturnFocusRef.current = event.currentTarget;
+                setCollectionPickerAnchor(event.currentTarget);
                 setCollectionPickerFor(entry);
               }}
             >
@@ -1791,7 +1793,7 @@ export function Sidebar({
         ) : null}
         {collection ? (
           <>
-            <button ref={menuFirstItemRef} type="button" role="menuitem" data-action="add-projects-to-collection" onClick={(event) => { closeMenus(false); const rect = event.currentTarget.getBoundingClientRect(); setCollectionPickerAnchor({ top: Math.min(window.innerHeight - 16, rect.top), left: rect.right + 8 }); setCollectionAssignmentFor(collection.id); }}><IconPlus size={14} />Add projects</button>
+            <button ref={menuFirstItemRef} type="button" role="menuitem" data-action="add-projects-to-collection" onClick={(event) => { closeMenus(false); collectionPickerReturnFocusRef.current = event.currentTarget; setCollectionPickerAnchor(event.currentTarget); setCollectionAssignmentFor(collection.id); }}><IconPlus size={14} />Add projects</button>
             <button type="button" role="menuitem" data-action="rename-collection" onClick={() => { closeMenus(false); const value = window.prompt("Rename project group", collection.name); if (value?.trim()) renameProjectCollection(collection.id, value); }}><IconPencil size={14} />Rename group</button>
             <button type="button" role="menuitem" data-action="move-collection-up" disabled={collection.order <= 0} onClick={() => moveProjectCollection(collection.id, collection.order - 1)}><IconArrowUp size={14} />Move up</button>
             <button type="button" role="menuitem" data-action="move-collection-down" disabled={collection.order >= projectCollections.length - 1} onClick={() => moveProjectCollection(collection.id, collection.order + 1)}><IconArrowDown size={14} />Move down</button>
@@ -2007,7 +2009,7 @@ export function Sidebar({
         >
           <span className="sidebar-list-label">{t("nav.projects")}</span>
           <div className="sidebar-toolbar-actions">
-            <TooltipButton type="button" className="sidebar-toolbar-button" tooltip={t("nav.newProjectGroup", { defaultValue: "New project group" })} ariaLabel={t("nav.newProjectGroup", { defaultValue: "New project group" })} onClick={() => setCreateGroupOpen(true)}><IconPlus size={14} /></TooltipButton>
+            <TooltipButton type="button" className="sidebar-toolbar-button" tooltip={t("nav.newProjectGroup", { defaultValue: "New project group" })} ariaLabel={t("nav.newProjectGroup", { defaultValue: "New project group" })} onClick={(event) => { createGroupReturnFocusRef.current = event.currentTarget; setCreateGroupOpen(true); }}><IconPlus size={14} /></TooltipButton>
             <TooltipButton type="button" className="sidebar-toolbar-button" data-action="new-project" tooltip={t("nav.newProject")} ariaLabel={t("nav.newProject")} onClick={() => void openProjectPicker()}><IconNewProject size={14} /></TooltipButton>
           </div>
         </div>
@@ -2046,7 +2048,7 @@ export function Sidebar({
                     <button type="button" className="sidebar-session-group-title" aria-expanded={!group.collapsed} onClick={() => setProjectGroupCollapsed(group.id)}><IconChevronDown size={13} className={`sidebar-disclosure-icon ${group.collapsed ? "collapsed" : ""}`} /><IconFolder size={13} /><span>{group.name}</span><span className="sidebar-project-group-count">{entries.length}</span></button>
                     <TooltipButton type="button" className="thread-item-more project-group-more" data-action="collection-menu" tooltip={t("nav.groupActions", { defaultValue: "Project group actions" })} ariaLabel={t("nav.groupActions", { defaultValue: "Project group actions" })} aria-haspopup="menu" aria-expanded={collectionMenu === group.id} onClick={(event) => { event.stopPropagation(); const rect = event.currentTarget.getBoundingClientRect(); openCollectionRowMenu(group.id, event.currentTarget); setMenuPosition({ top: Math.min(window.innerHeight - 220, rect.bottom + 4), left: Math.min(window.innerWidth - 240, rect.right + 4) }); }}><IconMore size={14} /></TooltipButton>
                   </div>
-                  {!group.collapsed ? (entries.length ? entries.map((entry) => <div key={entry.key} className="sidebar-project-collection-row" data-project-collection-row={entry.key} data-drop-position={draggedProject?.path === entry.path ? "project" : undefined}><button type="button" className="sidebar-project-drag-handle" data-action="project-collection-drag-handle" aria-label={t("nav.reorderProject", { defaultValue: "Reorder project" })} onPointerDown={(event) => startCollectionDrag(event, { kind: "project", path: entry.path, collectionId: group.id })} onClick={(event) => event.preventDefault()}><IconArrowUpDown size={12} /></button>{renderProjectGroup(entry)}</div>) : <button type="button" className="sidebar-project-group-empty-action" onClick={(event) => { const rect = event.currentTarget.getBoundingClientRect(); setCollectionPickerAnchor({ top: Math.min(window.innerHeight - 16, rect.top), left: rect.right + 8 }); setCollectionAssignmentFor(group.id); }}>{t("nav.addProjectToGroup", { defaultValue: "Add project" })}</button>) : null}
+                  {!group.collapsed ? (entries.length ? entries.map((entry) => <div key={entry.key} className="sidebar-project-collection-row" data-project-collection-row={entry.key} data-drop-position={draggedProject?.path === entry.path ? "project" : undefined}><button type="button" className="sidebar-project-drag-handle" data-action="project-collection-drag-handle" aria-label={t("nav.reorderProject", { defaultValue: "Reorder project" })} onPointerDown={(event) => startCollectionDrag(event, { kind: "project", path: entry.path, collectionId: group.id })} onClick={(event) => event.preventDefault()}><IconArrowUpDown size={12} /></button>{renderProjectGroup(entry)}</div>) : <button type="button" className="sidebar-project-group-empty-action" onClick={(event) => { collectionPickerReturnFocusRef.current = event.currentTarget; setCollectionPickerAnchor(event.currentTarget); setCollectionAssignmentFor(group.id); }}>{t("nav.addProjectToGroup", { defaultValue: "Add project" })}</button>) : null}
                 </section>;
               })}
               {ungrouped.length ? <section className="sidebar-project-group-folder sidebar-project-group-ungrouped" data-sidebar-project-folder="ungrouped" onPointerMove={moveCollectionDrag} onPointerUp={finishCollectionDrop} onPointerCancel={endCollectionDrag}>
@@ -2133,8 +2135,8 @@ export function Sidebar({
           onError={reportError}
         />
       ) : null}
-      {createGroupOpen ? <ProjectGroupCreateDialog onClose={() => setCreateGroupOpen(false)} onSave={createProjectGroup} /> : null}
-      {collectionPickerFor || collectionAssignmentFor ? <ProjectCollectionPicker anchor={collectionPickerAnchor} projectPath={collectionPickerFor?.path} collections={projectCollections} selected={collectionAssignmentFor ? projectCollectionMemberships.filter((item) => item.collectionId === collectionAssignmentFor).map((item) => item.projectPath) : projectCollectionMemberships.filter((item) => item.projectPath === collectionPickerFor?.key).map((item) => item.collectionId)} projects={projectEntries.map((entry) => ({ path: entry.key, name: entry.name }))} assignmentCollectionId={collectionAssignmentFor ?? undefined} onClose={() => { setCollectionPickerFor(null); setCollectionAssignmentFor(null); setCollectionPickerAnchor(undefined); }} onToggle={(id, checked) => collectionPickerFor ? (checked ? addProjectToCollection(collectionPickerFor.path, id) : removeProjectFromCollection(collectionPickerFor.path, id)) : undefined} onAssign={(path, checked) => collectionAssignmentFor ? (checked ? addProjectToCollection(path, collectionAssignmentFor) : removeProjectFromCollection(path, collectionAssignmentFor)) : undefined} onCreate={(name) => { createCollection(name); }} /> : null}
+      {createGroupOpen ? <ProjectGroupCreateDialog returnFocus={createGroupReturnFocusRef.current} onClose={() => setCreateGroupOpen(false)} onSave={createProjectGroup} /> : null}
+      {collectionPickerFor || collectionAssignmentFor ? <ProjectCollectionPicker anchor={collectionPickerAnchor} projectPath={collectionPickerFor?.path} collections={projectCollections} selected={collectionAssignmentFor ? projectCollectionMemberships.filter((item) => item.collectionId === collectionAssignmentFor).map((item) => item.projectPath) : projectCollectionMemberships.filter((item) => item.projectPath === collectionPickerFor?.key).map((item) => item.collectionId)} projects={projectEntries.map((entry) => ({ path: entry.key, name: entry.name }))} assignmentCollectionId={collectionAssignmentFor ?? undefined} onClose={() => { setCollectionPickerFor(null); setCollectionAssignmentFor(null); setCollectionPickerAnchor(null); collectionPickerReturnFocusRef.current?.focus(); }} onToggle={(id, checked) => collectionPickerFor ? (checked ? addProjectToCollection(collectionPickerFor.path, id) : removeProjectFromCollection(collectionPickerFor.path, id)) : undefined} onAssign={(path, checked) => collectionAssignmentFor ? (checked ? addProjectToCollection(path, collectionAssignmentFor) : removeProjectFromCollection(path, collectionAssignmentFor)) : undefined} onCreate={(name) => { createCollection(name); }} /> : null}
       <div
         className={cx("sidebar-resize-handle no-drag", sidebarResizing && "is-resizing")}
         role="separator"

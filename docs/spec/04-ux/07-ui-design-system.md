@@ -1210,3 +1210,25 @@ Scenic theme selection cards use a dark translucent copy tile with an explicit
 cool-white title and description hierarchy. Card copy must not inherit the
 currently active theme's general text token, because the cards preview themes
 other than the active one and their image backgrounds vary in brightness.
+## Sidebar project-organization surfaces
+
+The sidebar hierarchy is semantic and depth-specific: project-group headers
+contain project rows, project rows contain session rows, and standalone
+sessions remain in their own section. Group, project, and session markers use
+dedicated classes and theme tokens; generic tag selectors must not leak into
+these surfaces.
+
+The project assignment control is a non-blocking, opaque anchored side panel.
+It is rendered through the body portal, uses viewport-relative
+`getBoundingClientRect()` placement, prefers the main-content side, flips only
+when necessary, and clamps inside titlebar-safe, bottom-safe, and viewport
+edges. Resize, scroll, sidebar/work-panel geometry, anchor movement, and panel
+content changes trigger remeasurement. The panel does not cover the sidebar
+list or native/work-panel controls and restores focus when dismissed.
+
+Create project group is an independent centered dialog rendered through the
+dialog portal. It is not positioned from a sidebar anchor and is constrained
+by viewport-safe padding on narrow windows. Both surfaces use readable opaque
+or tinted theme tokens over scenic backdrops; scenic pointer-inert behavior,
+plugin-theme isolation, native controls, and work-panel ownership are
+preserved.
