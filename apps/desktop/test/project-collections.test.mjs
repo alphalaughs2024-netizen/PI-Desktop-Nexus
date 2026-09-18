@@ -55,3 +55,12 @@ test("collection picker supports assigning an existing project", () => {
   assert.match(picker, /assignmentCollectionId/);
   assert.match(picker, /project-collection-project/);
 });
+
+test("collection picker is an anchored sidebar popover, not a centered modal", () => {
+  const picker = read("src/components/ProjectCollectionPicker.tsx");
+  const styles = read("src/styles/project-groups.css");
+  assert.match(picker, /anchor/);
+  assert.match(picker, /collection-picker-popover/);
+  assert.match(styles, /\.collection-picker-popover/);
+  assert.doesNotMatch(styles, /project-group-modal-backdrop \{[^}]*place-items: center/);
+});

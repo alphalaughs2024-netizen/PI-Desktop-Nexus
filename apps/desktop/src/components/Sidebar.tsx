@@ -285,6 +285,7 @@ export function Sidebar({
   const [createGroupOpen, setCreateGroupOpen] = useState(false);
   const [collectionPickerFor, setCollectionPickerFor] = useState<ProjectEntry | null>(null);
   const [collectionAssignmentFor, setCollectionAssignmentFor] = useState<string | null>(null);
+  const [collectionPickerAnchor, setCollectionPickerAnchor] = useState<{ top: number; left: number } | undefined>();
   const [projectMenu, setProjectMenu] = useState<string | null>(null);
   const [sectionMenu, setSectionMenu] = useState<"sessions" | "projects" | null>(null);
   const [menuPosition, setMenuPosition] = useState<{
@@ -1485,7 +1486,7 @@ export function Sidebar({
               type="button"
               role="menuitem"
               data-action="rename-session"
-              onClick={() => {
+              onClick={(event) => {
                 closeMenus(false);
                 setRenameFor(session);
               }}
@@ -1608,8 +1609,10 @@ export function Sidebar({
               type="button"
               role="menuitem"
               data-action="manage-project-collections"
-              onClick={() => {
+              onClick={(event) => {
                 closeMenus(false);
+                const rect = event.currentTarget.getBoundingClientRect();
+                setCollectionPickerAnchor({ top: Math.min(window.innerHeight - 16, rect.top), left: rect.right + 8 });
                 setCollectionPickerFor(entry);
               }}
             >
@@ -1896,7 +1899,7 @@ export function Sidebar({
                 const entries = projectEntries.filter((entry) => memberships.some((item) => item.collectionId === group.id && item.projectPath === entry.key));
                 return <section key={group.id} className="sidebar-project-group-folder" data-sidebar-project-folder={group.id}>
                   <button type="button" className="sidebar-session-group-title" aria-expanded={!group.collapsed} onClick={() => setProjectGroupCollapsed(group.id)}><IconFolder size={13} /><span>{group.name}</span></button>
-                  {!group.collapsed ? (entries.length ? entries.map(renderProjectGroup) : <button type="button" className="sidebar-project-group-empty-action" onClick={() => setCollectionAssignmentFor(group.id)}>{t("nav.addProjectToGroup", { defaultValue: "Add project" })}</button>) : null}
+                  {!group.collapsed ? (entries.length ? entries.map(renderProjectGroup) : <button type="button" className="sidebar-project-group-empty-action" onClick={(event) => { const rect = event.currentTarget.getBoundingClientRect(); setCollectionPickerAnchor({ top: Math.min(window.innerHeight - 16, rect.top), left: rect.right + 8 }); setCollectionAssignmentFor(group.id); }}>{t("nav.addProjectToGroup", { defaultValue: "Add project" })}</button>) : null}
                 </section>;
               })}
               {ungrouped.length ? <section className="sidebar-project-group-folder sidebar-project-group-ungrouped" data-sidebar-project-folder="ungrouped">
@@ -1984,7 +1987,7 @@ export function Sidebar({
         />
       ) : null}
       {createGroupOpen ? <ProjectGroupCreateDialog onClose={() => setCreateGroupOpen(false)} onSave={createProjectGroup} /> : null}
-      {collectionPickerFor || collectionAssignmentFor ? <ProjectCollectionPicker projectPath={collectionPickerFor?.path} collections={projectCollections} selected={collectionAssignmentFor ? projectCollectionMemberships.filter((item) => item.collectionId === collectionAssignmentFor).map((item) => item.projectPath) : projectCollectionMemberships.filter((item) => item.projectPath === collectionPickerFor?.key).map((item) => item.collectionId)} projects={projectEntries.map((entry) => ({ path: entry.key, name: entry.name }))} assignmentCollectionId={collectionAssignmentFor ?? undefined} onClose={() => { setCollectionPickerFor(null); setCollectionAssignmentFor(null); }} onToggle={(id, checked) => collectionPickerFor ? (checked ? addProjectToCollection(collectionPickerFor.path, id) : removeProjectFromCollection(collectionPickerFor.path, id)) : undefined} onAssign={(path, checked) => collectionAssignmentFor ? (checked ? addProjectToCollection(path, collectionAssignmentFor) : removeProjectFromCollection(path, collectionAssignmentFor)) : undefined} onCreate={(name) => { createCollection(name); }} /> : null}
+      {collectionPickerFor || collectionAssignmentFor ? <ProjectCollectionPicker anchor={collectionPickerAnchor} projectPath={collectionPickerFor?.path} collections={projectCollections} selected={collectionAssignmentFor ? projectCollectionMemberships.filter((item) => item.collectionId === collectionAssignmentFor).map((item) => item.projectPath) : projectCollectionMemberships.filter((item) => item.projectPath === collectionPickerFor?.key).map((item) => item.collectionId)} projects={projectEntries.map((entry) => ({ path: entry.key, name: entry.name }))} assignmentCollectionId={collectionAssignmentFor ?? undefined} onClose={() => { setCollectionPickerFor(null); setCollectionAssignmentFor(null); setCollectionPickerAnchor(undefined); }} onToggle={(id, checked) => collectionPickerFor ? (checked ? addProjectToCollection(collectionPickerFor.path, id) : removeProjectFromCollection(collectionPickerFor.path, id)) : undefined} onAssign={(path, checked) => collectionAssignmentFor ? (checked ? addProjectToCollection(path, collectionAssignmentFor) : removeProjectFromCollection(path, collectionAssignmentFor)) : undefined} onCreate={(name) => { createCollection(name); }} /> : null}
       <div
         className={cx("sidebar-resize-handle no-drag", sidebarResizing && "is-resizing")}
         role="separator"
