@@ -1,5 +1,5 @@
 .sidebar-toolbar-actions { display: inline-flex; align-items: center; gap: 2px; }
-.project-group-modal-backdrop { position: fixed; inset: 0; z-index: 80; display: grid; place-items: center; padding: 24px; background: color-mix(in oklab, var(--ds-bg-primary) 78%, transparent); }
+.project-group-modal-backdrop { position: fixed; inset: 0; z-index: 80; }
 .project-group-modal { width: min(420px, 100%); padding: 20px; border: 1px solid var(--ds-border-default); border-radius: var(--radius-lg); background: var(--ds-bg-elevated-opaque); box-shadow: var(--ds-shadow-dialog); color: var(--ds-text-primary); }
 .project-group-modal h2 { margin: 0 0 16px; font-size: var(--text-lg); }
 .project-group-modal label { display: grid; gap: 6px; color: var(--ds-text-muted); font-size: var(--text-sm); }
@@ -9,3 +9,11 @@
 .project-group-modal button[type="submit"] { background: var(--ds-accent); color: var(--ds-text-on-accent); }
 .sidebar-project-group-empty-action { display: block; margin: 4px 10px 8px 28px; padding: 5px 8px; border: 1px dashed var(--ds-border-default); border-radius: var(--radius-sm); background: transparent; color: var(--ds-text-muted); font-size: var(--text-xs); text-align: left; cursor: pointer; }
 .sidebar-project-group-empty-action:hover, .sidebar-project-group-empty-action:focus-visible { border-color: var(--ds-accent); color: var(--ds-text-primary); background: var(--ds-bg-hover); }
+.collection-picker-popover { position: fixed; z-index: 90; width: min(340px, calc(100vw - 24px)); max-height: min(560px, calc(100vh - 24px)); overflow: auto; padding: 16px; border: 1px solid var(--ds-border-default); border-radius: var(--radius-lg); background: var(--ds-bg-elevated-opaque); box-shadow: var(--ds-shadow-dialog); color: var(--ds-text-primary); transform: translateY(-8px); }
+.collection-picker-popover h2 { margin: 0 0 8px; font-size: var(--text-lg); }
+.collection-picker-popover p { margin: 0 0 12px; color: var(--ds-text-muted); font-size: var(--text-sm); }
+.collection-picker-popover label { display: flex; align-items: center; gap: 8px; min-height: 32px; color: var(--ds-text-primary); font-size: var(--text-sm); }
+.collection-picker-popover input[type="text"], .collection-picker-popover input:not([type]) { box-sizing: border-box; width: 100%; margin-bottom: 10px; padding: 8px 10px; border: 1px solid var(--ds-border-default); border-radius: var(--radius-sm); background: var(--ds-bg-input); color: var(--ds-text-primary); }
+.collection-picker-popover .project-collection-options { display: grid; gap: 2px; max-height: 300px; overflow: auto; margin-bottom: 10px; }
+.collection-picker-popover footer { display: flex; justify-content: flex-end; margin-top: 12px; }
+.collection-picker-popover button { padding: 7px 12px; border: 1px solid var(--ds-border-default); border-radius: var(--radius-sm); background: var(--ds-bg-elevated); color: var(--ds-text-primary); }
