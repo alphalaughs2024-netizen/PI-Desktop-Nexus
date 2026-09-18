@@ -268,6 +268,28 @@ Re-running the workflow for the same tag is safe if the CNB pipeline is
 idempotent. It does not rebuild desktop artifacts and does not change
 electron-updater feeds.
 
+### 4.5 Nexus update feed
+
+PI Desktop Nexus is a separately packaged product. Its electron-builder
+publisher and `electron-updater` fallback URL must remain pinned to
+`alphalaughs2024-netizen/PI-Desktop-Nexus`; do not inherit the upstream
+`vastsa/PI-Desktop` feed. Packaged builds begin a non-blocking check immediately
+after the first window is ready. Windows NSIS and Linux AppImage builds use the
+downloaded feed and restart/install flow; portable Windows, macOS, and deb/rpm
+Linux remain manual-delivery modes. Development builds intentionally report
+updates disabled because they have no packaged updater metadata.
+
+### 4.5 Nexus update feed
+
+PI Desktop Nexus is a separately packaged product. Its electron-builder
+publisher and `electron-updater` fallback URL must remain pinned to
+`alphalaughs2024-netizen/PI-Desktop-Nexus`; do not inherit the upstream
+`vastsa/PI-Desktop` feed. Packaged builds begin a non-blocking check immediately
+after the first window is ready. Windows NSIS and Linux AppImage builds use the
+downloaded feed and restart/install flow; portable Windows, macOS, and deb/rpm
+Linux remain manual-delivery modes. Development builds intentionally report
+updates disabled because they have no packaged updater metadata.
+
 ## 5. Verification gates
 
 For the default unsigned macOS lane, do not treat macOS artifacts as

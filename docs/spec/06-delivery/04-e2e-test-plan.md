@@ -294,8 +294,12 @@ Each scenario is documented in this format:
   while bootstrap runs, then reveals the main shell in English with the current
   locale catalog; no compile error, missing-menu runtime error, or crash;
   version info visible. Key lifecycle and error records are written to the
-  categorized logs. GitHub auto-update is not started until after `ensureWindow`, and a hung
-  feed cannot keep updater status on `checking` for Chromium's ~60s timeout.
+  categorized logs. After `ensureWindow` returns, the Nexus GitHub Releases
+  auto-update check starts immediately without blocking the first window; a
+  packaged Windows NSIS or Linux AppImage build downloads a newer stable
+  release in the background, while portable/manual-delivery builds only show
+  the release action. A hung feed cannot keep updater status on `checking` for
+  Chromium's ~60s timeout.
 - **Specs linked**: `03-runtime/07-process-model.md`, `04-ux/01-ui-ia.md`,
   `03-runtime/09-logging-and-observability.md`
 - **Acceptance**: A (app startup)
@@ -3624,6 +3628,25 @@ membership when dropped on Ungrouped.
 - **Milestone**: M5
 - **Status**: Unit-covered (`auto-update.test.mjs` asserts
   `allowPrerelease = false`); packaged discovery scenario Draft
+
+#### E2E-067D: Nexus release is checked and downloaded on startup
+
+- **Preconditions**: A packaged Nexus build is installed; the Nexus repository
+  `alphalaughs2024-netizen/PI-Desktop-Nexus` has a newer stable GitHub Release
+  with the platform's `latest*.yml` feed and installer assets.
+- **Steps**: 1) Launch Nexus. 2) Observe the update state after the first
+  window is ready. 3) On Windows NSIS or Linux AppImage, wait for download to
+  finish and choose Restart to update. 4) On portable Windows, macOS, or deb/
+  rpm Linux, choose View release and install manually.
+- **Expected**: Startup checks the Nexus feed immediately and never the
+  upstream PI-Desktop repository. Supported in-app modes download in the
+  background and expose the existing restart/install action; manual modes do
+  not attempt an incompatible installer. Development runs remain disabled.
+- **Specs linked**: `06-delivery/06-release-runbook.md`, ADR 0022
+- **Acceptance**: A (app startup), Quality
+- **Milestone**: M5
+- **Status**: Source/unit-covered; packaged release journey requires a newly
+  published Nexus fixture release
 
 #### E2E-067B: Shipped-locale update notes and full changelog dialog (D164/D345/D349)
 
