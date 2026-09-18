@@ -36,7 +36,6 @@ const { autoUpdater } = electronUpdaterPkg;
 export const RELEASES_URL =
   "https://github.com/alphalaughs2024-netizen/PI-Desktop-Nexus/releases/latest";
 
-const AUTO_CHECK_INITIAL_DELAY_MS = 15_000;
 const AUTO_CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000;
 /** Auto-check wait. Chromium's GitHub hang is ~60s; do not pin UI on that. */
 export const AUTO_CHECK_TIMEOUT_MS = 8_000;
@@ -77,7 +76,6 @@ export class AppUpdaterController {
   private readonly getLocale: () => string | null | undefined;
   private state: UpdateState;
   private manualRequested = false;
-  private initialTimer: NodeJS.Timeout | null = null;
   private intervalTimer: NodeJS.Timeout | null = null;
   private listenersAttached = false;
 
@@ -273,21 +271,19 @@ export class AppUpdaterController {
    * first window or pin the updater on `checking`.
    */
   startAutoCheck() {
-    if (this.state.mode === "disabled" || this.initialTimer || this.intervalTimer) {
+    if (this.state.mode === "disabled" || this.intervalTimer) {
       return;
     }
-    this.initialTimer = setTimeout(() => {
-      void this.check().catch(() => undefined);
-    }, AUTO_CHECK_INITIAL_DELAY_MS);
+    // The first window is ready when this is called. Start discovery without
+    // awaiting it so a slow GitHub feed cannot delay renderer boot.
+    void this.check().catch(() => undefined);
     this.intervalTimer = setInterval(() => {
       void this.check().catch(() => undefined);
     }, AUTO_CHECK_INTERVAL_MS);
   }
 
   dispose() {
-    if (this.initialTimer) clearTimeout(this.initialTimer);
     if (this.intervalTimer) clearInterval(this.intervalTimer);
-    this.initialTimer = null;
     this.intervalTimer = null;
   }
 }

@@ -84,6 +84,12 @@ test("main process registers update handlers and the auto-check lifecycle", () =
   assert.match(mainSource, /updater\.dispose\(\)/);
 });
 
+test("startup auto-check begins immediately after the first window is ready", () => {
+  assert.match(updaterSource, /void this\.check\(\)\.catch\(\(\) => undefined\);/);
+  assert.doesNotMatch(updaterSource, /AUTO_CHECK_INITIAL_DELAY_MS|initialTimer/);
+  assert.match(updaterSource, /AUTO_CHECK_INTERVAL_MS = 6 \* 60 \* 60 \* 1000/);
+});
+
 test("updater gates delivery mode by platform and delivery policy", () => {
   // macOS stays manual-delivery even for notarized artifacts; dev builds are
   // disabled outright.
