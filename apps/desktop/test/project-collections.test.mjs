@@ -134,3 +134,17 @@ test("project filesystem paths stay accessible without a persistent visual toolt
   assert.doesNotMatch(projectBlock, /tooltip=\{entry\.path\}/);
   assert.match(projectBlock, /aria-describedby=\{`\$\{projectId\}-path-description`\}/);
 });
+
+test("sessions can move between projects with confirmation-aware drag targets", () => {
+  const sidebar = read("src/components/Sidebar.tsx");
+  const store = read("src/stores/app-store.ts");
+  const api = read("src/lib/api.ts");
+  const protocol = read("../../packages/shared/src/protocol.ts");
+  assert.match(sidebar, /draggingSessionId/);
+  assert.match(sidebar, /moveSessionToProject/);
+  assert.match(sidebar, /event\.shiftKey/);
+  assert.match(sidebar, /window\.confirm/);
+  assert.match(store, /moveSessionToProject:/);
+  assert.match(api, /moveSessionProject:/);
+  assert.match(protocol, /sessionMoveProject/);
+});

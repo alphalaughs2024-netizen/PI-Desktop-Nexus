@@ -964,6 +964,7 @@ export type AppState = {
   archiveSession: (id: string) => void;
   restoreSession: (id: string) => void;
   renameSession: (id: string, title: string) => Promise<void>;
+  moveSessionToProject: (id: string, projectPath: string | null) => Promise<void>;
   deleteSession: (id: string) => Promise<void>;
   setSessionSort: (sort: SessionSort) => void;
   setSessionArchiveVisibility: (show: boolean) => void;
@@ -3152,6 +3153,24 @@ export const useAppStore = create<AppState>((set, get) => ({
       ),
     }));
     persistCurrentSidebar(get);
+  },
+
+  moveSessionToProject: async (id, projectPath) => {
+    const session = get().sessions.find((candidate) => candidate.id === id);
+    if (!session) throw new Error(i18n.t("errors.sessionNotFound"));
+    if (get().runningSessions[id]) {
+      throw new Error("A running session cannot be moved");
+    }
+    const normalizedProjectPath = projectPath?.trim() || null;
+    if (normalizeProjectPath(session.projectPath ?? "") === normalizeProjectPath(normalizedProjectPath ?? "")) {
+      return;
+    }
+    const result = await api.moveSessionProject(id, normalizedProjectPath);
+    set((state) => ({
+      sessions: state.sessions.map((candidate) =>
+        candidate.id === id ? { ...candidate, ...result.session } : candidate,
+      ),
+    }));
   },
 
   deleteSession: async (id) => {

@@ -10,7 +10,14 @@ removes only the container and memberships. Collection order and per-group
 membership order are persisted independently and normalized at load time.
 
 Assignment uses a searchable anchored side panel, with drag-and-drop backed by
-keyboard/menu alternatives. The panel and drag layer must not alter native
+keyboard/menu alternatives. Sessions are canonical records and may be moved
+between projects without changing their id or transcript. The host validates
+the move and rejects running sessions; moving a session changes its
+project-scoped instruction and Context Vault resolution on the next turn. A
+non-empty session drag asks for confirmation, while Shift-drag is an explicit
+bypass; empty sessions move immediately. Session order uses existing
+per-session metadata and remains independent of collection ordering. The panel
+and drag layer must not alter native
 window hit areas, work-panel geometry, scenic backdrop ownership, permissions,
 or plugin isolation.
 

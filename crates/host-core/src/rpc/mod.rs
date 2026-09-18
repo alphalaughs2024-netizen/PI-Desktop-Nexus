@@ -1684,6 +1684,18 @@ async fn handle_request(
                 .map_err(|e| rpc_err(1000, e.to_string(), "INTERNAL"))?;
             Ok(json!({ "ok": ok }))
         }
+        "session.moveProject" => {
+            let id = params
+                .get("id")
+                .and_then(|v| v.as_str())
+                .ok_or_else(|| rpc_err(1002, "id required", "INVALID_PARAMS"))?;
+            let project_path = params.get("projectPath").and_then(|v| v.as_str());
+            let st = state.lock().await;
+            let session = sessions::move_session_project(&st.db, id, project_path)
+                .map_err(|e| rpc_err(1002, e.to_string(), "INVALID_PARAMS"))?
+                .ok_or_else(|| rpc_err(1007, "session not found", "NOT_FOUND"))?;
+            Ok(json!({ "session": session }))
+        }
         "session.appendMessage" => {
             let session_id = params
                 .get("sessionId")

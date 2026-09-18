@@ -379,6 +379,11 @@ export const api = {
       session: normalizeSessionDetail(result.session),
     })),
   deleteSession: (id: string) => invoke(IPC.invoke.sessionDelete, id),
+  moveSessionProject: (sessionId: string, projectPath: string | null) =>
+    invoke<{ session: SessionSummary }>(IPC.invoke.sessionMoveProject, {
+      id: sessionId,
+      projectPath,
+    }).then((result) => ({ ...result, session: normalizeSession(result.session) })),
   getSessionScratchPath: (sessionId: string) =>
     invoke<{ path: string }>(IPC.invoke.sessionGetScratchPath, { sessionId }),
   openSessionScratchPath: (sessionId: string) =>

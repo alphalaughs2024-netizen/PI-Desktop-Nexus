@@ -10463,3 +10463,12 @@ foreground rather than inheriting the selected theme's general text color.
   state without changing project paths or session ownership.
 - Context Vault project memory remains scoped to the active project and only
   exposes reviewed, fresh claims in deterministic bounded form.
+
+## Session project organization
+
+- Drag a session onto a project header, including a collapsed project, and
+  verify the session keeps its id/transcript while its project path changes.
+- Verify non-empty sessions require confirmation, Shift-drag bypasses it, empty
+  sessions move immediately, and running sessions remain immovable.
+- Verify session movement remains independent of collection ordering when a
+  project appears in multiple groups.

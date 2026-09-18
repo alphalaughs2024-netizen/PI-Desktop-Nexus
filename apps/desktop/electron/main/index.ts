@@ -6648,6 +6648,33 @@ function registerIpc() {
     return host.call("session.rename", { id, title });
   });
   handle(
+    IPC.invoke.sessionMoveProject,
+    async (input: { id?: string; projectPath?: string | null }) => {
+      if (!host) throw new Error("host unavailable");
+      const id = String(input?.id ?? "").trim();
+      if (!id) throw new Error("session id required");
+      if (activeTurns.has(id)) throw new Error("cannot move a running session");
+      const projectPath = input?.projectPath == null ? null : String(input.projectPath).trim();
+      if (projectPath !== null && !projectPath) throw new Error("project path must not be blank");
+      if (sidecar) {
+        sidecar.clearProjectInstructionRoot(id);
+        sidecar.clearVendorAuthBindings(id);
+        await sidecar.call("agent.disposeSession", { sessionId: id }).catch(() => undefined);
+      }
+      const result = await host.call<{ session: RuntimeSession }>("session.moveProject", {
+        id,
+        projectPath,
+      });
+      const resolvedProjectPath = result.session.projectPath ?? null;
+      sessionProjects.set(id, resolvedProjectPath);
+      if (resolvedProjectPath) {
+        sidecar?.setProjectInstructionRoot(id, resolvedProjectPath);
+      }
+      sendToRenderer(IPC.event.sessionsChanged, { reason: "session.moveProject", sessionId: id });
+      return result;
+    },
+  );
+  handle(
     IPC.invoke.sessionReplaceMessages,
     async (input: { sessionId: string; messages: unknown[] }) => {
       if (!host) throw new Error("host unavailable");

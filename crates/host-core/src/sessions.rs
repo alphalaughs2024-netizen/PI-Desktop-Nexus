@@ -1092,6 +1092,32 @@ pub fn list_sessions(db: &Database) -> Result<Vec<SessionSummary>> {
     Ok(out)
 }
 
+/// Move a session to another project (or to the standalone workspace when
+/// `project_path` is None). The transcript and session id remain unchanged.
+pub fn move_session_project(
+    db: &Database,
+    session_id: &str,
+    project_path: Option<&str>,
+) -> Result<Option<SessionSummary>> {
+    let project_id = match project_path {
+        Some(path) if !path.trim().is_empty() => Some(db.ensure_project(path, true)?),
+        Some(_) => return Err(anyhow!("project path must not be blank")),
+        None => None,
+    };
+    let conn = db.conn();
+    let changed = conn.execute(
+        "UPDATE sessions SET project_id = ?1, updated_at = ?2 WHERE id = ?3 AND deleted_at IS NULL",
+        params![project_id, now_ms(), session_id],
+    )?;
+    if changed == 0 {
+        return Ok(None);
+    }
+    let mut stmt = conn.prepare_cached(&format!("{SUMMARY_SELECT} AND s.id = ?1"))?;
+    stmt.query_row(params![session_id], summary_from_row)
+        .optional()
+        .map_err(Into::into)
+}
+
 /// Backwards-compatible session constructor.  New callers that need an
 /// explicit thinking level should use [`create_session_with_thinking`].
 pub fn create_session(

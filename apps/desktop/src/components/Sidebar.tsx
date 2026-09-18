@@ -285,6 +285,7 @@ export function Sidebar({
   const moveProjectCollection = useAppStore((s) => s.moveProjectCollection);
   const moveProjectWithinCollection = useAppStore((s) => s.moveProjectWithinCollection);
   const moveProjectToCollection = useAppStore((s) => s.moveProjectToCollection);
+  const moveSessionToProject = useAppStore((s) => s.moveSessionToProject);
   const showToast = useAppStore((s) => s.showToast);
   const version = useAppStore((s) => s.version);
   const setSettingsTab = useAppStore((s) => s.setSettingsTab);
@@ -303,6 +304,7 @@ export function Sidebar({
   const [collectionMenu, setCollectionMenu] = useState<string | null>(null);
   const [draggedProject, setDraggedProject] = useState<{ path: string; collectionId: string | null } | null>(null);
   const [draggedCollection, setDraggedCollection] = useState<string | null>(null);
+  const [draggingSessionId, setDraggingSessionId] = useState<string | null>(null);
   const collectionDragRef = useRef<{ kind: "project" | "collection"; path?: string; collectionId?: string | null; pointerId: number; startX: number; startY: number; armed: boolean } | null>(null);
 
   const startCollectionDrag = useCallback((event: ReactPointerEvent, payload: { kind: "project" | "collection"; path?: string; collectionId?: string | null }) => {
@@ -376,6 +378,26 @@ export function Sidebar({
   const sessionHoverTimerRef = useRef<number | undefined>(undefined);
   const sessionHoverTargetRef = useRef<HTMLElement | null>(null);
   const sidebarResizeRef = useRef<SidebarResizeState | null>(null);
+
+  const handleSessionDrop = useCallback(async (event: React.DragEvent, projectPath: string) => {
+    event.preventDefault();
+    const sessionId = event.dataTransfer.getData("application/x-nexus-session") || event.dataTransfer.getData("text/plain");
+    if (!sessionId) return;
+    const session = sessions.find((candidate) => candidate.id === sessionId);
+    if (!session || normalizeProjectPath(session.projectPath ?? "") === normalizeProjectPath(projectPath)) return;
+    if (runningSessions[sessionId]) {
+      showToast(t("errors.sessionRunningCannotMove", { defaultValue: "Running sessions cannot be moved." }), { variant: "error" });
+      return;
+    }
+    if (session.messageCount > 0 && !event.shiftKey && !window.confirm(t("nav.confirmMoveSession", { defaultValue: "Move this conversation to the selected project?" }))) return;
+    try {
+      await moveSessionToProject(sessionId, projectPath);
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : String(error), { variant: "error" });
+    } finally {
+      setDraggingSessionId(null);
+    }
+  }, [moveSessionToProject, runningSessions, sessions, showToast, t]);
 
   const finishSidebarResize = useCallback((cancelled: boolean) => {
     const state = sidebarResizeRef.current;
@@ -1265,6 +1287,15 @@ export function Sidebar({
         <button
           type="button"
           className="thread-item-main"
+          draggable={!running}
+          onDragStart={(event) => {
+            if (running) { event.preventDefault(); return; }
+            event.dataTransfer.effectAllowed = "move";
+            event.dataTransfer.setData("application/x-nexus-session", session.id);
+            event.dataTransfer.setData("text/plain", session.id);
+            setDraggingSessionId(session.id);
+          }}
+          onDragEnd={() => setDraggingSessionId(null)}
           onPointerEnter={() => scheduleSessionPrefetch(session.id)}
           onPointerLeave={cancelSessionPrefetch}
           onFocus={() => void prefetchSession(session.id).catch(() => undefined)}
@@ -1378,6 +1409,14 @@ export function Sidebar({
       <section
         key={entry.key}
         className={`sidebar-session-group project-group ${entry.active ? "active" : ""} ${entry.meta.archived ? "archived" : ""}`}
+        data-sidebar-session-project={entry.path}
+        onDragOver={(event) => {
+          if (event.dataTransfer.types.includes("application/x-nexus-session") || event.dataTransfer.types.includes("text/plain")) {
+            event.preventDefault();
+            event.dataTransfer.dropEffect = "move";
+          }
+        }}
+        onDrop={(event) => { void handleSessionDrop(event, entry.path); }}
         aria-labelledby={projectId}
         data-sidebar-project-group={entry.key}
       >
