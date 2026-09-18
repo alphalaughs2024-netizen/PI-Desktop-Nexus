@@ -6941,7 +6941,7 @@ function registerIpc() {
         providerId?: string;
         modelId?: string;
         thinkingLevel?: ThinkingLevel;
-        permissionMode?: "inherit" | "ask" | "accept-edits" | "auto";
+        permissionMode?: "inherit" | "ask" | "accept-edits" | "auto" | "full-access";
       },
     ) => {
       if (!host) throw new Error("host unavailable");

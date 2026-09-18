@@ -1368,6 +1368,22 @@ membership when dropped on Ungrouped.
   with tool name, workspace, arguments preview, countdown, and allow/deny
   options. It creates no backdrop or modal and does not cover another session.
 - **Specs linked**: `04-ux/03-permission-ux.md`, `03-runtime/03-tools-and-permissions.md`
+
+#### E2E-014a: Agent Composer Full access is confirmed and host-enforced
+
+- **Steps**: 1) In an Agent session, open the Composer permission selector. 2)
+  Choose Full access. 3) Verify the danger confirmation lists file, terminal,
+  internet/connected-tool, sensitive-data, and prompt-injection risks. 4) Cancel
+  and verify the prior chip and host behavior remain unchanged. 5) Repeat and
+  confirm Full access. 6) Request eligible Agent file/terminal operations and
+  verify they run without ordinary permission cards. 7) Switch to Plan or Goal
+  and verify Full access is unavailable and hard-denied tools remain denied.
+- **Expected**: Full access is session-scoped, persisted only after explicit
+  confirmation, and changes real host authorization without bypassing contract
+  mode, containment, canonicalization, administrator, platform, remote-control,
+  timeout, or audit restrictions.
+- **Specs linked**: `04-ux/03-permission-ux.md`, `03-runtime/03-tools-and-permissions.md`,
+  `docs/adr/0220-composer-agent-full-access-permission.md`
 - **Acceptance**: E (Write/Edit/Bash trigger confirmation)
 - **Milestone**: M3
 - **Status**: Draft

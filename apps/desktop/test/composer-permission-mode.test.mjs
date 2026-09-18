@@ -14,8 +14,8 @@ test("Agent and Plan permission menus present only effective selectable modes", 
   );
 
   assert.match(
-    permissionControlSource,
-    /\["ask", "accept-edits", "auto"\] as const/,
+    composerSource,
+    /mode === "agent"[\s\S]*\["ask", "auto", "full-access"\]/,
   );
   assert.match(
     permissionControlSource,
@@ -42,4 +42,15 @@ test("Goal keeps the permission chip visible but fixes it to Full auto", () => {
   assert.match(permissionControlSource, /mode === "goal" \? undefined : "menu"/);
   assert.match(permissionControlSource, /disabled=\{controlsBlocked \|\| mode === "goal"\}/);
   assert.match(permissionControlSource, /permissionOpen && mode !== "goal"/);
+});
+
+test("Agent permission menu offers Full access while Plan does not", () => {
+  const permissionControlSource = composerSource.slice(
+    composerSource.indexOf('<div className="composer-permission"'),
+    composerSource.indexOf('<div className="composer-right">'),
+  );
+
+  assert.match(permissionControlSource, /full-access/);
+  assert.match(composerSource, /fullAccess/);
+  assert.match(composerSource, /: \(\["ask", "accept-edits", "auto"\] as const\)/);
 });

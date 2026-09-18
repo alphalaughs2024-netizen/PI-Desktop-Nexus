@@ -55,3 +55,7 @@ test("a failed flush keeps the staged configuration instead of dropping it", () 
   assert.match(flush, /catch \(error\) \{[\s\S]*?failed = true;\n\s*break;/);
   assert.match(flush, /!failed &&\n\s*pendingSessionConfigurations\.has\(sessionId\)/);
 });
+
+test("session configuration keeps permission mode typed for Full access", () => {
+  assert.match(store, /permissionMode\?: PermissionMode/);
+});

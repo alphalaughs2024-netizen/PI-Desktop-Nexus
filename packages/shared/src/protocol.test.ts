@@ -149,6 +149,7 @@ describe("Plan protocol contracts", () => {
     expect(normalizeGlobalPermissionMode("accept-edits")).toBe("accept-edits");
     expect(isGlobalPermissionMode("ask")).toBe(true);
     expect(isGlobalPermissionMode("invalid")).toBe(false);
+    expect(isGlobalPermissionMode("full-access")).toBe(false);
   });
 
   it("keeps the artifact and queued execution wire shapes explicit", () => {

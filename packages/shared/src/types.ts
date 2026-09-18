@@ -279,10 +279,20 @@ export type Risk = "low" | "medium" | "high";
 export type PermissionDecision = "allow-once" | "allow-session" | "deny";
 /** Permission mode (D115): how high-risk tool calls are approved.
  * `inherit` (sessions only) falls back to the global default. */
-export const PERMISSION_MODES = ["inherit", "ask", "accept-edits", "auto"] as const;
+export const PERMISSION_MODES = [
+  "inherit",
+  "ask",
+  "accept-edits",
+  "auto",
+  "full-access",
+] as const;
 export type PermissionMode = (typeof PERMISSION_MODES)[number];
 /** Global default: `inherit` is not meaningful at the settings level. */
-export type GlobalPermissionMode = Exclude<PermissionMode, "inherit">;
+export type SessionPermissionMode = Exclude<PermissionMode, never>;
+/** Global defaults and contract approvals intentionally exclude Full access. */
+export type GlobalPermissionMode = Exclude<PermissionMode, "inherit" | "full-access">;
+
+export type ComposerPermissionMode = Exclude<GlobalPermissionMode, "accept-edits"> | "full-access";
 
 export function isGlobalPermissionMode(
   value: unknown,
