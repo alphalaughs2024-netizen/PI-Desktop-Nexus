@@ -41,3 +41,17 @@ test("legacy group migration clears remembered tabs once", () => {
   assert.match(prefs, /hasLegacyGroups/);
   assert.match(prefs, /openProjectPaths: hasLegacyGroups/);
 });
+
+test("empty collections remain visible and expose project assignment", () => {
+  const sidebar = read("src/components/Sidebar.tsx");
+  assert.match(sidebar, /const visibleCollections = projectCollections/);
+  assert.match(sidebar, /Add project/);
+  assert.match(sidebar, /ProjectCollectionPicker/);
+});
+
+test("collection picker supports assigning an existing project", () => {
+  const picker = read("src/components/ProjectCollectionPicker.tsx");
+  assert.match(picker, /projects/);
+  assert.match(picker, /assignmentCollectionId/);
+  assert.match(picker, /project-collection-project/);
+});

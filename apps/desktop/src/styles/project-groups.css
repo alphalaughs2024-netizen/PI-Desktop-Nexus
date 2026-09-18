@@ -7,3 +7,5 @@
 .project-group-modal footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
 .project-group-modal button { padding: 7px 12px; border: 1px solid var(--ds-border-default); border-radius: var(--radius-sm); background: var(--ds-bg-elevated); color: var(--ds-text-primary); }
 .project-group-modal button[type="submit"] { background: var(--ds-accent); color: var(--ds-text-on-accent); }
+.sidebar-project-group-empty-action { display: block; margin: 4px 10px 8px 28px; padding: 5px 8px; border: 1px dashed var(--ds-border-default); border-radius: var(--radius-sm); background: transparent; color: var(--ds-text-muted); font-size: var(--text-xs); text-align: left; cursor: pointer; }
+.sidebar-project-group-empty-action:hover, .sidebar-project-group-empty-action:focus-visible { border-color: var(--ds-accent); color: var(--ds-text-primary); background: var(--ds-bg-hover); }
