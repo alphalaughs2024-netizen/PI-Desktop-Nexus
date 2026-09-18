@@ -151,6 +151,11 @@ test("updater gates delivery mode by platform and delivery policy", () => {
     /this\.setState\(\{ status: "error", error: "Unable to check for updates" \}\)/,
     "the renderer receives a concise safe update failure message",
   );
+  assert.match(
+    updaterSource,
+    /const shouldReport =[^;]+shouldReportAutomaticFailure[\s\S]*if \(shouldReport\) \{[\s\S]*this\.setState\(\{ status: "error"/,
+    "unchanged automatic failures do not repeat renderer state pushes",
+  );
 });
 
 test("renderer exposes the updates API, banner and settings row", () => {

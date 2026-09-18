@@ -3696,6 +3696,10 @@ membership when dropped on Ungrouped.
   upstream PI-Desktop repository. Supported in-app modes download in the
   background and expose the existing restart/install action; manual modes do
   not attempt an incompatible installer. Development runs remain disabled.
+  Feed, network, configuration, and timeout failures are surfaced through the
+  corresponding stable local diagnostic code; repeated unchanged automatic
+  failures for the same installed version produce no duplicate renderer state
+  transition or log record, while a manual retry remains visible.
 - **Specs linked**: `06-delivery/06-release-runbook.md`, ADR 0022
 - **Acceptance**: A (app startup), Quality
 - **Milestone**: M5

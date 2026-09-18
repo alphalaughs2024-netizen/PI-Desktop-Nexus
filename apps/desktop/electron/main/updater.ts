@@ -29,6 +29,12 @@ import {
   raceWithTimeout,
   UPDATE_CHECK_TIMEOUT_CODE,
 } from "./update-timeout";
+import {
+  automaticFailureKey,
+  classifyUpdateFailure,
+  shouldReportAutomaticFailure,
+  type UpdateFailureClass,
+} from "./update-failure";
 
 const { autoUpdater } = electronUpdaterPkg;
 
@@ -41,6 +47,8 @@ const AUTO_CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000;
 export const AUTO_CHECK_TIMEOUT_MS = 8_000;
 /** Manual check can wait a bit longer; still far below the socket timeout. */
 export const MANUAL_CHECK_TIMEOUT_MS = 15_000;
+
+export type { UpdateFailureClass } from "./update-failure";
 
 export type UpdaterOptions = {
   logger: Logger;
@@ -78,6 +86,8 @@ export class AppUpdaterController {
   private manualRequested = false;
   private intervalTimer: NodeJS.Timeout | null = null;
   private listenersAttached = false;
+  private lastAutomaticFailureKey: string | null = null;
+  private failureClass: UpdateFailureClass | undefined;
 
   constructor(options: UpdaterOptions) {
     this.logger = options.logger;
@@ -162,8 +172,23 @@ export class AppUpdaterController {
     autoUpdater.on("error", (error: Error) => {
       // Auto checks fail quietly (offline, private repo, rate limits);
       // the renderer only surfaces errors when `manual` is set.
-      this.logger.app("updater", "warn", "updater error", { data: String(error) });
-      this.setState({ status: "error", error: "Unable to check for updates" });
+      const classification = classifyUpdateFailure(error);
+      this.failureClass = classification;
+      const key = automaticFailureKey(classification, this.state.currentVersion);
+      const shouldReport =
+        this.manualRequested ||
+        shouldReportAutomaticFailure(this.lastAutomaticFailureKey, key);
+      if (shouldReport) {
+        this.logger.app("updater", "warn", "updater error", {
+          code: `UPDATE_${classification.toUpperCase().replaceAll("-", "_")}`,
+        });
+      }
+      if (!this.manualRequested) {
+        this.lastAutomaticFailureKey = key;
+      }
+      if (shouldReport) {
+        this.setState({ status: "error", error: "Unable to check for updates" });
+      }
     });
   }
 
@@ -174,6 +199,10 @@ export class AppUpdaterController {
 
   getState(): UpdateState {
     return this.state;
+  }
+
+  getFailureClass(): UpdateFailureClass | undefined {
+    return this.failureClass;
   }
 
   /**
@@ -217,6 +246,7 @@ export class AppUpdaterController {
       const timedOut =
         (error as { code?: unknown } | null)?.code === UPDATE_CHECK_TIMEOUT_CODE;
       if (timedOut) {
+        this.failureClass = "timeout";
         if (this.manualRequested) {
           this.setState({ status: "error", error: "update check timed out" });
           throw error;
@@ -229,12 +259,20 @@ export class AppUpdaterController {
         if (this.getState().status === "checking") {
           this.setState({ status: "idle", error: undefined });
         }
+        const key = automaticFailureKey("timeout", this.state.currentVersion);
+        if (shouldReportAutomaticFailure(this.lastAutomaticFailureKey, key)) {
+          this.logger.app("updater", "warn", "updater check timed out", {
+            code: "UPDATE_TIMEOUT",
+          });
+          this.lastAutomaticFailureKey = key;
+        }
         return this.state;
       }
       // The 'error' listener already recorded state; rethrow for manual
       // callers so the invoke rejects and the UI can toast it.
       if (options.manual) throw error;
     }
+    if (this.state.status !== "error") this.lastAutomaticFailureKey = null;
     return this.state;
   }
 

@@ -236,6 +236,12 @@ sidecar/host shutdown sequence runs before the updater replaces the app.
 - packaged builds use the Main-owned update controller. macOS, non-AppImage
   Linux, and Windows portable runs are manual-delivery modes; Windows NSIS and
   Linux AppImage use the in-app feeds published by D126 tag releases
+- updater feed failures are classified by Main into stable local diagnostic
+  codes (`UPDATE_FEED_UNAVAILABLE`, `UPDATE_NETWORK`,
+  `UPDATE_CONFIGURATION`, `UPDATE_TIMEOUT`). Automatic checks de-duplicate an
+  unchanged class for the current installed version so offline intervals do
+  not spam the renderer or logs; manual checks always produce a visible
+  result.
 
 ## 7. Remote target topology (post-MVP)
 

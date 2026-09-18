@@ -96,6 +96,15 @@ Format: NDJSON files.
 - plugin enable/disable/load/error;
 - tool admission rejection, queue/resource exhaustion, and updater errors.
 
+Updater failures are classified into the stable diagnostic codes
+`UPDATE_FEED_UNAVAILABLE`, `UPDATE_NETWORK`, `UPDATE_CONFIGURATION`, and
+`UPDATE_TIMEOUT`. Automatic checks report a given classification once per
+installed app version until the failure class changes or a check succeeds;
+unchanged automatic failures do not create duplicate log records or renderer
+state transitions. A user-triggered check remains visible on every attempt.
+The log record contains the stable code, never the feed URL, response body, or
+raw transport error.
+
 These records should identify the relevant session, turn, tool call, plugin, or
 stable error code when available. Normal successful operations should not emit
 per-phase or per-request latency records.
