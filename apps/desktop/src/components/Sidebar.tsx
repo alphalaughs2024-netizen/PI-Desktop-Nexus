@@ -72,6 +72,7 @@ import { useUpdateState } from "../hooks/use-update-state";
 import {
   IconArchive,
   IconArchiveRestore,
+  IconArrowUpDown,
   IconArrowUp,
   IconArrowDown,
   IconPlug,

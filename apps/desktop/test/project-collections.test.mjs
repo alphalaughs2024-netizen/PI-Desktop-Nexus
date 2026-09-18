@@ -103,6 +103,12 @@ test("group and project rows use their full surface for manual drag without visi
   assert.doesNotMatch(styles, /sidebar-collection-drag-handle|sidebar-project-drag-handle/);
 });
 
+test("the project sort control keeps its icon dependency after drag handles are removed", () => {
+  const sidebar = read("src/components/Sidebar.tsx");
+  assert.match(sidebar, /import[\s\S]*IconArrowUpDown[\s\S]*from "\.\/icons"/);
+  assert.match(sidebar, /data-action="session-sort"[\s\S]*IconArrowUpDown/);
+});
+
 test("collection drag controller preserves click until the movement threshold", () => {
   const controller = read("src/lib/sidebar-project-collection-drag.ts");
   assert.match(controller, /PROJECT_COLLECTION_DRAG_ARM_PX/);
