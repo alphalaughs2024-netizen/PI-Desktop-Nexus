@@ -127,3 +127,10 @@ test("project menus expose membership ordering alternatives", () => {
   assert.match(sidebar, /data-action=\"move-project-up\"/);
   assert.match(sidebar, /data-action=\"move-project-down\"/);
 });
+
+test("project filesystem paths stay accessible without a persistent visual tooltip", () => {
+  const sidebar = read("src/components/Sidebar.tsx");
+  const projectBlock = sidebar.slice(sidebar.indexOf('className="sidebar-session-group-title project-toggle"'), sidebar.indexOf('className="sidebar-session-group-title project-toggle"') + 700);
+  assert.doesNotMatch(projectBlock, /tooltip=\{entry\.path\}/);
+  assert.match(projectBlock, /aria-describedby=\{`\$\{projectId\}-path-description`\}/);
+});

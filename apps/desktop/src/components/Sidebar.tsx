@@ -1399,9 +1399,6 @@ export function Sidebar({
             type="button"
             id={projectId}
             className="sidebar-session-group-title project-toggle"
-            tooltip={entry.path}
-            tooltipDelayMs={500}
-            tooltipClassName="ui-tooltip-path"
             ariaLabel={entry.name}
             aria-describedby={`${projectId}-path-description`}
             aria-expanded={!collapsedProject}
