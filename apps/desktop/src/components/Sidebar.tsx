@@ -284,6 +284,7 @@ export function Sidebar({
   const [renameProjectFor, setRenameProjectFor] = useState<ProjectEntry | null>(null);
   const [createGroupOpen, setCreateGroupOpen] = useState(false);
   const [collectionPickerFor, setCollectionPickerFor] = useState<ProjectEntry | null>(null);
+  const [collectionAssignmentFor, setCollectionAssignmentFor] = useState<string | null>(null);
   const [projectMenu, setProjectMenu] = useState<string | null>(null);
   const [sectionMenu, setSectionMenu] = useState<"sessions" | "projects" | null>(null);
   const [menuPosition, setMenuPosition] = useState<{
@@ -1886,9 +1887,7 @@ export function Sidebar({
           {projectEntries.length > 0 ? (() => {
             // Only canonical collections with at least one live project are
             // rendered; stale empty legacy groups must not reappear.
-            const visibleCollections = projectCollections.filter((collection) =>
-              projectCollectionMemberships.some((item) => item.collectionId === collection.id && projectEntries.some((entry) => entry.key === item.projectPath)),
-            );
+            const visibleCollections = projectCollections;
             const memberships = projectCollectionMemberships;
             const grouped = new Set(memberships.map((item) => item.projectPath));
             const ungrouped = projectEntries.filter((entry) => !grouped.has(entry.key));
@@ -1897,7 +1896,7 @@ export function Sidebar({
                 const entries = projectEntries.filter((entry) => memberships.some((item) => item.collectionId === group.id && item.projectPath === entry.key));
                 return <section key={group.id} className="sidebar-project-group-folder" data-sidebar-project-folder={group.id}>
                   <button type="button" className="sidebar-session-group-title" aria-expanded={!group.collapsed} onClick={() => setProjectGroupCollapsed(group.id)}><IconFolder size={13} /><span>{group.name}</span></button>
-                  {!group.collapsed ? entries.map(renderProjectGroup) : null}
+                  {!group.collapsed ? (entries.length ? entries.map(renderProjectGroup) : <button type="button" className="sidebar-project-group-empty-action" onClick={() => setCollectionAssignmentFor(group.id)}>{t("nav.addProjectToGroup", { defaultValue: "Add project" })}</button>) : null}
                 </section>;
               })}
               {ungrouped.length ? <section className="sidebar-project-group-folder sidebar-project-group-ungrouped" data-sidebar-project-folder="ungrouped">
@@ -1985,7 +1984,7 @@ export function Sidebar({
         />
       ) : null}
       {createGroupOpen ? <ProjectGroupCreateDialog onClose={() => setCreateGroupOpen(false)} onSave={createProjectGroup} /> : null}
-      {collectionPickerFor ? <ProjectCollectionPicker projectPath={collectionPickerFor.path} collections={projectCollections} selected={projectCollectionMemberships.filter((item) => item.projectPath === collectionPickerFor.key).map((item) => item.collectionId)} onClose={() => setCollectionPickerFor(null)} onToggle={(id, checked) => checked ? addProjectToCollection(collectionPickerFor.path, id) : removeProjectFromCollection(collectionPickerFor.path, id)} onCreate={(name) => { createCollection(name); }} /> : null}
+      {collectionPickerFor || collectionAssignmentFor ? <ProjectCollectionPicker projectPath={collectionPickerFor?.path} collections={projectCollections} selected={collectionAssignmentFor ? projectCollectionMemberships.filter((item) => item.collectionId === collectionAssignmentFor).map((item) => item.projectPath) : projectCollectionMemberships.filter((item) => item.projectPath === collectionPickerFor?.key).map((item) => item.collectionId)} projects={projectEntries.map((entry) => ({ path: entry.key, name: entry.name }))} assignmentCollectionId={collectionAssignmentFor ?? undefined} onClose={() => { setCollectionPickerFor(null); setCollectionAssignmentFor(null); }} onToggle={(id, checked) => collectionPickerFor ? (checked ? addProjectToCollection(collectionPickerFor.path, id) : removeProjectFromCollection(collectionPickerFor.path, id)) : undefined} onAssign={(path, checked) => collectionAssignmentFor ? (checked ? addProjectToCollection(path, collectionAssignmentFor) : removeProjectFromCollection(path, collectionAssignmentFor)) : undefined} onCreate={(name) => { createCollection(name); }} /> : null}
       <div
         className={cx("sidebar-resize-handle no-drag", sidebarResizing && "is-resizing")}
         role="separator"
