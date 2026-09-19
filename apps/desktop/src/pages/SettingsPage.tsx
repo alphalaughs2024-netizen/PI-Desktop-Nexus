@@ -32,6 +32,7 @@ import {
 } from "../lib/settings-search";
 import {
   IconArchive,
+  IconBranch,
   IconBookOpen,
   IconBot,
   IconChevronLeft,
@@ -1255,7 +1256,7 @@ export function SettingsPage() {
       subagents: <IconBot size={14} />,
       import: <IconDownload size={14} />,
       projects: <IconArchive size={14} />,
-      workspaces: <IconArchive size={14} />,
+      workspaces: <IconBranch size={14} />,
       about: <IconInfo size={14} />,
     };
     return SETTINGS_NAV.map((entry) => ({

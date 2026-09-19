@@ -513,6 +513,25 @@ skills remain portable under `<project>/.agents/skills`.
 - Activating a project or project session returns to chat; archive and close
   actions keep Project archive open even when the active workspace changes
 
+### Workspaces
+- Shows only Nexus profile-recorded managed Git worktrees; arbitrary Git
+  worktrees never appear here and remain ineligible for cleanup.
+- The empty state is a compact theme-compatible tile with a branch icon, a
+  concise explanation, and an **Open a project** action that uses the existing
+  project picker. Refresh remains available beside the quiet page description.
+- Repository and worktree paths are shortened for scanning and retain their
+  complete values in accessible hover titles. Each row shows a localized date,
+  task count, and a status badge for unavailable, dirty, active, or merged
+  worktrees.
+- Open, Reveal, and Clean up are guarded asynchronous actions. Only the
+  active row action is pending at a time; failures surface through the global
+  error toast. Cleanup keeps the existing host confirmation and refuses dirty,
+  unmerged, unknown, or non-recorded worktrees.
+- A valid recorded worktree whose repository has been moved or removed remains
+  visible as **Folder unavailable**, so the inventory explains stale records
+  instead of silently disappearing them. Such a row cannot be opened, revealed,
+  or cleaned up.
+
 ### Info
 - app/host/protocol versions + open logs
 - **Report a problem** row: one action opens the GitHub bug issue form in

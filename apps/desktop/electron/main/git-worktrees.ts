@@ -188,11 +188,45 @@ export function listManagedWorktreeRecords(dataDir: string, repositoryPath?: str
 export async function listManagedWorktreeInventory(dataDir: string): Promise<ManagedWorktreeInventoryRow[]> {
   const records = listManagedWorktreeRecords(dataDir);
   const rows = await Promise.all(records.map(async (record) => {
+    const validation = validateManagedBranch(record.branch);
+    if (!validation.ok || !isAbsolute(record.repositoryPath) || !isAbsolute(record.worktreePath)) {
+      return undefined;
+    }
+    const repositoryPath = resolve(record.repositoryPath);
+    const branch = `nexus/${validation.shortName}`;
+    const worktreePath = managedWorktreePath(repositoryPath, branch);
+    if (!validateManagedRecord(record, { repositoryPath, branch, worktreePath })) {
+      return undefined;
+    }
     try {
-      const status = await inspectManagedWorktree(dataDir, record.repositoryPath, record.branch);
-      if (!status.managed || status.worktreePath !== record.worktreePath) return undefined;
+      const status = await inspectManagedWorktree(dataDir, repositoryPath, branch);
+      if (!status.managed || status.worktreePath !== worktreePath) return undefined;
       return { ...status, createdAt: record.createdAt };
     } catch {
+      // Keep a valid profile record visible when the source repository itself
+      // has been moved or removed. This is still profile-recorded only: no
+      // Git worktree discovery occurs, and the row has no cleanup eligibility.
+      try {
+        if (!existsSync(repositoryPath) || !statSync(repositoryPath).isDirectory()) {
+          return {
+            repositoryPath,
+            branch,
+            worktreePath,
+            managed: true,
+            exists: false,
+            createdAt: record.createdAt,
+          } satisfies ManagedWorktreeInventoryRow;
+        }
+      } catch {
+        return {
+          repositoryPath,
+          branch,
+          worktreePath,
+          managed: true,
+          exists: false,
+          createdAt: record.createdAt,
+        } satisfies ManagedWorktreeInventoryRow;
+      }
       return undefined;
     }
   }));
