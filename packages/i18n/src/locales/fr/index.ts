@@ -619,6 +619,8 @@ export const fr = {
     "shortcutReserved": "Réservé par le système d'exploitation ou l'éditeur.",
     "shortcutConflict": "Déjà attribué à {{action}}.",
     "shortcutSaveFailed": "Impossible d'enregistrer le raccourci.",
+    "shortcutUnavailable": "Indisponible. Choisissez un autre raccourci ou restaurez celui par défaut.",
+    "shortcutConflictRecovery": "Indisponible, car une autre application l'a réservé. Choisissez un autre raccourci ou restaurez celui par défaut.",
     "shortcutUnbound": "Non lié",
     "shortcutDisable": "Désactiver le raccourci pour {{action}}",
     "shortcutGroup": {

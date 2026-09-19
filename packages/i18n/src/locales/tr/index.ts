@@ -615,6 +615,8 @@ export const tr = {
     shortcutReserved: "İşletim sistemi veya düzenleyici tarafından ayrılmış.",
     shortcutConflict: "Zaten {{action}} için atanmış.",
     shortcutSaveFailed: "Kısayol kaydedilemedi.",
+    shortcutUnavailable: "Kullanılamıyor. Başka bir kısayol seçin veya varsayılanı geri yükleyin.",
+    shortcutConflictRecovery: "Başka bir uygulama kullandığı için kullanılamıyor. Başka bir kısayol seçin veya varsayılanı geri yükleyin.",
     shortcutUnbound: "Atanmamış",
     shortcutDisable: "{{action}} kısayolunu kapat",
     shortcutGroup: {
