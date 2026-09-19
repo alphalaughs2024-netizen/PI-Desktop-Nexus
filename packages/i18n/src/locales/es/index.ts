@@ -619,6 +619,8 @@ export const es = {
     "shortcutReserved": "Reservado por el sistema operativo o el editor.",
     "shortcutConflict": "Ya asignado a {{action}}.",
     "shortcutSaveFailed": "No se pudo guardar el acceso directo.",
+    "shortcutUnavailable": "No disponible. Elija otro acceso directo o restaure el predeterminado.",
+    "shortcutConflictRecovery": "No disponible porque otra aplicación lo ha reclamado. Elija otro acceso directo o restaure el predeterminado.",
     "shortcutUnbound": "Sin enlazar",
     "shortcutDisable": "Deshabilitar el acceso directo para {{action}}",
     "shortcutGroup": {

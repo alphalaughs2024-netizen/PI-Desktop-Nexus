@@ -615,6 +615,8 @@ export const ko = {
     shortcutReserved: "운영 체제 또는 편집기에서 예약한 키입니다.",
     shortcutConflict: "이미 {{action}}에 할당되어 있습니다.",
     shortcutSaveFailed: "단축키를 저장할 수 없습니다.",
+    shortcutUnavailable: "사용할 수 없습니다. 다른 단축키를 선택하거나 기본값을 복원하세요.",
+    shortcutConflictRecovery: "다른 앱이 사용 중이어서 사용할 수 없습니다. 다른 단축키를 선택하거나 기본값을 복원하세요.",
     shortcutUnbound: "할당되지 않음",
     shortcutDisable: "{{action}} 단축키 비활성화",
     shortcutGroup: {

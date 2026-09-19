@@ -611,6 +611,8 @@ export const zhTW = {
     shortcutReserved: "該組合鍵由作業系統或編輯器保留。",
     shortcutConflict: "已分配給“{{action}}”。",
     shortcutSaveFailed: "無法儲存快捷鍵。",
+    shortcutUnavailable: "無法使用。請選擇其他快捷鍵或恢復預設值。",
+    shortcutConflictRecovery: "其他應用程式已佔用此快捷鍵，因此無法使用。請選擇其他快捷鍵或恢復預設值。",
     shortcutUnbound: "未繫結",
     shortcutDisable: "停用“{{action}}”快捷鍵",
     shortcutGroup: {

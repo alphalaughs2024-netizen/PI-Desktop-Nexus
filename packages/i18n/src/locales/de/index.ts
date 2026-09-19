@@ -626,6 +626,8 @@ export const de = {
     "shortcutReserved": "Reserviert durch das Betriebssystem oder den Editor.",
     "shortcutConflict": "Bereits {{action}} zugewiesen.",
     "shortcutSaveFailed": "Die Verknüpfung konnte nicht gespeichert werden.",
+    "shortcutUnavailable": "Nicht verfügbar. Wählen Sie eine andere Verknüpfung oder stellen Sie die Standardeinstellung wieder her.",
+    "shortcutConflictRecovery": "Nicht verfügbar, da eine andere App die Verknüpfung übernommen hat. Wählen Sie eine andere Verknüpfung oder stellen Sie die Standardeinstellung wieder her.",
     "shortcutUnbound": "Ungebunden",
     "shortcutDisable": "Verknüpfung für {{action}} deaktivieren",
     "shortcutGroup": {

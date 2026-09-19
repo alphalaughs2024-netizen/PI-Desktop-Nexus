@@ -329,9 +329,11 @@ Each scenario is documented in this format:
 - **Expected**: Development launch rebuilds all workspace dependencies before
   host-core and Electron startup. Window first shows the branded startup splash
   while bootstrap runs, then reveals the main shell in English with the current
-  locale catalog; no compile error, missing-menu runtime error, or crash;
-  version info visible. Key lifecycle and error records are written to the
-  categorized logs. After `ensureWindow` returns, the Nexus GitHub Releases
+  locale catalog; the dependency build type-checks every shipped locale against
+  English, including shortcut unavailable and conflict-recovery status copy; no
+  compile error, missing-menu runtime error, or crash; version info visible.
+  Key lifecycle and error records are written to the categorized logs. After
+  `ensureWindow` returns, the Nexus GitHub Releases
   auto-update check starts immediately without blocking the first window; a
   packaged Windows NSIS or Linux AppImage build downloads a newer stable
   release in the background, while portable/manual-delivery builds only show
