@@ -4215,6 +4215,30 @@ membership when dropped on Ungrouped.
 - **Status**: Unit/source-contract covered (`summon-shortcut-status.test.mjs`);
   native collision journey Draft
 
+#### E2E-072B: App health exposes bounded, privacy-safe runtime diagnostics
+
+- **Preconditions**: App running with a fresh profile; host-core is healthy;
+  updater and summon-window shortcut paths are initialized.
+- **Steps**: 1) Call the existing `app.health` IPC method. 2) Attach a
+  workspace and call it again. 3) Trigger one normalized updater, shortcut, or
+  host failure in a test fixture and call it again. 4) Inspect the response
+  and the raw categorized logs separately.
+- **Expected**: The original `ok`, protocol/version, uptime, and `toolBudget`
+  fields remain present. Optional runtime fields report only updater mode/status
+  and safe classification, shortcut registration state, and host availability;
+  workspace reports `project-attached` versus `scratch-only`, and capability
+  counts are bounded. Incident summaries group equivalent stable codes with
+  count and first/last timestamps, expire after the retention window, and do
+  not contain raw messages, paths, credentials, session text, response bodies,
+  or arbitrary tool arguments. Raw NDJSON logs remain available for local
+  troubleshooting.
+- **Specs linked**: `03-runtime/06-host-rpc-protocol.md`,
+  `03-runtime/09-logging-and-observability.md`
+- **Acceptance**: A (runtime health), H (diagnostics)
+- **Milestone**: M5
+- **Status**: Unit/source-contract covered (`diagnostic-health.test.mjs`);
+  full Electron health journey Draft
+
 #### E2E-073a: Developer mode gates the developer-tools console
 
 - **Preconditions**: App running on macOS and on one Windows/Linux target;

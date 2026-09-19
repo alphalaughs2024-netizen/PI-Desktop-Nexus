@@ -190,6 +190,45 @@ type ToolBudgetHealth = {
 }
 ```
 
+The response also keeps the following additive, privacy-safe fields available
+to health consumers:
+
+```ts
+type AppHealthWorkspace = {
+  mode: "project-attached" | "scratch-only"
+  attached: boolean
+  ready: boolean
+}
+
+type AppHealthCapabilities = {
+  core: number
+  available: number
+}
+
+type AppHealthRuntime = {
+  updater?: {
+    mode: "in-app" | "manual" | "disabled"
+    status: "idle" | "checking" | "available" | "up-to-date" |
+      "downloading" | "downloaded" | "error"
+    classification?: "feed-unavailable" | "network" | "configuration" | "timeout"
+  }
+  summonShortcut?: {
+    binding: string | null
+    accelerator: string | null
+    registered: boolean
+    errorCode?: "SHORTCUT_CONFLICT" | "SHORTCUT_UNAVAILABLE"
+  }
+  hostAvailable?: boolean
+}
+```
+
+Electron Main merges `runtime` and a bounded `incidents` list into the host
+response. Incident entries contain only stable code/fingerprint, count,
+first/last timestamps, retryability, and an optional short action. They never
+contain workspace paths, credentials, session text, arbitrary tool arguments,
+feed URLs, or raw exception messages. Existing required fields remain
+unchanged and no protocol-version bump is needed.
+
 ### Workspace
 - `workspace.get`
 - `workspace.set`

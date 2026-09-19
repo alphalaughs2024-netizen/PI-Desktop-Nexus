@@ -71,6 +71,7 @@ import {
   type PromptEnhancementRequest,
   type SessionSummarizeTitleRequest,
   type AgentStopRequest,
+  type HostHealth,
   type AskToolResolution,
   type AppMenuCommand,
   type AppNotification,
@@ -3026,6 +3027,13 @@ function applySummonWindowShortcut(keybindings?: KeybindingOverrides) {
       errorCode: "SHORTCUT_CONFLICT",
     });
   } catch {
+    const failureKey = summonShortcutFailureKey(accelerator, process.platform);
+    if (shouldReportSummonShortcutFailure(lastSummonShortcutFailureKey, failureKey)) {
+      logger.app("diagnostics", "warn", "summon window shortcut unavailable", {
+        code: "SHORTCUT_UNAVAILABLE",
+      });
+      lastSummonShortcutFailureKey = failureKey;
+    }
     updateSummonShortcutStatus({
       binding,
       accelerator,
@@ -6343,7 +6351,17 @@ function registerIpc() {
 
   handle(IPC.invoke.appHealth, async () => {
     if (!host) throw new Error("host unavailable");
-    return host.call("app.health");
+    const health = await host.call<HostHealth>("app.health");
+    return {
+      ...health,
+      runtime: {
+        ...(health.runtime ?? {}),
+        updater: updater.getDiagnosticSnapshot(),
+        summonShortcut: summonShortcutStatus,
+        hostAvailable: host.isAvailable(),
+      },
+      incidents: logger.getIncidentSummaries(),
+    } satisfies HostHealth;
   });
 
   handle(IPC.invoke.summonShortcutGetStatus, async () => summonShortcutStatus);

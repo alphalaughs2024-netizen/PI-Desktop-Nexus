@@ -1872,11 +1872,61 @@ export type AppVersionInfo = {
   arch: string;
 };
 
+/**
+ * A bounded, local-only summary of a repeated diagnostic condition.
+ *
+ * This deliberately contains neither the original log message nor arbitrary
+ * fields from the triggering operation. Raw records remain in the categorized
+ * NDJSON logs for local troubleshooting.
+ */
+export type DiagnosticIncidentSummary = {
+  code: string;
+  fingerprint: string;
+  count: number;
+  firstSeen: string;
+  lastSeen: string;
+  retryable: boolean;
+  suggestedAction?: string;
+};
+
+export type AppHealthUpdater = {
+  mode: UpdateMode;
+  status: UpdateStatus;
+  classification?:
+    | "feed-unavailable"
+    | "network"
+    | "configuration"
+    | "timeout";
+};
+
+/** Main-owned, privacy-safe runtime state added to `app.health`. */
+export type AppHealthRuntime = {
+  updater?: AppHealthUpdater;
+  summonShortcut?: SummonShortcutStatus;
+  hostAvailable?: boolean;
+};
+
+export type AppHealthWorkspace = {
+  mode: "project-attached" | "scratch-only";
+  attached: boolean;
+  ready: boolean;
+};
+
+export type AppHealthCapabilities = {
+  core: number;
+  available: number;
+};
+
 export type HostHealth = {
   ok: boolean;
   protocolVersion: number;
   version: string;
   uptimeMs: number;
+  /** Optional additive diagnostics; older consumers can ignore these fields. */
+  runtime?: AppHealthRuntime;
+  workspace?: AppHealthWorkspace;
+  capabilities?: AppHealthCapabilities;
+  incidents?: DiagnosticIncidentSummary[];
 };
 
 /** Main-owned registration state for the global summon-window shortcut. */

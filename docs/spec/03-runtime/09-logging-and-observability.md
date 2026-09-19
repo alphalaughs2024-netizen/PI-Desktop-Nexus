@@ -35,6 +35,21 @@ are wrapped into records on their channel. The audit channel is stored in
 SQLite, owned exclusively by host-core, so it remains queryable independently
 of rotating diagnostic files.
 
+### 3b. Bounded incident summaries
+
+Electron Main maintains a process-local incident index alongside the raw
+category files. Records are admitted only when a call supplies a stable
+diagnostic `code`; equivalent records are grouped by
+`channel/category/code` and exposed through the additive `app.health`
+`incidents` field. Each summary contains `code`, `fingerprint`, `count`,
+`firstSeen`, `lastSeen`, `retryable`, and an optional short `suggestedAction`.
+
+The index is capped at 64 entries, expires entries 24 hours after their last
+observation, and is cleared when the process restarts. Raw NDJSON records are
+still retained and rotated independently. Summaries never retain the original
+message, stack, response body, path, session text, credentials, or arbitrary
+tool arguments; health is read-only and local-only.
+
 ### 3a. Category routing
 
 The three process channels are directories, not aggregate files. Main-process
@@ -177,3 +192,7 @@ Session transcripts are user data and are not deleted by log rotation.
    broken pipe.
 6. Host restart, permission failure, shell timeout, and process abort remain
    diagnosable from stable lifecycle records and error codes.
+7. `app.health` preserves the compatibility fields and, when available,
+   reports bounded incident summaries plus workspace mode, capability counts,
+   updater state/classification, and summon-shortcut registration state without
+   sensitive payloads.

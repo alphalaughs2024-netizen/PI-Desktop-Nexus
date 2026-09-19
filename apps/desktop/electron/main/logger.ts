@@ -39,6 +39,143 @@ export type LogFields = {
   data?: unknown;
 };
 
+export type DiagnosticIncidentSummary = {
+  code: string;
+  fingerprint: string;
+  count: number;
+  firstSeen: string;
+  lastSeen: string;
+  retryable: boolean;
+  suggestedAction?: string;
+};
+
+type IncidentInput = {
+  channel: LogChannel;
+  category: LogCategory;
+  level: LogLevel;
+  code?: string;
+  at?: number;
+};
+
+type IncidentRecord = DiagnosticIncidentSummary & {
+  lastSeenMs: number;
+};
+
+const INCIDENT_MAX_ENTRIES = 64;
+const INCIDENT_TTL_MS = 24 * 60 * 60 * 1000;
+
+const INCIDENT_ACTIONS: Record<string, { retryable: boolean; suggestedAction?: string }> = {
+  UPDATE_FEED_UNAVAILABLE: {
+    retryable: true,
+    suggestedAction: "Retry after a release is published.",
+  },
+  UPDATE_NETWORK: {
+    retryable: true,
+    suggestedAction: "Check the network connection and retry.",
+  },
+  UPDATE_CONFIGURATION: {
+    retryable: false,
+    suggestedAction: "Install a build with a configured update feed.",
+  },
+  UPDATE_TIMEOUT: {
+    retryable: true,
+    suggestedAction: "Retry when the update service responds.",
+  },
+  SHORTCUT_CONFLICT: {
+    retryable: false,
+    suggestedAction: "Choose another shortcut or restore the default.",
+  },
+  SHORTCUT_UNAVAILABLE: {
+    retryable: false,
+    suggestedAction: "Choose another shortcut or disable it.",
+  },
+  HOST_UNAVAILABLE: {
+    retryable: true,
+    suggestedAction: "Restart the local service.",
+  },
+};
+
+// Stable diagnostic codes are deliberately narrower than arbitrary strings:
+// allowing only uppercase token-style identifiers prevents paths, URLs, or
+// user-provided values from becoming part of a health fingerprint.
+const INCIDENT_CODE_RE = /^[A-Z][A-Z0-9_]{0,95}$/;
+const SENSITIVE_INCIDENT_CODE_RE =
+  /(?:TOKEN|SECRET|PASSWORD|CREDENTIAL|PRIVATE|API[_-]?KEY)/;
+
+function normalizeIncidentCode(value: string | undefined): string | undefined {
+  const code = value?.trim();
+  return code && INCIDENT_CODE_RE.test(code) && !SENSITIVE_INCIDENT_CODE_RE.test(code)
+    ? code
+    : undefined;
+}
+
+/**
+ * Process-local, privacy-safe incident aggregation. It intentionally accepts
+ * only stable codes and stores no message, arguments, paths, or stack text.
+ */
+export class IncidentIndex {
+  private readonly now: () => number;
+  private readonly maxEntries: number;
+  private readonly ttlMs: number;
+  private readonly entries = new Map<string, IncidentRecord>();
+
+  constructor(options: { now?: () => number; maxEntries?: number; ttlMs?: number } = {}) {
+    this.now = options.now ?? Date.now;
+    this.maxEntries = Math.max(1, options.maxEntries ?? INCIDENT_MAX_ENTRIES);
+    this.ttlMs = Math.max(1, options.ttlMs ?? INCIDENT_TTL_MS);
+  }
+
+  record(input: IncidentInput): void {
+    const code = normalizeIncidentCode(input.code);
+    if (!code) return;
+    const atMs = input.at ?? this.now();
+    this.prune(atMs);
+    const fingerprint = `${input.channel}/${input.category}/${code}`;
+    const existing = this.entries.get(fingerprint);
+    const action = INCIDENT_ACTIONS[code];
+    if (existing) {
+      existing.count += 1;
+      existing.lastSeenMs = atMs;
+      existing.lastSeen = new Date(atMs).toISOString();
+      return;
+    }
+    this.entries.set(fingerprint, {
+      code,
+      fingerprint,
+      count: 1,
+      firstSeen: new Date(atMs).toISOString(),
+      lastSeen: new Date(atMs).toISOString(),
+      lastSeenMs: atMs,
+      retryable: action?.retryable ?? input.level !== "error",
+      ...(action?.suggestedAction ? { suggestedAction: action.suggestedAction } : {}),
+    });
+    this.enforceCapacity();
+  }
+
+  snapshot(): DiagnosticIncidentSummary[] {
+    this.prune(this.now());
+    return [...this.entries.values()]
+      .sort((left, right) => right.lastSeenMs - left.lastSeenMs)
+      .map(({ lastSeenMs: _lastSeenMs, ...summary }) => ({ ...summary }));
+  }
+
+  private prune(now: number): void {
+    for (const [fingerprint, entry] of this.entries) {
+      if (now - entry.lastSeenMs > this.ttlMs) this.entries.delete(fingerprint);
+    }
+  }
+
+  private enforceCapacity(): void {
+    while (this.entries.size > this.maxEntries) {
+      const oldest = [...this.entries.values()].sort(
+        (left, right) => left.lastSeenMs - right.lastSeenMs,
+      )[0];
+      if (!oldest) return;
+      this.entries.delete(oldest.fingerprint);
+    }
+  }
+}
+
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
 const KEEP_ROTATED = 2;
 const CONSOLE_METHODS = ["debug", "info", "log", "warn", "error"] as const;
@@ -108,6 +245,7 @@ export class Logger {
   private minLevel: LogLevel;
   private sizes = new Map<string, number>();
   private childBuffers = new Map<LogChannel, string>();
+  private readonly incidents = new IncidentIndex();
 
   constructor(dataDir: string, minLevel: LogLevel = "info") {
     this.dir = join(dataDir, "logs");
@@ -173,13 +311,20 @@ export class Logger {
   ) {
     if (this.levelAt(level) < this.levelAt(this.minLevel)) return;
     const safeMessage = String(redactValue(message));
+    const safeFields = redactValue(fields) as LogFields;
+    this.incidents.record({
+      channel,
+      category,
+      level,
+      code: typeof safeFields.code === "string" ? safeFields.code : undefined,
+    });
     const record = {
       ts: new Date().toISOString(),
       level,
       channel,
       category,
       message: safeMessage,
-      ...(redactValue(fields) as LogFields),
+      ...safeFields,
     };
     const line = JSON.stringify(record) + "\n";
     try {
@@ -202,6 +347,10 @@ export class Logger {
         // AppImage) must never become an uncaught main-process exception.
       }
     }
+  }
+
+  getIncidentSummaries(): DiagnosticIncidentSummary[] {
+    return this.incidents.snapshot();
   }
 
   app(

@@ -20,6 +20,7 @@ import type { UpdateInfo, ProgressInfo } from "electron-updater";
 import {
   formatChangelogNotes,
   IPC,
+  type AppHealthUpdater,
   type UpdateMode,
   type UpdateState,
 } from "@pi-desktop/shared";
@@ -137,6 +138,7 @@ export class AppUpdaterController {
       this.setState({ status: "checking", error: undefined });
     });
     autoUpdater.on("update-available", (info: UpdateInfo) => {
+      this.failureClass = undefined;
       this.setState({
         status: this.state.mode === "in-app" ? "downloading" : "available",
         availableVersion: info.version,
@@ -145,6 +147,7 @@ export class AppUpdaterController {
       });
     });
     autoUpdater.on("update-not-available", () => {
+      this.failureClass = undefined;
       this.setState({
         status: "up-to-date",
         availableVersion: undefined,
@@ -203,6 +206,19 @@ export class AppUpdaterController {
 
   getFailureClass(): UpdateFailureClass | undefined {
     return this.failureClass;
+  }
+
+  /**
+   * Renderer-safe updater diagnostics for the additive `app.health` response.
+   * Keep this separate from `getState()` so release URLs, notes, and other UI
+   * fields cannot accidentally become part of the health contract.
+   */
+  getDiagnosticSnapshot(): AppHealthUpdater {
+    return {
+      mode: this.state.mode,
+      status: this.state.status,
+      ...(this.failureClass ? { classification: this.failureClass } : {}),
+    };
   }
 
   /**
@@ -272,7 +288,10 @@ export class AppUpdaterController {
       // callers so the invoke rejects and the UI can toast it.
       if (options.manual) throw error;
     }
-    if (this.state.status !== "error") this.lastAutomaticFailureKey = null;
+    if (this.state.status !== "error") {
+      this.failureClass = undefined;
+      this.lastAutomaticFailureKey = null;
+    }
     return this.state;
   }
 

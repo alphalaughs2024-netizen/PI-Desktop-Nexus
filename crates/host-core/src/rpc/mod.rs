@@ -1204,11 +1204,25 @@ async fn handle_request(
         "app.health" => {
             let st = state.lock().await;
             let budget = st.tool_budget.snapshot();
+            let workspace_attached = st.workspace.get().is_some();
+            let core_capabilities = tools::builtin_tool_defs()
+                .as_array()
+                .map(|definitions| definitions.len())
+                .unwrap_or(0);
             Ok(json!({
                 "ok": true,
                 "protocolVersion": PROTOCOL_VERSION,
                 "version": HOST_VERSION,
                 "uptimeMs": st.uptime_ms(),
+                "workspace": {
+                    "mode": if workspace_attached { "project-attached" } else { "scratch-only" },
+                    "attached": workspace_attached,
+                    "ready": st.handshook && !st.shutting_down
+                },
+                "capabilities": {
+                    "core": core_capabilities,
+                    "available": core_capabilities
+                },
                 "toolBudget": {
                     "active": budget.active,
                     "queued": budget.queued,
@@ -4014,6 +4028,45 @@ mod tests {
             error.data.as_ref().and_then(|data| data.get("errorCode")),
             Some(&json!("MODEL_ALIAS_TOO_LONG"))
         );
+    }
+
+    #[tokio::test]
+    async fn app_health_preserves_compatibility_fields_and_reports_safe_runtime_state() {
+        let data_dir = tempfile::tempdir().unwrap();
+        let mut app_state = AppState::open(data_dir.path()).unwrap();
+        app_state.handshook = true;
+        let state = Arc::new(Mutex::new(app_state));
+        let (tx, _rx) = mpsc::unbounded_channel();
+
+        let health = handle_request(state.clone(), "app.health", json!({}), tx.clone())
+            .await
+            .unwrap();
+        for field in ["ok", "protocolVersion", "version", "uptimeMs", "toolBudget"] {
+            assert!(health.get(field).is_some(), "missing compatibility field {field}");
+        }
+        assert_eq!(health["workspace"]["mode"], "scratch-only");
+        assert_eq!(health["workspace"]["attached"], false);
+        assert_eq!(health["workspace"]["ready"], true);
+        assert!(health["capabilities"]["core"].as_u64().unwrap() > 0);
+        assert_eq!(health["capabilities"]["core"], health["capabilities"]["available"]);
+        assert!(health.get("incidents").is_none());
+
+        let workspace = data_dir.path().join("project");
+        fs::create_dir_all(&workspace).unwrap();
+        handle_request(
+            state.clone(),
+            "workspace.set",
+            json!({ "path": workspace }),
+            tx.clone(),
+        )
+        .await
+        .unwrap();
+        let attached = handle_request(state, "app.health", json!({}), tx)
+            .await
+            .unwrap();
+        assert_eq!(attached["workspace"]["mode"], "project-attached");
+        assert_eq!(attached["workspace"]["attached"], true);
+        assert_eq!(attached["workspace"]["ready"], true);
     }
 
     #[tokio::test]
