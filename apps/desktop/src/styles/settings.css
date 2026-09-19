@@ -713,6 +713,86 @@
   padding: 16px 14px;
 }
 
+.workspace-empty {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 96px;
+  padding: 18px 20px;
+  border-radius: var(--radius-lg);
+  background: var(--ds-tile);
+  color: var(--ds-text-primary);
+}
+
+.workspace-empty-icon {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: var(--radius-md-plus);
+  background: color-mix(in oklab, var(--ds-accent) 14%, transparent);
+  color: var(--ds-accent);
+}
+
+.workspace-empty-copy {
+  min-width: 0;
+  flex: 1;
+}
+
+.workspace-empty-copy h2 {
+  margin: 0;
+  color: inherit;
+  font-size: var(--text-md-plus);
+  font-weight: var(--font-weight-strong);
+}
+
+.workspace-empty-copy p {
+  max-width: 58ch;
+  margin: 4px 0 0;
+  color: var(--ds-text-secondary);
+  font-size: var(--text-sm);
+  line-height: var(--leading-body);
+}
+
+.workspace-path {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+}
+
+.workspace-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.workspace-status {
+  white-space: nowrap;
+}
+
+.workspace-actions {
+  gap: 6px;
+  max-width: none;
+}
+
+@media (max-width: 620px) {
+  .workspace-empty {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .workspace-empty-copy {
+    flex-basis: calc(100% - 58px);
+  }
+
+  .workspace-empty > .btn {
+    margin-left: 56px;
+  }
+}
+
 .settings-about-meta {
   display: flex;
   flex-direction: column;

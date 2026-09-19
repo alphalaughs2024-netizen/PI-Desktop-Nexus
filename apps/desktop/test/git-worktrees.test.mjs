@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import test from "node:test";
 import { createRequire } from "node:module";
 import { execFileSync } from "node:child_process";
@@ -14,6 +15,7 @@ const requireFromRuntime = createRequire(join(repoRoot, "packages/agent-runtime/
 const loadTypeScript = requireFromRuntime("jiti")(join(repoRoot, "packages/agent-runtime/jiti-runner.cjs"));
 const {
   managedWorktreePath,
+  listManagedWorktreeInventory,
   runGitWorktreeOperation,
   validateManagedBranch,
   validateManagedRecord,
@@ -23,6 +25,42 @@ const {
   getGitWorkspaceMode,
   setGitWorkspaceMode,
 } = loadTypeScript(join(desktopRoot, "electron/main/git-worktrees.ts"));
+
+test("retains a valid recorded worktree when its repository is unavailable", async () => {
+  const root = mkdtempSync(join(tmpdir(), "nexus-git-inventory-missing-"));
+  const dataDir = join(root, "profile");
+  const repositoryPath = join(root, "removed-project");
+  const branch = "nexus/stale";
+  const worktreePath = managedWorktreePath(repositoryPath, branch);
+  const recordDir = join(dataDir, "agent-capabilities", "git-worktrees");
+  const recordPath = join(
+    recordDir,
+    `${createHash("sha256").update(`${repositoryPath}\\0${branch}`).digest("hex")}.json`,
+  );
+  mkdirSync(recordDir, { recursive: true });
+  writeFileSync(
+    recordPath,
+    JSON.stringify({
+      repositoryPath,
+      branch,
+      worktreePath,
+      createdAt: "2026-09-11T00:00:00.000Z",
+    }),
+  );
+  try {
+    const rows = await listManagedWorktreeInventory(dataDir);
+    assert.deepEqual(rows, [{
+      repositoryPath,
+      branch,
+      worktreePath,
+      managed: true,
+      exists: false,
+      createdAt: "2026-09-11T00:00:00.000Z",
+    }]);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
 
 test("persists direct-folder mode without changing the selected folder", () => {
   const root = mkdtempSync(join(tmpdir(), "nexus-git-mode-"));

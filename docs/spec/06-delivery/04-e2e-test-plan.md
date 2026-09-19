@@ -10566,7 +10566,13 @@ existing three-failed-`Edit` recovery scenario remains unchanged.
   lifecycle. A source copy is never initialized and has no Git worktree tool or
   workflow guidance. A hard lifecycle failure ends Git attempts for that turn;
   changing project clears the old blocker. The inventory excludes arbitrary user
-  worktrees and cleanup refuses unknown, dirty, or unmerged records.
+  worktrees and cleanup refuses unknown, dirty, or unmerged records. With no
+  recorded rows, Settings → Workspaces shows a compact empty-state tile with
+  an **Open a project** action. Long paths are shortened with full-path tooltips,
+  dates follow the selected app locale, and Open/Reveal/Clean up expose pending
+  state and a toast when their host action fails. A profile-recorded worktree
+  whose repository was removed remains visible as **Folder unavailable** and
+  has no enabled action.
 
 Desktop smoke coverage should verify that the work-panel header does not cover
 Windows/Linux native controls, plugin views remain visible while resizing, and
