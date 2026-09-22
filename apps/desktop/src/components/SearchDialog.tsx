@@ -13,7 +13,7 @@ import {
   searchSettings,
   type SettingsSearchHit,
 } from "../lib/settings-search";
-import type { SessionSummary, CommandItem } from "@pi-desktop/shared";
+import type { SessionSummary, CommandItem, SessionSearchHit } from "@pi-desktop/shared";
 import type { SessionMeta } from "../lib/sidebar-preferences";
 import {
   IconAt,
@@ -51,6 +51,8 @@ type SearchRow = {
   projectLabel: string;
   /** Flat option index across the whole listbox (0 = "new task" row). */
   optionIndex: number;
+  contentMatch?: boolean;
+  snippet?: string;
 };
 
 const DAY_MS = 86_400_000;
@@ -119,15 +121,29 @@ export function SearchDialog({
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
   const [commandHits, setCommandHits] = useState<CommandItem[]>([]);
+  const [contentHits, setContentHits] = useState<SessionSearchHit[] | null>(null);
 
   useEffect(() => {
     if (!open) return;
     setQuery("");
     setActive(0);
     setCommandHits([]);
+    setContentHits(null);
     // Catch sessions renamed/created since the last store refresh.
     void refreshSessions().catch(() => undefined);
   }, [open, refreshSessions]);
+
+  useEffect(() => {
+    const q = query.trim();
+    if (!open || !q) { setContentHits(null); return; }
+    let cancelled = false;
+    const timer = window.setTimeout(() => {
+      void api.searchSessions(q).then((result) => {
+        if (!cancelled) setContentHits(result.hits as SessionSearchHit[]);
+      }).catch(() => { if (!cancelled) setContentHits([]); });
+    }, 120);
+    return () => { cancelled = true; window.clearTimeout(timer); };
+  }, [open, query]);
 
   // Surface command-palette commands inside global search so a single
   // surface covers sessions, pages, settings, and commands.
@@ -157,6 +173,7 @@ export function SearchDialog({
   const rows = useMemo<SearchRow[]>(() => {
     const q = query.trim().toLowerCase();
     const candidates: Omit<SearchRow, "optionIndex">[] = [];
+    const remote = q && contentHits ? new Map(contentHits.map((hit) => [hit.session.id, hit])) : null;
     for (const session of sessions) {
       // Untitled drafts carry no searchable signal; they stay sidebar-only.
       if (isDefaultSessionTitle(session.title)) continue;
@@ -170,21 +187,26 @@ export function SearchDialog({
         : t("nav.temporarySessions");
       if (q) {
         const title = (session.title || "").toLowerCase();
-        if (!title.includes(q) && !projectLabel.toLowerCase().includes(q)) {
+        const hit = remote?.get(session.id);
+        if (!title.includes(q) && !projectLabel.toLowerCase().includes(q) && !hit) {
           continue;
         }
+        candidates.push({ session, archived, projectLabel, contentMatch: Boolean(hit && !title.includes(q) && !projectLabel.toLowerCase().includes(q)), snippet: hit?.matches?.[0]?.snippet });
+        continue;
       }
       candidates.push({ session, archived, projectLabel });
     }
     candidates.sort((a, b) => {
       const aTs = Date.parse(a.session.updatedAt || "") || 0;
       const bTs = Date.parse(b.session.updatedAt || "") || 0;
-      return bTs - aTs || a.session.id.localeCompare(b.session.id);
+      const aContent = a.contentMatch ? 1 : 0;
+      const bContent = b.contentMatch ? 1 : 0;
+      return aContent - bContent || bTs - aTs || a.session.id.localeCompare(b.session.id);
     });
     return candidates
       .slice(0, q ? 50 : 30)
       .map((row, index) => ({ ...row, optionIndex: index + 1 }));
-  }, [sessions, sessionMeta, projectNames, query, t]);
+  }, [sessions, sessionMeta, projectNames, query, contentHits, t]);
 
   const groups = useMemo(() => {
     const now = new Date();
@@ -385,6 +407,9 @@ export function SearchDialog({
                       <span className="search-item-title">
                         {highlightMatch(row.session.title, query)}
                       </span>
+                      {row.snippet ? (
+                        <span className="search-item-snippet">{row.snippet}</span>
+                      ) : null}
                       <span className="search-item-meta">
                         {runningSessions[row.session.id] ? (
                           <span
