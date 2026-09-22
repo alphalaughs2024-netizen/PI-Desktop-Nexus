@@ -6784,6 +6784,26 @@ export class DesktopAgentRuntime {
     this.compactionAbort?.abort();
   }
 
+  steeringContext(expectedTurnId: string): { projectPath?: string; supportsVision: boolean } {
+    if (this.disposed || this.runCancelled || !this.getStatus().isRunning || expectedTurnId !== this.turnId) {
+      throw Object.assign(new Error("No active turn to steer"), { errorCode: "TURN_NOT_FOUND" });
+    }
+    return { projectPath: this.projectPath, supportsVision: this.model.input.includes("image") };
+  }
+
+  steer(input: RuntimePrompt, expectedTurnId: string, message?: UiMessage): { accepted: boolean; turnId: string } {
+    this.steeringContext(expectedTurnId);
+    const content = promptContent(input);
+    const agentMessage: AgentMessage = { role: "user", content, timestamp: Date.now() };
+    this.agent.steer(agentMessage);
+    if (message) {
+      this.appendLiveEntry(message.id, agentMessage);
+      this.emit({ type: "message_start", message });
+      this.emit({ type: "message_end", message });
+    }
+    return { accepted: true, turnId: this.turnId! };
+  }
+
   /** Ask pi-agent-core to stop after the current assistant/tool turn. */
   requestGracefulStop(): { requested: boolean } {
     if (this.disposed || !this.agent.state.isStreaming) {
