@@ -852,6 +852,7 @@ export type AppState = {
   isRunning: boolean;
   /** Run state per session id — sessions run independent agents. */
   runningSessions: Record<string, boolean>;
+  activeTurnIds: Record<string, string>;
   /** Runtime-owned phase for explaining quiet intervals in active turns. */
   agentStatuses: Record<string, AgentStatus>;
   /** Latest in-memory result for each session, used by the active transcript. */
@@ -933,6 +934,7 @@ export type AppState = {
   removeQueuedPrompt: (promptId: string) => void;
   sendQueuedNow: (promptId: string) => Promise<void>;
   moveQueuedPrompt: (promptId: string, direction: "up" | "down") => Promise<void>;
+  steerActiveTurn: (content: string) => Promise<boolean>;
   editQueuedPrompt: (promptId: string) => void;
   refreshQueuedPrompts: (sessionId: string) => Promise<void>;
   applyQueueChanged: (event: AgentQueueChangedEvent) => void;
@@ -1367,6 +1369,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   draftConfiguration: null,
   isRunning: false,
   runningSessions: {},
+  activeTurnIds: {},
   agentStatuses: {},
   latestTurnResults: {},
   sessionOutcomes: {},
@@ -2229,6 +2232,15 @@ export const useAppStore = create<AppState>((set, get) => ({
     set((state) => ({ queuedPrompts: reorderQueuedPrompt(state.queuedPrompts, sessionId, promptId, direction) }));
     try { const result = await api.reorderQueuedPrompt(promptId, direction); if (!result.moved) await get().refreshQueuedPrompts(sessionId); }
     catch (error) { await get().refreshQueuedPrompts(sessionId); get().showToast(error instanceof Error ? error.message : String(error), { variant: "error" }); }
+  },
+
+  steerActiveTurn: async (content) => {
+    const state = get();
+    const sessionId = state.activeSessionId;
+    const turnId = sessionId ? state.activeTurnIds[sessionId] : undefined;
+    if (!sessionId || !turnId || !state.runningSessions[sessionId] || !content.trim()) return false;
+    try { await api.steer({ sessionId, expectedTurnId: turnId, content: content.trim() }); return true; }
+    catch (error) { get().showToast(error instanceof Error ? error.message : String(error), { variant: "error" }); return false; }
   },
 
   refreshQueuedPrompts: async (sessionId) => {
@@ -3867,6 +3879,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     ) {
       set((s) => ({
         runningSessions: { ...s.runningSessions, [envelope.sessionId]: true },
+        ...(envelope.turnId ? { activeTurnIds: { ...s.activeTurnIds, [envelope.sessionId]: envelope.turnId } } : {}),
         sessionOutcomes: withoutRecordKey(s.sessionOutcomes, envelope.sessionId),
         latestTurnResults: withoutRecordKey(
           s.latestTurnResults,
@@ -3876,6 +3889,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     } else if (event.type === "compaction_end" && event.reason === "manual") {
       set((s) => ({
         runningSessions: { ...s.runningSessions, [envelope.sessionId]: false },
+        activeTurnIds: withoutRecordKey(s.activeTurnIds, envelope.sessionId),
       }));
       void flushPendingSessionConfiguration(envelope.sessionId);
       void get().refreshQueuedPrompts(envelope.sessionId);

@@ -629,6 +629,7 @@ export function Composer({
   const removeQueuedPrompt = useAppStore((s) => s.removeQueuedPrompt);
   const sendQueuedNow = useAppStore((s) => s.sendQueuedNow);
   const moveQueuedPrompt = useAppStore((s) => s.moveQueuedPrompt);
+  const steerActiveTurn = useAppStore((s) => s.steerActiveTurn);
   const editQueuedPrompt = useAppStore((s) => s.editQueuedPrompt);
   const abort = useAppStore((s) => s.abort);
   const isRunning = useAppStore((s) => s.isRunning);
@@ -2316,6 +2317,11 @@ export function Composer({
                       acceptCompletion(composerAc.highlight);
                       return;
                     }
+                  }
+                  if (e.key === "Enter" && e.altKey && !e.shiftKey && isRunning && hasDraftContent) {
+                    e.preventDefault();
+                    void steerActiveTurn(value);
+                    return;
                   }
                   if (e.key === "Enter" && !e.shiftKey && enterToSend) {
                     e.preventDefault();
