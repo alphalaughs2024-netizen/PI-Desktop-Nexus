@@ -5,7 +5,7 @@
 
 - 基线版本：`0.4.16`
 - 日期：`2026-08-14`
-- 状态：`Frozen for implementation details (Plan checkpoint artifact + approval/execution startup fence + protocol v11 + schema v15 + host-owned plugin session import/read/update/delete P0/P1 + selectable shell catalog + icon-free composer prompt row + turn-boundary context checkpoint compaction + session-scoped work panel + pi-owned model metadata + provider/runtime safety + M5 hardening + settings IA + project archive + sidebar organization + app update delivery + three-platform release + Extensions page density and theme-readable actions + custom global UI font)`
+- 状态：`Frozen for implementation details (Plan checkpoint artifact + approval/execution startup fence + protocol v11 + schema v17 + host-owned plugin session import/read/update/delete P0/P1 + selectable shell catalog + icon-free composer prompt row + turn-boundary context checkpoint compaction + session-scoped work panel + pi-owned model metadata + provider/runtime safety + M5 hardening + settings IA + project archive + sidebar organization + app update delivery + three-platform release + Extensions page density and theme-readable actions + custom global UI font)`
 - 语言政策：**英语优先**
 - 后端策略：**Rust 主机核心 + pi 代理 sidecar**
 
@@ -79,7 +79,7 @@
 > 当前基线后的修订通过 ADR 0200 / D367 增加了 P0/P1 宿主拥有的插件会话
 > API，通过 ADR 0201 / D368 增加显式项目 id 与宿主拥有的会话刷新，并通过
 > ADR 0203 / D370（D372 收紧目录与绑定）增加默认关闭的本地 MCP 控制面。协议
-> 仍为 v11；schema v15 在 v14（插件来源 sidecar 和软删除标记）之上增加 Host 拥有的回合队列
+> 仍为 v11；schema v17 在 v14（插件来源 sidecar 和软删除标记）之上增加 Host 拥有的回合队列
 > （D386 / ADR 0213）。会话变更、任意重新
 > 绑定、provider/model 绑定、批量删除和标签操作仍延期；导入会话只有在显式提供
 > `projectId` 时才允许进行这项有限的项目绑定。本地控制面只绑定回环，不会重新打开

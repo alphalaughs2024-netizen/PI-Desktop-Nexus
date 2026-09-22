@@ -2,7 +2,7 @@
 
 - Baseline Version: `0.4.16`
 - Date: `2026-08-14`
-- Status: `Frozen for implementation details (Plan checkpoint artifact + approval/execution startup fence + protocol v11 + schema v15 + host-owned plugin session import/read/update/delete P0/P1 + selectable shell catalog + icon-free composer prompt row + turn-boundary context checkpoint compaction + session-scoped work panel + edge-specific work-panel/chat resize ownership + models.dev model catalog with a bundled release snapshot + provider/runtime safety + M5 hardening + settings IA + project archive + sidebar organization + app update delivery + three-platform release + Extensions page density and theme-readable actions + custom global UI font)`
+- Status: `Frozen for implementation details (Plan checkpoint artifact + approval/execution startup fence + protocol v11 + schema v17 + host-owned plugin session import/read/update/delete P0/P1 + selectable shell catalog + icon-free composer prompt row + turn-boundary context checkpoint compaction + session-scoped work panel + edge-specific work-panel/chat resize ownership + models.dev model catalog with a bundled release snapshot + provider/runtime safety + M5 hardening + settings IA + project archive + sidebar organization + app update delivery + three-platform release + Extensions page density and theme-readable actions + custom global UI font)`
 - Language policy: **English-first**
 - Backend policy: **Rust host core + pi agent sidecar**
 
@@ -81,7 +81,7 @@
 > The current post-baseline amendments add the P0/P1 host-owned plugin session
 > API through ADR 0200 / D367, explicit project ids plus host-owned session
 > refresh through ADR 0201 / D368, and the opt-in local MCP control plane
-> through ADR 0203 / D370 (catalog and bind tightened by D372). Protocol v11 remains unchanged; schema v15 adds the Host-owned turn queue
+> through ADR 0203 / D370 (catalog and bind tightened by D372). Protocol v11 remains unchanged; schema v17 includes the Host-owned turn queue
 > (D386 / ADR 0213) on top of schema v14, which added the
 > plugin origin sidecar and soft-delete marker. Schema v16 adds the Nexus-only
 > host-owned Context Vault (ADR 0217): project-scoped claims, manual JSON

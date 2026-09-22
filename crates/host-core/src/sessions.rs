@@ -3402,8 +3402,7 @@ mod tests {
         )
         .unwrap();
 
-        let canonical = project
-            .canonicalize()
+        let canonical = crate::workspace::simple_canonicalize(&project)
             .unwrap()
             .to_string_lossy()
             .replace('\\', "/");

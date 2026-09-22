@@ -621,7 +621,8 @@ mod tests {
         first.project_path = Some(project_path.clone());
         let record = registry.upsert(first).unwrap();
         let target = dir.path().join(".agents/servers/files.json");
-        assert_eq!(record.path.as_deref(), target.to_str());
+        let expected_target = crate::workspace::simple_canonicalize(&target).unwrap();
+        assert_eq!(record.path.as_deref(), expected_target.to_str());
         assert!(!fs::read_to_string(&target).unwrap().contains("enabled"));
 
         let mut duplicate = stdio("other");
