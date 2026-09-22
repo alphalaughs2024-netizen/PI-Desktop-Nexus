@@ -575,7 +575,13 @@ function AppShell() {
   useEffect(() => {
     if (bootstrapStartedRef.current) return;
     bootstrapStartedRef.current = true;
+    const watchdog = window.setTimeout(() => {
+      if (!useAppStore.getState().ready) {
+        setBackendDown({ fatal: true, component: "startup", message: "STARTUP_TIMEOUT" });
+      }
+    }, 30_000);
     void bootstrap();
+    return () => window.clearTimeout(watchdog);
   }, [bootstrap]);
 
   // The Host owns the prompt queue (D375); mirror it whenever the visible
