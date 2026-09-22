@@ -1,6 +1,13 @@
 import type { ChangelogEntry } from "./changelog.js";
 
 export const frEntries: ChangelogEntry[] = [{
+  version: "0.0.5",
+  date: "2026-09-23",
+  highlights: [
+    "Améliore Workspaces avec un état vide utile, une action d’ouverture de projet, des métadonnées localisées, des badges d’état et des actions de ligne protégées.",
+    "Corrige les surfaces des réglages dans les quatre thèmes scenic intégrés afin de garder les lignes de l’archive des projets lisibles sans cadre extérieur.",
+  ],
+}, {
   version: "0.0.4",
   date: "2026-09-18",
   highlights: [

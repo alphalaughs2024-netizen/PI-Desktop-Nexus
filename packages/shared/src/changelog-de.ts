@@ -1,6 +1,13 @@
 import type { ChangelogEntry } from "./changelog.js";
 
 export const deEntries: ChangelogEntry[] = [{
+  version: "0.0.5",
+  date: "2026-09-23",
+  highlights: [
+    "Verbessert Workspaces mit einem hilfreichen Leerzustand, einer Projektaktion, lokalisierten Metadaten, Statusbadges und geschützten Zeilenaktionen.",
+    "Behebt die Einstellungen-Oberflächen aller vier integrierten Scenic-Themes, sodass Projektarchiv-Zeilen lesbar bleiben und kein äußerer Rahmen erscheint.",
+  ],
+}, {
   version: "0.0.4",
   date: "2026-09-18",
   highlights: [
