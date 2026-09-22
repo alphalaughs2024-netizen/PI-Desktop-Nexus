@@ -1540,6 +1540,14 @@ async fn handle_request(
                 .map_err(|e| rpc_err(1000, e.to_string(), "INTERNAL"))?;
             Ok(json!({ "sessions": sessions }))
         }
+        "session.search" => {
+            let query = params.get("query").and_then(|v| v.as_str()).unwrap_or("");
+            let offset = params.get("offset").and_then(|v| v.as_i64()).unwrap_or(0);
+            let st = state.lock().await;
+            let page = crate::session_search::search(&st.db, query, offset)
+                .map_err(|e| rpc_err(1000, e.to_string(), "INTERNAL"))?;
+            Ok(serde_json::to_value(page).map_err(|e| rpc_err(1000, e.to_string(), "INTERNAL"))?)
+        }
         "session.create" => {
             let thinking_level = thinking_level_param(&params)?;
             let st = state.lock().await;
@@ -2165,6 +2173,13 @@ async fn handle_request(
             notifications::mark_all_read(&st.db)
                 .map_err(|e| rpc_err(1000, e.to_string(), "INTERNAL"))?;
             Ok(json!({ "ok": true }))
+        }
+        "session.queueReorder" => {
+            let id = params.get("id").and_then(|v| v.as_str()).ok_or_else(|| rpc_err(1002, "id required", "INVALID_PARAMS"))?;
+            let direction = params.get("direction").and_then(|v| v.as_str()).unwrap_or("");
+            let st = state.lock().await;
+            let moved = turn_queue::reorder(&st.db, id, direction).map_err(|e| rpc_err(1000, e.to_string(), "INTERNAL"))?;
+            Ok(json!({ "moved": moved }))
         }
         "notification.clear" => {
             let st = state.lock().await;

@@ -19,6 +19,7 @@ mod scheduled;
 mod scratch;
 mod secrets;
 mod sessions;
+mod session_search;
 mod state;
 mod tool_budget;
 mod tools;

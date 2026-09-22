@@ -9,6 +9,7 @@ import type {
   AgentCompactRequest,
   AgentCompactResponse,
   AgentPromptRequest,
+  AgentSteerRequest,
   UiMessage,
   MessageRevisionSummary,
   AgentPromptResponse,
@@ -550,6 +551,8 @@ export const api = {
     invoke<{ workspace: ProjectWorkspace | null; canceled?: boolean }>(
       IPC.invoke.projectOpen,
     ),
+  cloneProject: (url: string, parentPath: string, name?: string) =>
+    invoke<{ workspace: ProjectWorkspace; canceled: false }>(IPC.invoke.projectClone, { url, parentPath, name }),
   pickFiles: () =>
     invoke<{ token: string | null; canceled?: boolean }>(IPC.invoke.composerPickFiles),
   pickPhotos: () =>
@@ -610,6 +613,8 @@ export const api = {
     invoke<{ messages: UiMessage[] }>(IPC.invoke.sessionActivateRevision, input),
   prompt: (req: AgentPromptRequest) =>
     invoke<AgentPromptResponse>(IPC.invoke.agentPrompt, req),
+  steer: (req: AgentSteerRequest) =>
+    invoke<AgentPromptResponse>(IPC.invoke.agentSteer, req),
   enhancePrompt: (req: PromptEnhancementRequest) =>
     invoke<PromptEnhancementResponse>(IPC.invoke.promptEnhance, req),
   compact: (req: AgentCompactRequest) =>
@@ -626,6 +631,10 @@ export const api = {
     invoke(IPC.invoke.agentQueueRemove, { turnId }),
   prioritizeQueuedPrompt: (turnId: string) =>
     invoke(IPC.invoke.agentQueuePrioritize, { turnId }),
+  reorderQueuedPrompt: (turnId: string, direction: "up" | "down") =>
+    invoke<{ moved: boolean }>(IPC.invoke.agentQueueReorder, { turnId, direction }),
+  searchSessions: (query: string, offset = 0) =>
+    invoke<{ hits: unknown[]; nextOffset?: number | null }>(IPC.invoke.sessionSearch, { query, offset }),
   getStatus: (sessionId: string) =>
     invoke<{ status: AgentStatus }>(IPC.invoke.agentGetStatus, sessionId),
   getAgentInstructions: (projectPath?: string) =>

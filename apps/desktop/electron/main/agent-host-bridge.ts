@@ -225,6 +225,10 @@ export function createAgentHostBridge(options: AgentHostBridgeOptions) {
     async prioritize(id) {
       await requireHost().call("session.queuePrioritize", { id });
     },
+    async reorder(id, direction) {
+      await requireHost().call("session.queueReorder", { id, direction });
+      return true;
+    },
   };
 
   const agentHost = new AgentHost({
@@ -272,6 +276,9 @@ export function createAgentHostBridge(options: AgentHostBridgeOptions) {
     },
     async prioritize(turnId: string): Promise<void> {
       await forIpc(() => agentHost.prioritizeTurn(DESKTOP_PRINCIPAL, turnId));
+    },
+    async reorder(turnId: string, direction: "up" | "down"): Promise<{ moved: boolean }> {
+      return { moved: await forIpc(() => agentHost.reorderTurn(DESKTOP_PRINCIPAL, turnId, direction)) };
     },
   };
 

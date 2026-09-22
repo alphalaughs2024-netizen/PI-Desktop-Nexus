@@ -203,6 +203,26 @@ pub fn prioritize(db: &Database, id: &str) -> Result<Option<QueuedTurn>> {
     Ok(Some(entry))
 }
 
+pub fn reorder(db: &Database, id: &str, direction: &str) -> Result<bool> {
+    let conn = db.conn();
+    let tx = conn.unchecked_transaction()?;
+    let Some((session_id, position)): Option<(String, i64)> = tx
+        .prepare_cached("SELECT session_id, position FROM turn_queue WHERE id = ?1")?
+        .query_row(params![id], |row| Ok((row.get(0)?, row.get(1)?)))
+        .optional()?
+    else { return Ok(false); };
+    let neighbor = if direction == "up" {
+        tx.query_row("SELECT id, position FROM turn_queue WHERE session_id = ?1 AND position < ?2 ORDER BY position DESC LIMIT 1", params![session_id, position], |row| Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)?))).optional()?
+    } else if direction == "down" {
+        tx.query_row("SELECT id, position FROM turn_queue WHERE session_id = ?1 AND position > ?2 ORDER BY position ASC LIMIT 1", params![session_id, position], |row| Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)?))).optional()?
+    } else { return Err(anyhow::anyhow!("direction must be up or down")); };
+    let Some((neighbor_id, neighbor_position)) = neighbor else { return Ok(false); };
+    tx.execute("UPDATE turn_queue SET position = ?1 WHERE id = ?2", params![neighbor_position, id])?;
+    tx.execute("UPDATE turn_queue SET position = ?1 WHERE id = ?2", params![position, neighbor_id])?;
+    tx.commit()?;
+    Ok(true)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

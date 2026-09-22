@@ -535,6 +535,16 @@ export class AgentHost {
     return this.toRacpTurn(state, turn);
   }
 
+  async reorderTurn(principal: Principal, turnId: string, direction: "up" | "down"): Promise<boolean> {
+    this.requireRole(principal, "turn/prioritize");
+    const state = this.stateForTurn(turnId);
+    const turn = state.turns.get(turnId)!;
+    if (turn.status !== "queued") throw racpError("CONFLICT", "only a queued turn can be reordered");
+    const moved = await this.queue.reorder(state.id, turn.id, direction);
+    if (moved) { this.renumberQueue(state); this.notifyQueue(state.id); }
+    return moved;
+  }
+
   async respondApproval(principal: Principal, response: RacpApprovalResponse): Promise<RacpApprovalResult> {
     this.requireRole(principal, "approval/respond");
     const request = this.approvals.get(response.approvalId);

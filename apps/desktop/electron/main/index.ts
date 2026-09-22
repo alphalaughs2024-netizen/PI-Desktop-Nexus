@@ -68,6 +68,7 @@ import {
   normalizeMode,
   type AgentEventEnvelope,
   type AgentPromptRequest,
+  type AgentSteerRequest,
   type PromptEnhancementRequest,
   type SessionSummarizeTitleRequest,
   type AgentStopRequest,
@@ -248,6 +249,7 @@ import {
   resolveRealOpenablePath,
 } from "./fs-panel";
 import { getWorkspaceFileIndex } from "./fs-index";
+import { cloneGitRepository } from "./git-clone";
 import {
   importComposerFiles,
   saveComposerPasteFiles,
@@ -6593,6 +6595,12 @@ function registerIpc() {
       ),
     };
   });
+  handle(IPC.invoke.sessionSearch, async (input: { query?: unknown; offset?: unknown } = {}) => {
+    if (!host) throw new Error("host unavailable");
+    const query = typeof input.query === "string" ? input.query : "";
+    const offset = typeof input.offset === "number" && Number.isInteger(input.offset) ? input.offset : 0;
+    return host.call("session.search", { query, offset });
+  });
   handle(IPC.invoke.sessionCreate, async (input = {}) => {
     if (!host) throw new Error("host unavailable");
     const capabilityPromise = sessionCapabilityContext();
@@ -7748,6 +7756,15 @@ function registerIpc() {
     setCurrentWorkspacePath(res.workspace?.path ?? result.filePaths[0]);
     return { workspace: await withGitBranch(res.workspace), canceled: false };
   });
+  handle(IPC.invoke.projectClone, async (input: { url?: unknown; parentPath?: unknown; name?: unknown } = {}) => {
+    const url = typeof input.url === "string" ? input.url : "";
+    const parentPath = typeof input.parentPath === "string" ? input.parentPath : "";
+    const path = await cloneGitRepository({ url, parentPath, ...(typeof input.name === "string" ? { name: input.name } : {}) });
+    if (!host) throw new Error("host unavailable");
+    const res = await host.call("workspace.set", { path });
+    setCurrentWorkspacePath(path);
+    return { workspace: await withGitBranch(res.workspace), canceled: false };
+  });
   handle(IPC.invoke.projectSet, async (path: string) => {
     if (!host) throw new Error("host unavailable");
     setCurrentWorkspacePath(path);
@@ -8758,6 +8775,15 @@ function registerIpc() {
     return result;
   });
 
+  handle(IPC.invoke.agentSteer, async (req: AgentSteerRequest) => {
+    if (!sidecar) throw new Error("sidecar unavailable");
+    if (!req?.sessionId || !req.expectedTurnId || typeof req.content !== "string" ||
+      (!req.content.trim() && !req.attachments?.length)) {
+      throw Object.assign(new Error("sessionId, expectedTurnId, and non-empty content are required"), { errorCode: ErrorCodes.INVALID_ARGUMENT });
+    }
+    return sidecar.call("agent.steer", req);
+  });
+
   handle(IPC.invoke.agentCompact, async (req: { sessionId: string }) => {
     if (!host || !sidecar) throw new Error("backend unavailable");
     if (activeTurns.has(req.sessionId)) {
@@ -8850,6 +8876,10 @@ function registerIpc() {
     if (!agentHostBridge) throw new Error("agent host unavailable");
     await agentHostBridge.queue.prioritize(req.turnId);
     return { ok: true };
+  });
+  handle(IPC.invoke.agentQueueReorder, async (req: { turnId: string; direction: "up" | "down" }) => {
+    if (!agentHostBridge) throw new Error("agent host unavailable");
+    return agentHostBridge.queue.reorder(req.turnId, req.direction);
   });
 
   handle(IPC.invoke.toolResolvePermission, async (resolution: {

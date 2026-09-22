@@ -106,4 +106,15 @@ export class TurnQueue {
     queue.unshift(record!);
     return true;
   }
+
+  async reorder(sessionId: string, id: string, direction: "up" | "down"): Promise<boolean> {
+    const queue = this.bySession.get(sessionId);
+    if (!queue) return false;
+    const index = queue.findIndex((record) => record.id === id);
+    const target = direction === "up" ? index - 1 : index + 1;
+    if (index < 0 || target < 0 || target >= queue.length) return false;
+    if (this.store.reorder && await this.store.reorder(id, direction) === false) return false;
+    [queue[index], queue[target]] = [queue[target], queue[index]];
+    return true;
+  }
 }

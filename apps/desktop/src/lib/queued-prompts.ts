@@ -75,6 +75,15 @@ export function clearQueuedPromptSendNow(
   );
 }
 
+export function reorderQueuedPrompt(queues: QueuedPrompts, sessionId: string, promptId: string, direction: "up" | "down"): QueuedPrompts {
+  const queue = queues[sessionId]; if (!queue) return queues;
+  const index = queue.findIndex((item) => item.id === promptId);
+  const target = direction === "up" ? index - 1 : index + 1;
+  if (index < 0 || target < 0 || target >= queue.length) return queues;
+  const next = [...queue]; [next[index], next[target]] = [next[target], next[index]];
+  return withSessionQueue(queues, sessionId, next);
+}
+
 export function queuedPromptForSession(
   queues: QueuedPrompts,
   sessionId: string,
