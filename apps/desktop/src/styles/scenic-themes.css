@@ -16,4 +16,39 @@
 :root[data-scenic-blur-dragging] .app-scenic-backdrop { will-change: filter; }
 :root[data-theme="light"] .scenic-theme-card-copy { background: rgba(20, 43, 75, .52); }
 :root[data-scenic-theme] .scenic-themes-page .settings-card-block { background: var(--ds-bg-secondary); border: 1px solid var(--ds-border-default); border-radius: var(--radius-xl); padding: 18px; }
+
+/* Project archive is a row-list: its individual `.projects-row-block` tiles
+   own the surface, so scenic themes must not add a second frame around them. */
+:root[data-scenic-theme] .settings-shell-full .settings-panel.projects-list {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  overflow: visible;
+}
+
+:root[data-scenic-theme] .settings-shell-full .projects-list :is(.projects-name-title, .projects-group-label) {
+  color: var(--ds-text-primary);
+}
+
+:root[data-scenic-theme] .settings-shell-full .projects-list :is(.projects-name-meta, .projects-updated, .projects-group-count) {
+  color: var(--ds-text-secondary);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  :root[data-scenic-theme] .settings-shell-full .settings-panel.projects-list {
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    overflow: visible;
+  }
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  :root[data-scenic-theme] .settings-shell-full .settings-panel.projects-list {
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    overflow: visible;
+  }
+}
 @media (max-width: 720px) { .scenic-blur-slider { min-width: 0; width: 100%; flex-wrap: wrap; } .scenic-blur-slider label { flex: 1 1 160px; } .scenic-blur-slider input { width: 100%; } }

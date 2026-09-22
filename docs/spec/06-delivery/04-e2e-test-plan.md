@@ -10574,6 +10574,12 @@ existing three-failed-`Edit` recovery scenario remains unchanged.
   whose repository was removed remains visible as **Folder unavailable** and
   has no enabled action.
 
+  Scenic Settings visual coverage should also verify that Project archive does
+  not render a second outer rectangle around its independent project rows in
+  Twilight Mountains, Alpine Light, Obsidian Horizon, or Emerald Afterglow.
+  Project names and metadata remain readable, and the same parent transparency
+  is preserved with reduced transparency or without backdrop-filter support.
+
 Desktop smoke coverage should verify that the work-panel header does not cover
 Windows/Linux native controls, plugin views remain visible while resizing, and
 the context inspector stays within the conversation pane when the work panel is

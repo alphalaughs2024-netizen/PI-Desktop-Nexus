@@ -532,6 +532,15 @@ skills remain portable under `<project>/.agents/skills`.
   instead of silently disappearing them. Such a row cannot be opened, revealed,
   or cleaned up.
 
+### Scenic theme surfaces
+- Project archive is a row-list surface: each project row owns its visual tile,
+  while the surrounding list remains transparent across all four first-party
+  scenic themes.
+- Project titles, metadata, group labels, and update times use the active scenic
+  text tokens so they remain readable over the themed backdrop.
+- The transparent-parent rule remains active with reduced transparency enabled
+  or when backdrop filters are unavailable.
+
 ### Info
 - app/host/protocol versions + open logs
 - **Report a problem** row: one action opens the GitHub bug issue form in
