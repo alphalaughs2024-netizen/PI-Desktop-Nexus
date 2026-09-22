@@ -106,6 +106,17 @@
   white-space: nowrap;
 }
 
+.search-item-snippet {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* Match emphasis inherits the row surface — no highlighter background. */
 .search-hit {
   background: transparent;
