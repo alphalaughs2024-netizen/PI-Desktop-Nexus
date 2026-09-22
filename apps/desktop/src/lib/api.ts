@@ -799,9 +799,12 @@ export const api = {
   subagentCatalog: () =>
     invoke<{
       subagents: SubagentDefinition[];
+      builtins: Array<SubagentDefinition & { enabled: boolean }>;
       diagnostics: string[];
       projectPath: string | null;
     }>(IPC.invoke.subagentCatalog),
+  setBuiltinSubagentEnabled: (id: string, enabled: boolean) =>
+    invoke<{ id: string; enabled: boolean }>(IPC.invoke.subagentSetBuiltinEnabled, { id, enabled }),
   createUserSubagent: (subagent: UserSubagentInput) =>
     invoke<{ subagent: UserSubagentRecord }>(IPC.invoke.subagentCreate, subagent),
   updateUserSubagent: (id: string, subagent: Omit<UserSubagentInput, "id">) =>

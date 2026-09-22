@@ -32,6 +32,7 @@ const THINKING_LEVELS: [&str; 8] = [
     "off", "minimal", "low", "medium", "high", "xhigh", "max", "omit",
 ];
 const SUBAGENT_KIND: &str = "subagents";
+const SUBAGENT_BUILTIN_KIND: &str = "subagent-builtins";
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
@@ -81,6 +82,7 @@ pub struct UserSubagentInput {
 
 pub struct UserSubagentRegistry {
     state: CapabilityState,
+    builtins: CapabilityState,
 }
 
 fn normalize_name(value: &str) -> String {
@@ -241,6 +243,7 @@ impl UserSubagentRegistry {
     pub fn new(data_dir: &Path) -> Self {
         Self {
             state: CapabilityState::new(data_dir, SUBAGENT_KIND),
+            builtins: CapabilityState::new(data_dir, SUBAGENT_BUILTIN_KIND),
         }
     }
 
@@ -476,6 +479,17 @@ impl UserSubagentRegistry {
             enabled,
         )?;
         self.find(id)
+    }
+
+    pub fn disabled_builtins(&self) -> Vec<String> {
+        self.builtins.disabled_ids(SUBAGENT_BUILTIN_KIND, CapabilityLevel::Global)
+    }
+
+    pub fn set_builtin_enabled(&mut self, handle: &str, enabled: bool) -> Result<String> {
+        let name = normalize_name(handle);
+        if name.is_empty() { bail!("SUBAGENT_INVALID: a builtin handle is required"); }
+        self.builtins.set_enabled(SUBAGENT_BUILTIN_KIND, CapabilityLevel::Global, &name, None, enabled)?;
+        Ok(name)
     }
 
     pub fn set_scope(

@@ -1380,8 +1380,10 @@ normalized alias at both ends of the app, so a display name containing spaces
 is valid.
 
 Electron's `subagent/list` IPC channel exposes the same global-only list to
-Settings > Agent > Subagents. The runtime catalog combines these global user
-documents with its builtins; it does not scan `.pi/agents` or any project
+Settings > Agent > Subagents. `subagent/catalog` returns the effective Task
+catalog (enabled user documents merged with the five shipped builtins) so the
+page can render those defaults as read-only rows. The runtime catalog
+combines the same sources; it does not scan `.pi/agents` or any project
 capability directory.
 
 ## 12d. Capability level and local activation

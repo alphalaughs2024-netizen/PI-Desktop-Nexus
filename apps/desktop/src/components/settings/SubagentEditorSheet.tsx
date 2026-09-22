@@ -8,9 +8,11 @@ import {
   SUBAGENT_ASSIGNABLE_TOOLS,
   SUBAGENT_PRESETS,
   SUBAGENT_THINKING_LEVELS,
+  findSubagentPreset,
   isSubagentMutatingTool,
   resolveScope,
   type ActivationScope,
+  type SubagentDefinition,
   type SubagentPreset,
   type SubagentThinkingLevel,
   type UserSubagentRecord,
@@ -87,6 +89,7 @@ export const SUBAGENT_PRESET_COPY = {
   "code-reviewer": { name: "presetReviewerName", desc: "presetReviewerDesc" },
   "test-runner": { name: "presetTestRunnerName", desc: "presetTestRunnerDesc" },
   fixer: { name: "presetFixerName", desc: "presetFixerDesc" },
+  "ui-designer": { name: "presetUiDesignerName", desc: "presetUiDesignerDesc" },
 } as const satisfies Record<SubagentPreset["id"], { name: string; desc: string }>;
 
 /** Full i18n path for a preset chip, or null when `id` is blank / unknown. */
@@ -128,6 +131,24 @@ export function draftFromRecord(record: UserSubagentRecord, body: string): Subag
     body,
     enabled: record.enabled,
     scope: resolveScope(record.scope),
+  };
+}
+
+/** Prefill the create sheet from a shipped definition (Copy as mine). */
+export function draftFromDefinition(definition: SubagentDefinition): SubagentDraft {
+  const preset = findSubagentPreset(definition.name);
+  return {
+    ...emptySubagentDraft(),
+    name: preset?.name ?? definition.name,
+    description: definition.description,
+    tools: definition.tools.length ? [...definition.tools] : [...DEFAULT_SUBAGENT_TOOLS],
+    model: definition.model
+      ? `${definition.model.providerId}/${definition.model.modelId}`
+      : "",
+    thinkingLevel: definition.thinkingLevel ?? "",
+    maxTurns: definition.maxTurns ?? 0,
+    maxTokens: definition.maxTokens ?? 0,
+    body: definition.prompt,
   };
 }
 
@@ -519,6 +540,7 @@ export function SubagentEditorSheet({
   setDraft,
   editing,
   saving,
+  initialPresetId,
   onClose,
   onSave,
   onReveal,
@@ -527,14 +549,19 @@ export function SubagentEditorSheet({
   setDraft: (next: SubagentDraft) => void;
   editing: UserSubagentRecord | null;
   saving: boolean;
+  /** Template chip to select on create, e.g. after Copy as mine. */
+  initialPresetId?: string;
   onClose: () => void;
   onSave: () => void;
   onReveal?: () => void;
 }) {
   const { t } = useTranslation();
   const providers = useAppStore((state) => state.providers);
-  const [nameTouched, setNameTouched] = useState(!!editing);
-  const [presetId, setPresetId] = useState<string | null>(BLANK_SUBAGENT_PRESET_ID);
+  const copiedPreset = Boolean(initialPresetId && findSubagentPreset(initialPresetId));
+  const [nameTouched, setNameTouched] = useState(!!editing || copiedPreset);
+  const [presetId, setPresetId] = useState<string | null>(
+    copiedPreset && initialPresetId ? initialPresetId : BLANK_SUBAGENT_PRESET_ID,
+  );
   const [advancedOpen, setAdvancedOpen] = useState(!!editing);
   const errorKey = subagentDraftError(draft);
   const pristine = !editing && !draft.name.trim() && !draft.description.trim();

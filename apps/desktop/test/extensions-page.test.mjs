@@ -195,11 +195,14 @@ test("project records shadow global records before disabled records are filtered
 
 test("subagents are global-only and use the agents root", () => {
   const page = settingsComponents.get("AgentSubagentsPage.tsx");
+  const helper = readFileSync(join(settingsDir, "subagent-settings.ts"), "utf8");
   assert.match(page, /GLOBAL_SUBAGENTS_PATH = "~\/\.agents\/subagents"/);
   // Global-only means no level to pick and no project to resolve against. It no
   // longer means read-only: authoring lives here now (D257).
   assert.doesNotMatch(page, /AgentProjectPicker|projectPath/);
-  assert.match(page, /level: "global"/);
+  assert.doesNotMatch(helper, /AgentProjectPicker|projectPath/);
+  assert.match(helper, /level: "global"/);
+  assert.match(page, /api\.subagentCatalog|fetchSubagentPageData/);
   assert.match(electronMainSrc, /IPC\.invoke\.subagentList/);
   assert.match(hostCapabilitySources, /capability_dir\(CapabilityLevel::Global, None, "subagents"\)/);
 });

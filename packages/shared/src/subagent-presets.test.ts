@@ -10,13 +10,20 @@ import { DEFAULT_SUBAGENT_TOOLS } from "./subagent-definition.js";
 import {
   SUBAGENT_PRESETS,
   defaultSubagentPresetTools,
+  fallbackBuiltinDefinitions,
   findSubagentPreset,
 } from "./subagent-presets.js";
 
 describe("SUBAGENT_PRESETS", () => {
-  it("ships the four builtin roles", () => {
+  it("ships the five builtin roles", () => {
     const ids = SUBAGENT_PRESETS.map((preset) => preset.id);
-    expect(ids).toEqual(["explorer", "code-reviewer", "test-runner", "fixer"]);
+    expect(ids).toEqual([
+      "explorer",
+      "code-reviewer",
+      "test-runner",
+      "fixer",
+      "ui-designer",
+    ]);
   });
 
   it("never duplicates a name", () => {
@@ -48,8 +55,12 @@ describe("SUBAGENT_PRESETS", () => {
     const explorer = findSubagentPreset("explorer");
     const reviewer = findSubagentPreset("code-reviewer");
     const runner = findSubagentPreset("test-runner");
+    const designer = findSubagentPreset("ui-designer");
     expect(fixer?.tools).toContain("Edit");
     expect(fixer?.tools).toContain("Write");
+    expect(designer?.tools).toContain("Edit");
+    expect(designer?.tools).toContain("Write");
+    expect(designer?.tools).toContain("BrowserPreview");
     expect(explorer?.tools ?? []).not.toContain("Edit");
     expect(reviewer?.tools ?? []).not.toContain("Edit");
     expect(runner?.tools ?? []).not.toContain("Edit");
@@ -60,6 +71,7 @@ describe("findSubagentPreset", () => {
   it("returns the matching preset", () => {
     expect(findSubagentPreset("explorer")?.id).toBe("explorer");
     expect(findSubagentPreset("fixer")?.id).toBe("fixer");
+    expect(findSubagentPreset("ui-designer")?.id).toBe("ui-designer");
   });
 
   it("returns undefined for unknown ids", () => {
@@ -71,5 +83,17 @@ describe("findSubagentPreset", () => {
 describe("defaultSubagentPresetTools", () => {
   it("matches the shared default tool list", () => {
     expect(defaultSubagentPresetTools()).toEqual(DEFAULT_SUBAGENT_TOOLS);
+  });
+});
+
+describe("fallbackBuiltinDefinitions", () => {
+  it("emits one catalog entry per preset, keyed by Task handle", () => {
+    const definitions = fallbackBuiltinDefinitions();
+    expect(definitions.map((item) => item.name)).toEqual(SUBAGENT_PRESETS.map((preset) => preset.id));
+    for (const definition of definitions) {
+      expect(definition.source).toBe("builtin");
+      expect(definition.prompt.trim().length).toBeGreaterThan(0);
+      expect(definition.tools.length).toBeGreaterThan(0);
+    }
   });
 });

@@ -3818,6 +3818,17 @@ async fn handle_request(
                 .map_err(subagent_err)?;
             Ok(json!({ "subagent": subagent }))
         }
+        "agents.disabledBuiltins" => {
+            let st = state.lock().await;
+            Ok(json!({ "disabled": st.user_subagents.disabled_builtins() }))
+        }
+        "agents.setBuiltinEnabled" => {
+            let id = params.get("id").and_then(Value::as_str).unwrap_or("");
+            let enabled = params.get("enabled").and_then(Value::as_bool).unwrap_or(false);
+            let mut st = state.lock().await;
+            let id = st.user_subagents.set_builtin_enabled(id, enabled).map_err(subagent_err)?;
+            Ok(json!({ "id": id, "enabled": enabled }))
+        }
         "agents.setScope" => {
             let id = require_id(&params)?;
             let scope = parse_scope(&params)?;

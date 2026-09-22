@@ -6176,13 +6176,18 @@ membership when dropped on Ungrouped.
       a global file also removes its project overrides.
   11. Open Subagents. Confirm it is one global-only panel rooted at
       `~/.agents/subagents`, with no level filter, no project picker, and no
-      project-level controls. Confirm the group header carries the global level
-      label and item count, that create/edit/delete/reveal all work from the
-      page, that leaving the turn limit empty writes a definition with no
-      `maxTurns`, that leaving the output limit empty writes a definition with
-      no `maxTokens`, and that an empty directory resolves
-      `settings.subagentsEmpty` to localized empty-state copy rather than
-      displaying a raw translation key. Open New subagent and confirm the
+      project-level controls. Confirm a Built-in group lists the five shipped
+      defaults (`explorer`, `code-reviewer`, `test-runner`, `fixer`,
+      `ui-designer`) even when the user directory is empty, each with a
+      Built-in badge, its tool grant, and no enablement switch, reveal, or
+      delete. Confirm the Global group header carries the global level label
+      and item count, that create/edit/delete/reveal all work from the page
+      for user-owned rows, that leaving the turn limit empty writes a
+      definition with no `maxTurns`, that leaving the output limit empty
+      writes a definition with no `maxTokens`, and that an empty user
+      directory still resolves `settings.subagentsEmpty` to localized
+      empty-state copy under the Global group rather than displaying a raw
+      translation key. Open New subagent and confirm the
       Model field is a select of the same configured, runnable models as the
       Composer, grouped by provider, with an inherit-session option, not a
       free-typed `provider/model` input. Pin a configured model, save, and
@@ -8164,8 +8169,8 @@ This test plan spec is accepted when:
 
 - **Preconditions**: A project-bound Agent session whose permission mode can be
   switched between `ask`, `accept-edits`, and `auto`, with a provider whose
-  stream can be driven; the four builtin subagents (`explorer`,
-  `code-reviewer`, `test-runner`, `fixer`) and a global
+  stream can be driven; the five builtin subagents (`explorer`,
+  `code-reviewer`, `test-runner`, `fixer`, `ui-designer`) and a global
   `~/.agents/subagents/readonly.md` definition. Builtins use the default
   `permission: inherit` behavior.
 - **Steps**:
@@ -8305,6 +8310,39 @@ This test plan spec is accepted when:
   (`packages/shared/src/subagent-presets.test.ts`,
   `apps/desktop/test/subagent-editor-presets.test.mjs`); full UI journey
   Draft (do not run E2E locally unless explicitly requested)
+
+#### E2E-SUBAGENT-settings-lists-builtin-defaults
+
+- **Preconditions**: A running app. `~/.agents/subagents` is empty. The five
+  shipped builtins are present and no user document shadows them.
+- **Steps**:
+  1. Open Settings → Agent → Subagents. Confirm a Built-in group lists
+     `explorer`, `code-reviewer`, `test-runner`, `fixer`, and `ui-designer`
+     with localized names, `Task(<handle>)` copy, tool grants, and a Built-in
+     badge. Confirm none of those rows has an enablement switch, Reveal, or
+     Delete.
+  2. Confirm the Global group still shows localized `settings.subagentsEmpty`
+     copy and the New subagent action.
+  3. Choose **Copy as mine** on explorer. Confirm the create sheet opens
+     pre-filled from that definition (name, description, tools, body, max
+     turns) with the Explorer template chip selected, not Blank. Save. Confirm
+     explorer now appears only as a user-owned Global row and is omitted from
+     Built-in, and the next prompt's Task catalog uses the user document.
+     row and is omitted from Built-in, and the next prompt's Task catalog
+     uses the user document.
+  4. Disable the user explorer and reload the page. Confirm the user row is
+     off and explorer reappears under Built-in (disabled user documents do
+     not reach the loader, so the shipped definition wins again).
+- **Expected**: Settings shows the defaults the agent can actually delegate
+  to. Copying a builtin is how a user retunes it; enablement, reveal, and
+  delete remain file-backed actions on user-owned rows only.
+- **Specs linked**: `04-ux/06-settings-ia.md` §2, `03-runtime/01-ipc-protocol.md`
+  §12c, `03-runtime/02-agent-runtime.md` §5f, ADR 0062, ADR 0063
+- **Acceptance**: E (tools & permissions), Quality
+- **Milestone**: M6+
+- **Status**: Source/unit covered (`apps/desktop/test/agent-capability-settings.test.mjs`,
+  `packages/shared/src/subagent-presets.test.ts`); full UI journey Draft
+  (run only in a capable environment when this surface changes)
 
 #### E2E-198: A subagent task opens with a live conversation process
 

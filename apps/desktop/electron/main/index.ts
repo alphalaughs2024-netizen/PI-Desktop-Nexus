@@ -1801,6 +1801,7 @@ async function resolveAgentRuntimeLaunch(
   // skills above; a delegate the model can see is one it will try to call.
   const subagentCatalog = await loadSubagentDefinitions(projectPath, {
     userDocuments: userSubagentDocuments,
+    disabledBuiltins: host ? (await host.call<{ disabled?: string[] }>("agents.disabledBuiltins", {})).disabled ?? [] : [],
   });
   const subagentBindings = await resolveSubagentProviders({
     definitions: subagentCatalog.definitions,
@@ -9554,11 +9555,11 @@ function registerIpc() {
    */
   handle(IPC.invoke.subagentCatalog, async () => {
     const projectPath = (await optionalWorkspaceRoot()) ?? undefined;
-    const { definitions, diagnostics } = await loadSubagentDefinitions(
+    const { definitions, builtins, diagnostics } = await loadSubagentDefinitions(
       projectPath,
-      { userDocuments: await activeUserSubagentDocuments(projectPath) },
+      { userDocuments: await activeUserSubagentDocuments(projectPath), disabledBuiltins: host ? (await host.call<{ disabled?: string[] }>("agents.disabledBuiltins", {})).disabled ?? [] : [] },
     );
-    return { subagents: definitions, diagnostics, projectPath: projectPath ?? null };
+    return { subagents: definitions, builtins: builtins.map((item) => ({ ...item, enabled: definitions.some((entry) => entry.name === item.name) })), diagnostics, projectPath: projectPath ?? null };
   });
 
   handle(IPC.invoke.subagentCreate, async (subagent: Record<string, unknown>) => {
