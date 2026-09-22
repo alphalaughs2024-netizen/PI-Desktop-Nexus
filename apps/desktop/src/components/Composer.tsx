@@ -71,6 +71,7 @@ import { PlanApprovalBar } from "./PlanApprovalBar";
 import {
   IconArrowUp,
   IconArrowDown,
+  IconPencil,
   IconUndo2,
   IconPlus,
   IconShield,
@@ -628,6 +629,7 @@ export function Composer({
   const removeQueuedPrompt = useAppStore((s) => s.removeQueuedPrompt);
   const sendQueuedNow = useAppStore((s) => s.sendQueuedNow);
   const moveQueuedPrompt = useAppStore((s) => s.moveQueuedPrompt);
+  const editQueuedPrompt = useAppStore((s) => s.editQueuedPrompt);
   const abort = useAppStore((s) => s.abort);
   const isRunning = useAppStore((s) => s.isRunning);
   const planningState = useAppStore((s) =>
@@ -2129,6 +2131,8 @@ export function Composer({
             aria-label={t("chat.queuedPrompts")}
           >
             {queuedPrompts.map((item, index) => {
+              const promoted = item.priority !== undefined;
+              const locked = promoted || item.id.startsWith("pending:");
               const label =
                 item.content.trim() ||
                 item.draft.fileReferences.map((reference) => reference.name).join(", ") ||
@@ -2143,13 +2147,14 @@ export function Composer({
                   <span className="composer-queued-prompt-text" title={label}>
                     {label}
                   </span>
-                  <TooltipButton type="button" className="composer-queued-prompt-action" tooltip="Move up" ariaLabel="Move queued prompt up" disabled={index === 0} onClick={() => void moveQueuedPrompt(item.id, "up")}><IconArrowUp size={13} aria-hidden /></TooltipButton>
-                  <TooltipButton type="button" className="composer-queued-prompt-action" tooltip="Move down" ariaLabel="Move queued prompt down" disabled={index === queuedPrompts.length - 1} onClick={() => void moveQueuedPrompt(item.id, "down")}><IconArrowDown size={13} aria-hidden /></TooltipButton>
+                  <TooltipButton type="button" className="composer-queued-prompt-action" tooltip="Move up" ariaLabel="Move queued prompt up" disabled={locked || index === 0} onClick={() => void moveQueuedPrompt(item.id, "up")}><IconArrowUp size={13} aria-hidden /></TooltipButton>
+                  <TooltipButton type="button" className="composer-queued-prompt-action" tooltip="Move down" ariaLabel="Move queued prompt down" disabled={locked || index === queuedPrompts.length - 1} onClick={() => void moveQueuedPrompt(item.id, "down")}><IconArrowDown size={13} aria-hidden /></TooltipButton>
                   <TooltipButton
                     type="button"
                     className="composer-queued-prompt-action"
                     tooltip={t("chat.removeQueuedPrompt")}
                     ariaLabel={t("chat.removeQueuedPrompt")}
+                    disabled={locked}
                     onClick={() => removeQueuedPrompt(item.id)}
                   >
                     <IconX size={13} aria-hidden />
@@ -2159,14 +2164,15 @@ export function Composer({
                     className="composer-queued-prompt-send-now"
                     disabled={
                       approvalPending ||
-                      (runActive && item.sendNowRequested === true)
+                      locked
                     }
                     onClick={() => void sendQueuedNow(item.id)}
                   >
-                    {item.sendNowRequested
+                    {promoted
                       ? t("chat.sendNowPending")
                       : t("chat.sendNow")}
                   </button>
+                  <TooltipButton type="button" className="composer-queued-prompt-action" tooltip="Edit queued prompt" ariaLabel="Edit queued prompt" disabled={locked} onClick={() => editQueuedPrompt(item.id)}><IconPencil size={13} aria-hidden /></TooltipButton>
                 </div>
               );
             })}
