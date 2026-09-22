@@ -8,7 +8,7 @@ import { api } from "../../lib/api";
 /** User-owned documents plus the builtins currently winning in the Task catalog. */
 export type SubagentPageData = {
   owned: UserSubagentRecord[];
-  builtins: SubagentDefinition[];
+  builtins: Array<SubagentDefinition & { enabled: boolean }>;
 };
 
 export const EMPTY_SUBAGENT_PAGE: SubagentPageData = {
@@ -29,14 +29,12 @@ export async function fetchSubagentPageData(): Promise<SubagentPageData> {
     const catalog = await api.subagentCatalog();
     return {
       owned,
-      builtins: (catalog.subagents ?? []).filter(
-        (item) => item.source === "builtin" && !enabledHandles.has(item.name),
-      ),
+      builtins: (catalog.builtins ?? []).filter((item) => !enabledHandles.has(item.name)),
     };
   } catch {
     return {
       owned,
-      builtins: fallbackBuiltinDefinitions().filter((item) => !enabledHandles.has(item.name)),
+      builtins: fallbackBuiltinDefinitions().filter((item) => !enabledHandles.has(item.name)).map((item) => ({ ...item, enabled: true })),
     };
   }
 }

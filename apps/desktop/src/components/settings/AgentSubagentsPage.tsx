@@ -218,7 +218,7 @@ export function AgentSubagentsPage() {
   const noMatches = searching && visibleOwned.length === 0 && visibleBuiltins.length === 0;
   const showOwnedGroup = !searching || visibleOwned.length > 0;
 
-  const renderBuiltin = (definition: SubagentDefinition) => {
+  const renderBuiltin = (definition: SubagentDefinition & { enabled: boolean }) => {
     const handle = definition.name;
     const name = builtinDisplayName(handle, t);
     const canCopy = !ownedHandles.has(handle);
@@ -227,6 +227,7 @@ export function AgentSubagentsPage() {
         key={`builtin:${handle}`}
         glyph={<IconBot size={16} />}
         name={name}
+        off={!definition.enabled}
         command={t("extensions.subagents.handle", { name: handle })}
         badges={
           <span className="agent-capability-badge">{t("extensions.subagents.sourceBuiltin")}</span>
@@ -242,7 +243,8 @@ export function AgentSubagentsPage() {
           ) : undefined
         }
         actions={
-          canCopy ? (
+          <>
+          {canCopy ? (
             <TooltipButton
               type="button"
               className="settings-icon-button"
@@ -251,7 +253,9 @@ export function AgentSubagentsPage() {
             >
               <IconCopy size={15} />
             </TooltipButton>
-          ) : null
+          ) : null}
+          <CapabilityToggle checked={definition.enabled} busy={false} label={t("settings.toggleCapability", { name })} onChange={() => api.setBuiltinSubagentEnabled(handle, !definition.enabled).then(() => void load()).catch((error) => showToast(error instanceof Error ? error.message : String(error), { variant: "error" }))} />
+          </>
         }
       />
     );

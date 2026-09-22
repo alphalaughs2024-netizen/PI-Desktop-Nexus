@@ -145,6 +145,14 @@ impl CapabilityState {
         self.save()
     }
 
+    pub fn disabled_ids(&self, kind: &str, level: CapabilityLevel) -> Vec<String> {
+        self.values.iter().filter_map(|(raw, enabled)| {
+            if *enabled { return None; }
+            let key = serde_json::from_str::<StateKey>(raw).ok()?;
+            (key.kind == kind && key.level == level.as_str() && key.project_path.is_none()).then_some(key.id)
+        }).collect()
+    }
+
     /// Remove state for records that disappeared from the selected directory.
     /// Other project selections remain untouched because they may still exist.
     pub fn prune(

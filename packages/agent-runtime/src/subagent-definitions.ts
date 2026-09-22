@@ -274,6 +274,7 @@ export type LoadSubagentOptions = {
   overrideDir?: string;
   /** Documents already scanned by host-core from `~/.agents/subagents`. */
   userDocuments?: readonly UserSubagentDocument[];
+  disabledBuiltins?: readonly string[];
 };
 
 function loadUserSubagents(documents: readonly UserSubagentDocument[]): {
@@ -304,7 +305,7 @@ function loadUserSubagents(documents: readonly UserSubagentDocument[]): {
 export async function loadSubagentDefinitions(
   workspaceRoot: string | null | undefined,
   options: LoadSubagentOptions = {},
-): Promise<{ definitions: SubagentDefinition[]; diagnostics: string[] }> {
+): Promise<{ definitions: SubagentDefinition[]; builtins: SubagentDefinition[]; diagnostics: string[] }> {
   const builtin = builtinSubagents();
   const dir =
     options.overrideDir ??
@@ -329,7 +330,13 @@ export async function loadSubagentDefinitions(
       `dropped subagents past the catalog cap: ${merged.dropped.join(", ")}`,
     );
   }
-  return { definitions: merged.definitions, diagnostics };
+  const disabled = new Set(options.disabledBuiltins ?? []);
+  const builtins = merged.definitions.filter((definition) => definition.source === "builtin");
+  return {
+    definitions: merged.definitions.filter((definition) => !(definition.source === "builtin" && disabled.has(definition.name))),
+    builtins,
+    diagnostics,
+  };
 }
 
 /** The stored-provider fields a pin can be resolved against. */
