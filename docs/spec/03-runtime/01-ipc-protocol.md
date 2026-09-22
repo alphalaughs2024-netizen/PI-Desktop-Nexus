@@ -419,7 +419,7 @@ type AgentStatus = {
 The Host owns the per-session prompt queue; the renderer mirrors it. A
 Send-while-running pushes through `pi-desktop/agent/queue/push` and the
 headless Agent Host module admits, orders, and drains the durable entries
-(`turn_queue`, schema v15). Every change is fanned out as
+(`turn_queue`, schema v17). Every change is fanned out as
 `pi-desktop/agent/event/queueChanged`.
 
 ```ts

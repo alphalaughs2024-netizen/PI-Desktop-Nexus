@@ -2917,11 +2917,15 @@ mod tests {
         let data = tempfile::tempdir().unwrap();
         let scratch = data.path().join("scratch/session-spill");
         let lines = BUDGET_SHELL.max_lines + 500;
+        #[cfg(windows)]
+        let command = format!("1..{}", lines);
+        #[cfg(not(windows))]
+        let command = format!("seq 1 {lines}");
         let result = execute_tool(
             Some(ws.path()),
             Some(&scratch),
             "Bash",
-            &serde_json::json!({ "command": format!("seq 1 {lines}") }),
+            &serde_json::json!({ "command": command }),
             30_000,
         )
         .await;
@@ -3303,7 +3307,7 @@ mod tests {
         std::fs::create_dir_all(outside.path().join("src")).unwrap();
         let file = outside.path().join("src/outside.rs");
         std::fs::write(&file, "const needle = 1;\n").unwrap();
-        let canonical_file = file.canonicalize().unwrap();
+        let canonical_file = crate::workspace::simple_canonicalize(&file).unwrap();
 
         let read = execute_tool_with_path_access(
             Some(workspace.path()),

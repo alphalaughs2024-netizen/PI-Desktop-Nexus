@@ -133,7 +133,7 @@ runbook 写明 feature flag、配对撤销路径、远端机器上的数据保�
   JSON Schema fixture、本地到 RACP 的事件映射、远程权限上限和共享错误码。
 - R1 已交付：host-core 的 `permissions.pending`；无头 `packages/agent-host` 模块（epoch
   事件日志、有界扇出、审批代理、回合队列、快照构建）；在现有 IPC handler 之上承载该
-  模块并把每个 agent 事件送入它的 Electron 桥接层；以及 schema v15 的持久化
+  模块并把每个 agent 事件送入它的 Electron 桥接层；以及 schema v17 的持久化
   `turn_queue` 与其 RPC 方法（D386 / ADR 0213）。
 - R1 已交付：renderer 的内存 prompt 队列已退役；composer 经 `agent/queue/push` 推入，
   镜像 `agent/event/queueChanged`，“立即发送”即 `turn/prioritize` 加优雅停止。

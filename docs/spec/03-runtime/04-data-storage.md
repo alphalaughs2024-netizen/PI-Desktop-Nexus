@@ -550,7 +550,7 @@ Serves: mid-session model switches ("next turn only", spec 13 §4), the
 per-message cost chip's session rollup (benchmark §3.2), failed/aborted badges
 (§3.8), and retry lineage.
 
-### 4.6b turn_queue — Host-owned turn queue (schema v15)
+### 4.6b turn_queue — Host-owned turn queue (schema v17)
 
 ```sql
 CREATE TABLE turn_queue (

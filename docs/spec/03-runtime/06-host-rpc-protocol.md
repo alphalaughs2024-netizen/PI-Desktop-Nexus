@@ -373,7 +373,7 @@ to later refresh and inference; the vendor picker does not collect them.
   from the caller. Surviving messages keep their owning `turn_id`
 - `session.beginTurn`
 - `session.queuePush` / `session.queueList` / `session.queueRemove` — the
-  Host-owned turn queue (D386 / ADR 0213, schema v15); push is idempotent per
+  Host-owned turn queue (D386 / ADR 0213, schema v17); push is idempotent per
   principal and key, bounded at eight entries per session
 - `session.endTurn` — atomically moves a running turn to its terminal state and
   conditionally returns the newly created notification for `completed`/`error`;

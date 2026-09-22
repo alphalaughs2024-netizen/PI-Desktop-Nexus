@@ -1,6 +1,6 @@
 # PI-Desktop Spec
 
-> Frozen baseline: `0.4.16` · current app line: `0.14.x`
+> Frozen baseline: `0.4.16` · current app line: `0.0.x`
 > Updated: `2026-09-10`
 > Language: **English-first**
 > Stack: Electron + **Rust host core** + pi Agent Harness + user-installable plugins
@@ -9,7 +9,7 @@ The baseline is a frozen decision artifact, not a complete list of every
 feature in the current app. The current implementation adds Goal contracts,
 standalone MCP/Skills/Subagents, plugin marketplace and launcher flows, session
 import, scheduled tasks, and next-turn composer configuration. The host wire
-protocol is v11; storage schema is v15 (see `00-baseline.md`).
+protocol is v11; storage schema is v17 (see `00-baseline.md`).
 
 ## Quick entry
 
@@ -91,7 +91,7 @@ docs/spec/
    `.pi/plan/*.md` artifact; title/question stay structured in
    `plan_approvals`, approval opens the artifact, is approve/reject only, and
    expires after 30 absolute minutes with `PLAN_APPROVAL_TIMEOUT`
-9. Protocol v11 and storage schema v15 are authoritative for Plan/Goal
+9. Protocol v11 and storage schema v17 are authoritative for Plan/Goal
    checkpoints, `plan_approvals` execution fields, startup interruption, and
    shell identity. v11 withdraws the A2A method domain added in v10.
 10. Permission timeout 120s deny; Bash timeout 60s by default

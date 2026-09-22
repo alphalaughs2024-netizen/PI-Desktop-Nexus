@@ -1,5 +1,5 @@
 export const PROTOCOL_VERSION = 11 as const;
-export const SCHEMA_VERSION = 16 as const;
+export const SCHEMA_VERSION = 17 as const;
 /** Separate identity for the forked test build; never shares official app state. */
 export const APP_ID = "com.akshay.pi-desktop-nexus";
 export const APP_NAME = "PI Desktop Nexus";
