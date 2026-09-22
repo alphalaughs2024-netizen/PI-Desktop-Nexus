@@ -1,6 +1,13 @@
 import type { ChangelogEntry } from "./changelog.js";
 
 export const koEntries: ChangelogEntry[] = [{
+  version: "0.0.5",
+  date: "2026-09-23",
+  highlights: [
+    "유용한 빈 상태, 프로젝트 열기 동작, 현지화된 메타데이터, 상태 배지와 행 작업 보호를 포함하도록 Workspaces를 개선합니다.",
+    "네 가지 기본 scenic 테마의 설정 표면을 수정해 프로젝트 보관 행을 읽기 쉽게 하고 불필요한 외곽 프레임을 제거합니다.",
+  ],
+}, {
   version: "0.0.4",
   date: "2026-09-18",
   highlights: [

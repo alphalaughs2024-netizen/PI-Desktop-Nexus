@@ -1,6 +1,13 @@
 import type { ChangelogEntry } from "./changelog.js";
 
 export const esEntries: ChangelogEntry[] = [{
+  version: "0.0.5",
+  date: "2026-09-23",
+  highlights: [
+    "Mejora Workspaces con un estado vacío útil, acción para abrir proyectos, metadatos localizados, insignias de estado y acciones protegidas por fila.",
+    "Corrige las superficies de Ajustes en los cuatro temas scenic integrados para mantener legibles las filas del archivo de proyectos sin un marco exterior adicional.",
+  ],
+}, {
   version: "0.0.4",
   date: "2026-09-18",
   highlights: [

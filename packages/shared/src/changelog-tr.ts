@@ -1,6 +1,13 @@
 import type { ChangelogEntry } from "./changelog.js";
 
 export const trEntries: ChangelogEntry[] = [{
+  version: "0.0.5",
+  date: "2026-09-23",
+  highlights: [
+    "Workspaces'i kullanışlı bir boş durum, proje açma işlemi, yerelleştirilmiş meta veriler, durum rozetleri ve korumalı satır işlemleriyle geliştirir.",
+    "Dört yerleşik scenic temanın Ayarlar yüzeylerini düzelterek proje arşivi satırlarının okunabilir kalmasını ve gereksiz dış çerçevenin kaldırılmasını sağlar.",
+  ],
+}, {
   version: "0.0.4",
   date: "2026-09-18",
   highlights: [

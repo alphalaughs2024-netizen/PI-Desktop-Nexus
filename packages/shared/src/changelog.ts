@@ -13,6 +13,13 @@ export type ChangelogEntry = {
 };
 
 const enEntries: ChangelogEntry[] = [{
+  version: "0.0.5",
+  date: "2026-09-23",
+  highlights: [
+    "Improved Workspaces with a useful empty state, project-picker action, localized metadata, status badges, and guarded row actions.",
+    "Fixed scenic Settings surfaces across all four first-party themes so Project archive rows remain readable without an unintended outer frame.",
+  ],
+}, {
   version: "0.0.4",
   date: "2026-09-18",
   highlights: [
@@ -41,6 +48,13 @@ const enEntries: ChangelogEntry[] = [{
 }];
 
 const zhCNEntries: ChangelogEntry[] = [{
+  version: "0.0.5",
+  date: "2026-09-23",
+  highlights: [
+    "改进 Workspaces 空状态、项目选择操作、本地化元数据、状态标记和行操作保护。",
+    "修复四个内置 scenic 主题中的设置界面，使项目归档行保持可读并移除多余外框。",
+  ],
+}, {
   version: "0.0.4",
   date: "2026-09-18",
   highlights: [
@@ -69,6 +83,13 @@ const zhCNEntries: ChangelogEntry[] = [{
 }];
 
 const zhTWEntries: ChangelogEntry[] = [{
+  version: "0.0.5",
+  date: "2026-09-23",
+  highlights: [
+    "改善 Workspaces 空狀態、專案選擇操作、本地化中繼資料、狀態標籤與列操作保護。",
+    "修正四個內建 scenic 主題中的設定介面，讓專案封存列保持可讀並移除多餘外框。",
+  ],
+}, {
   version: "0.0.4",
   date: "2026-09-18",
   highlights: [
