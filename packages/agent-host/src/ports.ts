@@ -73,6 +73,7 @@ export interface QueueStore {
   remove(id: string): Promise<boolean>;
   /** Move one entry to the head of its session ("send now"). */
   prioritize?(id: string): Promise<void>;
+  reorder?(id: string, direction: "up" | "down"): Promise<boolean>;
 }
 
 export type SessionSummary = {

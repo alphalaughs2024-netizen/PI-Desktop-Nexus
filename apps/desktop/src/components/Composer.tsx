@@ -70,6 +70,7 @@ import { AskToolCard } from "./AskToolCard";
 import { PlanApprovalBar } from "./PlanApprovalBar";
 import {
   IconArrowUp,
+  IconArrowDown,
   IconUndo2,
   IconPlus,
   IconShield,
@@ -626,6 +627,7 @@ export function Composer({
   const sendPrompt = useAppStore((s) => s.sendPrompt);
   const removeQueuedPrompt = useAppStore((s) => s.removeQueuedPrompt);
   const sendQueuedNow = useAppStore((s) => s.sendQueuedNow);
+  const moveQueuedPrompt = useAppStore((s) => s.moveQueuedPrompt);
   const abort = useAppStore((s) => s.abort);
   const isRunning = useAppStore((s) => s.isRunning);
   const planningState = useAppStore((s) =>
@@ -2126,7 +2128,7 @@ export function Composer({
             role="list"
             aria-label={t("chat.queuedPrompts")}
           >
-            {queuedPrompts.map((item) => {
+            {queuedPrompts.map((item, index) => {
               const label =
                 item.content.trim() ||
                 item.draft.fileReferences.map((reference) => reference.name).join(", ") ||
@@ -2141,6 +2143,8 @@ export function Composer({
                   <span className="composer-queued-prompt-text" title={label}>
                     {label}
                   </span>
+                  <TooltipButton type="button" className="composer-queued-prompt-action" tooltip="Move up" ariaLabel="Move queued prompt up" disabled={index === 0} onClick={() => void moveQueuedPrompt(item.id, "up")}><IconArrowUp size={13} aria-hidden /></TooltipButton>
+                  <TooltipButton type="button" className="composer-queued-prompt-action" tooltip="Move down" ariaLabel="Move queued prompt down" disabled={index === queuedPrompts.length - 1} onClick={() => void moveQueuedPrompt(item.id, "down")}><IconArrowDown size={13} aria-hidden /></TooltipButton>
                   <TooltipButton
                     type="button"
                     className="composer-queued-prompt-action"

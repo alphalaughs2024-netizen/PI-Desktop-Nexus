@@ -633,6 +633,13 @@ export type AgentPromptResponse = {
   turnId: string;
 };
 
+export type AgentSteerRequest = {
+  sessionId: string;
+  expectedTurnId: string;
+  content: string;
+  attachments?: AgentPromptAttachment[];
+};
+
 /** One-shot Composer draft enhancement; this never reads session history. */
 export type PromptEnhancementRequest = {
   sessionId?: string | null;
@@ -706,6 +713,21 @@ export type AgentQueuePushRequest = {
 export type AgentQueueChangedEvent = {
   sessionId: string;
   entries: QueuedTurnSummary[];
+};
+
+export type SessionSearchMessageMatch = {
+  messageId: string;
+  role: string;
+  createdAt: string;
+  snippet: string;
+};
+
+export type SessionSearchHit = {
+  session: SessionSummary;
+  projectName?: string | null;
+  metadataMatch: boolean;
+  messageCount: number;
+  matches: SessionSearchMessageMatch[];
 };
 
 export type AgentCompactRequest = {

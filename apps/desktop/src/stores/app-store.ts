@@ -160,6 +160,7 @@ import {
   prioritizeQueuedPrompt,
   queuedPromptForSession,
   removeQueuedPrompt,
+  reorderQueuedPrompt,
   type QueuedPrompt,
   type QueuedPrompts,
 } from "../lib/queued-prompts";
@@ -929,6 +930,7 @@ export type AppState = {
   ) => void;
   removeQueuedPrompt: (promptId: string) => void;
   sendQueuedNow: (promptId: string) => Promise<void>;
+  moveQueuedPrompt: (promptId: string, direction: "up" | "down") => Promise<void>;
   refreshQueuedPrompts: (sessionId: string) => Promise<void>;
   applyQueueChanged: (event: AgentQueueChangedEvent) => void;
   compactContext: () => Promise<void>;
@@ -2222,6 +2224,13 @@ export const useAppStore = create<AppState>((set, get) => ({
         { variant: "error" },
       );
     }
+  },
+
+  moveQueuedPrompt: async (promptId, direction) => {
+    const sessionId = get().activeSessionId; if (!sessionId) return;
+    set((state) => ({ queuedPrompts: reorderQueuedPrompt(state.queuedPrompts, sessionId, promptId, direction) }));
+    try { const result = await api.reorderQueuedPrompt(promptId, direction); if (!result.moved) await get().refreshQueuedPrompts(sessionId); }
+    catch (error) { await get().refreshQueuedPrompts(sessionId); get().showToast(error instanceof Error ? error.message : String(error), { variant: "error" }); }
   },
 
   refreshQueuedPrompts: async (sessionId) => {
