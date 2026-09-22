@@ -1624,17 +1624,6 @@ export function Sidebar({
               <IconPencil size={14} />
               {t("nav.renameTask", { defaultValue: "Rename task" })}
             </button>
-            <button type="button" role="menuitem" data-action="clone-project" onClick={() => {
-              closeMenus(false);
-              const url = window.prompt("Git repository URL");
-              if (!url) return;
-              const parentPath = window.prompt("Parent folder path");
-              if (!parentPath) return;
-              void api.cloneProject(url, parentPath).then(() => void refreshProject(parentPath)).catch((error) => reportError(error));
-            }}>
-              <IconFolder size={14} />
-              Clone repository
-            </button>
             <button
               type="button"
               role="menuitem"
@@ -1707,6 +1696,17 @@ export function Sidebar({
         ) : null}
         {entry ? (
           <>
+            <button type="button" role="menuitem" data-action="clone-project" onClick={() => {
+              closeMenus(false);
+              const url = window.prompt("Git repository URL");
+              if (!url) return;
+              const parentPath = window.prompt("Parent folder path");
+              if (!parentPath) return;
+              void api.cloneProject(url, parentPath).then(() => void refreshProject(parentPath)).catch((error) => reportError(error));
+            }}>
+              <IconFolder size={14} />
+              Clone repository
+            </button>
             <button
               ref={menuFirstItemRef}
               type="button"
