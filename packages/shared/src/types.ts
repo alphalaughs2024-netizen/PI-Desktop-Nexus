@@ -701,6 +701,7 @@ export type QueuedTurnSummary = {
   attachments?: AgentPromptAttachment[];
   position: number;
   createdAt: string;
+  priority?: number;
 };
 
 export type AgentQueuePushRequest = {

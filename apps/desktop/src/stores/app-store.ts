@@ -155,12 +155,14 @@ import {
   type ComposerPrefill,
 } from "../lib/composer-smart-stop";
 import {
-  clearQueuedPromptSendNow,
   enqueueQueuedPrompt,
-  prioritizeQueuedPrompt,
+  isPendingQueuedPrompt,
+  isPromotedQueuedPrompt,
+  promoteQueuedPrompt,
   queuedPromptForSession,
   removeQueuedPrompt,
   reorderQueuedPrompt,
+  type QueuedPromptDirection,
   type QueuedPrompt,
   type QueuedPrompts,
 } from "../lib/queued-prompts";
@@ -931,6 +933,7 @@ export type AppState = {
   removeQueuedPrompt: (promptId: string) => void;
   sendQueuedNow: (promptId: string) => Promise<void>;
   moveQueuedPrompt: (promptId: string, direction: "up" | "down") => Promise<void>;
+  editQueuedPrompt: (promptId: string) => void;
   refreshQueuedPrompts: (sessionId: string) => Promise<void>;
   applyQueueChanged: (event: AgentQueueChangedEvent) => void;
   compactContext: () => Promise<void>;
@@ -2181,6 +2184,16 @@ export const useAppStore = create<AppState>((set, get) => ({
     });
   },
 
+  editQueuedPrompt: (promptId) => {
+    const sessionId = get().activeSessionId; if (!sessionId) return;
+    const item = queuedPromptForSession(get().queuedPrompts, sessionId, promptId);
+    if (!item || isPendingQueuedPrompt(item) || isPromotedQueuedPrompt(item)) return;
+    const prefill: ComposerPrefill = { sessionId, text: item.draft.text, fileReferences: item.draft.fileReferences.map((reference) => ({ ...reference })) };
+    set((state) => ({ queuedPrompts: removeQueuedPrompt(state.queuedPrompts, sessionId, promptId), composerPrefill: prefill }));
+    queuedDrafts.delete(promptId);
+    void api.removeQueuedPrompt(promptId).catch(() => get().refreshQueuedPrompts(sessionId));
+  },
+
   sendQueuedNow: async (promptId) => {
     const sessionId = get().activeSessionId;
     if (!sessionId) return;
@@ -2189,9 +2202,9 @@ export const useAppStore = create<AppState>((set, get) => ({
       sessionId,
       promptId,
     );
-    if (!item || item.id.startsWith("pending:") || item.sendNowRequested) return;
+    if (!item || isPendingQueuedPrompt(item) || isPromotedQueuedPrompt(item)) return;
     set((state) => ({
-      queuedPrompts: prioritizeQueuedPrompt(
+        queuedPrompts: promoteQueuedPrompt(
         state.queuedPrompts,
         sessionId,
         promptId,
@@ -2201,24 +2214,9 @@ export const useAppStore = create<AppState>((set, get) => ({
       // The Host moves the entry to the head of its queue; a running turn is
       // asked to finish at its next boundary so that entry starts next.
       await api.prioritizeQueuedPrompt(promptId);
-      if (get().runningSessions[sessionId]) {
-        const result = await api.stop(sessionId);
-        if (!result.requested) {
-          set((state) => ({
-            queuedPrompts: clearQueuedPromptSendNow(
-              state.queuedPrompts,
-              sessionId,
-            ),
-          }));
-        }
-      }
+        if (get().runningSessions[sessionId]) await api.stop(sessionId);
     } catch (error) {
-      set((state) => ({
-        queuedPrompts: clearQueuedPromptSendNow(
-          state.queuedPrompts,
-          sessionId,
-        ),
-      }));
+      void get().refreshQueuedPrompts(sessionId);
       get().showToast(
         error instanceof Error ? error.message : String(error),
         { variant: "error" },
@@ -4714,7 +4712,6 @@ const queuedDrafts = new Map<string, ComposerDraftSnapshot>();
 
 function toQueuedPrompt(
   entry: QueuedTurnSummary,
-  previous?: QueuedPrompt,
 ): QueuedPrompt {
   return {
     id: entry.id,
@@ -4722,7 +4719,7 @@ function toQueuedPrompt(
     content: entry.content,
     draft: queuedDrafts.get(entry.id) ?? { text: entry.content, fileReferences: [] },
     createdAt: Date.parse(entry.createdAt) || Date.now(),
-    ...(previous?.sendNowRequested ? { sendNowRequested: true } : {}),
+    ...(entry.priority === undefined ? {} : { priority: entry.priority }),
   };
 }
 
@@ -4730,10 +4727,8 @@ function toQueuedPrompt(
 function applyQueueEntries(sessionId: string, entries: QueuedTurnSummary[]): void {
   useAppStore.setState((state) => {
     const current = state.queuedPrompts[sessionId] ?? [];
-    const pending = current.filter((item) => item.id.startsWith("pending:"));
-    const mirrored = entries.map((entry) =>
-      toQueuedPrompt(entry, current.find((item) => item.id === entry.id)),
-    );
+    const pending = current.filter(isPendingQueuedPrompt);
+    const mirrored = entries.map(toQueuedPrompt);
     for (const item of current) {
       if (!item.id.startsWith("pending:") && !entries.some((entry) => entry.id === item.id)) {
         queuedDrafts.delete(item.id);
