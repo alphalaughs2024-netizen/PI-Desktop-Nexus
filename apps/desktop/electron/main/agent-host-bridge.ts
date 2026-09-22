@@ -198,7 +198,7 @@ export function createAgentHostBridge(options: AgentHostBridgeOptions) {
     return result.session ?? null;
   }
 
-  /** The Host-owned turn queue persisted by host-core (schema v15, ADR 0213). */
+  /** The Host-owned turn queue persisted by host-core (schema v17, ADR 0213). */
   const queueStore: QueueStore = {
     async listAll() {
       const host = options.getHost();
