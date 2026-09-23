@@ -634,6 +634,12 @@ export type AgentPromptResponse = {
   turnId: string;
 };
 
+/**
+ * Additive steering response contract. Legacy runtimes may still return the
+ * prompt-shaped response until the Host admission path is upgraded.
+ */
+export type AgentSteerResponse = SteerOutcome | AgentPromptResponse;
+
 export type AgentSteerRequest = {
   sessionId: string;
   expectedTurnId: string;
@@ -868,6 +874,37 @@ export type PromptCompositionSnapshot = {
 };
 export type PromptLifecycleKind = "prompt_accepted" | "context_assembled" | "prompt_sent" | "steering_requested" | "steering_accepted" | "steering_queued" | "steering_rejected" | "steering_unavailable" | "steering_failed" | "context_requested" | "context_completed" | "retry_started" | "resume_started" | "resume_success" | "resume_unavailable" | "resume_failed" | "reconnect" | "turn_completed" | "turn_failed";
 export type PromptLifecycleEvent = { id: string; kind: PromptLifecycleKind; ts: number; turnId?: string; preview?: string; compositionHash?: string; reason?: string; expectedTurnId?: string; sensitive?: boolean; parentToolCallId?: string; agentName?: string };
+export type PromptLifecycleFilter = "all" | "steering" | "context" | "recovery" | "turn";
+
+export type PersistedLifecycleEvent = PromptLifecycleEvent & {
+  schema: 1;
+  sessionId: string;
+};
+
+export type PersistedPromptComposition = {
+  schema: 1;
+  id: string;
+  kind: "prompt_composed";
+  sessionId: string;
+  ts: number;
+  compositionHash: string;
+  estimatedTokens: number;
+  sections: Array<Pick<PromptCompositionSection, "id" | "source" | "scope" | "included" | "estimatedTokens" | "hash" | "reason" | "reloadTrigger" | "sensitive" | "context">>;
+};
+
+export type PersistedLifecycleRecord = PersistedLifecycleEvent | PersistedPromptComposition;
+
+export type SessionTimelineGetRequest = {
+  sessionId: string;
+  filter?: PromptLifecycleFilter;
+  limit?: number;
+};
+
+export type SessionTimelineGetResponse = {
+  records: PersistedLifecycleRecord[];
+  latestComposition?: PersistedPromptComposition;
+};
+
 export type NexusFeatureFlags = {
   structuredComposition: boolean;
   lifecycleTimeline: boolean;

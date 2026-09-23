@@ -21,6 +21,12 @@ Phase 2 project workbench scenarios include:
 
 Phase 1 closure scenarios include:
 
+- Shared lifecycle records carry schema/versioned metadata-only contracts.
+- Shared steering responses remain compatible with legacy prompt responses while
+  exposing a discriminated `AgentSteerResponse` for the Host upgrade.
+- Feature flag defaults normalize deterministically and do not change ordinary
+  prompt delivery.
+
 - Prompt lifecycle records use stable IDs, bounded previews, and metadata-only
   persistence.
 - Timeline read-back filters by steering, context, recovery, and turn without

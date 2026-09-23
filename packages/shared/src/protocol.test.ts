@@ -22,6 +22,10 @@ import {
   type CommandShellCatalog,
   type ToolsOutputParams,
 } from "./index.js";
+import {
+  DEFAULT_NEXUS_FEATURE_FLAGS,
+  normalizeNexusFeatureFlags,
+} from "./feature-flags.js";
 
 describe("Plan protocol contracts", () => {
   it("uses protocol v11/schema v17 and exposes the plan, schedule, and shell channels", () => {
@@ -237,5 +241,22 @@ describe("Plan protocol contracts", () => {
     expect(rpcTimeoutMs("tools.abort", { sessionId: "s", toolCallId: "t" })).toBe(
       130_000,
     );
+  });
+});
+
+describe("Phase 1 closure contracts", () => {
+  it("normalizes the additive feature flag snapshot", () => {
+    expect(DEFAULT_NEXUS_FEATURE_FLAGS.lifecycleTimeline).toBe(true);
+    expect(normalizeNexusFeatureFlags({ lifecyclePersistence: false })).toEqual({
+      structuredComposition: true,
+      lifecycleTimeline: true,
+      lifecyclePersistence: false,
+      contextProvenance: true,
+      statefulSteering: true,
+    });
+  });
+
+  it("keeps the timeline channel whitelisted", () => {
+    expect(IPC_WHITELIST.has(IPC.invoke.sessionTimelineGet)).toBe(true);
   });
 });
