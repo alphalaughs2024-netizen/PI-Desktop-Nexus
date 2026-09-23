@@ -21,6 +21,14 @@ Phase 2 project workbench scenarios include:
 
 Phase 1 closure scenarios include:
 
+Queued steering scenarios include:
+
+- Steering a queued prompt sends it into the active turn and removes it from
+  both the renderer queue and Host-owned durable queue after successful
+  admission.
+- A queue refresh racing with steering cannot reintroduce the sent prompt.
+- Rejected or failed steering preserves the queued prompt for retry or editing.
+
 - Steering returns an authoritative typed outcome through the runtime, sidecar,
   Electron IPC, API, and renderer store.
 - A stale expected turn is rejected without affecting the replacement turn.
