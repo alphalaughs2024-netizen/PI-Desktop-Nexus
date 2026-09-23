@@ -2,11 +2,13 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAppStore } from "../../stores/app-store";
 
+const EMPTY_TIMELINE: readonly import("@pi-desktop/shared").PromptLifecycleEvent[] = [];
+
 export function PromptInspectorTab() {
   const { t } = useTranslation();
   const sessionId = useAppStore((state) => state.activeSessionId);
   const inspector = useAppStore((state) => sessionId ? state.promptInspector[sessionId] : undefined);
-  const timeline = useAppStore((state) => sessionId ? state.promptTimeline[sessionId] ?? [] : []);
+  const timeline = useAppStore((state) => sessionId ? state.promptTimeline[sessionId] ?? EMPTY_TIMELINE : EMPTY_TIMELINE);
   const composition = inspector?.composition;
   const [filter, setFilter] = useState<"all" | "steering" | "context">("all");
   if (!composition) return <div className="prompt-inspector-empty">No prompt composition has been recorded yet.</div>;
