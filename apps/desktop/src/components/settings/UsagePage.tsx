@@ -107,7 +107,11 @@ export function UsagePage() {
       total += ((model.inputTokens ?? 0) * (cost.input ?? 0) + (model.outputTokens ?? 0) * (cost.output ?? 0) + (model.cacheReadTokens ?? 0) * (cost.cacheRead ?? 0) + (model.cacheWriteTokens ?? 0) * (cost.cacheWrite ?? 0)) / 1_000_000;
       priced += 1;
     }
-    return { total, priced, models: facets.models.length };
+    return { total, priced, models: facets.models.length, rows: facets.models.map((model) => {
+      const info = Object.values(providerModels).flat().find((candidate) => candidate.modelId === model.id || candidate.displayName === model.label);
+      if (!info?.cost) return { ...model, cost: null };
+      return { ...model, cost: ((model.inputTokens ?? 0) * (info.cost.input ?? 0) + (model.outputTokens ?? 0) * (info.cost.output ?? 0) + (model.cacheReadTokens ?? 0) * (info.cost.cacheRead ?? 0) + (model.cacheWriteTokens ?? 0) * (info.cost.cacheWrite ?? 0)) / 1_000_000 };
+    }) };
   }, [facets.models, providerModels]);
   const insights = history?.insights;
   const locale = i18n.resolvedLanguage ?? i18n.language;
@@ -190,6 +194,7 @@ export function UsagePage() {
       <section className="settings-card-block usage-cost-card">
         <div className="usage-card-heading"><div><h3>{t("settings.usageBreakdown")}</h3><span>{t("settings.usageDescription")}</span></div><strong>{costEstimate.priced ? `$${costEstimate.total.toFixed(2)}` : "—"}</strong></div>
         <div className="usage-cost-grid"><div><span>{t("settings.usageTotal")}</span><strong>{costEstimate.priced ? `$${costEstimate.total.toFixed(2)}` : t("settings.usageUnavailable")}</strong></div><div><span>{t("settings.usageTurns")}</span><strong>{t("settings.usageUnavailable")}</strong></div><div><span>{t("settings.usageModelsTitle")}</span><strong>{costEstimate.priced} / {costEstimate.models}</strong></div></div>
+        <div className="usage-cost-model-list">{costEstimate.rows.slice(0, 8).map((row) => <div className="usage-cost-model-row" key={row.id}><span>{row.label}</span><strong>{row.cost == null ? "Unpriced" : `$${row.cost.toFixed(2)}`}</strong><i><b style={{ width: `${Math.max(4, ((row.cost ?? 0) / Math.max(0.01, costEstimate.total)) * 100)}%` }} /></i></div>)}</div>
       </section>
     </div>
   );

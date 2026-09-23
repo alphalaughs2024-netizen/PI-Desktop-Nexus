@@ -2370,6 +2370,11 @@
 .usage-cost-grid > div { display: grid; gap: 5px; padding: 12px; border: 1px solid var(--ds-border-subtle); border-radius: 8px; background: var(--ds-bg-elevated-opaque); }
 .usage-cost-grid span { color: var(--ds-text-muted); font-size: var(--text-xs); }
 .usage-cost-grid strong { color: var(--ds-text-primary); font-variant-numeric: tabular-nums; }
+.usage-cost-model-list { display: grid; gap: 10px; padding: 0 14px 14px; }
+.usage-cost-model-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 12px; color: var(--ds-text-secondary); font-size: var(--text-xs-plus); }
+.usage-cost-model-row strong { color: var(--ds-text-primary); font-variant-numeric: tabular-nums; }
+.usage-cost-model-row i { grid-column: 1 / -1; height: 4px; overflow: hidden; background: var(--ds-bg-inset); }
+.usage-cost-model-row i b { display: block; height: 100%; background: var(--ds-accent); }
 
 .usage-detail-card { min-width: 0; overflow: hidden; }
 .usage-detail-card > .usage-card-heading { padding-bottom: 12px; }

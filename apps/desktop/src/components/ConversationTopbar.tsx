@@ -1,5 +1,7 @@
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAppStore } from "../stores/app-store";
+import { api } from "../lib/api";
 import {
   IconSidebar,
   IconNewSession,
@@ -49,6 +51,27 @@ export function ConversationTopbar({
   const activeSessionId = useAppStore((s) => s.activeSessionId);
   const sessions = useAppStore((s) => s.sessions);
   const workspace = useAppStore((s) => s.workspace);
+  const activeMessages = useAppStore((s) => s.messages);
+  const providerModels = useAppStore((s) => s.providerModels);
+  const [costTotal, setCostTotal] = useState<number | null>(null);
+  useEffect(() => {
+    let alive = true;
+    void api.getTokenUsageHistory({ bucket: "month" }).then((history) => {
+      let total = 0;
+      for (const model of history.facets.models) {
+        const info = Object.values(providerModels).flat().find((candidate) => candidate.modelId === model.id || candidate.displayName === model.label);
+        if (!info?.cost) continue;
+        total += ((model.inputTokens ?? 0) * (info.cost.input ?? 0) + (model.outputTokens ?? 0) * (info.cost.output ?? 0) + (model.cacheReadTokens ?? 0) * (info.cost.cacheRead ?? 0) + (model.cacheWriteTokens ?? 0) * (info.cost.cacheWrite ?? 0)) / 1_000_000;
+      }
+      if (alive) setCostTotal(total);
+    }).catch(() => undefined);
+    return () => { alive = false; };
+  }, [providerModels]);
+  const sessionCost = useMemo(() => activeMessages.reduce((total, message) => {
+    const model = message.modelId ? Object.values(providerModels).flat().find((candidate) => candidate.modelId === message.modelId) : undefined;
+    if (!model?.cost || !message.usage) return total;
+    return total + ((message.usage.inputTokens ?? 0) * (model.cost.input ?? 0) + (message.usage.outputTokens ?? 0) * (model.cost.output ?? 0) + (message.usage.cacheReadTokens ?? 0) * (model.cost.cacheRead ?? 0) + (message.usage.cacheWriteTokens ?? 0) * (model.cost.cacheWrite ?? 0)) / 1_000_000;
+  }, 0), [activeMessages, providerModels]);
 
   const activeSession = sessions.find((session) => session.id === activeSessionId);
 
