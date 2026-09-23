@@ -2251,6 +2251,7 @@
 }
 
 .usage-hero-title {
+  display: block;
   margin: 0 0 8px;
   color: var(--ds-text-primary);
   font-size: clamp(34px, 6vw, 48px);
@@ -2258,6 +2259,8 @@
   font-weight: 600;
   letter-spacing: -.045em;
   line-height: 1.05;
+  font-variant-numeric: tabular-nums lining-nums;
+  white-space: nowrap;
 }
 
 .usage-hero p {

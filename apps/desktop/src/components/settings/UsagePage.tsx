@@ -107,7 +107,7 @@ export function UsagePage() {
       </div>
       <div className="usage-hero">
         <div>
-          <h2 className="usage-hero-title">{formatTokens(totals.totalTokens)}</h2>
+          <output className="usage-hero-title" aria-label={t("settings.usageTotal")} data-value={totals.totalTokens}>{formatTokens(totals.totalTokens)}</output>
           <p>{t("settings.usageHeroSub", { turns: totals.turnCount })}</p>
           <p className="usage-hero-note">{t("settings.usageDescription")}</p>
         </div>
