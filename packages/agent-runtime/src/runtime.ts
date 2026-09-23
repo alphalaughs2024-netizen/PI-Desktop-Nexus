@@ -6791,14 +6791,19 @@ export class DesktopAgentRuntime {
     return { projectPath: this.projectPath, supportsVision: this.model.input.includes("image") };
   }
 
-  steer(input: RuntimePrompt, expectedTurnId: string, message?: UiMessage): { accepted: boolean; turnId: string } {
+  async steer(input: RuntimePrompt, expectedTurnId: string, message?: UiMessage): Promise<{ accepted: boolean; turnId: string }> {
     this.steeringContext(expectedTurnId);
     const content = promptContent(input);
     const agentMessage: AgentMessage = { role: "user", content, timestamp: Date.now() };
-    // Stop the in-flight provider stream before injecting the steering message.
-    // pi-agent-core will consume the queued message on the next idle cycle.
-    this.agent.abort();
+    // Queue the steering message, abort the in-flight provider request, then
+    // explicitly resume the agent so the queued message is consumed immediately
+    // instead of waiting for the old response to finish naturally.
     this.agent.steer(agentMessage);
+    this.agent.abort();
+    await this.agent.waitForIdle();
+    if (!this.disposed && !this.runCancelled && expectedTurnId === this.turnId) {
+      await this.agent.continue();
+    }
     if (message) {
       this.appendLiveEntry(message.id, agentMessage);
       this.emit({ type: "message_start", message });
