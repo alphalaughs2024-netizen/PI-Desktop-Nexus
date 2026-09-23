@@ -8872,7 +8872,24 @@ function registerIpc() {
     const activeTurnId = activeTurns.get(req.sessionId);
     if (!activeTurnId) return { state: "rejected", reason: "not_running" };
     if (activeTurnId !== req.expectedTurnId) return { state: "rejected", reason: "stale_turn" };
-    return sidecar.call("agent.steer", req);
+    const outcome = await sidecar.call("agent.steer", req);
+    if (
+      req.queuedPromptId &&
+      outcome &&
+      typeof outcome === "object" &&
+      ((outcome as { state?: string }).state === "accepted" ||
+        (outcome as { state?: string }).state === "queued")
+    ) {
+      try {
+        await agentHostBridge?.queue.remove(req.queuedPromptId);
+      } catch (error) {
+        logger.app("session", "warn", "steered queue entry cleanup failed", {
+          sessionId: req.sessionId,
+          data: { queuedPromptId: req.queuedPromptId, error: String(error) },
+        });
+      }
+    }
+    return outcome;
   });
 
   handle(IPC.invoke.agentCompact, async (req: { sessionId: string }) => {

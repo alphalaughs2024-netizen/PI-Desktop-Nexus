@@ -28,6 +28,8 @@ Queued steering scenarios include:
   admission.
 - A queue refresh racing with steering cannot reintroduce the sent prompt.
 - Rejected or failed steering preserves the queued prompt for retry or editing.
+- The durable queued prompt ID is passed with steering so Main removes the Host
+  entry in the same admission path, preventing queue snapshots from restoring it.
 
 - Steering returns an authoritative typed outcome through the runtime, sidecar,
   Electron IPC, API, and renderer store.

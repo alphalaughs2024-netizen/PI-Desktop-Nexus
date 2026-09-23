@@ -646,6 +646,8 @@ export type AgentSteerRequest = {
   content: string;
   attachments?: AgentPromptAttachment[];
   messageId?: string;
+  /** Durable Host queue entry being promoted into this steering turn. */
+  queuedPromptId?: string;
 };
 
 /** One-shot Composer draft enhancement; this never reads session history. */
