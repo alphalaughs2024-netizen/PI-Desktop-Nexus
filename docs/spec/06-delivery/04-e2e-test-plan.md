@@ -30,6 +30,12 @@ Phase 2 project workbench scenarios include:
 - Contract and diff evidence remain informational and do not automatically
   complete a Goal.
 
+Sidebar navigation scenarios include:
+
+- The footer shows a visible Scheduled button with a clock icon immediately
+  before Notifications.
+- Clicking Scheduled opens the Scheduled tasks page and marks the control active.
+
 - Document every user-visible and protocol-visible behavior that MVP must verify.
 - Provide a scenario catalog that maps to acceptance criteria (A–H) and milestones (M1–M6).
 - Serve as the traceability backbone: scenario ID ↔ acceptance criterion ↔ spec.

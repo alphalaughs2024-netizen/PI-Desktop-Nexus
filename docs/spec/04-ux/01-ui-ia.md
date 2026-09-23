@@ -1,5 +1,10 @@
 # 01. UI Information Architecture
 
+The sidebar footer exposes a visible **Scheduled** destination with a clock
+icon immediately before Notifications. Unlike icon-only utility actions, the
+Scheduled control keeps its text label visible so the task automation page is
+discoverable without global search.
+
 ## Project workbench
 
 Expanding a project in the Projects destination reveals a compact project
