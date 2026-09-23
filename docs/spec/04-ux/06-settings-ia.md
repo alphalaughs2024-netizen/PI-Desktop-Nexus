@@ -144,11 +144,10 @@ Settings is a **full-window page** that replaces the app sidebar + main chrome (
   session; the transcript shows where each compaction happened and the context
   usage inspector shows whether a checkpoint is installed.
 
-Token usage is **not a Settings destination** (D335 / ADR 0173). Completed-turn
-history stays host-owned (`session.endTurn.usage`, `stats.getTokenUsageHistory`).
-The user-facing dashboard is marketplace plugin `pi.token-insights`, opened from
-the command palette (`usage`, `tokens`, `用量`). Settings search does not index
-a usage tab.
+Token usage is a native Settings destination. Completed-turn history stays
+host-owned (`session.endTurn.usage`, `stats.getTokenUsageHistory`). The Usage
+page provides token totals, bounded history, and token breakdowns. Currency cost
+is intentionally a separate follow-up.
 
 ### Shortcuts (`shortcuts` tab)
 - **Keyboard shortcuts** card:
@@ -563,7 +562,7 @@ system while preserving their different data ownership:
    Shortcuts / 快捷键, Instructions / 指令, Models / 模型, Skills / 技能, MCP,
    Subagents / 子智能体, Import / 导入, Projects / 项目, and Info / 信息 in
    that order. The rows are grouped under Preferences / 偏好, Agent / 智能体,
-   Workspace / 工作区, and System / 系统. There is no Usage / 用量 destination.
+    Workspace / 工作区, and System / 系统. Usage / 用量 is a System destination.
 3. Appearance is part of General and has no standalone rail destination
 4. Providers is part of Agent and has no standalone rail destination
 5. Plugins has no Settings destination; the app-shell Plugins page supports
@@ -571,8 +570,8 @@ system while preserving their different data ownership:
 6. General shows the host-backed Appearance card; the AI destination shows
    Permissions and Defaults, including the Command shell row; the
    Shortcuts destination shows the Keyboard shortcuts card; Info shows the
-   Developer card. No additional settings destinations are rendered. Token
-   usage lives in plugin `pi.token-insights`, not Settings.
+    Developer card. The native Usage destination reads host-owned token history
+    and does not depend on a plugin installation.
 7. Provider secrets never display raw key values
 8. Model configuration shows compact Defaults, separate vendor accounts, the
    account edit/add dialogs, and AI service cards rather than a dense always-on

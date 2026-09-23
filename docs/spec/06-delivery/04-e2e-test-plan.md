@@ -9222,26 +9222,24 @@ are withdrawn with ADR 0165.
   `feedback.test.mjs`); full UI journey Draft (do not run E2E locally
   unless explicitly requested)
 
-#### E2E-186: Token usage dashboard is plugin-owned; host still stores turn totals
+#### E2E-186: Native token usage dashboard reads host turn totals
 
 - **Preconditions**: A profile with at least one completed Agent turn that
   reported provider usage after this build. Settings is reachable. Plugin
   `pi.token-insights` may be installed.
 - **Steps**: 1) Complete a turn that also settled a subagent. 2) Open
-  Settings. 3) Search settings for "tokens" / "用量". 4) Open Token Insights
-  from the command palette (`usage` / `用量`). 5) Confirm the transcript
-  assistant chip.
+  Settings. 3) Search settings for "tokens" / "用量". 4) Open Usage. 5)
+  Confirm the transcript assistant chip.
 - **Expected**:
-  - The rail has no Usage / 用量 destination. Preferences is General, AI,
-    Shortcuts.
-  - Settings search does not surface a usage tab.
+  - The rail exposes a native Usage / 用量 destination.
+  - Settings search surfaces the Usage destination.
   - `stats.getTokenUsageHistory` still returns completed-turn totals that
     include subagent spend.
   - The assistant chip under the transcript still shows parent-only provider
     usage.
-  - Token Insights is the heatmap / KPI dashboard. When the plugin is
-    installed, PI-Desktop remainders from the host turns table appear there
-    without rewriting `message.usage`.
+  - Usage is the native Nexus token dashboard. It shows KPI totals, bounded
+    daily/weekly/monthly history, and token breakdowns without rewriting
+    `message.usage`.
 - **Specs linked**: `04-ux/06-settings-ia.md`,
   `03-runtime/01-ipc-protocol.md`, `03-runtime/06-host-rpc-protocol.md`,
   ADR 0171, ADR 0173, `08-meta/decisions-log.md` (D331, D335)
