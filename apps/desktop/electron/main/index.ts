@@ -5851,6 +5851,19 @@ function subagentTagged(message: UiMessage, envelope: AgentEventEnvelope): UiMes
 
 function persistAgentEvent(envelope: AgentEventEnvelope): UiMessage | undefined {
   const event = envelope.event;
+  if (event.type === "lifecycle" || event.type === "prompt_composed") {
+    const timelinePath = path.join(dataDir, "lifecycle-events.jsonl");
+    const record = event.type === "lifecycle"
+      ? { ...event.lifecycle, sessionId: envelope.sessionId, turnId: envelope.turnId }
+      : { id: `${envelope.sessionId}:composition:${event.composition.hash}`, kind: "prompt_composed", ts: event.composition.composedAt, sessionId: envelope.sessionId, compositionHash: event.composition.hash, estimatedTokens: event.composition.estimatedTokens, sections: event.composition.sections.map((section) => ({ id: section.id, source: section.source, scope: section.scope, included: section.included, estimatedTokens: section.estimatedTokens, hash: section.hash })) };
+    try {
+      fs.mkdirSync(path.dirname(timelinePath), { recursive: true });
+      fs.appendFileSync(timelinePath, `${JSON.stringify(record).slice(0, 12000)}\n`, "utf8");
+      const lines = fs.readFileSync(timelinePath, "utf8").trim().split(/\r?\n/).slice(-80);
+      fs.writeFileSync(timelinePath, lines.join("\n") + "\n", "utf8");
+    } catch { /* diagnostics must never block transcript delivery */ }
+    return undefined;
+  }
   const turnId = activeTurns.get(envelope.sessionId);
   const executionId = (() => {
     const candidate = approvedExecutionIdsBySession.get(envelope.sessionId);

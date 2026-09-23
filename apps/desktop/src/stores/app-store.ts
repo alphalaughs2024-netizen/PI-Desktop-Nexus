@@ -3855,13 +3855,15 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   handleAgentEvent: (envelope) => {
     if (envelope.event.type === "prompt_composed") {
-      set((state) => ({ promptInspector: { ...state.promptInspector, [envelope.sessionId]: { sessionId: envelope.sessionId, composition: envelope.event.composition, lastEvent: envelope.event.type, updatedAt: Date.now() } } }));
+      const composition = envelope.event.composition;
+      set((state) => ({ promptInspector: { ...state.promptInspector, [envelope.sessionId]: { sessionId: envelope.sessionId, composition, lastEvent: envelope.event.type, updatedAt: Date.now() } } }));
     }
     if (envelope.event.type === "lifecycle") {
+      const lifecycle = envelope.event.lifecycle;
       set((state) => {
         const current = state.promptTimeline[envelope.sessionId] ?? [];
-        const next = [...current.filter((event) => event.id !== envelope.event.lifecycle.id), envelope.event.lifecycle].slice(-80);
-        return { promptTimeline: { ...state.promptTimeline, [envelope.sessionId]: next }, promptInspector: { ...state.promptInspector, [envelope.sessionId]: { ...(state.promptInspector[envelope.sessionId] ?? { sessionId: envelope.sessionId }), lastEvent: envelope.event.lifecycle.kind, updatedAt: Date.now() } } };
+        const next = [...current.filter((event) => event.id !== lifecycle.id), lifecycle].slice(-80);
+        return { promptTimeline: { ...state.promptTimeline, [envelope.sessionId]: next }, promptInspector: { ...state.promptInspector, [envelope.sessionId]: { ...(state.promptInspector[envelope.sessionId] ?? { sessionId: envelope.sessionId }), lastEvent: lifecycle.kind, updatedAt: Date.now() } } };
       });
     }
     const event = envelope.event;

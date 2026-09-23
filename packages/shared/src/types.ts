@@ -639,6 +639,7 @@ export type AgentSteerRequest = {
   expectedTurnId: string;
   content: string;
   attachments?: AgentPromptAttachment[];
+  messageId?: string;
 };
 
 /** One-shot Composer draft enhancement; this never reads session history. */
