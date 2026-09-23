@@ -835,6 +835,7 @@ export type AppState = {
   selectingSessionId?: string;
   messages: UiMessage[];
   promptInspector: Record<string, import("@pi-desktop/shared").PromptInspectorState>;
+  promptTimeline: Record<string, import("@pi-desktop/shared").PromptLifecycleEvent[]>;
   /**
    * Session ids whose panes stay mounted, most recently visible first and
    * bounded by `RETAINED_SESSION_PANE_LIMIT` (ADR 0137). The head is the
@@ -1366,6 +1367,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   projectSort: initialSidebarPreferences.projectSort,
   messages: [],
   promptInspector: {},
+  promptTimeline: {},
   retainedSessionIds: [],
   retainedTranscripts: {},
   sessionHistory: {},
@@ -3851,6 +3853,13 @@ export const useAppStore = create<AppState>((set, get) => ({
   handleAgentEvent: (envelope) => {
     if (envelope.event.type === "prompt_composed") {
       set((state) => ({ promptInspector: { ...state.promptInspector, [envelope.sessionId]: { sessionId: envelope.sessionId, composition: envelope.event.composition, lastEvent: envelope.event.type, updatedAt: Date.now() } } }));
+    }
+    if (envelope.event.type === "lifecycle") {
+      set((state) => {
+        const current = state.promptTimeline[envelope.sessionId] ?? [];
+        const next = [...current.filter((event) => event.id !== envelope.event.lifecycle.id), envelope.event.lifecycle].slice(-80);
+        return { promptTimeline: { ...state.promptTimeline, [envelope.sessionId]: next }, promptInspector: { ...state.promptInspector, [envelope.sessionId]: { ...(state.promptInspector[envelope.sessionId] ?? { sessionId: envelope.sessionId }), lastEvent: envelope.event.lifecycle.kind, updatedAt: Date.now() } } };
+      });
     }
     const event = envelope.event;
     if (event.type === "agent_end" || event.type === "error") {

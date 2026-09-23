@@ -798,6 +798,7 @@ export type AgentEvent =
   | { type: "agent_end"; messageIds: string[] }
   | { type: "turn_start" }
   | { type: "prompt_composed"; composition: PromptCompositionSnapshot }
+  | { type: "lifecycle"; lifecycle: PromptLifecycleEvent }
   | { type: "turn_end"; subagentUsage?: MessageUsage }
   | { type: "message_start"; message: UiMessage }
   | {
@@ -863,6 +864,8 @@ export type PromptCompositionSnapshot = {
   reloadReason: string;
   sections: PromptCompositionSection[];
 };
+export type PromptLifecycleKind = "prompt_accepted" | "context_assembled" | "prompt_sent" | "steering_requested" | "steering_accepted" | "steering_rejected" | "steering_unavailable" | "retry_started" | "resume_started" | "turn_completed" | "turn_failed";
+export type PromptLifecycleEvent = { id: string; kind: PromptLifecycleKind; ts: number; turnId?: string; preview?: string; compositionHash?: string; reason?: string; expectedTurnId?: string; sensitive?: boolean };
 
 export type AgentEventEnvelope = {
   sessionId: string;

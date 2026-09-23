@@ -1258,6 +1258,11 @@
 .prompt-inspector-list article > div:last-child { text-align: right; }
 .prompt-inspector-list article.is-excluded { opacity: .62; }
 .prompt-inspector-empty { display: grid; height: 100%; place-items: center; padding: 24px; color: var(--ds-text-muted); text-align: center; }
+.prompt-inspector-timeline-title { margin: 18px 0 8px; color: var(--ds-text-secondary); font-size: var(--text-xs-plus); text-transform: uppercase; letter-spacing: .06em; }
+.prompt-inspector-timeline { display: grid; gap: 5px; }
+.prompt-inspector-timeline article { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; padding: 7px 9px; border-left: 2px solid var(--ds-accent); background: var(--ds-tile); color: var(--ds-text-secondary); font-size: var(--text-xs); }
+.prompt-inspector-timeline article span { color: var(--ds-text-muted); }
+.prompt-inspector-timeline article small { grid-column: 1 / -1; color: var(--ds-text-muted); }
 .context-vault-workspace { min-width: 0; min-height: 0; flex: 1; display: grid; grid-template-columns: minmax(124px, 0.32fr) minmax(0, 1fr); overflow: hidden; border: 1px solid var(--ds-border); border-radius: var(--radius-md); background: var(--ds-bg-primary); }
 .context-vault-rail { display: flex; min-width: 0; min-height: 0; flex-direction: column; gap: 3px; padding: 8px; border-right: 1px solid var(--ds-border); background: var(--ds-bg-secondary); overflow: auto; }
 .context-vault-category { display: flex; min-height: 30px; align-items: center; justify-content: space-between; gap: 6px; padding: 0 7px; border-radius: var(--radius-sm); color: var(--ds-text-secondary); font-size: var(--text-xs); text-align: left; }

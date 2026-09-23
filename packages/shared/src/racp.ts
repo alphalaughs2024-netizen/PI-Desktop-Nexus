@@ -663,6 +663,7 @@ export function racpKindForAgentEvent(
     case "turn_start":
     case "turn_end":
     case "prompt_composed":
+    case "lifecycle":
     case "status":
       return { kind: "turn.activity", durable: false };
     case "message_start":
@@ -701,6 +702,7 @@ export const LOCAL_AGENT_EVENT_TYPES: readonly AgentEvent["type"][] = [
   "turn_start",
   "turn_end",
   "prompt_composed",
+  "lifecycle",
   "message_start",
   "message_update",
   "message_end",

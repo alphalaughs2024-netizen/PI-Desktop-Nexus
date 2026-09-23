@@ -1479,6 +1479,7 @@ export class DesktopAgentRuntime {
   private onEvent: (envelope: AgentEventEnvelope) => void;
   private baseSystemPrompt: string;
   private promptComposition?: import("@pi-desktop/shared").PromptCompositionSnapshot;
+  private lifecycleSequence = 0;
   private planningState: PlanningState;
   private pendingPlanId?: string;
   private currentAssistant?: UiMessage;
@@ -1847,7 +1848,12 @@ export class DesktopAgentRuntime {
     ], "runtime-recompose", (prompt) => composeModeSystemPrompt(this.mode, prompt));
     this.promptComposition = composed.snapshot;
     this.onEvent({ sessionId: this.sessionId, ts: Date.now(), event: { type: "prompt_composed", composition: composed.snapshot } });
+    this.emitLifecycle("context_assembled", { compositionHash: composed.snapshot.hash });
     return composed.prompt;
+  }
+
+  private emitLifecycle(kind: import("@pi-desktop/shared").PromptLifecycleKind, details: Omit<import("@pi-desktop/shared").PromptLifecycleEvent, "id" | "kind" | "ts"> = {}): void {
+    this.onEvent({ sessionId: this.sessionId, ts: Date.now(), event: { type: "lifecycle", lifecycle: { id: `${this.sessionId}:${++this.lifecycleSequence}`, kind, ts: Date.now(), ...details } } });
   }
 
   /**
