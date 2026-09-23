@@ -2246,8 +2246,8 @@ export const useAppStore = create<AppState>((set, get) => ({
     if (!sessionId || !turnId || !content.trim()) return { state: "rejected", reason: "invalid" };
     if (!state.runningSessions[sessionId]) return { state: "rejected", reason: "not_running" };
     try {
-      await api.steer({ sessionId, expectedTurnId: turnId, content: content.trim() });
-      return { state: "accepted", sessionId, expectedTurnId: turnId };
+      const response = await api.steer({ sessionId, expectedTurnId: turnId, content: content.trim() });
+      return "state" in response ? response : { state: "accepted", sessionId, expectedTurnId: response.turnId };
     } catch (error) {
       const reason = error instanceof Error ? error.message : String(error);
       const lower = reason.toLowerCase();
@@ -2272,12 +2272,14 @@ export const useAppStore = create<AppState>((set, get) => ({
     message.steering = true;
     insertOptimisticUserMessage(sessionId, message);
     try {
-      await api.steer({ sessionId, expectedTurnId, content, messageId: message.id, attachments: draft ? promptAttachmentsFromDraft(draft.fileReferences) : [] });
-      if (promptId) {
+      const response = await api.steer({ sessionId, expectedTurnId, content, messageId: message.id, attachments: draft ? promptAttachmentsFromDraft(draft.fileReferences) : [] });
+      const outcome = "state" in response ? response : { state: "accepted" as const, sessionId, expectedTurnId: response.turnId };
+      if ((outcome.state === "accepted" || outcome.state === "queued") && promptId) {
         set((current) => ({ queuedPrompts: removeQueuedPrompt(current.queuedPrompts, sessionId, promptId) }));
         void api.removeQueuedPrompt(promptId).catch(() => undefined);
       }
-      return { state: "accepted", sessionId, expectedTurnId };
+      if (outcome.state !== "accepted" && outcome.state !== "queued") retractOptimisticUserMessage(sessionId, message);
+      return outcome;
     }
     catch (error) {
       retractOptimisticUserMessage(sessionId, message);

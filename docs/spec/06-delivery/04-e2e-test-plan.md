@@ -21,6 +21,12 @@ Phase 2 project workbench scenarios include:
 
 Phase 1 closure scenarios include:
 
+- Steering returns an authoritative typed outcome through the runtime, sidecar,
+  Electron IPC, API, and renderer store.
+- A stale expected turn is rejected without affecting the replacement turn.
+- Prompt acceptance, steering request/outcome, retry, turn completion, and turn
+  failure appear in lifecycle diagnostics without changing transcript events.
+
 - Shared lifecycle records carry schema/versioned metadata-only contracts.
 - Shared steering responses remain compatible with legacy prompt responses while
   exposing a discriminated `AgentSteerResponse` for the Host upgrade.
