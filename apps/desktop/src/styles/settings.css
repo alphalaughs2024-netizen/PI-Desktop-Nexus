@@ -2365,6 +2365,11 @@
 
 .usage-provenance { display: grid; gap: 3px; padding: 0 2px 10px; color: var(--ds-text-faint); font-size: var(--text-xs); line-height: 1.5; }
 .usage-provenance span { color: var(--ds-text-muted); }
+.usage-cost-card { margin-top: 10px; }
+.usage-cost-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; padding: 0 14px 14px; }
+.usage-cost-grid > div { display: grid; gap: 5px; padding: 10px; border: 1px solid var(--ds-border-subtle); background: var(--ds-bg-secondary); }
+.usage-cost-grid span { color: var(--ds-text-muted); font-size: var(--text-xs); }
+.usage-cost-grid strong { color: var(--ds-text-primary); font-variant-numeric: tabular-nums; }
 
 .usage-detail-card { min-width: 0; overflow: hidden; }
 .usage-detail-card > .usage-card-heading { padding-bottom: 12px; }

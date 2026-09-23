@@ -556,6 +556,12 @@
   gap: 2px;
 }
 
+.cost-summary-popover { position: fixed; top: 46px; right: 18px; z-index: 50; width: 250px; padding: 12px; border: 1px solid var(--ds-border-default); border-radius: var(--radius-md); background: var(--ds-bg-elevated-opaque); box-shadow: var(--shadow-lg); color: var(--ds-text-primary); }
+.cost-summary-popover > strong { display: block; margin-bottom: 10px; font-size: var(--text-sm-plus); }
+.cost-summary-row { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; border-top: 1px solid var(--ds-border-subtle); color: var(--ds-text-secondary); font-size: var(--text-xs-plus); }
+.cost-summary-row b { color: var(--ds-text-primary); font-weight: var(--font-weight-medium); text-align: right; }
+.cost-summary-popover small { display: block; margin-top: 8px; color: var(--ds-text-faint); font-size: var(--text-xs); }
+
 /* Keep the sole work-panel toggle anchored to the viewport while the in-flow
  * panel changes MainPane width. AppShell ownership keeps it available on every
  * non-Settings route and above the panel header throughout both animations. */

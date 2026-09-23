@@ -647,6 +647,7 @@ export const en = {
       usageSessionsHint: "Sessions by token volume",
       usageNativeFooter: "{{turns}} completed turns from the local Nexus host",
       usageNativeDisclaimer: "Aggregate counts only · message content and tool arguments are never read",
+      cost: { openSummary: "View usage costs", summaryTitle: "Cost estimate", overall: "Overall", currentSession: "Current session", openUsageForDetails: "Open Usage", pricingUnavailable: "Pricing unavailable", detailsTitle: "Usage & costs", detailsHint: "Estimated from configured model rates", pricedModels: "Priced models", sessionUnavailable: "Select a session" },
       usageCacheRead: "Cache read",
       usageCacheWrite: "Cache write",
       usageReasoning: "Reasoning",

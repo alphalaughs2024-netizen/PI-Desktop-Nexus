@@ -41,5 +41,5 @@ test("native usage page exposes the Token Insights dashboard surfaces", async ()
   assert.match(usage, /aria-pressed/);
   assert.match(usage, /usage-filter-control/);
   assert.match(usage, /usageClearFilters/);
-  assert.doesNotMatch(usage, /cost|price|currency/i);
+  assert.match(usage, /usage-cost-card/);
 });

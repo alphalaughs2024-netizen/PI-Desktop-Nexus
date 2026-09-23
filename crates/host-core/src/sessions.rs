@@ -3030,10 +3030,10 @@ pub fn get_token_usage_history_filtered(
     let mut total_cache_read = 0i64;
     let mut total_cache_write = 0i64;
     let mut total_reasoning = 0i64;
-    let mut facet_sources: std::collections::HashMap<String, (i64, i64)> = std::collections::HashMap::new();
-    let mut facet_models: std::collections::HashMap<String, (i64, i64)> = std::collections::HashMap::new();
-    let mut facet_providers: std::collections::HashMap<String, (i64, i64)> = std::collections::HashMap::new();
-    let mut facet_sessions: std::collections::HashMap<String, (i64, i64)> = std::collections::HashMap::new();
+    let mut facet_sources: std::collections::HashMap<String, (i64, i64, i64, i64, i64, i64)> = std::collections::HashMap::new();
+    let mut facet_models: std::collections::HashMap<String, (i64, i64, i64, i64, i64, i64)> = std::collections::HashMap::new();
+    let mut facet_providers: std::collections::HashMap<String, (i64, i64, i64, i64, i64, i64)> = std::collections::HashMap::new();
+    let mut facet_sessions: std::collections::HashMap<String, (i64, i64, i64, i64, i64, i64)> = std::collections::HashMap::new();
     let query = query.trim().to_lowercase();
 
     for row in rows {
@@ -3075,14 +3075,12 @@ pub fn get_token_usage_history_filtered(
         hour_tokens[dt.format("%H").to_string().parse::<usize>().unwrap_or(0)] += turn_tokens;
         token_timeline.push((ended_at, turn_tokens));
         for (map, key) in [(&mut facet_sources, source), (&mut facet_models, model), (&mut facet_providers, format!("{}\u{1f}{}", provider_id, provider_label))] {
-            let entry = map.entry(key).or_insert((0, 0));
-            entry.0 += input_tokens + output_tokens + cache_read + cache_write;
-            entry.1 += 1;
+            let entry = map.entry(key).or_insert((0, 0, 0, 0, 0, 0));
+            entry.0 += input_tokens + output_tokens + cache_read + cache_write; entry.1 += 1; entry.2 += input_tokens; entry.3 += output_tokens; entry.4 += cache_read; entry.5 += cache_write;
         }
         let session_label = if title.trim().is_empty() { session_id.clone() } else { title };
-        let entry = facet_sessions.entry(session_label).or_insert((0, 0));
-        entry.0 += input_tokens + output_tokens + cache_read + cache_write;
-        entry.1 += 1;
+        let entry = facet_sessions.entry(session_label).or_insert((0, 0, 0, 0, 0, 0));
+        entry.0 += input_tokens + output_tokens + cache_read + cache_write; entry.1 += 1; entry.2 += input_tokens; entry.3 += output_tokens; entry.4 += cache_read; entry.5 += cache_write;
 
         let key = usage_bucket_key(&dt, bucket);
         bucket_map.entry(key).or_default().add(
@@ -3133,12 +3131,12 @@ pub fn get_token_usage_history_filtered(
         })
         .collect();
 
-    let facets = |map: std::collections::HashMap<String, (i64, i64)>| {
-        let mut values: Vec<Value> = map.into_iter().map(|(key, (total_tokens, turn_count))| {
+    let facets = |map: std::collections::HashMap<String, (i64, i64, i64, i64, i64, i64)>| {
+        let mut values: Vec<Value> = map.into_iter().map(|(key, (total_tokens, turn_count, input, output, cache_read, cache_write))| {
             let mut parts = key.splitn(2, '\u{1f}');
             let id = parts.next().unwrap_or(&key);
             let label = parts.next().unwrap_or(id);
-            json!({ "id": id, "label": label, "turnCount": turn_count, "totalTokens": total_tokens })
+            json!({ "id": id, "label": label, "turnCount": turn_count, "totalTokens": total_tokens, "inputTokens": input, "outputTokens": output, "cacheReadTokens": cache_read, "cacheWriteTokens": cache_write })
         }).collect();
         values.sort_by(|a, b| b["totalTokens"].as_i64().cmp(&a["totalTokens"].as_i64()));
         values

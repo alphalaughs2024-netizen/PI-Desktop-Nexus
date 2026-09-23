@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { TokenUsageHistoryResult } from "@pi-desktop/shared";
 import { api } from "../../lib/api";
+import { useAppStore } from "../../stores/app-store";
 import { Button, Select } from "../ui";
 
 type Bucket = TokenUsageHistoryResult["bucket"];
@@ -39,6 +40,7 @@ function heatLevel(value: number, max: number): number {
 
 export function UsagePage() {
   const { t, i18n } = useTranslation();
+  const providerModels = useAppStore((state) => state.providerModels);
   const [bucket, setBucket] = useState<Bucket>("day");
   const [range, setRange] = useState<Range>("30d");
   const [source, setSource] = useState("");
@@ -95,6 +97,18 @@ export function UsagePage() {
   const latest = history?.items.at(-1);
   const facets = history?.facets ?? { sources: [], models: [], providers: [], sessions: [] };
   const activeDays = (history?.items ?? []).filter((item) => item.turnCount > 0).length;
+  const costEstimate = useMemo(() => {
+    let total = 0;
+    let priced = 0;
+    for (const model of facets.models) {
+      const info = Object.values(providerModels).flat().find((candidate) => candidate.modelId === model.id || candidate.displayName === model.label);
+      if (!info?.cost) continue;
+      const cost = info.cost;
+      total += ((model.inputTokens ?? 0) * (cost.input ?? 0) + (model.outputTokens ?? 0) * (cost.output ?? 0) + (model.cacheReadTokens ?? 0) * (cost.cacheRead ?? 0) + (model.cacheWriteTokens ?? 0) * (cost.cacheWrite ?? 0)) / 1_000_000;
+      priced += 1;
+    }
+    return { total, priced, models: facets.models.length };
+  }, [facets.models, providerModels]);
   const insights = history?.insights;
   const locale = i18n.resolvedLanguage ?? i18n.language;
   const peakHour = insights?.peakHour == null ? null : new Intl.DateTimeFormat(locale, { hour: "numeric" }).format(new Date(2026, 0, 1, insights.peakHour));
@@ -173,6 +187,10 @@ export function UsagePage() {
         </div>
       </section>
       <footer className="usage-provenance">{t("settings.usageNativeFooter", { turns: totals.turnCount })}<span>{t("settings.usageNativeDisclaimer")}</span></footer>
+      <section className="settings-card-block usage-cost-card">
+        <div className="usage-card-heading"><div><h3>{t("settings.usageBreakdown")}</h3><span>{t("settings.usageDescription")}</span></div><strong>{costEstimate.priced ? `$${costEstimate.total.toFixed(2)}` : "—"}</strong></div>
+        <div className="usage-cost-grid"><div><span>{t("settings.usageTotal")}</span><strong>{costEstimate.priced ? `$${costEstimate.total.toFixed(2)}` : t("settings.usageUnavailable")}</strong></div><div><span>{t("settings.usageTurns")}</span><strong>{t("settings.usageUnavailable")}</strong></div><div><span>{t("settings.usageModelsTitle")}</span><strong>{costEstimate.priced} / {costEstimate.models}</strong></div></div>
+      </section>
     </div>
   );
 }

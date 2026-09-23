@@ -1226,6 +1226,7 @@ export const tr = {
      usageSessionsHint: "Token hacmine göre oturumlar",
      usageNativeFooter: "Yerel Nexus ana makinesinden {{turns}} tamamlanan tur",
      usageNativeDisclaimer: "Yalnızca toplamlar · mesaj içeriği ve araç bağımsız değişkenleri okunmaz",
+     cost: { openSummary: "Kullanım maliyetlerini görüntüle", summaryTitle: "Maliyet tahmini", overall: "Toplam", currentSession: "Geçerli oturum", openUsageForDetails: "Kullanımı aç", pricingUnavailable: "Fiyatlandırma yok", detailsTitle: "Kullanım ve maliyetler", detailsHint: "Model ücretlerinden tahmini", pricedModels: "Fiyatlı modeller", sessionUnavailable: "Bir oturum seçin" },
      usageCacheRead: "Önbellek okuma",
      usageCacheWrite: "Önbellek yazma",
      usageReasoning: "Akıl yürütme",

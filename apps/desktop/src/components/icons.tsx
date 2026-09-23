@@ -21,6 +21,7 @@ import {
   ChevronRight,
   CornerDownLeft,
   CircleAlert,
+  CircleDollarSign,
   CircleCheck,
   CircleHelp,
   ClipboardPaste,
@@ -144,6 +145,7 @@ export const IconClipboard = icon(ClipboardPaste);
 export const IconArchive = icon(Archive);
 export const IconArchiveRestore = icon(ArchiveRestore);
 export const IconActivity = icon(Activity);
+export const IconCircleDollar = icon(CircleDollarSign);
 export const IconUsage = icon(BarChart3);
 export const IconArrowUpDown = icon(ArrowUpDown);
 export const IconSearch = icon(Search);
