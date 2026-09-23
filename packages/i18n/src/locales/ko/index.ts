@@ -1226,6 +1226,7 @@ export const ko = {
      usageSessionsHint: "토큰 사용량별 세션",
      usageNativeFooter: "로컬 Nexus 호스트의 완료된 턴 {{turns}}개",
      usageNativeDisclaimer: "집계만 표시 · 메시지 내용과 도구 인수는 읽지 않습니다",
+     cost: { openSummary: "사용량 비용 보기", summaryTitle: "비용 추정", overall: "전체", currentSession: "현재 세션", openUsageForDetails: "사용량 열기", pricingUnavailable: "가격 정보 없음", detailsTitle: "사용량 및 비용", detailsHint: "모델 요금 기준 추정", pricedModels: "가격이 있는 모델", sessionUnavailable: "세션을 선택하세요" },
      usageCacheRead: "캐시 읽기",
      usageCacheWrite: "캐시 쓰기",
      usageReasoning: "추론",

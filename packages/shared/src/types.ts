@@ -2202,6 +2202,10 @@ export type TokenUsageFacet = {
   label: string;
   turnCount: number;
   totalTokens: number;
+  inputTokens?: number;
+  outputTokens?: number;
+  cacheReadTokens?: number;
+  cacheWriteTokens?: number;
 };
 
 export type TokenUsageHistoryQuery = {

@@ -645,6 +645,7 @@ export const zhCN = {
       usageSessionsHint: "按令牌用量排列",
       usageNativeFooter: "来自本地 Nexus 主机的 {{turns}} 个已完成回合",
       usageNativeDisclaimer: "仅统计汇总 · 不会读取消息内容和工具参数",
+      cost: { openSummary: "查看用量费用", summaryTitle: "费用估算", overall: "总计", currentSession: "当前会话", openUsageForDetails: "打开用量", pricingUnavailable: "暂无价格", detailsTitle: "用量与费用", detailsHint: "根据模型费率估算", pricedModels: "有价格的模型", sessionUnavailable: "请选择会话" },
       usageCacheRead: "缓存读取",
       usageCacheWrite: "缓存写入",
       usageReasoning: "推理",

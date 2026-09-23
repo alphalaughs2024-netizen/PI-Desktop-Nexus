@@ -192,6 +192,7 @@ function AppShell() {
   const projectPath = useAppStore((s) => s.workspace?.path ?? null);
 
   const [searchOpen, setSearchOpen] = useState(false);
+  const [costOpen, setCostOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(() => loadSidebarWidth());
   const [sidebarExiting, setSidebarExiting] = useState(false);
@@ -901,6 +902,7 @@ function AppShell() {
                 onToggleSidebar={() => setSidebarCollapsed(!sidebarCollapsed)}
                 onNewTask={() => void runMenuCommand("newTask")}
                 onOpenSearch={() => setSearchOpen(true)}
+                onOpenCost={() => setCostOpen((open) => !open)}
               />
             ) : (
               <div
@@ -1023,6 +1025,15 @@ function AppShell() {
               frameless app-region hit testing by compositor order; mounting
               this after the dock guarantees the controls win while it is open. */}
           <WindowControls contained />
+
+          {costOpen && (
+            <div className="cost-summary-popover" role="dialog" aria-label={i18n.t("settings.usageBreakdown")}>
+              <strong>{i18n.t("settings.usageBreakdown")}</strong>
+              <div className="cost-summary-row"><span>{i18n.t("settings.usageTotal")}</span><b>{i18n.t("settings.usageUnavailable")}</b></div>
+              <div className="cost-summary-row"><span>{i18n.t("settings.usageTurns")}</span><b>{i18n.t("settings.usageUnavailable")}</b></div>
+              <small>{i18n.t("settings.usageDescription")}</small>
+            </div>
+          )}
 
           <SearchDialog open={searchOpen} onClose={() => setSearchOpen(false)} />
           <ToastHost />

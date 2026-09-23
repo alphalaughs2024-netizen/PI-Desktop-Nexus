@@ -1213,6 +1213,7 @@ export const es = {
      "usageSessionsHint": "Sesiones por volumen de tokens",
      "usageNativeFooter": "{{turns}} turnos completados del host local de Nexus",
      "usageNativeDisclaimer": "Solo totales · nunca se leen el contenido ni los argumentos de herramientas",
+     "cost": { "openSummary": "Ver costes de uso", "summaryTitle": "Estimación de coste", "overall": "Total", "currentSession": "Sesión actual", "openUsageForDetails": "Abrir uso", "pricingUnavailable": "Precios no disponibles", "detailsTitle": "Uso y costes", "detailsHint": "Estimado con las tarifas del modelo", "pricedModels": "Modelos con precio", "sessionUnavailable": "Selecciona una sesión" },
      "diagnosticsStatus": "Estado del tiempo de ejecución",
      "diagnosticsDesc": "Inspeccione el host, el espacio de trabajo y los incidentes recuperables.",
      "diagnosticsUnavailable": "El diagnóstico no está disponible cuando el host está desconectado.",

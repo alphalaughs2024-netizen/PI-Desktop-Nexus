@@ -1220,6 +1220,7 @@ export const de = {
      "usageSessionsHint": "Sitzungen nach Tokenvolumen",
      "usageNativeFooter": "{{turns}} abgeschlossene Runden vom lokalen Nexus-Host",
      "usageNativeDisclaimer": "Nur Summen · Nachrichteninhalte und Toolargumente werden nie gelesen",
+     "cost": { "openSummary": "Nutzungskosten anzeigen", "summaryTitle": "Kostenschätzung", "overall": "Gesamt", "currentSession": "Aktuelle Sitzung", "openUsageForDetails": "Nutzung öffnen", "pricingUnavailable": "Preise nicht verfügbar", "detailsTitle": "Nutzung & Kosten", "detailsHint": "Geschätzt anhand der Modellpreise", "pricedModels": "Modelle mit Preis", "sessionUnavailable": "Sitzung auswählen" },
      "diagnosticsStatus": "Laufzeitstatus",
      "diagnosticsDesc": "Host, Arbeitsbereich und wiederherstellbare Vorfälle prüfen.",
      "diagnosticsUnavailable": "Diagnose ist offline nicht verfügbar.",

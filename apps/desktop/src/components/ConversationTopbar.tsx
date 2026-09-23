@@ -4,6 +4,7 @@ import {
   IconSidebar,
   IconNewSession,
   IconSearch,
+  IconCircleDollar,
 } from "./icons";
 import { TooltipButton } from "./ui";
 
@@ -35,12 +36,14 @@ export function ConversationTopbar({
   onToggleSidebar,
   onNewTask,
   onOpenSearch,
+  onOpenCost,
 }: {
   sidebarCollapsed: boolean;
   workPanelOpen: boolean;
   onToggleSidebar: () => void;
   onNewTask: () => void;
   onOpenSearch: () => void;
+  onOpenCost: () => void;
 }) {
   const { t } = useTranslation();
   const activeSessionId = useAppStore((s) => s.activeSessionId);
@@ -108,6 +111,9 @@ export function ConversationTopbar({
             onClick={onOpenSearch}
           >
             <IconSearch size={15} />
+          </TooltipButton>
+          <TooltipButton type="button" className="ct-icon-btn" tooltip={t("settings.usageBreakdown")} ariaLabel={t("settings.usageBreakdown")} onClick={onOpenCost}>
+            <IconCircleDollar size={15} />
           </TooltipButton>
         </div>
       </div>

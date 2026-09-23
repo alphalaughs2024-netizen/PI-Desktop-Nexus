@@ -1213,6 +1213,7 @@ export const fr = {
      "usageSessionsHint": "Sessions par volume de tokens",
      "usageNativeFooter": "{{turns}} tours terminés depuis l’hôte Nexus local",
      "usageNativeDisclaimer": "Totaux uniquement · le contenu et les arguments d’outils ne sont jamais lus",
+     "cost": { "openSummary": "Voir les coûts d’utilisation", "summaryTitle": "Estimation du coût", "overall": "Total", "currentSession": "Session actuelle", "openUsageForDetails": "Ouvrir l’utilisation", "pricingUnavailable": "Tarifs indisponibles", "detailsTitle": "Utilisation et coûts", "detailsHint": "Estimé selon les tarifs du modèle", "pricedModels": "Modèles tarifés", "sessionUnavailable": "Sélectionnez une session" },
      "diagnosticsStatus": "État de l’exécution",
      "diagnosticsDesc": "Inspectez l’hôte, l’espace de travail et les incidents récupérables.",
      "diagnosticsUnavailable": "Les diagnostics sont indisponibles lorsque l’hôte est hors ligne.",

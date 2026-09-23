@@ -1216,6 +1216,7 @@ export const zhTW = {
      usageSessionsHint: "按 Token 用量排列",
      usageNativeFooter: "來自本機 Nexus 主機的 {{turns}} 個已完成回合",
      usageNativeDisclaimer: "僅統計彙總 · 不會讀取訊息內容和工具參數",
+     cost: { openSummary: "檢視用量費用", summaryTitle: "費用估算", overall: "總計", currentSession: "目前工作階段", openUsageForDetails: "開啟用量", pricingUnavailable: "沒有價格資料", detailsTitle: "用量與費用", detailsHint: "根據模型費率估算", pricedModels: "有價格的模型", sessionUnavailable: "請選取工作階段" },
      usageCacheRead: "快取讀取",
      usageCacheWrite: "快取寫入",
      usageReasoning: "推理",
