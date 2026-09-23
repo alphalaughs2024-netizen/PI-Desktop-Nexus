@@ -8864,11 +8864,14 @@ function registerIpc() {
   });
 
   handle(IPC.invoke.agentSteer, async (req: AgentSteerRequest) => {
-    if (!sidecar) throw new Error("sidecar unavailable");
+    if (!sidecar) return { state: "unavailable", reason: "host_offline" };
     if (!req?.sessionId || !req.expectedTurnId || typeof req.content !== "string" ||
       (!req.content.trim() && !req.attachments?.length)) {
-      throw Object.assign(new Error("sessionId, expectedTurnId, and non-empty content are required"), { errorCode: ErrorCodes.INVALID_ARGUMENT });
+      return { state: "rejected", reason: "invalid" };
     }
+    const activeTurnId = activeTurns.get(req.sessionId);
+    if (!activeTurnId) return { state: "rejected", reason: "not_running" };
+    if (activeTurnId !== req.expectedTurnId) return { state: "rejected", reason: "stale_turn" };
     return sidecar.call("agent.steer", req);
   });
 

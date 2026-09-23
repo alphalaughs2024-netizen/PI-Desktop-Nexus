@@ -1759,6 +1759,7 @@ export class DesktopAgentRuntime {
             status: () => this.providerResponseStatus,
               onRetry: ({ error, phase, attempt, delayMs }) => {
                 this.emitLifecycle("retry_started", { reason: `${phase}:${attempt}:${delayMs}`, preview: this.retryActivityError(error).message });
+                this.emitLifecycle("retry_started", { reason: `${phase}:${attempt}:${delayMs}`, preview: this.retryActivityError(error).message });
               this.setAgentActivity({
                 phase: "retrying",
                 since: Date.now(),
@@ -6368,6 +6369,7 @@ export class DesktopAgentRuntime {
           type: "turn_end",
           ...(subagentUsage ? { subagentUsage } : {}),
         });
+        this.emitLifecycle("turn_completed");
         break;
       case "agent_end":
         if (
@@ -6545,6 +6547,7 @@ export class DesktopAgentRuntime {
     this.pathInstructionClaims.clear();
     this.hostTurnId = durableTurnId;
     this.turnId = durableTurnId;
+    this.emitLifecycle("prompt_accepted", { compositionHash: this.promptComposition?.hash, sensitive: true });
     this.pendingUserMessageId = undefined;
     this.gracefulStopRequested = false;
     this.runCancelled = false;
@@ -6619,6 +6622,11 @@ export class DesktopAgentRuntime {
     const nextTurnId = durableTurnId?.trim() || randomUUID();
     this.hostTurnId = nextTurnId;
     this.turnId = nextTurnId;
+    this.emitLifecycle("prompt_accepted", {
+      compositionHash: this.promptComposition?.hash,
+      preview: typeof input === "string" ? input : input.text,
+      sensitive: true,
+    });
     this.gracefulStopRequested = false;
     this.runCancelled = false;
     this.turnSubagentUsage = undefined;
@@ -6682,10 +6690,12 @@ export class DesktopAgentRuntime {
 
       if (!(await this.runPendingRecoveries())) return { turnId: this.turnId };
       if (this.turnHadError) {
+        this.emitLifecycle("turn_failed", { reason: "runtime_error" });
         this.terminateParentTurn();
         return { turnId: this.turnId };
       }
       await this.resumeAfterDelegations();
+      this.emitLifecycle("turn_completed");
     } catch (err) {
       const classifiedError = classifyAgentError(err);
       const diagnosticError =
@@ -6699,6 +6709,7 @@ export class DesktopAgentRuntime {
                 : undefined,
             );
       this.terminateParentTurn();
+      this.emitLifecycle("turn_failed", { reason: diagnosticError.code });
       this.finalizeCurrentAssistant(
         classifiedError.code === "TURN_ABORTED" ? "aborted" : "error",
         classifiedError.code === "TURN_ABORTED" ? undefined : diagnosticError,
@@ -6803,31 +6814,48 @@ export class DesktopAgentRuntime {
   }
 
   steeringContext(expectedTurnId: string): { projectPath?: string; supportsVision: boolean } {
-    if (this.disposed || this.runCancelled || !this.getStatus().isRunning || expectedTurnId !== this.turnId) {
-      throw Object.assign(new Error("No active turn to steer"), { errorCode: "TURN_NOT_FOUND" });
-    }
+    if (this.disposed) throw Object.assign(new Error("Steering runtime is unavailable"), { errorCode: "MISSING_SESSION" });
+    if (expectedTurnId !== this.turnId) throw Object.assign(new Error("Steering target is stale"), { errorCode: "STALE_TURN" });
+    if (this.runCancelled || !this.getStatus().isRunning) throw Object.assign(new Error("No active turn to steer"), { errorCode: "NOT_RUNNING" });
     return { projectPath: this.projectPath, supportsVision: this.model.input.includes("image") };
   }
 
-  async steer(input: RuntimePrompt, expectedTurnId: string, message?: UiMessage): Promise<{ accepted: boolean; turnId: string }> {
-    this.steeringContext(expectedTurnId);
+  async steer(input: RuntimePrompt, expectedTurnId: string, message?: UiMessage): Promise<import("@pi-desktop/shared").SteerOutcome> {
+    this.emitLifecycle("steering_requested", { expectedTurnId, preview: input.text, sensitive: true });
+    try {
+      this.steeringContext(expectedTurnId);
+    } catch (error) {
+      const code = String((error as { errorCode?: unknown })?.errorCode ?? "");
+      const outcome: import("@pi-desktop/shared").SteerOutcome = code === "STALE_TURN"
+        ? { state: "rejected", reason: "stale_turn" }
+        : code === "NOT_RUNNING"
+          ? { state: "rejected", reason: "not_running" }
+          : { state: "unavailable", reason: "missing_session" };
+      this.emitLifecycle(outcome.state === "rejected" ? "steering_rejected" : "steering_unavailable", { expectedTurnId, reason: outcome.reason });
+      return outcome;
+    }
     const content = promptContent(input);
     const agentMessage: AgentMessage = { role: "user", content, timestamp: Date.now() };
     // Queue the steering message, abort the in-flight provider request, then
     // explicitly resume the agent so the queued message is consumed immediately
     // instead of waiting for the old response to finish naturally.
-    this.agent.steer(agentMessage);
-    this.agent.abort();
-    await this.agent.waitForIdle();
-    if (!this.disposed && !this.runCancelled && expectedTurnId === this.turnId) {
-      await this.agent.continue();
+    try {
+      this.agent.steer(agentMessage);
+      this.agent.abort();
+      await this.agent.waitForIdle();
+      if (!this.disposed && !this.runCancelled && expectedTurnId === this.turnId) await this.agent.continue();
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : String(error);
+      this.emitLifecycle("steering_failed", { expectedTurnId, reason });
+      return { state: "failed", reason };
     }
     if (message) {
       this.appendLiveEntry(message.id, agentMessage);
       this.emit({ type: "message_start", message });
       this.emit({ type: "message_end", message });
     }
-    return { accepted: true, turnId: this.turnId! };
+    this.emitLifecycle("steering_accepted", { expectedTurnId });
+    return { state: "accepted", sessionId: this.sessionId, expectedTurnId };
   }
 
   /** Ask pi-agent-core to stop after the current assistant/tool turn. */
