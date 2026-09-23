@@ -22,6 +22,10 @@ function formatTokens(value: number): string {
   return String(value);
 }
 
+function formatFullTokens(value: number): string {
+  return Math.round(value).toLocaleString("en-US");
+}
+
 type Range = "7d" | "30d" | "90d" | "1y" | "all";
 const RANGE_DAYS: Record<Exclude<Range, "all">, number> = { "7d": 7, "30d": 30, "90d": 90, "1y": 365 };
 
@@ -90,6 +94,7 @@ export function UsagePage() {
   }, [history]);
   const latest = history?.items.at(-1);
   const facets = history?.facets ?? { sources: [], models: [], providers: [], sessions: [] };
+  const activeDays = (history?.items ?? []).filter((item) => item.turnCount > 0).length;
   const clearFilters = () => { setRange("30d"); setSource(""); setModel(""); setProvider(""); setQuery(""); };
 
   return (
@@ -107,8 +112,9 @@ export function UsagePage() {
       </div>
       <div className="usage-hero">
         <div>
-          <output className="usage-hero-title" aria-label={t("settings.usageTotal")} data-value={totals.totalTokens}>{formatTokens(totals.totalTokens)}</output>
-          <p>{t("settings.usageHeroSub", { turns: totals.turnCount })}</p>
+          <p className="usage-hero-greeting">{t("settings.usageGreeting")}</p>
+          <output className="usage-hero-title" aria-label={t("settings.usageTotal")} data-value={totals.totalTokens}>{formatFullTokens(totals.totalTokens)}</output>
+          <p className="usage-hero-stats">{t("settings.usageHeroStats", { turns: totals.turnCount, sessions: facets.sessions.length, days: activeDays })}</p>
           <p className="usage-hero-note">{t("settings.usageDescription")}</p>
         </div>
         <div className="usage-toolbar-actions">

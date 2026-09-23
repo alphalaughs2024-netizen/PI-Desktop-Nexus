@@ -1204,6 +1204,8 @@ export const ko = {
      usageAverage: "턴당 평균",
      usagePluginTitle: "Token Insights",
      usageHeroSub: "완료된 턴 {{turns}}개 · 로컬 사용량",
+     usageGreeting: "좋은 오후입니다 — 나와 도구가 작성한 내용을 보여드립니다.",
+     usageHeroStats: "토큰 · 답변 {{turns}}개 · 세션 {{sessions}}개 · 활성 날짜 {{days}}일",
      usageFilters: "사용량 필터",
      usageAllTools: "모든 도구",
      usageAllModels: "모든 모델",

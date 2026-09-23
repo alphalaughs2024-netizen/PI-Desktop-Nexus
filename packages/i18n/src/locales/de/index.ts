@@ -1198,6 +1198,8 @@ export const de = {
      "usageAverage": "Durchschnitt pro Runde",
      "usagePluginTitle": "Token Insights",
      "usageHeroSub": "{{turns}} abgeschlossene Runden · lokale Nutzung",
+     "usageGreeting": "Guten Tag — hier sehen Sie, was Sie und Ihre Tools geschrieben haben.",
+     "usageHeroStats": "Tokens · {{turns}} Antworten · {{sessions}} Sitzungen · {{days}} aktive Tage",
      "usageFilters": "Nutzungsfilter",
      "usageAllTools": "Alle Tools",
      "usageAllModels": "Alle Modelle",

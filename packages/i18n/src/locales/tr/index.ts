@@ -1204,6 +1204,8 @@ export const tr = {
      usageAverage: "Tur başına ortalama",
      usagePluginTitle: "Token Insights",
      usageHeroSub: "{{turns}} tamamlanan tur · yerel kullanım",
+     usageGreeting: "İyi günler — sizin ve araçlarınızın yazdıkları burada.",
+     usageHeroStats: "token · {{turns}} yanıt · {{sessions}} oturum · {{days}} aktif gün",
      usageFilters: "Kullanım filtreleri",
      usageAllTools: "Tüm araçlar",
      usageAllModels: "Tüm modeller",

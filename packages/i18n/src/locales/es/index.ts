@@ -1191,6 +1191,8 @@ export const es = {
      "usageAverage": "Promedio por turno",
      "usagePluginTitle": "Token Insights",
      "usageHeroSub": "{{turns}} turnos completados · uso local",
+     "usageGreeting": "Buenas tardes — esto es lo que tú y tus herramientas habéis escrito.",
+     "usageHeroStats": "tokens · {{turns}} respuestas · {{sessions}} sesiones · {{days}} días activos",
      "usageFilters": "Filtros de uso",
      "usageAllTools": "Todas las herramientas",
      "usageAllModels": "Todos los modelos",

@@ -625,6 +625,8 @@ export const en = {
       usageAverage: "Average per turn",
       usagePluginTitle: "Token Insights",
       usageHeroSub: "{{turns}} completed turns · local usage",
+      usageGreeting: "Good afternoon — here is what you and your tools have written.",
+      usageHeroStats: "tokens · {{turns}} replies · {{sessions}} sessions · {{days}} active days",
       usageFilters: "Usage filters",
       usageAllTools: "All tools",
       usageAllModels: "All models",

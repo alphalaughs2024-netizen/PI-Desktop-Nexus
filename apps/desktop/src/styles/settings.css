@@ -2272,6 +2272,8 @@
 }
 
 .usage-hero-note { color: var(--ds-text-faint) !important; }
+.usage-hero-greeting { color: var(--ds-text-secondary) !important; margin-bottom: 10px !important; }
+.usage-hero-stats { color: var(--ds-text-muted) !important; font-size: var(--text-xs-plus) !important; }
 
 .usage-toolbar-actions {
   display: flex;

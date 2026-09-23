@@ -623,6 +623,8 @@ export const zhCN = {
       usageAverage: "每回合平均",
       usagePluginTitle: "Token Insights",
       usageHeroSub: "{{turns}} 个已完成回合 · 本地用量",
+      usageGreeting: "下午好——这里是你和工具共同写下的内容。",
+      usageHeroStats: "令牌 · {{turns}} 条回复 · {{sessions}} 个会话 · {{days}} 个活跃日",
       usageFilters: "用量筛选",
       usageAllTools: "所有工具",
       usageAllModels: "所有模型",

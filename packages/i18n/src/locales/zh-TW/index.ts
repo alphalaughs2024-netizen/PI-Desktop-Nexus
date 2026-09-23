@@ -1194,6 +1194,8 @@ export const zhTW = {
      usageAverage: "每回合平均",
      usagePluginTitle: "Token Insights",
      usageHeroSub: "{{turns}} 個已完成回合 · 本機用量",
+     usageGreeting: "午安——這裡是你與工具共同寫下的內容。",
+     usageHeroStats: "Token · {{turns}} 則回覆 · {{sessions}} 個工作階段 · {{days}} 個活躍日",
      usageFilters: "用量篩選",
      usageAllTools: "所有工具",
      usageAllModels: "所有模型",
