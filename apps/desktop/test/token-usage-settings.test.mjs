@@ -28,3 +28,14 @@ test("native usage page exists", async () => {
     constants.F_OK,
   );
 });
+
+test("native usage page exposes the Token Insights dashboard surfaces", async () => {
+  const usage = await readFile(
+    new URL("../src/components/settings/UsagePage.tsx", import.meta.url),
+    "utf8",
+  );
+  assert.match(usage, /usage-heatmap/);
+  assert.match(usage, /usage-kpi-grid/);
+  assert.match(usage, /usageLatest/);
+  assert.doesNotMatch(usage, /cost|price|currency/i);
+});

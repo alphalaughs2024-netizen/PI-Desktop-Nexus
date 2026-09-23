@@ -9240,6 +9240,8 @@ are withdrawn with ADR 0165.
   - Usage is the native Nexus token dashboard. It shows KPI totals, bounded
     daily/weekly/monthly history, and token breakdowns without rewriting
     `message.usage`.
+  - The native Usage page presents an activity heatmap, KPI cards, latest-period
+    summary, and token breakdown. Currency cost is not displayed in this scope.
 - **Specs linked**: `04-ux/06-settings-ia.md`,
   `03-runtime/01-ipc-protocol.md`, `03-runtime/06-host-rpc-protocol.md`,
   ADR 0171, ADR 0173, `08-meta/decisions-log.md` (D331, D335)
