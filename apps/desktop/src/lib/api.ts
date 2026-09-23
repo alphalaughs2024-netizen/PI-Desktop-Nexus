@@ -13,6 +13,9 @@ import type {
   UiMessage,
   MessageRevisionSummary,
   AgentPromptResponse,
+  AgentSteerResponse,
+  SessionTimelineGetRequest,
+  SessionTimelineGetResponse,
   PromptEnhancementRequest,
   PromptEnhancementResponse,
   SessionSummarizeTitleRequest,
@@ -619,9 +622,11 @@ export const api = {
   prompt: (req: AgentPromptRequest) =>
     invoke<AgentPromptResponse>(IPC.invoke.agentPrompt, req),
   steer: (req: AgentSteerRequest) =>
-    invoke<AgentPromptResponse>(IPC.invoke.agentSteer, req),
-  getSessionTimeline: (sessionId: string, filter?: string) =>
-    invoke<{ records: Array<Record<string, unknown>> }>(IPC.invoke.sessionTimelineGet, { sessionId, filter }),
+    invoke<AgentSteerResponse>(IPC.invoke.agentSteer, req),
+  getSessionTimeline: (input: SessionTimelineGetRequest | string, filter?: SessionTimelineGetRequest["filter"]) => {
+    const request = typeof input === "string" ? { sessionId: input, filter } : input;
+    return invoke<SessionTimelineGetResponse>(IPC.invoke.sessionTimelineGet, request);
+  },
   enhancePrompt: (req: PromptEnhancementRequest) =>
     invoke<PromptEnhancementResponse>(IPC.invoke.promptEnhance, req),
   compact: (req: AgentCompactRequest) =>

@@ -196,3 +196,22 @@ Session transcripts are user data and are not deleted by log rotation.
    reports bounded incident summaries plus workspace mode, capability counts,
    updater state/classification, and summon-shortcut registration state without
    sensitive payloads.
+# Phase 1 diagnostic contracts
+
+Lifecycle and prompt-composition diagnostics use additive shared contracts.
+Persisted records carry schema `1`, a session ID, stable event identity, and
+metadata-only fields. They must not contain complete prompts, Context Vault
+claim text, evidence excerpts, or tool arguments. Timeline queries use the
+shared `PromptLifecycleFilter` vocabulary and a caller limit, with the host
+enforcing its retention ceiling.
+
+Steering introduces the discriminated `AgentSteerResponse` contract while
+retaining the legacy `{ accepted, turnId }` response as a compatibility member
+until the Host admission path is upgraded. Renderer and Host callers must not
+infer outcomes from localized error-message text.
+
+The Phase 1 feature snapshot is owned by the application boundary and is
+normalized from `DEFAULT_NEXUS_FEATURE_FLAGS`. The flags are additive controls
+for structured composition, lifecycle timeline, lifecycle persistence, Context
+Vault provenance, and stateful steering; they do not change ordinary prompt
+semantics when enabled or disabled.
