@@ -834,6 +834,7 @@ export type AppState = {
   /** Latest user-selected session while its transcript/workspace is resolving. */
   selectingSessionId?: string;
   messages: UiMessage[];
+  promptInspector: Record<string, import("@pi-desktop/shared").PromptInspectorState>;
   /**
    * Session ids whose panes stay mounted, most recently visible first and
    * bounded by `RETAINED_SESSION_PANE_LIMIT` (ADR 0137). The head is the
@@ -1364,6 +1365,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   workPanelFileRequest: null,
   projectSort: initialSidebarPreferences.projectSort,
   messages: [],
+  promptInspector: {},
   retainedSessionIds: [],
   retainedTranscripts: {},
   sessionHistory: {},
@@ -3847,6 +3849,9 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   handleAgentEvent: (envelope) => {
+    if (envelope.event.type === "prompt_composed") {
+      set((state) => ({ promptInspector: { ...state.promptInspector, [envelope.sessionId]: { sessionId: envelope.sessionId, composition: envelope.event.composition, lastEvent: envelope.event.type, updatedAt: Date.now() } } }));
+    }
     const event = envelope.event;
     if (event.type === "agent_end" || event.type === "error") {
       submittedComposerDrafts.delete(envelope.sessionId);

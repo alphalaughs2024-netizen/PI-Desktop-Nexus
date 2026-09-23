@@ -797,6 +797,7 @@ export type AgentEvent =
   | { type: "agent_start" }
   | { type: "agent_end"; messageIds: string[] }
   | { type: "turn_start" }
+  | { type: "prompt_composed"; composition: PromptCompositionSnapshot }
   | { type: "turn_end"; subagentUsage?: MessageUsage }
   | { type: "message_start"; message: UiMessage }
   | {
@@ -838,6 +839,31 @@ export type AgentEvent =
   | { type: "error"; error: AppError }
   | { type: "status"; status: AgentStatus };
 
+export type PromptCompositionScope = "runtime" | "project" | "session" | "workflow" | "provider";
+export type PromptCompositionSection = {
+  id: string;
+  source: string;
+  scope: PromptCompositionScope;
+  order: number;
+  included: boolean;
+  reason: string;
+  characters: number;
+  estimatedTokens: number;
+  hash: string;
+  reloadTrigger: string;
+  sensitive: boolean;
+};
+export type PromptCompositionSnapshot = {
+  version: 1;
+  hash: string;
+  composedAt: number;
+  durationMs: number;
+  characters: number;
+  estimatedTokens: number;
+  reloadReason: string;
+  sections: PromptCompositionSection[];
+};
+
 export type AgentEventEnvelope = {
   sessionId: string;
   turnId?: string;
@@ -851,6 +877,13 @@ export type AgentEventEnvelope = {
   parentToolCallId?: string;
   /** Definition name of the emitting subagent. */
   agentName?: string;
+};
+
+export type PromptInspectorState = {
+  sessionId: string;
+  composition?: PromptCompositionSnapshot;
+  lastEvent?: string;
+  updatedAt: number;
 };
 
 export type AppNotificationKind = "task.completed" | "task.failed";

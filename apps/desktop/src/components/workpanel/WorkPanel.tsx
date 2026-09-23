@@ -14,6 +14,7 @@ import {
   parsePluginViewRef,
   pluginWorkPanelTab,
   contextVaultWorkPanelTab,
+  promptInspectorWorkPanelTab,
 } from "../../lib/work-panel-tabs";
 import { pluginViewIcon, pluginViewInitial } from "../../lib/plugin-view-icons";
 import { useAppStore } from "../../stores/app-store";
@@ -36,6 +37,7 @@ import { PluginViewTab } from "./PluginViewTab";
 import { WorkTabEmpty } from "./WorkTabEmpty";
 import { SubagentPanel } from "./SubagentPanel";
 import { ContextVaultTab } from "./ContextVaultTab";
+import { PromptInspectorTab } from "./PromptInspectorTab";
 import type { SubagentPanelSelection } from "../../lib/subagent-panel";
 import {
   WORK_PANEL_MAX_WIDTH,
@@ -48,6 +50,7 @@ const TAB_ICONS = {
   file: IconFileText,
   plugin: IconPlug,
   contextVault: IconBookOpen,
+  promptInspector: IconFileText,
 } as const;
 
 type WorkPanelResizeState = {
@@ -269,6 +272,13 @@ export function WorkPanel({
   const openContextVault = useCallback(async () => {
     if (!(await ensureSession())) return;
     const tab = contextVaultWorkPanelTab();
+    if (tabs.some((candidate) => candidate.id === tab.id)) activateTab(tab.id);
+    else openWorkPanelTab(tab);
+    closeContext();
+  }, [activateTab, closeContext, ensureSession, openWorkPanelTab, tabs]);
+  const openPromptInspector = useCallback(async () => {
+    if (!(await ensureSession())) return;
+    const tab = promptInspectorWorkPanelTab();
     if (tabs.some((candidate) => candidate.id === tab.id)) activateTab(tab.id);
     else openWorkPanelTab(tab);
     closeContext();
@@ -528,6 +538,9 @@ export function WorkPanel({
                   >
                     <IconBookOpen size={15} /><span className="work-panel-menu-label">Context Vault</span>
                   </button>
+                  <button type="button" role="menuitemradio" aria-checked={activeTab?.kind === "promptInspector"} tabIndex={-1} data-work-panel-menu-item="" className="work-panel-menu-item" onClick={() => void openPromptInspector()}>
+                    <IconFileText size={15} /><span className="work-panel-menu-label">Prompt inspector</span>
+                  </button>
                 </div>
                 {pluginViews.length > 0 && (
                   <div
@@ -704,6 +717,7 @@ export function WorkPanel({
               <ContextVaultTab />
             </div>
           )}
+          {!subagentPanel && activeTab?.kind === "promptInspector" && <PromptInspectorTab />}
           {!subagentPanel && activeTab?.kind === "file" && (
             <div
               key={activeTab.id}

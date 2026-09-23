@@ -1246,6 +1246,18 @@
 }
 
 .context-vault-tab { height: 100%; display: flex; min-width: 0; flex-direction: column; gap: 10px; padding: 10px; overflow: hidden; }
+.prompt-inspector-tab { height: 100%; overflow: auto; padding: 14px; color: var(--ds-text-primary); }
+.prompt-inspector-tab header { display: flex; justify-content: space-between; gap: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--ds-border-subtle); }
+.prompt-inspector-tab header strong, .prompt-inspector-tab header span { display: block; }
+.prompt-inspector-tab header span, .prompt-inspector-tab header small { color: var(--ds-text-muted); font-size: var(--text-xs); }
+.prompt-inspector-summary { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 0; color: var(--ds-text-secondary); font-size: var(--text-xs); }
+.prompt-inspector-summary span { padding: 4px 8px; border: 1px solid var(--ds-border-subtle); border-radius: 999px; background: var(--ds-tile); }
+.prompt-inspector-list { display: grid; gap: 7px; }
+.prompt-inspector-list article { display: flex; justify-content: space-between; gap: 12px; padding: 10px; border: 1px solid var(--ds-border-subtle); border-radius: var(--radius-sm); background: var(--ds-tile); }
+.prompt-inspector-list article > div:first-child span, .prompt-inspector-list article small { display: block; margin-top: 3px; color: var(--ds-text-muted); font-size: var(--text-xs); }
+.prompt-inspector-list article > div:last-child { text-align: right; }
+.prompt-inspector-list article.is-excluded { opacity: .62; }
+.prompt-inspector-empty { display: grid; height: 100%; place-items: center; padding: 24px; color: var(--ds-text-muted); text-align: center; }
 .context-vault-workspace { min-width: 0; min-height: 0; flex: 1; display: grid; grid-template-columns: minmax(124px, 0.32fr) minmax(0, 1fr); overflow: hidden; border: 1px solid var(--ds-border); border-radius: var(--radius-md); background: var(--ds-bg-primary); }
 .context-vault-rail { display: flex; min-width: 0; min-height: 0; flex-direction: column; gap: 3px; padding: 8px; border-right: 1px solid var(--ds-border); background: var(--ds-bg-secondary); overflow: auto; }
 .context-vault-category { display: flex; min-height: 30px; align-items: center; justify-content: space-between; gap: 6px; padding: 0 7px; border-radius: var(--radius-sm); color: var(--ds-text-secondary); font-size: var(--text-xs); text-align: left; }

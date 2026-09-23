@@ -137,6 +137,7 @@ import { clampThinkingLevel } from "./thinking-level.js";
 import { visionFromModelConfig } from "./model-capabilities.js";
 import type { ProjectInstructions } from "./project-instructions.js";
 import { projectInstructionsPrompt } from "./project-instructions-prompt.js";
+import { composePromptSections } from "./prompt-composition.js";
 import {
   instructionCatalogPrompt,
   instructionCatalogWithinBudget,
@@ -1477,6 +1478,7 @@ export class DesktopAgentRuntime {
   private host: RuntimeHost;
   private onEvent: (envelope: AgentEventEnvelope) => void;
   private baseSystemPrompt: string;
+  private promptComposition?: import("@pi-desktop/shared").PromptCompositionSnapshot;
   private planningState: PlanningState;
   private pendingPlanId?: string;
   private currentAssistant?: UiMessage;
@@ -1838,14 +1840,14 @@ export class DesktopAgentRuntime {
   private composeSystemPrompt(): string {
     const projectPrompt = projectInstructionsPrompt(this.projectInstructions);
     const optionalToolsPrompt = this.optionalToolsPrompt();
-    return composeModeSystemPrompt(
-      this.mode,
-      [
-        this.baseSystemPrompt,
-        ...(optionalToolsPrompt ? [optionalToolsPrompt] : []),
-        ...(projectPrompt ? [projectPrompt] : []),
-      ].join("\n\n"),
-    );
+    const composed = composePromptSections([
+      { id: "runtime", source: "runtime", scope: "runtime", content: this.baseSystemPrompt, reloadTrigger: "runtime", sensitive: true },
+      { id: "optional-tools", source: "tool-catalog", scope: "runtime", content: optionalToolsPrompt, reloadTrigger: "tools" },
+      { id: "project-instructions", source: "project-instructions", scope: "project", content: projectPrompt, reloadTrigger: "project-instructions" },
+    ], "runtime-recompose", (prompt) => composeModeSystemPrompt(this.mode, prompt));
+    this.promptComposition = composed.snapshot;
+    this.onEvent({ sessionId: this.sessionId, ts: Date.now(), event: { type: "prompt_composed", composition: composed.snapshot } });
+    return composed.prompt;
   }
 
   /**
