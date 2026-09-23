@@ -310,6 +310,10 @@ export class AgentHost {
       case "turn_end":
         this.emit(state, "turn.activity", { event }, meta2);
         return;
+      case "prompt_composed":
+      case "lifecycle":
+        this.emit(state, mapping.kind, { event }, meta2);
+        return;
       default: {
         const exhaustive: never = event;
         throw new Error(`unhandled agent event ${String((exhaustive as { type?: string }).type)}`);
