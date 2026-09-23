@@ -7,6 +7,7 @@ import type {
   CommandShellCatalog,
   CommandShellId,
   GlobalPermissionMode,
+  HostHealth,
   ShortcutPlatform,
 } from "@pi-desktop/shared";
 import {
@@ -32,6 +33,7 @@ import {
 } from "../lib/settings-search";
 import {
   IconArchive,
+  IconActivity,
   IconBranch,
   IconBookOpen,
   IconBot,
@@ -105,6 +107,60 @@ function SettingsCard({
       {title ? <h3 className="settings-card-heading">{title}</h3> : null}
       <div className="settings-panel">{children}</div>
     </section>
+  );
+}
+
+function DiagnosticsSection() {
+  const { t } = useTranslation();
+  const showToast = useAppStore((state) => state.showToast);
+  const [health, setHealth] = useState<HostHealth | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  const refresh = useCallback(async () => {
+    setLoading(true);
+    setError(false);
+    try {
+      setHealth(await api.health());
+    } catch {
+      setHealth(null);
+      setError(true);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { void refresh(); }, [refresh]);
+
+  const exportBundle = async () => {
+    try {
+      const result = await api.exportSupportBundle();
+      if (!result.canceled) showToast(t("settings.supportBundleExported"), { variant: "success" });
+    } catch (cause) {
+      showToast(cause instanceof Error ? cause.message : String(cause), { variant: "error" });
+    }
+  };
+
+  return (
+    <div className="settings-stack">
+      <SettingsCard title={t("settings.diagnosticsStatus")}>
+        {loading ? <div className="settings-recovery">{t("common.loading")}</div> : null}
+        {error ? <div className="settings-recovery" role="status"><span>{t("settings.diagnosticsUnavailable")}</span><Button variant="secondary" onClick={() => void refresh()}>{t("errors.action.retry")}</Button></div> : null}
+        {health ? <>
+          <SettingsRow title={t("settings.hostStatus")} description={t("settings.hostStatusDesc")}><Badge tone={health.ok ? "success" : "error"}>{health.ok ? t("settings.healthy") : t("settings.unhealthy")}</Badge></SettingsRow>
+          <SettingsRow title={t("settings.workspaceStatus")} description={health.workspace?.mode ?? t("settings.unknown")}><Badge tone={health.workspace?.ready ? "success" : "warning"}>{health.workspace?.ready ? t("settings.ready") : t("settings.needsAttention")}</Badge></SettingsRow>
+          <SettingsRow title={t("settings.capabilitiesStatus")} description={t("settings.capabilitiesDesc")}><span className="settings-about-meta">{health.capabilities?.available ?? 0} / {health.capabilities?.core ?? 0}</span></SettingsRow>
+          <SettingsRow title={t("settings.incidents")} description={t("settings.incidentsDesc")}><span className="settings-about-meta">{health.incidents?.length ?? 0}</span></SettingsRow>
+        </> : null}
+      </SettingsCard>
+      {health?.incidents?.length ? <SettingsCard title={t("settings.recentIncidents")}>
+        {health.incidents.map((incident) => <div className="settings-row" key={incident.fingerprint}><div className="settings-row-copy"><div className="settings-row-title">{incident.code}</div><div className="settings-row-desc">{incident.suggestedAction ?? t("settings.noRecoveryAction")}</div></div><div className="settings-row-control"><Badge tone="warning">{incident.count}</Badge></div></div>)}
+      </SettingsCard> : null}
+      <SettingsCard title={t("settings.supportBundle")}>
+        <SettingsRow title={t("settings.supportBundleTitle")} description={t("settings.supportBundleDesc")}><Button variant="secondary" onClick={() => void exportBundle()}>{t("settings.exportSupportBundle")}</Button></SettingsRow>
+        <SettingsRow title={t("settings.logs")} description={t("settings.logsDesc")}><Button variant="secondary" onClick={() => void api.openLogs()}>{t("settings.openLogs")}</Button></SettingsRow>
+      </SettingsCard>
+    </div>
   );
 }
 
@@ -1258,6 +1314,7 @@ export function SettingsPage() {
       projects: <IconArchive size={14} />,
       workspaces: <IconBranch size={14} />,
       about: <IconInfo size={14} />,
+      diagnostics: <IconActivity size={14} />,
     };
     return SETTINGS_NAV.map((entry) => ({
       id: entry.id,
@@ -1531,6 +1588,7 @@ export function SettingsPage() {
               )}
             </div>
           )}
+          {tab === "diagnostics" && <DiagnosticsSection />}
 
         </div>
       </div>

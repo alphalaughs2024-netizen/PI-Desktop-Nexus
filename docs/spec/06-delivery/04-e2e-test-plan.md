@@ -8,6 +8,15 @@
 
 ## 1. Goals
 
+Phase 1 reliability scenarios include:
+
+- Settings > Diagnostics loads host/workspace health and bounded incident counts.
+- Diagnostics shows a retry action when the host is unavailable.
+- Export support diagnostics opens a save dialog and writes a JSON health
+  envelope without prompts, workspace content, secrets, or plugin contents.
+- Scheduled tasks show recent persisted run statuses and timestamps after a
+  refresh; tasks with no history remain quiet.
+
 - Document every user-visible and protocol-visible behavior that MVP must verify.
 - Provide a scenario catalog that maps to acceptance criteria (A–H) and milestones (M1–M6).
 - Serve as the traceability backbone: scenario ID ↔ acceptance criterion ↔ spec.

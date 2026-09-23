@@ -2040,6 +2040,16 @@ export type ScheduledTask = {
   lastRunAt?: string;
 };
 
+export type ScheduledTaskRun = {
+  id: string;
+  taskId: string;
+  sessionId?: string | null;
+  status: "running" | "completed" | "aborted" | "error";
+  errorCode?: string | null;
+  startedAt: string;
+  endedAt?: string | null;
+};
+
 // --- Work panel (review / browser / files / plugin views) ---
 
 export type DiffLineType = "add" | "del" | "context";

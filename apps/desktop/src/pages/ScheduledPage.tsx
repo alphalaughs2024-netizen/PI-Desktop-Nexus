@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { ScheduledTask } from "@pi-desktop/shared";
+import type { ScheduledTask, ScheduledTaskRun } from "@pi-desktop/shared";
 import { useAppStore } from "../stores/app-store";
 import { api } from "../lib/api";
 import { Badge, Button, Field, Input, Panel, Select, Textarea } from "../components/ui";
@@ -17,12 +17,18 @@ export function ScheduledPage() {
   const [prompt, setPrompt] = useState("");
   const [cadence, setCadence] = useState<ScheduledTask["cadence"]>("manual");
   const [loading, setLoading] = useState(false);
+  const [runs, setRuns] = useState<Record<string, ScheduledTaskRun[]>>({});
 
   const refresh = async () => {
     setLoading(true);
     try {
       const res = await api.listScheduled();
       setTasks(res.tasks || []);
+      const histories = await Promise.all((res.tasks || []).map(async (task) => [
+        task.id,
+        (await api.listScheduledRuns(task.id, 10)).runs,
+      ] as const));
+      setRuns(Object.fromEntries(histories));
     } catch (e) {
       showToast(e instanceof Error ? e.message : String(e), { variant: "error" });
     } finally {
@@ -140,6 +146,7 @@ export function ScheduledPage() {
                         )
                       : t("scheduled.never")}
                   </div>
+                  {runs[task.id]?.length ? <div className="dest-row-meta">{t("scheduled.recentRuns")}: {runs[task.id].slice(0, 3).map((run) => `${run.status} · ${new Date(run.startedAt).toLocaleString(i18n.resolvedLanguage ?? i18n.language)}`).join(" | ")}</div> : null}
                 </div>
                 <div className="dest-row-actions">
                   <Button

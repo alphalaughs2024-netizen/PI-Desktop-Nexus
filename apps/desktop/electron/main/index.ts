@@ -6367,6 +6367,51 @@ function registerIpc() {
     } satisfies HostHealth;
   });
 
+  handle(IPC.invoke.supportBundleExport, async () => {
+    const result = mainWindow
+      ? await dialog.showSaveDialog(mainWindow, {
+          title: "Export Nexus diagnostics",
+          defaultPath: `nexus-diagnostics-${new Date().toISOString().replace(/[:.]/g, "-")}.json`,
+          filters: [{ name: "JSON", extensions: ["json"] }],
+        })
+      : await dialog.showSaveDialog({
+      title: "Export Nexus diagnostics",
+      defaultPath: `nexus-diagnostics-${new Date().toISOString().replace(/[:.]/g, "-")}.json`,
+      filters: [{ name: "JSON", extensions: ["json"] }],
+        });
+    if (result.canceled || !result.filePath) return { ok: true, canceled: true };
+    const health = host
+      ? await host.call<HostHealth>("app.health").catch(() => null)
+      : null;
+    const version = {
+      name: APP_NAME,
+      version: APP_VERSION,
+      protocolVersion: PROTOCOL_VERSION,
+      platform: process.platform,
+      arch: process.arch,
+    };
+    const bundle = {
+      schema: 1,
+      generatedAt: new Date().toISOString(),
+      version,
+      health: health
+        ? {
+            ok: health.ok,
+            protocolVersion: health.protocolVersion,
+            version: health.version,
+            uptimeMs: health.uptimeMs,
+            runtime: health.runtime,
+            workspace: health.workspace,
+            capabilities: health.capabilities,
+            incidents: logger.getIncidentSummaries(),
+          }
+        : { ok: false, hostAvailable: false, incidents: logger.getIncidentSummaries() },
+      note: "Redacted diagnostics only. Transcripts, prompts, workspace files, secrets, and plugin contents are excluded.",
+    };
+    await writeFile(result.filePath, `${JSON.stringify(bundle, null, 2)}\n`, "utf8");
+    return { ok: true, path: result.filePath };
+  });
+
   handle(IPC.invoke.summonShortcutGetStatus, async () => summonShortcutStatus);
 
   handle(IPC.invoke.appGetOnboarding, async () => {
@@ -8415,6 +8460,13 @@ function registerIpc() {
     // the run so agent_end can close it via scheduled.finishRun.
     scheduledRunsBySession.set(res.sessionId, res.runId);
     return res;
+  });
+  handle(IPC.invoke.scheduledListRuns, async (input: { taskId?: string; limit?: number } = {}) => {
+    if (!host) throw new Error("host unavailable");
+    return host.call<{ runs: ScheduledTaskRun[] }>("scheduled.listRuns", {
+      ...(input.taskId ? { taskId: input.taskId } : {}),
+      limit: Math.max(1, Math.min(50, Number(input.limit) || 10)),
+    });
   });
 
   handle(IPC.invoke.promptEnhance, async (req: PromptEnhancementRequest) => {

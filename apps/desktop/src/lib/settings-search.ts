@@ -18,6 +18,7 @@ export type SettingsTabId =
   | "import"
   | "projects"
   | "workspaces"
+  | "diagnostics"
   | "about";
 
 export type SettingsNavGroupId =
@@ -231,6 +232,13 @@ export const SETTINGS_NAV: SettingsNavEntry[] = [
     titleKey: "settings.workspaces",
     group: "workspace",
     keywordKeys: ["settings.workspaces", "settings.workspacesDesc", "settings.workspaceDirectFolder"],
+  },
+  {
+    id: "diagnostics",
+    labelKey: "settings.nav.diagnostics",
+    titleKey: "settings.diagnostics",
+    group: "system",
+    keywordKeys: ["settings.diagnosticsDesc", "settings.supportBundle"],
   },
   {
     id: "about",

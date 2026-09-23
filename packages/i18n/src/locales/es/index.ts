@@ -579,7 +579,8 @@ export const es = {
       "import": "Importar",
       "projects": "Proyectos",
       "workspaces": "Espacios de trabajo",
-      "info": "Información"
+       "info": "Información",
+       "diagnostics": "Diagnóstico"
     },
     "general": "General",
     "scenicThemes": "Temas escénicos",
@@ -1145,7 +1146,30 @@ export const es = {
     "fontSizeScale": "Escala de tamaño de texto",
     "fontSizePercent": "{{value}}%",
     "fontSizeSaveError": "No se pudo guardar el tamaño de fuente.",
-    "bottomPanel": "Panel inferior",
+     "diagnostics": "Diagnóstico",
+     "diagnosticsStatus": "Estado del tiempo de ejecución",
+     "diagnosticsDesc": "Inspeccione el host, el espacio de trabajo y los incidentes recuperables.",
+     "diagnosticsUnavailable": "El diagnóstico no está disponible cuando el host está desconectado.",
+     "hostStatus": "Estado del host",
+     "hostStatusDesc": "Disponibilidad del host Rust y del tiempo de ejecución local.",
+     "healthy": "Correcto",
+     "unhealthy": "No disponible",
+     "workspaceStatus": "Estado del espacio de trabajo",
+     "ready": "Listo",
+     "needsAttention": "Requiere atención",
+     "unknown": "Desconocido",
+     "capabilitiesStatus": "Capacidades",
+     "capabilitiesDesc": "Capacidades principales disponibles.",
+     "incidents": "Incidentes activos",
+     "incidentsDesc": "Condiciones de diagnóstico acotadas registradas en este proceso.",
+     "recentIncidents": "Incidentes recientes",
+     "noRecoveryAction": "Consulte los registros para obtener más detalles.",
+     "supportBundle": "Diagnóstico de soporte",
+     "supportBundleTitle": "Exportar paquete de soporte",
+     "supportBundleDesc": "Exporta diagnósticos redactados sin mensajes, archivos, secretos ni contenido de complementos.",
+     "exportSupportBundle": "Exportar JSON",
+     "supportBundleExported": "Diagnóstico de soporte exportado",
+     "bottomPanel": "Panel inferior",
     "bottomPanelDesc": "Muestra el control del panel inferior en el encabezado de la aplicación."
   },
   "thinkingLevel": {
@@ -1236,7 +1260,7 @@ export const es = {
     "filterDraft": "Borrador",
     "filterAll": "Todos",
     "open": "Abierto",
-    "draft": "Borrador"
+      "draft": "Borrador"
   },
   "scheduled": {
     "title": "Programado",
@@ -1257,7 +1281,8 @@ export const es = {
     "delete": "Eliminar",
     "lastRun": "Última ejecución",
     "never": "Nunca",
-    "tasks": "Tareas"
+     "tasks": "Tareas",
+     "recentRuns": "Ejecuciones recientes"
   },
   "permission": {
     "title": "Permiso necesario",
