@@ -853,6 +853,7 @@ export type PromptCompositionSection = {
   hash: string;
   reloadTrigger: string;
   sensitive: boolean;
+  context?: ContextPromptProvenance;
 };
 export type PromptCompositionSnapshot = {
   version: 1;
@@ -866,6 +867,21 @@ export type PromptCompositionSnapshot = {
 };
 export type PromptLifecycleKind = "prompt_accepted" | "context_assembled" | "prompt_sent" | "steering_requested" | "steering_accepted" | "steering_rejected" | "steering_unavailable" | "retry_started" | "resume_started" | "turn_completed" | "turn_failed";
 export type PromptLifecycleEvent = { id: string; kind: PromptLifecycleKind; ts: number; turnId?: string; preview?: string; compositionHash?: string; reason?: string; expectedTurnId?: string; sensitive?: boolean };
+export type SteerOutcome =
+  | { state: "accepted"; sessionId: string; expectedTurnId: string }
+  | { state: "queued"; sessionId: string; expectedTurnId: string; position?: number }
+  | { state: "rejected"; reason: "stale_turn" | "not_running" | "plan_pending" | "invalid" }
+  | { state: "unavailable"; reason: "provider_unsupported" | "host_offline" | "missing_session" }
+  | { state: "failed"; reason: string };
+
+export type ContextPromptProvenance = {
+  contextId: string;
+  contextSource: string;
+  scope: string;
+  verificationState?: string;
+  inclusionReason: string;
+  omissionReason?: string;
+};
 
 export type AgentEventEnvelope = {
   sessionId: string;

@@ -2330,7 +2330,11 @@ export function Composer({
                   }
                   if (e.key === "Enter" && e.altKey && !e.shiftKey && isRunning && hasDraftContent) {
                     e.preventDefault();
-                    void steerActiveTurn(value);
+                    void steerActiveTurn(value).then((outcome) => {
+                      if (outcome.state === "rejected" || outcome.state === "failed" || outcome.state === "unavailable") {
+                        useAppStore.getState().showToast(outcome.state === "failed" ? outcome.reason : outcome.state, { variant: "error" });
+                      }
+                    });
                     return;
                   }
                   if (e.key === "Enter" && !e.shiftKey && enterToSend) {

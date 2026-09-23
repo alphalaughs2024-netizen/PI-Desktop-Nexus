@@ -936,8 +936,8 @@ export type AppState = {
   removeQueuedPrompt: (promptId: string) => void;
   sendQueuedNow: (promptId: string) => Promise<void>;
   moveQueuedPrompt: (promptId: string, direction: "up" | "down") => Promise<void>;
-  steerActiveTurn: (content: string) => Promise<boolean>;
-  steerPrompt: (content: string, draft?: ComposerDraftSnapshot, promptId?: string) => Promise<boolean>;
+  steerActiveTurn: (content: string) => Promise<import("@pi-desktop/shared").SteerOutcome>;
+  steerPrompt: (content: string, draft?: ComposerDraftSnapshot, promptId?: string) => Promise<import("@pi-desktop/shared").SteerOutcome>;
   editQueuedPrompt: (promptId: string) => void;
   refreshQueuedPrompts: (sessionId: string) => Promise<void>;
   applyQueueChanged: (event: AgentQueueChangedEvent) => void;
@@ -2243,16 +2243,19 @@ export const useAppStore = create<AppState>((set, get) => ({
     const state = get();
     const sessionId = state.activeSessionId;
     const turnId = sessionId ? state.activeTurnIds[sessionId] : undefined;
-    if (!sessionId || !turnId || !state.runningSessions[sessionId] || !content.trim()) return false;
-    try { await api.steer({ sessionId, expectedTurnId: turnId, content: content.trim() }); return true; }
-    catch (error) { get().showToast(error instanceof Error ? error.message : String(error), { variant: "error" }); return false; }
+    if (!sessionId || !turnId || !content.trim()) return { state: "rejected", reason: "invalid" };
+    if (!state.runningSessions[sessionId]) return { state: "rejected", reason: "not_running" };
+    try { await api.steer({ sessionId, expectedTurnId: turnId, content: content.trim() }); return { state: "accepted", sessionId, expectedTurnId: turnId }; }
+    catch (error) { const reason = error instanceof Error ? error.message : String(error); get().showToast(reason, { variant: "error" }); return { state: "failed", reason }; }
   },
 
   steerPrompt: async (content, draft, promptId) => {
     const state = get();
     const sessionId = state.activeSessionId;
     const expectedTurnId = sessionId ? state.activeTurnIds[sessionId] : undefined;
-    if (!sessionId || !expectedTurnId || !state.runningSessions[sessionId] || state.pendingPlans[sessionId]?.status === "pending") return false;
+    if (!sessionId || !expectedTurnId) return { state: "rejected", reason: "invalid" };
+    if (!state.runningSessions[sessionId]) return { state: "rejected", reason: "not_running" };
+    if (state.pendingPlans[sessionId]?.status === "pending") return { state: "rejected", reason: "plan_pending" };
     const message = optimisticUserMessage(crypto.randomUUID(), content, draft?.fileReferences ?? []);
     message.steering = true;
     insertOptimisticUserMessage(sessionId, message);
@@ -2262,9 +2265,9 @@ export const useAppStore = create<AppState>((set, get) => ({
         set((current) => ({ queuedPrompts: removeQueuedPrompt(current.queuedPrompts, sessionId, promptId) }));
         void api.removeQueuedPrompt(promptId).catch(() => undefined);
       }
-      return true;
+      return { state: "accepted", sessionId, expectedTurnId };
     }
-    catch (error) { retractOptimisticUserMessage(sessionId, message); get().showToast(error instanceof Error ? error.message : String(error), { variant: "error" }); return false; }
+    catch (error) { retractOptimisticUserMessage(sessionId, message); const reason = error instanceof Error ? error.message : String(error); get().showToast(reason, { variant: "error" }); return { state: "failed", reason }; }
   },
 
   refreshQueuedPrompts: async (sessionId) => {
