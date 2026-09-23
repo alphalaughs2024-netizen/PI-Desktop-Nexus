@@ -1029,8 +1029,8 @@ function AppShell() {
           {costOpen && (
             <div className="cost-summary-popover" role="dialog" aria-label={i18n.t("settings.usageBreakdown")}>
               <strong>{i18n.t("settings.usageBreakdown")}</strong>
-              <div className="cost-summary-row"><span>{i18n.t("settings.usageTotal")}</span><b>{i18n.t("settings.usageUnavailable")}</b></div>
-              <div className="cost-summary-row"><span>{i18n.t("settings.usageTurns")}</span><b>{i18n.t("settings.usageUnavailable")}</b></div>
+              <div className="cost-summary-row"><span>{i18n.t("settings.usageTotal")}</span><b>—</b></div>
+              <div className="cost-summary-row"><span>{i18n.t("settings.usageTurns")}</span><b>—</b></div>
               <small>{i18n.t("settings.usageDescription")}</small>
             </div>
           )}
