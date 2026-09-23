@@ -71,7 +71,14 @@ export function UsagePage() {
   const heatItems = useMemo(() => {
     const items = history?.items ?? [];
     const max = Math.max(1, ...items.map((item) => item.totalTokens));
-    return items.map((item) => ({ ...item, level: heatLevel(item.totalTokens, max) }));
+    const byDate = new Map(items.map((item) => [item.date, item]));
+    const days = Array.from({ length: 371 }, (_, index) => {
+      const date = new Date(Date.now() - (370 - index) * 86_400_000);
+      const dateKey = date.toISOString().slice(0, 10);
+      const item = byDate.get(dateKey);
+      return item ?? { date: dateKey, timestamp: date.getTime(), inputTokens: 0, outputTokens: 0, totalTokens: 0, cacheReadTokens: 0, cacheWriteTokens: 0, reasoningTokens: 0, turnCount: 0 };
+    });
+    return days.map((item) => ({ ...item, level: heatLevel(item.totalTokens, max) }));
   }, [history]);
   const latest = history?.items.at(-1);
   const mix = useMemo(() => [
@@ -81,14 +88,25 @@ export function UsagePage() {
     { label: t("settings.usageReasoning"), value: totals.reasoningTokens, tone: "reasoning" },
   ].filter((entry) => entry.value > 0), [t, totals]);
   const maxMix = Math.max(1, ...mix.map((entry) => entry.value));
+  const recentItems = useMemo(() => (history?.items ?? []).slice(-8).reverse(), [history]);
+  const filterOptions = [t("settings.usageAllTools"), t("settings.usageAllModels"), t("settings.usageAllProviders")];
 
   return (
     <div className="settings-stack usage-page">
+      <div className="usage-plugin-topbar">
+        <strong>{t("settings.usagePluginTitle")}</strong>
+        <div className="usage-plugin-filters" role="group" aria-label={t("settings.usageFilters")}>
+          <div className="usage-range-pills">{["7D", "30D", "90D", "1Y", "ALL"].map((range) => <button className={range === "ALL" ? "active" : ""} key={range} type="button">{range}</button>)}</div>
+          {filterOptions.map((label) => <button className="usage-filter-chip" key={label} type="button">{label}<span aria-hidden="true">⌄</span></button>)}
+          <span className="usage-filter-search">{t("settings.usageFilterPlaceholder")}</span>
+        </div>
+      </div>
       <div className="usage-hero">
         <div>
           <div className="usage-eyebrow">{t("settings.usageEyebrow")}</div>
-          <h2 className="usage-hero-title">{t("settings.usageHeadline")}</h2>
-          <p>{t("settings.usageDescription")}</p>
+          <h2 className="usage-hero-title">{formatTokens(totals.totalTokens)}</h2>
+          <p>{t("settings.usageHeroSub", { turns: totals.turnCount })}</p>
+          <p className="usage-hero-note">{t("settings.usageDescription")}</p>
         </div>
         <div className="usage-toolbar-actions">
           <Select aria-label={t("settings.usageRange")} value={bucket} onChange={(event) => setBucket(event.target.value as Bucket)}>
@@ -142,7 +160,7 @@ export function UsagePage() {
         <div className="settings-card-block usage-detail-card">
           <div className="usage-card-heading"><div><h3>{t("settings.usagePeriodsTitle")}</h3><span>{t("settings.usagePeriodsHint")}</span></div><span>{totals.turnCount} {t("settings.usageTurnsShort")}</span></div>
           <div className="usage-period-list">
-            {(history?.items ?? []).slice(-6).reverse().map((item) => <div className="usage-period-row" key={item.date}><span>{new Date(item.timestamp).toLocaleDateString(locale, { month: "short", day: "numeric" })}</span><span className="usage-period-track"><i style={{ width: `${Math.max(3, (item.totalTokens / maxTotal) * 100)}%` }} /></span><strong>{formatTokens(item.totalTokens)}</strong></div>)}
+            {recentItems.map((item) => <div className="usage-period-row" key={item.date}><span>{new Date(item.timestamp).toLocaleDateString(locale, { month: "short", day: "numeric" })}</span><span className="usage-period-track"><i style={{ width: `${Math.max(3, (item.totalTokens / maxTotal) * 100)}%` }} /></span><strong>{formatTokens(item.totalTokens)}</strong></div>)}
           </div>
         </div>
         <div className="settings-card-block usage-detail-card usage-turn-card">
