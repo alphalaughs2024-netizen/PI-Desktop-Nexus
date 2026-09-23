@@ -1,6 +1,7 @@
 import type { CSSProperties, SVGProps } from "react";
 import {
   Activity,
+  BarChart3,
   AppWindow,
   Archive,
   ArchiveRestore,
@@ -143,6 +144,7 @@ export const IconClipboard = icon(ClipboardPaste);
 export const IconArchive = icon(Archive);
 export const IconArchiveRestore = icon(ArchiveRestore);
 export const IconActivity = icon(Activity);
+export const IconUsage = icon(BarChart3);
 export const IconArrowUpDown = icon(ArrowUpDown);
 export const IconSearch = icon(Search);
 export const IconRefresh = icon(RefreshCcw);

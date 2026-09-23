@@ -41,6 +41,7 @@ import {
   IconDownload,
   IconFileText,
   IconInfo,
+  IconUsage,
   IconImage,
   IconKeyboard,
   IconSearch,
@@ -1316,7 +1317,7 @@ export function SettingsPage() {
       workspaces: <IconBranch size={14} />,
       about: <IconInfo size={14} />,
       diagnostics: <IconActivity size={14} />,
-      usage: <IconActivity size={14} />,
+      usage: <IconUsage size={14} />,
     };
     return SETTINGS_NAV.map((entry) => ({
       id: entry.id,
