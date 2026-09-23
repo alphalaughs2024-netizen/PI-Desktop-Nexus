@@ -586,7 +586,8 @@ export const de = {
       "import": "Importieren Sie",
       "projects": "Projekte",
       "workspaces": "Arbeitsbereiche",
-      "info": "Informationen"
+       "info": "Informationen",
+       "diagnostics": "Diagnose"
     },
     "general": "Allgemein",
     "scenicThemes": "Szenische Themen",
@@ -1152,7 +1153,30 @@ export const de = {
     "fontSizeScale": "Textgrößenskala",
     "fontSizePercent": "{{value}}%",
     "fontSizeSaveError": "Die Schriftgröße konnte nicht gespeichert werden.",
-    "bottomPanel": "Unteres Bedienfeld",
+     "diagnostics": "Diagnose",
+     "diagnosticsStatus": "Laufzeitstatus",
+     "diagnosticsDesc": "Host, Arbeitsbereich und wiederherstellbare Vorfälle prüfen.",
+     "diagnosticsUnavailable": "Diagnose ist offline nicht verfügbar.",
+     "hostStatus": "Hoststatus",
+     "hostStatusDesc": "Verfügbarkeit des Rust-Hosts und der lokalen Laufzeit.",
+     "healthy": "Funktionsfähig",
+     "unhealthy": "Nicht verfügbar",
+     "workspaceStatus": "Arbeitsbereichsstatus",
+     "ready": "Bereit",
+     "needsAttention": "Aufmerksamkeit erforderlich",
+     "unknown": "Unbekannt",
+     "capabilitiesStatus": "Funktionen",
+     "capabilitiesDesc": "Verfügbare Kernfunktionen.",
+     "incidents": "Aktive Vorfälle",
+     "incidentsDesc": "Begrenzte Diagnosezustände dieses Prozesses.",
+     "recentIncidents": "Letzte Vorfälle",
+     "noRecoveryAction": "Weitere Informationen finden Sie in den Protokollen.",
+     "supportBundle": "Supportdiagnose",
+     "supportBundleTitle": "Supportpaket exportieren",
+     "supportBundleDesc": "Exportiert bereinigte Laufzeitdiagnosen ohne Eingaben, Dateien, Geheimnisse oder Plugin-Inhalte.",
+     "exportSupportBundle": "JSON exportieren",
+     "supportBundleExported": "Supportdiagnose exportiert",
+     "bottomPanel": "Unteres Bedienfeld",
     "bottomPanelDesc": "Zeigt das untere Bedienfeld-Steuerelement im App-Header an."
   },
   "thinkingLevel": {
@@ -1243,7 +1267,7 @@ export const de = {
     "filterDraft": "Entwurf",
     "filterAll": "Alle",
     "open": "Offen",
-    "draft": "Entwurf"
+     "draft": "Entwurf"
   },
   "scheduled": {
     "title": "Geplant",
@@ -1264,7 +1288,8 @@ export const de = {
     "delete": "Löschen",
     "lastRun": "Letzte Ausführung",
     "never": "Nie",
-    "tasks": "Aufgaben"
+     "tasks": "Aufgaben",
+     "recentRuns": "Letzte Läufe"
   },
   "permission": {
     "title": "Berechtigung erforderlich",

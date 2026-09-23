@@ -61,6 +61,7 @@ import type {
   ProjectWorkspace,
   PullRequestSummary,
   ScheduledTask,
+  ScheduledTaskRun,
   ProviderCreateInput,
   ProviderPublic,
   ProviderUpdateInput,
@@ -330,6 +331,8 @@ function normalizePlansChangedEvent(value: unknown): PlanningStateEvent {
 export const api = {
   getVersion: () => invoke<AppVersionInfo>(IPC.invoke.appGetVersion),
   health: () => invoke<HostHealth>(IPC.invoke.appHealth),
+  exportSupportBundle: () =>
+    invoke<{ ok: boolean; canceled?: boolean; path?: string }>(IPC.invoke.supportBundleExport),
   getSummonShortcutStatus: () =>
     invoke<SummonShortcutStatus>(IPC.invoke.summonShortcutGetStatus),
   getOnboarding: () => invoke<OnboardingState>(IPC.invoke.appGetOnboarding),
@@ -590,6 +593,8 @@ export const api = {
       IPC.invoke.scheduledRun,
       id,
     ),
+  listScheduledRuns: (taskId: string, limit = 10) =>
+    invoke<{ runs: ScheduledTaskRun[] }>(IPC.invoke.scheduledListRuns, { taskId, limit }),
   replaceSessionMessages: (sessionId: string, messages: UiMessage[]) =>
     invoke(IPC.invoke.sessionReplaceMessages, { sessionId, messages }),
   saveSessionRevision: (input: {

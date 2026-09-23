@@ -2,6 +2,13 @@
 
 ## 1. Settings root (Codex full-page shell)
 
+The System cluster includes a read-only **Diagnostics** destination. It reads
+the existing `app.health` snapshot and shows host availability, workspace
+readiness, capability counts, and bounded incident summaries. It also exposes
+an explicit support-diagnostics export that writes a redacted JSON manifest;
+prompts, transcripts, workspace files, secrets, and plugin contents are never
+included.
+
 Settings is a **full-window page** that replaces the app sidebar + main chrome (Codex electron behavior):
 
 - Settings remains usable when an unrelated startup read fails: a successfully

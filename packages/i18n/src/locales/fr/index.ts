@@ -579,7 +579,8 @@ export const fr = {
       "import": "Importation",
       "projects": "Projets",
       "workspaces": "Espaces de travail",
-      "info": "Informations"
+       "info": "Informations",
+       "diagnostics": "Diagnostics"
     },
     "general": "Général",
     "scenicThemes": "Thèmes panoramiques",
@@ -1145,7 +1146,30 @@ export const fr = {
     "fontSizeScale": "Échelle de taille du texte",
     "fontSizePercent": "{{value}}%",
     "fontSizeSaveError": "Impossible d'enregistrer la taille de la police.",
-    "bottomPanel": "Panneau inférieur",
+     "diagnostics": "Diagnostics",
+     "diagnosticsStatus": "État de l’exécution",
+     "diagnosticsDesc": "Inspectez l’hôte, l’espace de travail et les incidents récupérables.",
+     "diagnosticsUnavailable": "Les diagnostics sont indisponibles lorsque l’hôte est hors ligne.",
+     "hostStatus": "État de l’hôte",
+     "hostStatusDesc": "Disponibilité de l’hôte Rust et de l’exécution locale.",
+     "healthy": "Opérationnel",
+     "unhealthy": "Indisponible",
+     "workspaceStatus": "État de l’espace de travail",
+     "ready": "Prêt",
+     "needsAttention": "Attention requise",
+     "unknown": "Inconnu",
+     "capabilitiesStatus": "Capacités",
+     "capabilitiesDesc": "Capacités principales disponibles.",
+     "incidents": "Incidents actifs",
+     "incidentsDesc": "Conditions de diagnostic limitées enregistrées dans ce processus.",
+     "recentIncidents": "Incidents récents",
+     "noRecoveryAction": "Consultez les journaux pour plus de détails.",
+     "supportBundle": "Diagnostics d’assistance",
+     "supportBundleTitle": "Exporter un paquet d’assistance",
+     "supportBundleDesc": "Exporte des diagnostics nettoyés sans prompts, fichiers, secrets ni contenu de plugin.",
+     "exportSupportBundle": "Exporter JSON",
+     "supportBundleExported": "Diagnostics exportés",
+     "bottomPanel": "Panneau inférieur",
     "bottomPanelDesc": "Afficher le contrôle du panneau inférieur dans l'en-tête de l'application."
   },
   "thinkingLevel": {
@@ -1236,7 +1260,7 @@ export const fr = {
     "filterDraft": "Brouillon",
     "filterAll": "Tous",
     "open": "Ouvrir",
-    "draft": "Brouillon"
+      "draft": "Brouillon"
   },
   "scheduled": {
     "title": "Planifié",
@@ -1257,7 +1281,8 @@ export const fr = {
     "delete": "Supprimer",
     "lastRun": "Dernière exécution",
     "never": "Jamais",
-    "tasks": "Tâches"
+     "tasks": "Tâches",
+     "recentRuns": "Exécutions récentes"
   },
   "permission": {
     "title": "Autorisation requise",
