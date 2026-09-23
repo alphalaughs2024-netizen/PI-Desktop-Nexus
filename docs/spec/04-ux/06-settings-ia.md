@@ -146,8 +146,10 @@ Settings is a **full-window page** that replaces the app sidebar + main chrome (
 
 Token usage is a native Settings destination. Completed-turn history stays
 host-owned (`session.endTurn.usage`, `stats.getTokenUsageHistory`). The Usage
-page provides token totals, bounded history, and token breakdowns. Currency cost
-is intentionally a separate follow-up.
+page provides token totals, bounded history, token breakdowns, and a dense
+Token Insights-style dashboard with activity heatmap, token-mix ranking, period
+rhythm, recent-period ranking, and completed-turn summary. Currency cost is
+intentionally a separate follow-up.
 
 ### Shortcuts (`shortcuts` tab)
 - **Keyboard shortcuts** card:

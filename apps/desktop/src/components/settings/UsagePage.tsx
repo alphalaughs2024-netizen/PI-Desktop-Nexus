@@ -74,6 +74,13 @@ export function UsagePage() {
     return items.map((item) => ({ ...item, level: heatLevel(item.totalTokens, max) }));
   }, [history]);
   const latest = history?.items.at(-1);
+  const mix = useMemo(() => [
+    { label: t("settings.usageInput"), value: totals.inputTokens, tone: "input" },
+    { label: t("settings.usageOutput"), value: totals.outputTokens, tone: "output" },
+    { label: t("settings.usageCacheRead"), value: totals.cacheReadTokens, tone: "cache" },
+    { label: t("settings.usageReasoning"), value: totals.reasoningTokens, tone: "reasoning" },
+  ].filter((entry) => entry.value > 0), [t, totals]);
+  const maxMix = Math.max(1, ...mix.map((entry) => entry.value));
 
   return (
     <div className="settings-stack usage-page">
@@ -113,6 +120,36 @@ export function UsagePage() {
           <span className="usage-latest-meta">{latest ? new Date(latest.timestamp).toLocaleDateString(locale, { month: "short", day: "numeric" }) : t("settings.usageEmpty")}</span>
           <div className="usage-latest-line"><span>{t("settings.usageInput")}</span><strong>{formatTokens(latest?.inputTokens ?? 0)}</strong></div>
           <div className="usage-latest-line"><span>{t("settings.usageOutput")}</span><strong>{formatTokens(latest?.outputTokens ?? 0)}</strong></div>
+        </div>
+      </section>
+      <section className="usage-dashboard-grid">
+        <div className="settings-card-block usage-detail-card">
+          <div className="usage-card-heading"><div><h3>{t("settings.usageMix")}</h3><span>{t("settings.usageMixHint")}</span></div><strong>{formatTokens(totals.totalTokens)}</strong></div>
+          <div className="usage-ranking-list">
+            {mix.map((entry) => <div className="usage-ranking-row" key={entry.label}>
+              <div className="usage-ranking-label"><span>{entry.label}</span><strong>{formatTokens(entry.value)}</strong></div>
+              <div className="usage-ranking-track"><span className={`usage-ranking-fill ${entry.tone}`} style={{ width: `${Math.max(3, (entry.value / maxMix) * 100)}%` }} /></div>
+            </div>)}
+          </div>
+        </div>
+        <div className="settings-card-block usage-detail-card usage-rhythm-card">
+          <div className="usage-card-heading"><div><h3>{t("settings.usageRhythm")}</h3><span>{t("settings.usageRhythmHint")}</span></div><span>{history?.items.length ?? 0} {t("settings.usagePeriods")}</span></div>
+          <div className="usage-bars" aria-label={t("settings.usageRhythm")}>
+            {(history?.items ?? []).slice(-18).map((item) => <span key={item.date} title={`${item.date}: ${formatTokens(item.totalTokens)}`} style={{ height: `${Math.max(8, (item.totalTokens / maxTotal) * 100)}%` }} />)}
+          </div>
+          <div className="usage-axis"><span>{history?.items.at(-18)?.date ?? ""}</span><span>{latest?.date ?? ""}</span></div>
+        </div>
+        <div className="settings-card-block usage-detail-card">
+          <div className="usage-card-heading"><div><h3>{t("settings.usagePeriodsTitle")}</h3><span>{t("settings.usagePeriodsHint")}</span></div><span>{totals.turnCount} {t("settings.usageTurnsShort")}</span></div>
+          <div className="usage-period-list">
+            {(history?.items ?? []).slice(-6).reverse().map((item) => <div className="usage-period-row" key={item.date}><span>{new Date(item.timestamp).toLocaleDateString(locale, { month: "short", day: "numeric" })}</span><span className="usage-period-track"><i style={{ width: `${Math.max(3, (item.totalTokens / maxTotal) * 100)}%` }} /></span><strong>{formatTokens(item.totalTokens)}</strong></div>)}
+          </div>
+        </div>
+        <div className="settings-card-block usage-detail-card usage-turn-card">
+          <div className="usage-card-heading"><div><h3>{t("settings.usageTurnsTitle")}</h3><span>{t("settings.usageTurnsHint")}</span></div><IconActivity size={17} /></div>
+          <strong className="usage-turn-total">{totals.turnCount}</strong>
+          <span className="usage-latest-meta">{t("settings.usageCompleted")}</span>
+          <div className="usage-turn-summary"><span>{t("settings.usageAverage")}</span><strong>{formatTokens(totals.turnCount ? totals.totalTokens / totals.turnCount : 0)}</strong></div>
         </div>
       </section>
       <section className="settings-card-block">
