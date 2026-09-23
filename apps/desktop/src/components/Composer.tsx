@@ -630,6 +630,7 @@ export function Composer({
   const sendQueuedNow = useAppStore((s) => s.sendQueuedNow);
   const moveQueuedPrompt = useAppStore((s) => s.moveQueuedPrompt);
   const steerActiveTurn = useAppStore((s) => s.steerActiveTurn);
+  const steerPrompt = useAppStore((s) => s.steerPrompt);
   const editQueuedPrompt = useAppStore((s) => s.editQueuedPrompt);
   const abort = useAppStore((s) => s.abort);
   const isRunning = useAppStore((s) => s.isRunning);
@@ -2167,11 +2168,17 @@ export function Composer({
                       approvalPending ||
                       locked
                     }
-                    onClick={() => void sendQueuedNow(item.id)}
+                    onClick={() => {
+                      if (isRunning && !locked) {
+                        void steerPrompt(item.content, item.draft);
+                      } else {
+                        void sendQueuedNow(item.id);
+                      }
+                    }}
                   >
                     {promoted
                       ? t("chat.sendNowPending")
-                      : t("chat.sendNow")}
+                      : isRunning ? "Steer" : t("chat.sendNow")}
                   </button>
                   <TooltipButton type="button" className="composer-queued-prompt-action" tooltip="Edit queued prompt" ariaLabel="Edit queued prompt" disabled={locked} onClick={() => editQueuedPrompt(item.id)}><IconPencil size={13} aria-hidden /></TooltipButton>
                 </div>
