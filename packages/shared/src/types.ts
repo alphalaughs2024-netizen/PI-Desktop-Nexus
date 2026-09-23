@@ -866,8 +866,15 @@ export type PromptCompositionSnapshot = {
   reloadReason: string;
   sections: PromptCompositionSection[];
 };
-export type PromptLifecycleKind = "prompt_accepted" | "context_assembled" | "prompt_sent" | "steering_requested" | "steering_accepted" | "steering_rejected" | "steering_unavailable" | "retry_started" | "resume_started" | "turn_completed" | "turn_failed";
-export type PromptLifecycleEvent = { id: string; kind: PromptLifecycleKind; ts: number; turnId?: string; preview?: string; compositionHash?: string; reason?: string; expectedTurnId?: string; sensitive?: boolean };
+export type PromptLifecycleKind = "prompt_accepted" | "context_assembled" | "prompt_sent" | "steering_requested" | "steering_accepted" | "steering_queued" | "steering_rejected" | "steering_unavailable" | "steering_failed" | "context_requested" | "context_completed" | "retry_started" | "resume_started" | "resume_success" | "resume_unavailable" | "resume_failed" | "reconnect" | "turn_completed" | "turn_failed";
+export type PromptLifecycleEvent = { id: string; kind: PromptLifecycleKind; ts: number; turnId?: string; preview?: string; compositionHash?: string; reason?: string; expectedTurnId?: string; sensitive?: boolean; parentToolCallId?: string; agentName?: string };
+export type NexusFeatureFlags = {
+  structuredComposition: boolean;
+  lifecycleTimeline: boolean;
+  lifecyclePersistence: boolean;
+  contextProvenance: boolean;
+  statefulSteering: boolean;
+};
 export type SteerOutcome =
   | { state: "accepted"; sessionId: string; expectedTurnId: string }
   | { state: "queued"; sessionId: string; expectedTurnId: string; position?: number }

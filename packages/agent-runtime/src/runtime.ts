@@ -47,6 +47,7 @@ import {
   type TrustedExtensionUiRequest,
   type TrustedExtensionUiResponse,
 } from "@pi-desktop/shared";
+import { createPromptLifecycleEvent } from "./lifecycle.js";
 import {
   TrustedExtensionRunner,
   type TrustedExtensionBridge,
@@ -1480,6 +1481,15 @@ export class DesktopAgentRuntime {
   private baseSystemPrompt: string;
   private promptComposition?: import("@pi-desktop/shared").PromptCompositionSnapshot;
   private lifecycleSequence = 0;
+
+  private emitLifecycle(kind: import("@pi-desktop/shared").PromptLifecycleKind, details: Partial<import("@pi-desktop/shared").PromptLifecycleEvent> = {}): void {
+    try {
+      const lifecycle = createPromptLifecycleEvent({ sessionId: this.sessionId, sequence: ++this.lifecycleSequence, kind, turnId: details.turnId ?? this.turnId, ...details });
+      this.onEvent({ sessionId: this.sessionId, turnId: this.turnId, ts: lifecycle.ts, event: { type: "lifecycle", lifecycle } });
+    } catch {
+      // Diagnostics are advisory and must never affect the agent loop.
+    }
+  }
   private planningState: PlanningState;
   private pendingPlanId?: string;
   private currentAssistant?: UiMessage;
@@ -1634,6 +1644,7 @@ export class DesktopAgentRuntime {
     this.host = opts.host;
     this.hostCloseUnsubscribe = this.host.onClose?.(() => {
       this.cleanupActiveToolProgress();
+      this.emitLifecycle("reconnect", { reason: "host_offline" });
     });
     this.onEvent = opts.onEvent;
     this.pluginTools = opts.pluginTools ?? [];
@@ -1746,7 +1757,8 @@ export class DesktopAgentRuntime {
             claim: (error, phase) => this.claimProviderRetry(error, phase),
             headers: () => this.providerRetryHeaders,
             status: () => this.providerResponseStatus,
-            onRetry: ({ error, phase, attempt, delayMs }) => {
+              onRetry: ({ error, phase, attempt, delayMs }) => {
+                this.emitLifecycle("retry_started", { reason: `${phase}:${attempt}:${delayMs}`, preview: this.retryActivityError(error).message });
               this.setAgentActivity({
                 phase: "retrying",
                 since: Date.now(),
@@ -1850,10 +1862,6 @@ export class DesktopAgentRuntime {
     this.onEvent({ sessionId: this.sessionId, ts: Date.now(), event: { type: "prompt_composed", composition: composed.snapshot } });
     this.emitLifecycle("context_assembled", { compositionHash: composed.snapshot.hash });
     return composed.prompt;
-  }
-
-  private emitLifecycle(kind: import("@pi-desktop/shared").PromptLifecycleKind, details: Omit<import("@pi-desktop/shared").PromptLifecycleEvent, "id" | "kind" | "ts"> = {}): void {
-    this.onEvent({ sessionId: this.sessionId, ts: Date.now(), event: { type: "lifecycle", lifecycle: { id: `${this.sessionId}:${++this.lifecycleSequence}`, kind, ts: Date.now(), ...details } } });
   }
 
   /**
@@ -5949,6 +5957,7 @@ export class DesktopAgentRuntime {
           break;
         }
         this.emit({ type: "turn_start" });
+        this.emitLifecycle("prompt_sent");
         break;
       case "message_start": {
         if (event.message.role === "assistant") {
@@ -6069,6 +6078,7 @@ export class DesktopAgentRuntime {
               : failed
                 ? "provider stream failed"
                 : undefined;
+          if (failed) this.emitLifecycle("turn_failed", { reason: errorMessage });
           let classifiedError = overflow
             ? errorMessage
               ? classifyAgentError(errorMessage)

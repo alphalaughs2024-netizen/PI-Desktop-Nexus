@@ -2245,8 +2245,20 @@ export const useAppStore = create<AppState>((set, get) => ({
     const turnId = sessionId ? state.activeTurnIds[sessionId] : undefined;
     if (!sessionId || !turnId || !content.trim()) return { state: "rejected", reason: "invalid" };
     if (!state.runningSessions[sessionId]) return { state: "rejected", reason: "not_running" };
-    try { await api.steer({ sessionId, expectedTurnId: turnId, content: content.trim() }); return { state: "accepted", sessionId, expectedTurnId: turnId }; }
-    catch (error) { const reason = error instanceof Error ? error.message : String(error); get().showToast(reason, { variant: "error" }); return { state: "failed", reason }; }
+    try {
+      await api.steer({ sessionId, expectedTurnId: turnId, content: content.trim() });
+      return { state: "accepted", sessionId, expectedTurnId: turnId };
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : String(error);
+      const lower = reason.toLowerCase();
+      const outcome = lower.includes("stale") || lower.includes("turn")
+        ? { state: "rejected" as const, reason: "stale_turn" as const }
+        : lower.includes("provider") || lower.includes("steer")
+          ? { state: "unavailable" as const, reason: "provider_unsupported" as const }
+          : { state: "failed" as const, reason };
+      get().showToast(reason, { variant: "error" });
+      return outcome;
+    }
   },
 
   steerPrompt: async (content, draft, promptId) => {
@@ -2267,7 +2279,18 @@ export const useAppStore = create<AppState>((set, get) => ({
       }
       return { state: "accepted", sessionId, expectedTurnId };
     }
-    catch (error) { retractOptimisticUserMessage(sessionId, message); const reason = error instanceof Error ? error.message : String(error); get().showToast(reason, { variant: "error" }); return { state: "failed", reason }; }
+    catch (error) {
+      retractOptimisticUserMessage(sessionId, message);
+      const reason = error instanceof Error ? error.message : String(error);
+      const lower = reason.toLowerCase();
+      const outcome = lower.includes("stale") || lower.includes("turn")
+        ? { state: "rejected" as const, reason: "stale_turn" as const }
+        : lower.includes("provider") || lower.includes("unsupported")
+          ? { state: "unavailable" as const, reason: "provider_unsupported" as const }
+          : { state: "failed" as const, reason };
+      get().showToast(reason, { variant: "error" });
+      return outcome;
+    }
   },
 
   refreshQueuedPrompts: async (sessionId) => {

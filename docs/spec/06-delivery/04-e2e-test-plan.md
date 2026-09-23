@@ -19,6 +19,17 @@ Phase 1 reliability scenarios include:
 
 Phase 2 project workbench scenarios include:
 
+Phase 1 closure scenarios include:
+
+- Prompt lifecycle records use stable IDs, bounded previews, and metadata-only
+  persistence.
+- Timeline read-back filters by steering, context, recovery, and turn without
+  exposing prompt text, claim text, or tool arguments.
+- Steering failures preserve the optimistic prompt/attachments and classify
+  stale-turn, unavailable, and failed outcomes.
+- Prompt Inspector exposes separate Composition and Timeline tabs with stable
+  empty/loading/error states.
+
 - Expanding a project shows its existing session list plus Local changes and
   Plan/Goal contracts sections.
 - The active project loads the current bounded Git diff, including clean/changed
