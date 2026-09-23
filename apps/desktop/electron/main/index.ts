@@ -6892,7 +6892,23 @@ function registerIpc() {
   handle(IPC.invoke.sessionTimelineGet, async (input: { sessionId: string; filter?: string }) => {
     const timelinePath = path.join(dataDir, "lifecycle-events.jsonl");
     if (!fs.existsSync(timelinePath)) return { records: [] };
-    const records = fs.readFileSync(timelinePath, "utf8").split(/\r?\n/).filter(Boolean).map((line) => { try { return JSON.parse(line) as Record<string, unknown>; } catch { return null; } }).filter((record): record is Record<string, unknown> => Boolean(record) && record.sessionId === input.sessionId && (!input.filter || String(record.kind ?? "").includes(input.filter))).slice(-80);
+    const filter = input.filter;
+    const kindMatches = (kind: string) => {
+      if (!filter || filter === "all") return true;
+      if (filter === "steering") return kind.startsWith("steering_");
+      if (filter === "context") return kind === "context_requested" || kind === "context_completed" || kind === "context_assembled";
+      if (filter === "recovery") return kind === "retry_started" || kind.startsWith("resume_") || kind === "reconnect";
+      if (filter === "turn") return kind === "prompt_accepted" || kind === "prompt_sent" || kind === "turn_completed" || kind === "turn_failed";
+      return false;
+    };
+    const seen = new Set<string>();
+    const records = fs.readFileSync(timelinePath, "utf8").split(/\r?\n/).filter(Boolean).map((line) => { try { return JSON.parse(line) as Record<string, unknown>; } catch { return null; } }).filter((record): record is Record<string, unknown> => {
+      if (!record || record.sessionId !== input.sessionId || !kindMatches(String(record.kind ?? ""))) return false;
+      const id = typeof record.id === "string" ? record.id : "";
+      if (!id || seen.has(id)) return false;
+      seen.add(id);
+      return true;
+    }).sort((a, b) => Number(a.ts ?? 0) - Number(b.ts ?? 0)).slice(-Math.min(80, Math.max(1, Number(input.limit) || 80)));
     return { records };
   });
   handle(IPC.invoke.contextVaultMemory, async (input: { projectPath: string; query?: string }) => {
