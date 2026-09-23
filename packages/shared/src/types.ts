@@ -403,6 +403,7 @@ export type UiMessage = {
    * text the model sees (D123). Transcript renders this as a chip.
    */
   command?: string;
+  steering?: boolean;
   toolName?: string;
   toolCallId?: string;
   toolStatus?: "running" | "success" | "error" | "denied";

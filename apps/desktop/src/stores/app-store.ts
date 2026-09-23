@@ -935,6 +935,7 @@ export type AppState = {
   sendQueuedNow: (promptId: string) => Promise<void>;
   moveQueuedPrompt: (promptId: string, direction: "up" | "down") => Promise<void>;
   steerActiveTurn: (content: string) => Promise<boolean>;
+  steerPrompt: (content: string, draft?: ComposerDraftSnapshot) => Promise<boolean>;
   editQueuedPrompt: (promptId: string) => void;
   refreshQueuedPrompts: (sessionId: string) => Promise<void>;
   applyQueueChanged: (event: AgentQueueChangedEvent) => void;
@@ -2241,6 +2242,18 @@ export const useAppStore = create<AppState>((set, get) => ({
     if (!sessionId || !turnId || !state.runningSessions[sessionId] || !content.trim()) return false;
     try { await api.steer({ sessionId, expectedTurnId: turnId, content: content.trim() }); return true; }
     catch (error) { get().showToast(error instanceof Error ? error.message : String(error), { variant: "error" }); return false; }
+  },
+
+  steerPrompt: async (content, draft) => {
+    const state = get();
+    const sessionId = state.activeSessionId;
+    const expectedTurnId = sessionId ? state.activeTurnIds[sessionId] : undefined;
+    if (!sessionId || !expectedTurnId || !state.runningSessions[sessionId] || state.pendingPlans[sessionId]?.status === "pending") return false;
+    const message = optimisticUserMessage(crypto.randomUUID(), content, draft?.fileReferences ?? []);
+    message.steering = true;
+    insertOptimisticUserMessage(sessionId, message);
+    try { await api.steer({ sessionId, expectedTurnId, content, messageId: message.id, attachments: draft ? promptAttachmentsFromDraft(draft.fileReferences) : [] }); return true; }
+    catch (error) { retractOptimisticUserMessage(sessionId, message); get().showToast(error instanceof Error ? error.message : String(error), { variant: "error" }); return false; }
   },
 
   refreshQueuedPrompts: async (sessionId) => {
