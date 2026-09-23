@@ -935,7 +935,7 @@ export type AppState = {
   sendQueuedNow: (promptId: string) => Promise<void>;
   moveQueuedPrompt: (promptId: string, direction: "up" | "down") => Promise<void>;
   steerActiveTurn: (content: string) => Promise<boolean>;
-  steerPrompt: (content: string, draft?: ComposerDraftSnapshot) => Promise<boolean>;
+  steerPrompt: (content: string, draft?: ComposerDraftSnapshot, promptId?: string) => Promise<boolean>;
   editQueuedPrompt: (promptId: string) => void;
   refreshQueuedPrompts: (sessionId: string) => Promise<void>;
   applyQueueChanged: (event: AgentQueueChangedEvent) => void;
@@ -2244,7 +2244,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     catch (error) { get().showToast(error instanceof Error ? error.message : String(error), { variant: "error" }); return false; }
   },
 
-  steerPrompt: async (content, draft) => {
+  steerPrompt: async (content, draft, promptId) => {
     const state = get();
     const sessionId = state.activeSessionId;
     const expectedTurnId = sessionId ? state.activeTurnIds[sessionId] : undefined;
@@ -2252,7 +2252,14 @@ export const useAppStore = create<AppState>((set, get) => ({
     const message = optimisticUserMessage(crypto.randomUUID(), content, draft?.fileReferences ?? []);
     message.steering = true;
     insertOptimisticUserMessage(sessionId, message);
-    try { await api.steer({ sessionId, expectedTurnId, content, messageId: message.id, attachments: draft ? promptAttachmentsFromDraft(draft.fileReferences) : [] }); return true; }
+    try {
+      await api.steer({ sessionId, expectedTurnId, content, messageId: message.id, attachments: draft ? promptAttachmentsFromDraft(draft.fileReferences) : [] });
+      if (promptId) {
+        set((current) => ({ queuedPrompts: removeQueuedPrompt(current.queuedPrompts, sessionId, promptId) }));
+        void api.removeQueuedPrompt(promptId).catch(() => undefined);
+      }
+      return true;
+    }
     catch (error) { retractOptimisticUserMessage(sessionId, message); get().showToast(error instanceof Error ? error.message : String(error), { variant: "error" }); return false; }
   },
 
