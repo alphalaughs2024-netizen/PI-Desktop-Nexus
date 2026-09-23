@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import type { TokenUsageHistoryResult } from "@pi-desktop/shared";
 import { api } from "../../lib/api";
 import { Badge, Button, Select } from "../ui";
+import { IconActivity } from "../icons";
 
 type Bucket = TokenUsageHistoryResult["bucket"];
 
@@ -25,6 +26,14 @@ function formatTokens(value: number): string {
 function startDateFor(bucket: Bucket): number {
   const days = bucket === "month" ? 180 : bucket === "week" ? 84 : 30;
   return Date.now() - days * 86_400_000;
+}
+
+function heatLevel(value: number, max: number): number {
+  if (!value) return 0;
+  if (value >= max * 0.75) return 4;
+  if (value >= max * 0.5) return 3;
+  if (value >= max * 0.25) return 2;
+  return 1;
 }
 
 export function UsagePage() {
@@ -59,11 +68,21 @@ export function UsagePage() {
     [history],
   );
   const locale = i18n.resolvedLanguage ?? i18n.language;
+  const heatItems = useMemo(() => {
+    const items = history?.items ?? [];
+    const max = Math.max(1, ...items.map((item) => item.totalTokens));
+    return items.map((item) => ({ ...item, level: heatLevel(item.totalTokens, max) }));
+  }, [history]);
+  const latest = history?.items.at(-1);
 
   return (
     <div className="settings-stack usage-page">
-      <div className="usage-toolbar">
-        <span className="settings-row-desc">{t("settings.usageDescription")}</span>
+      <div className="usage-hero">
+        <div>
+          <div className="usage-eyebrow">{t("settings.usageEyebrow")}</div>
+          <h2 className="usage-hero-title">{t("settings.usageHeadline")}</h2>
+          <p>{t("settings.usageDescription")}</p>
+        </div>
         <div className="usage-toolbar-actions">
           <Select aria-label={t("settings.usageRange")} value={bucket} onChange={(event) => setBucket(event.target.value as Bucket)}>
             <option value="day">{t("settings.usageDaily")}</option>
@@ -75,11 +94,27 @@ export function UsagePage() {
       </div>
       {error ? <div className="settings-recovery" role="status">{t("settings.usageUnavailable")}<Button variant="secondary" size="sm" onClick={() => void load()}>{t("errors.action.retry")}</Button></div> : null}
       <div className="usage-kpi-grid">
-        <div className="usage-kpi"><span>{t("settings.usageTotal")}</span><strong>{formatTokens(totals.totalTokens)}</strong></div>
-        <div className="usage-kpi"><span>{t("settings.usageInput")}</span><strong>{formatTokens(totals.inputTokens)}</strong></div>
-        <div className="usage-kpi"><span>{t("settings.usageOutput")}</span><strong>{formatTokens(totals.outputTokens)}</strong></div>
-        <div className="usage-kpi"><span>{t("settings.usageTurns")}</span><strong>{totals.turnCount}</strong></div>
+        <div className="usage-kpi usage-kpi-primary"><span>{t("settings.usageTotal")}</span><strong>{formatTokens(totals.totalTokens)}</strong><small>{t("settings.usageTokensInRange")}</small></div>
+        <div className="usage-kpi"><span>{t("settings.usageTurns")}</span><strong>{totals.turnCount}</strong><small>{t("settings.usageCompleted")}</small></div>
+        <div className="usage-kpi"><span>{t("settings.usageInput")}</span><strong>{formatTokens(totals.inputTokens)}</strong><small>{t("settings.usageProviderInput")}</small></div>
+        <div className="usage-kpi"><span>{t("settings.usageOutput")}</span><strong>{formatTokens(totals.outputTokens)}</strong><small>{t("settings.usageProviderOutput")}</small></div>
       </div>
+      <section className="usage-insight-grid">
+        <div className="settings-card-block usage-heatmap-card">
+          <div className="usage-card-heading"><div><h3>{t("settings.usageActivity")}</h3><span>{t("settings.usageActivityHint")}</span></div><span className="usage-heatmap-legend"><i data-level="0" /><i data-level="2" /><i data-level="4" /></span></div>
+          <div className="usage-heatmap" aria-label={t("settings.usageActivity")}>
+            {heatItems.map((item) => <span key={item.date} data-level={item.level} title={`${item.date}: ${formatTokens(item.totalTokens)}`} />)}
+          </div>
+          <div className="usage-heatmap-footer"><span>{history?.items[0]?.date ?? ""}</span><span>{latest?.date ?? ""}</span></div>
+        </div>
+        <div className="settings-card-block usage-latest-card">
+          <div className="usage-card-heading"><div><h3>{t("settings.usageLatest")}</h3><span>{t("settings.usageLatestHint")}</span></div><IconActivity size={17} /></div>
+          <strong className="usage-latest-total">{formatTokens(latest?.totalTokens ?? 0)}</strong>
+          <span className="usage-latest-meta">{latest ? new Date(latest.timestamp).toLocaleDateString(locale, { month: "short", day: "numeric" }) : t("settings.usageEmpty")}</span>
+          <div className="usage-latest-line"><span>{t("settings.usageInput")}</span><strong>{formatTokens(latest?.inputTokens ?? 0)}</strong></div>
+          <div className="usage-latest-line"><span>{t("settings.usageOutput")}</span><strong>{formatTokens(latest?.outputTokens ?? 0)}</strong></div>
+        </div>
+      </section>
       <section className="settings-card-block">
         <h3 className="settings-card-heading">{t("settings.usageHistory")}</h3>
         <div className="settings-panel usage-history-panel">
