@@ -1,5 +1,21 @@
 # 01. UI Information Architecture
 
+## Project workbench
+
+Expanding a project in the Projects destination reveals a compact project
+workbench below its session list. The workbench keeps two evidence surfaces
+separate:
+
+- **Local changes** reads the current Git worktree only when that project is the
+  active host workspace. It shows clean/changed state, bounded file counts,
+  additions/deletions, and truncated file listings.
+- **Plan and Goal contracts** lists recent contract checkpoints associated with
+  sessions in the project and opens the owning session when selected.
+
+Contract state and local changes are evidence views. They never automatically
+mark a Goal complete. A non-active project shows an activation prompt instead
+of incorrectly displaying the active workspace diff.
+
 > Language: English (per ADR 0009). This describes the shipped Codex-aligned
 > shell (D034+). Component detail: [08-component-spec](08-component-spec.md);
 > visual tokens: [07-ui-design-system](07-ui-design-system.md); behavior:
