@@ -62,6 +62,7 @@ import { WorkspacesPage } from "./WorkspacesPage";
 import { AgentSkillsPage } from "../components/settings/AgentSkillsPage";
 import { AgentMcpPage } from "../components/settings/AgentMcpPage";
 import { AgentSubagentsPage } from "../components/settings/AgentSubagentsPage";
+import { UsagePage } from "../components/settings/UsagePage";
 
 type SettingsTab = ReturnType<typeof useAppStore.getState>["settingsTab"];
 
@@ -1315,6 +1316,7 @@ export function SettingsPage() {
       workspaces: <IconBranch size={14} />,
       about: <IconInfo size={14} />,
       diagnostics: <IconActivity size={14} />,
+      usage: <IconActivity size={14} />,
     };
     return SETTINGS_NAV.map((entry) => ({
       id: entry.id,
@@ -1589,6 +1591,7 @@ export function SettingsPage() {
             </div>
           )}
           {tab === "diagnostics" && <DiagnosticsSection />}
+          {tab === "usage" && <UsagePage />}
 
         </div>
       </div>
