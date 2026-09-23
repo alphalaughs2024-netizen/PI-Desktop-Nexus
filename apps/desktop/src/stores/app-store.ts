@@ -2276,7 +2276,14 @@ export const useAppStore = create<AppState>((set, get) => ({
       const outcome = "state" in response ? response : { state: "accepted" as const, sessionId, expectedTurnId: response.turnId };
       if ((outcome.state === "accepted" || outcome.state === "queued") && promptId) {
         set((current) => ({ queuedPrompts: removeQueuedPrompt(current.queuedPrompts, sessionId, promptId) }));
-        void api.removeQueuedPrompt(promptId).catch(() => undefined);
+        queuedDrafts.delete(promptId);
+        if (!promptId.startsWith("pending:")) {
+          try {
+            await api.removeQueuedPrompt(promptId);
+          } finally {
+            await get().refreshQueuedPrompts(sessionId);
+          }
+        }
       }
       if (outcome.state !== "accepted" && outcome.state !== "queued") retractOptimisticUserMessage(sessionId, message);
       return outcome;

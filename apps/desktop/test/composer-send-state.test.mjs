@@ -84,6 +84,14 @@ test("running prompts use a removable per-session FIFO queue", () => {
   assert.match(composer, /approvalPending[\s\S]*item\.sendNowRequested/);
 });
 
+test("successful queued steering removes the durable queue entry before refreshing", () => {
+  const steering = store.match(/steerPrompt: async [\s\S]*?\n  refreshQueuedPrompts:/)?.[0] ?? "";
+  assert.ok(steering.length > 0, "steerPrompt implementation not found");
+  assert.match(steering, /await api\.removeQueuedPrompt\(promptId\)/);
+  assert.match(steering, /await get\(\)\.refreshQueuedPrompts\(sessionId\)/);
+  assert.match(steering, /queuedDrafts\.delete\(promptId\)/);
+});
+
 test("new task persists or reuses an empty session and keeps the run flag scoped", () => {
   const newSession = store.match(
     /newSession: async [\s\S]*?\n  forkSession: async/,
