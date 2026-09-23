@@ -2234,6 +2234,13 @@ export type TokenUsageHistoryResult = {
     providers: TokenUsageFacet[];
     sessions: TokenUsageFacet[];
   };
+  insights: {
+    bestDay?: { date: string; timestamp: number; totalTokens: number };
+    peakHour?: number;
+    streak: { current: number; longest: number };
+    milestone?: { value: number; reachedAt: number };
+    nextMilestone: { value: number; remaining: number };
+  };
 };
 
 export type ContextVaultCategory =

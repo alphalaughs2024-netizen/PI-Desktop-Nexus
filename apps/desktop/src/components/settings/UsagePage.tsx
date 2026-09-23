@@ -38,7 +38,7 @@ function heatLevel(value: number, max: number): number {
 }
 
 export function UsagePage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [bucket, setBucket] = useState<Bucket>("day");
   const [range, setRange] = useState<Range>("30d");
   const [source, setSource] = useState("");
@@ -95,6 +95,10 @@ export function UsagePage() {
   const latest = history?.items.at(-1);
   const facets = history?.facets ?? { sources: [], models: [], providers: [], sessions: [] };
   const activeDays = (history?.items ?? []).filter((item) => item.turnCount > 0).length;
+  const insights = history?.insights;
+  const locale = i18n.resolvedLanguage ?? i18n.language;
+  const peakHour = insights?.peakHour == null ? null : new Intl.DateTimeFormat(locale, { hour: "numeric" }).format(new Date(2026, 0, 1, insights.peakHour));
+  const milestoneProgress = insights ? Math.min(100, Math.max(0, ((insights.nextMilestone.value - insights.nextMilestone.remaining) / insights.nextMilestone.value) * 100)) : 0;
   const clearFilters = () => { setRange("30d"); setSource(""); setModel(""); setProvider(""); setQuery(""); };
 
   return (
@@ -112,10 +116,15 @@ export function UsagePage() {
       </div>
       <div className="usage-hero">
         <div>
-          <p className="usage-hero-greeting">{t("settings.usageGreeting")}</p>
+          <div className="usage-hero-top"><p className="usage-hero-greeting">{t("settings.usageGreeting")}</p><div className="usage-hero-badges">
+            <span>{t("settings.usageStreak", { current: insights?.streak.current ?? 0 })} <strong>{t("settings.usageLongest", { longest: insights?.streak.longest ?? 0 })}</strong></span>
+            {insights?.milestone ? <span>{t("settings.usageMilestoneReached", { value: formatTokens(insights.milestone.value), date: new Date(insights.milestone.reachedAt).toLocaleDateString(locale, { month: "short", day: "numeric" }) })}</span> : null}
+          </div></div>
           <output className="usage-hero-title" aria-label={t("settings.usageTotal")} data-value={totals.totalTokens}>{formatFullTokens(totals.totalTokens)}</output>
           <p className="usage-hero-stats">{t("settings.usageHeroStats", { turns: totals.turnCount, sessions: facets.sessions.length, days: activeDays })}</p>
-          <p className="usage-hero-note">{t("settings.usageDescription")}</p>
+          {insights?.bestDay && peakHour ? <p className="usage-hero-note">{t("settings.usageBestDay", { date: new Date(insights.bestDay.timestamp).toLocaleDateString(locale, { month: "short", day: "numeric", year: "numeric" }), tokens: formatTokens(insights.bestDay.totalTokens), hour: peakHour })}</p> : <p className="usage-hero-note">{t("settings.usageDescription")}</p>}
+          <div className="usage-hero-sparkline" aria-hidden="true">{(history?.items ?? []).slice(-18).map((item) => <i key={item.date} style={{ height: `${Math.max(3, (item.totalTokens / maxTotal) * 100)}%` }} />)}</div>
+          {insights ? <div className="usage-milestone"><div><span>{t("settings.usageNextMilestone", { value: formatTokens(insights.nextMilestone.value) })}</span><span>{t("settings.usageMilestoneRemaining", { value: formatTokens(insights.nextMilestone.remaining) })}</span></div><span className="usage-milestone-track"><i style={{ width: `${milestoneProgress}%` }} /></span></div> : null}
         </div>
         <div className="usage-toolbar-actions">
           <Select aria-label={t("settings.usageRange")} value={bucket} onChange={(event) => setBucket(event.target.value as Bucket)}>

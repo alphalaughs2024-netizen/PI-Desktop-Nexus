@@ -3021,6 +3021,9 @@ pub fn get_token_usage_history_filtered(
 
     use std::collections::BTreeMap;
     let mut bucket_map: BTreeMap<String, UsageBucketAcc> = BTreeMap::new();
+    let mut day_map: BTreeMap<String, UsageBucketAcc> = BTreeMap::new();
+    let mut hour_tokens = [0i64; 24];
+    let mut token_timeline: Vec<(i64, i64)> = Vec::new();
     let mut total_input = 0i64;
     let mut total_output = 0i64;
     let mut total_turns = 0i64;
@@ -3068,6 +3071,9 @@ pub fn get_token_usage_history_filtered(
         total_cache_read += cache_read;
         total_cache_write += cache_write;
         total_reasoning += reasoning;
+        let turn_tokens = input_tokens + output_tokens + cache_read + cache_write;
+        hour_tokens[dt.format("%H").to_string().parse::<usize>().unwrap_or(0)] += turn_tokens;
+        token_timeline.push((ended_at, turn_tokens));
         for (map, key) in [(&mut facet_sources, source), (&mut facet_models, model), (&mut facet_providers, format!("{}\u{1f}{}", provider_id, provider_label))] {
             let entry = map.entry(key).or_insert((0, 0));
             entry.0 += input_tokens + output_tokens + cache_read + cache_write;
@@ -3087,7 +3093,34 @@ pub fn get_token_usage_history_filtered(
             reasoning,
             ended_at,
         );
+        day_map.entry(dt.format("%Y-%m-%d").to_string()).or_default().add(
+            input_tokens, output_tokens, cache_read, cache_write, reasoning, ended_at,
+        );
     }
+
+    let best_day = day_map.iter().max_by_key(|(_, acc)| acc.total_tokens()).map(|(date, acc)| {
+        json!({ "date": date, "timestamp": acc.timestamp, "totalTokens": acc.total_tokens() })
+    });
+    let peak_hour = hour_tokens.iter().enumerate().max_by_key(|(_, tokens)| *tokens).and_then(|(hour, tokens)| if *tokens > 0 { Some(hour) } else { None });
+    let active_dates: Vec<chrono::NaiveDate> = day_map.keys().filter_map(|key| chrono::NaiveDate::parse_from_str(key, "%Y-%m-%d").ok()).collect();
+    let mut longest_streak = 0i64;
+    let mut run = 0i64;
+    let mut previous: Option<chrono::NaiveDate> = None;
+    for date in &active_dates {
+        run = if previous.is_some_and(|day| *date == day + chrono::Duration::days(1)) { run + 1 } else { 1 };
+        longest_streak = longest_streak.max(run);
+        previous = Some(*date);
+    }
+    let today = chrono::Local::now().date_naive();
+    let current_streak = previous.filter(|date| *date == today || *date == today - chrono::Duration::days(1)).map(|_| run).unwrap_or(0);
+    let milestone_values = [1_000_000i64, 5_000_000, 10_000_000, 25_000_000, 50_000_000, 100_000_000, 250_000_000, 500_000_000, 1_000_000_000, 2_000_000_000, 5_000_000_000, 10_000_000_000];
+    let grand_total = total_input + total_output + total_cache_read + total_cache_write;
+    let reached_value = milestone_values.iter().copied().filter(|value| *value <= grand_total).max();
+    let milestone = reached_value.and_then(|value| {
+        let mut cumulative = 0i64;
+        token_timeline.iter().find_map(|(timestamp, tokens)| { cumulative += *tokens; (cumulative >= value).then(|| json!({ "value": value, "reachedAt": timestamp })) })
+    });
+    let next_value = milestone_values.iter().copied().find(|value| *value > grand_total).unwrap_or_else(|| ((grand_total / 10_000_000_000) + 1) * 10_000_000_000);
 
     let items: Vec<Value> = filled_history_keys(range_start, range_end, bucket)
         .into_iter()
@@ -3118,13 +3151,20 @@ pub fn get_token_usage_history_filtered(
         "totals": {
             "inputTokens": total_input,
             "outputTokens": total_output,
-            "totalTokens": total_input + total_output + total_cache_read + total_cache_write,
+            "totalTokens": grand_total,
             "cacheReadTokens": total_cache_read,
             "cacheWriteTokens": total_cache_write,
             "reasoningTokens": total_reasoning,
             "turnCount": total_turns,
         },
-        "facets": { "sources": facets(facet_sources), "models": facets(facet_models), "providers": facets(facet_providers), "sessions": facets(facet_sessions) }
+        "facets": { "sources": facets(facet_sources), "models": facets(facet_models), "providers": facets(facet_providers), "sessions": facets(facet_sessions) },
+        "insights": {
+            "bestDay": best_day,
+            "peakHour": peak_hour,
+            "streak": { "current": current_streak, "longest": longest_streak },
+            "milestone": milestone,
+            "nextMilestone": { "value": next_value, "remaining": next_value - grand_total }
+        }
     }))
 }
 
