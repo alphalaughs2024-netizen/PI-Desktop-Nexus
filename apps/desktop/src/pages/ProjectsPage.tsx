@@ -32,6 +32,7 @@ import {
 } from "../lib/sidebar-session-groups";
 import { ProjectInstructionsDialog } from "../components/ProjectInstructionsDialog";
 import { ProjectRenameDialog, SessionRenameDialog } from "../components/SessionRenameDialog";
+import { ProjectWorkbench } from "../components/ProjectWorkbench";
 
 const INITIAL_VISIBLE_SESSION_COUNT = 8;
 
@@ -828,6 +829,12 @@ export function ProjectsPage() {
                             {t("project.showFewerSessions")}
                           </Button>
                         ) : null}
+                        <ProjectWorkbench
+                          projectPath={project.path}
+                          sessions={related}
+                          active={active}
+                          onOpenSession={(sessionId) => void openProjectSession(project.path, sessionId)}
+                        />
                       </div>
                     ) : null}
                   </div>

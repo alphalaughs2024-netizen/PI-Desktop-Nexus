@@ -17,6 +17,19 @@ Phase 1 reliability scenarios include:
 - Scheduled tasks show recent persisted run statuses and timestamps after a
   refresh; tasks with no history remain quiet.
 
+Phase 2 project workbench scenarios include:
+
+- Expanding a project shows its existing session list plus Local changes and
+  Plan/Goal contracts sections.
+- The active project loads the current bounded Git diff, including clean/changed
+  state, file counts, additions/deletions, and truncation state.
+- A non-active project does not display the active project's diff and instead
+  shows the activation prompt.
+- Selecting a Plan or Goal contract opens its owning session by durable session
+  ID.
+- Contract and diff evidence remain informational and do not automatically
+  complete a Goal.
+
 - Document every user-visible and protocol-visible behavior that MVP must verify.
 - Provide a scenario catalog that maps to acceptance criteria (A–H) and milestones (M1–M6).
 - Serve as the traceability backbone: scenario ID ↔ acceptance criterion ↔ spec.
