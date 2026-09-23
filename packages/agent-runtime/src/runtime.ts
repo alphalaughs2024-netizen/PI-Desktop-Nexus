@@ -6795,6 +6795,9 @@ export class DesktopAgentRuntime {
     this.steeringContext(expectedTurnId);
     const content = promptContent(input);
     const agentMessage: AgentMessage = { role: "user", content, timestamp: Date.now() };
+    // Stop the in-flight provider stream before injecting the steering message.
+    // pi-agent-core will consume the queued message on the next idle cycle.
+    this.agent.abort();
     this.agent.steer(agentMessage);
     if (message) {
       this.appendLiveEntry(message.id, agentMessage);

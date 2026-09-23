@@ -2173,7 +2173,7 @@ export function Composer({
                     }
                     onClick={() => {
                       if (isRunning && !locked) {
-                        void steerPrompt(item.content, item.draft);
+                        void steerPrompt(item.content, item.draft, item.id);
                       } else {
                         void sendQueuedNow(item.id);
                       }
