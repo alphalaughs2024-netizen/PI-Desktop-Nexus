@@ -195,13 +195,8 @@
 }
 
 .footer-scheduled {
-  width: auto;
+  width: 32px;
   min-width: 32px;
-  padding: 0 9px;
-  gap: 6px;
-  font-size: var(--text-xs-plus);
-  font-weight: var(--font-weight-medium);
-  white-space: nowrap;
 }
 
 .composer-toolbar .icon-btn {

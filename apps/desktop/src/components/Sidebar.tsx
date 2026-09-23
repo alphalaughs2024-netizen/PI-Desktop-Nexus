@@ -2101,18 +2101,17 @@ export function Sidebar({
             >
               <IconPlug size={14} aria-hidden />
             </TooltipButton>
-            <button
+            <TooltipButton
               type="button"
               className={`footer-action footer-scheduled ${page === "scheduled" ? "active" : ""}`}
               data-nav="scheduled"
-              title={t("scheduled.title")}
+              tooltip={t("scheduled.title")}
               aria-label={t("scheduled.title")}
               aria-current={page === "scheduled" ? "page" : undefined}
               onClick={() => setPage("scheduled")}
             >
               <IconClock size={14} aria-hidden />
-              <span>{t("scheduled.title")}</span>
-            </button>
+            </TooltipButton>
             <NotificationCenter onBeforeOpen={() => closeMenus(false)} />
           </div>
 

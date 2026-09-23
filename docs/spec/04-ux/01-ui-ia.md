@@ -1,9 +1,8 @@
 # 01. UI Information Architecture
 
-The sidebar footer exposes a visible **Scheduled** destination with a clock
-icon immediately before Notifications. Unlike icon-only utility actions, the
-Scheduled control keeps its text label visible so the task automation page is
-discoverable without global search.
+The sidebar footer exposes a visible **Scheduled** destination as a clock icon
+immediately before Notifications. The icon uses a tooltip and accessible label
+for discoverability without adding a persistent text label to the compact footer.
 
 ## Project workbench
 
