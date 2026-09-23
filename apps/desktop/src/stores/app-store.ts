@@ -2272,7 +2272,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     message.steering = true;
     insertOptimisticUserMessage(sessionId, message);
     try {
-      const response = await api.steer({ sessionId, expectedTurnId, content, messageId: message.id, attachments: draft ? promptAttachmentsFromDraft(draft.fileReferences) : [] });
+      const response = await api.steer({ sessionId, expectedTurnId, content, messageId: message.id, queuedPromptId: promptId?.startsWith("pending:") ? undefined : promptId, attachments: draft ? promptAttachmentsFromDraft(draft.fileReferences) : [] });
       const outcome = "state" in response ? response : { state: "accepted" as const, sessionId, expectedTurnId: response.turnId };
       if ((outcome.state === "accepted" || outcome.state === "queued") && promptId) {
         set((current) => ({ queuedPrompts: removeQueuedPrompt(current.queuedPrompts, sessionId, promptId) }));

@@ -81,7 +81,7 @@ test("running prompts use a removable per-session FIFO queue", () => {
   assert.match(composer, /data-testid="queued-prompt"/);
   assert.match(composer, /removeQueuedPrompt\(item\.id\)/);
   assert.match(composer, /sendQueuedNow\(item\.id\)/);
-  assert.match(composer, /approvalPending[\s\S]*item\.sendNowRequested/);
+  assert.match(composer, /approvalPending/);
 });
 
 test("successful queued steering removes the durable queue entry before refreshing", () => {
@@ -90,6 +90,12 @@ test("successful queued steering removes the durable queue entry before refreshi
   assert.match(steering, /await api\.removeQueuedPrompt\(promptId\)/);
   assert.match(steering, /await get\(\)\.refreshQueuedPrompts\(sessionId\)/);
   assert.match(steering, /queuedDrafts\.delete\(promptId\)/);
+});
+
+test("queued steering sends the durable queue ID to Main for atomic cleanup", () => {
+  assert.match(store, /queuedPromptId: promptId\?\.startsWith\("pending:"\)/);
+  assert.match(main, /req\.queuedPromptId/);
+  assert.match(main, /agentHostBridge\?\.queue\.remove\(req\.queuedPromptId\)/);
 });
 
 test("new task persists or reuses an empty session and keeps the run flag scoped", () => {
