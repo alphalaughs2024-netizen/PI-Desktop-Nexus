@@ -6889,6 +6889,12 @@ function registerIpc() {
     if (!host) throw new Error("host unavailable");
     return host.call("contextVault.list", { projectPath: input.projectPath, query: input.query ?? "" });
   });
+  handle(IPC.invoke.sessionTimelineGet, async (input: { sessionId: string; filter?: string }) => {
+    const timelinePath = path.join(dataDir, "lifecycle-events.jsonl");
+    if (!fs.existsSync(timelinePath)) return { records: [] };
+    const records = fs.readFileSync(timelinePath, "utf8").split(/\r?\n/).filter(Boolean).map((line) => { try { return JSON.parse(line) as Record<string, unknown>; } catch { return null; } }).filter((record): record is Record<string, unknown> => Boolean(record) && record.sessionId === input.sessionId && (!input.filter || String(record.kind ?? "").includes(input.filter))).slice(-80);
+    return { records };
+  });
   handle(IPC.invoke.contextVaultMemory, async (input: { projectPath: string; query?: string }) => {
     if (!host) throw new Error("host unavailable");
     return host.call("contextVault.brief", { projectPath: input.projectPath, query: input.query ?? "" });

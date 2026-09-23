@@ -72,6 +72,7 @@ export const IPC = {
     notificationSetViewingSession: "pi-desktop/notification/setViewingSession",
     agentPrompt: "pi-desktop/agent/prompt",
     agentSteer: "pi-desktop/agent/steer",
+    sessionTimelineGet: "pi-desktop/session/timelineGet",
     promptEnhance: "pi-desktop/prompt/enhance",
     agentCompact: "pi-desktop/agent/compact",
     agentAbort: "pi-desktop/agent/abort",

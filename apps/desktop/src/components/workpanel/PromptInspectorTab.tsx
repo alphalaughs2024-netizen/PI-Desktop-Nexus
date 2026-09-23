@@ -1,6 +1,8 @@
 import { useState } from "react";
+import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useAppStore } from "../../stores/app-store";
+import { api } from "../../lib/api";
 
 function copyText(text: string) { void navigator.clipboard?.writeText(text); }
 
@@ -11,6 +13,8 @@ export function PromptInspectorTab() {
   const sessionId = useAppStore((state) => state.activeSessionId);
   const inspector = useAppStore((state) => sessionId ? state.promptInspector[sessionId] : undefined);
   const timeline = useAppStore((state) => sessionId ? state.promptTimeline[sessionId] ?? EMPTY_TIMELINE : EMPTY_TIMELINE);
+  const [history, setHistory] = useState<import("@pi-desktop/shared").PromptLifecycleEvent[]>([]);
+  useEffect(() => { if (!sessionId) return; void api.getSessionTimeline(sessionId).then((result) => setHistory(result.records.filter((record): record is import("@pi-desktop/shared").PromptLifecycleEvent => typeof record.kind === "string" && typeof record.ts === "number") as import("@pi-desktop/shared").PromptLifecycleEvent[])).catch(() => setHistory([])); }, [sessionId]);
   const composition = inspector?.composition;
   const [filter, setFilter] = useState<"all" | "steering" | "context">("all");
   if (!composition) return <div className="prompt-inspector-empty">No prompt composition has been recorded yet.</div>;
@@ -19,6 +23,6 @@ export function PromptInspectorTab() {
     <div className="prompt-inspector-summary"><span>{composition.sections.length} sections</span><span>{composition.durationMs.toFixed(1)}ms</span><span>{composition.reloadReason}</span><button onClick={() => setFilter("all")}>All</button><button onClick={() => setFilter("steering")}>Steering</button><button onClick={() => setFilter("context")}>Context</button></div>
     <div className="prompt-inspector-list">{composition.sections.map((section) => <article key={section.id} className={section.included ? "" : "is-excluded"}><div><strong>{section.id}</strong><span>{section.source} · {section.scope}</span></div><div><b>{section.included ? `${section.estimatedTokens} tok` : "excluded"}</b><small>{section.reason}</small></div></article>)}</div>
     <h4 className="prompt-inspector-timeline-title">Lifecycle</h4>
-    <div className="prompt-inspector-timeline">{timeline.filter((event) => filter === "all" || (filter === "steering" ? event.kind.startsWith("steering") : event.kind === "context_assembled")).map((event) => <article key={event.id}><strong>{event.kind.replaceAll("_", " ")}</strong><span>{new Date(event.ts).toLocaleTimeString()}</span>{event.reason ? <small>{event.reason}</small> : null}</article>)}</div>
+    <div className="prompt-inspector-timeline">{[...history, ...timeline].filter((event, index, all) => all.findIndex((candidate) => candidate.id === event.id) === index).filter((event) => filter === "all" || (filter === "steering" ? event.kind.startsWith("steering") : event.kind === "context_assembled")).map((event) => <article key={event.id}><strong>{event.kind.replaceAll("_", " ")}</strong><span>{new Date(event.ts).toLocaleTimeString()}</span>{event.reason ? <small>{event.reason}</small> : null}</article>)}</div>
   </div>;
 }

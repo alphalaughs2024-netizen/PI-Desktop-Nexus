@@ -620,6 +620,8 @@ export const api = {
     invoke<AgentPromptResponse>(IPC.invoke.agentPrompt, req),
   steer: (req: AgentSteerRequest) =>
     invoke<AgentPromptResponse>(IPC.invoke.agentSteer, req),
+  getSessionTimeline: (sessionId: string, filter?: string) =>
+    invoke<{ records: Array<Record<string, unknown>> }>(IPC.invoke.sessionTimelineGet, { sessionId, filter }),
   enhancePrompt: (req: PromptEnhancementRequest) =>
     invoke<PromptEnhancementResponse>(IPC.invoke.promptEnhance, req),
   compact: (req: AgentCompactRequest) =>
