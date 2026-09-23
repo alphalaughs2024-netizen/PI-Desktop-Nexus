@@ -107,7 +107,6 @@ export function UsagePage() {
       </div>
       <div className="usage-hero">
         <div>
-          <div className="usage-eyebrow">{t("settings.usageEyebrow")}</div>
           <h2 className="usage-hero-title">{formatTokens(totals.totalTokens)}</h2>
           <p>{t("settings.usageHeroSub", { turns: totals.turnCount })}</p>
           <p className="usage-hero-note">{t("settings.usageDescription")}</p>

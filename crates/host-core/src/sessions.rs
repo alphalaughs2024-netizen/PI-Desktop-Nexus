@@ -2995,9 +2995,11 @@ pub fn get_token_usage_history_filtered(
         "SELECT t.ended_at, t.input_tokens, t.output_tokens, t.usage_json,
                 COALESCE(NULLIF(s.source, ''), 'PI-Desktop'),
                 COALESCE(NULLIF(t.model_id, ''), NULLIF(s.model_id, ''), 'Unknown model'),
-                COALESCE(NULLIF(t.provider_id, ''), NULLIF(s.provider_id, ''), 'Unknown provider'),
-                COALESCE(s.title, ''), s.id
+                COALESCE(NULLIF(p.name, ''), NULLIF(t.provider_id, ''), NULLIF(s.provider_id, ''), 'Unknown provider'),
+                COALESCE(s.title, ''), s.id,
+                COALESCE(NULLIF(t.provider_id, ''), NULLIF(s.provider_id, ''), 'unknown-provider')
          FROM turns t JOIN sessions s ON s.id = t.session_id
+              LEFT JOIN providers p ON p.id = COALESCE(NULLIF(t.provider_id, ''), NULLIF(s.provider_id, ''))
          WHERE t.status = 'completed' AND t.ended_at IS NOT NULL AND t.ended_at >= ?1 AND t.ended_at <= ?2
          ORDER BY t.ended_at ASC",
     )?;
@@ -3013,6 +3015,7 @@ pub fn get_token_usage_history_filtered(
             row.get::<_, String>(6)?,
             row.get::<_, String>(7)?,
             row.get::<_, String>(8)?,
+            row.get::<_, String>(9)?,
         ))
     })?;
 
@@ -3031,11 +3034,11 @@ pub fn get_token_usage_history_filtered(
     let query = query.trim().to_lowercase();
 
     for row in rows {
-        let (ended_at, input_tokens, output_tokens, usage_json, source, model, provider, title, session_id) = row?;
-        let haystack = format!("{} {} {} {} {}", source, model, provider, title, session_id).to_lowercase();
+        let (ended_at, input_tokens, output_tokens, usage_json, source, model, provider_label, title, session_id, provider_id) = row?;
+        let haystack = format!("{} {} {} {} {}", source, model, provider_label, title, session_id).to_lowercase();
         if (!sources.is_empty() && !sources.iter().any(|v| v == &source))
             || (!models.is_empty() && !models.iter().any(|v| v == &model))
-            || (!providers.is_empty() && !providers.iter().any(|v| v == &provider))
+            || (!providers.is_empty() && !providers.iter().any(|v| v == &provider_id))
             || (!query.is_empty() && !haystack.contains(&query)) { continue; }
         let Some(dt) = local_from_ms(ended_at) else {
             continue;
@@ -3065,7 +3068,7 @@ pub fn get_token_usage_history_filtered(
         total_cache_read += cache_read;
         total_cache_write += cache_write;
         total_reasoning += reasoning;
-        for (map, key) in [(&mut facet_sources, source), (&mut facet_models, model), (&mut facet_providers, provider)] {
+        for (map, key) in [(&mut facet_sources, source), (&mut facet_models, model), (&mut facet_providers, format!("{}\u{1f}{}", provider_id, provider_label))] {
             let entry = map.entry(key).or_insert((0, 0));
             entry.0 += input_tokens + output_tokens + cache_read + cache_write;
             entry.1 += 1;
@@ -3098,7 +3101,12 @@ pub fn get_token_usage_history_filtered(
         .collect();
 
     let facets = |map: std::collections::HashMap<String, (i64, i64)>| {
-        let mut values: Vec<Value> = map.into_iter().map(|(id, (total_tokens, turn_count))| json!({ "id": id, "label": id, "turnCount": turn_count, "totalTokens": total_tokens })).collect();
+        let mut values: Vec<Value> = map.into_iter().map(|(key, (total_tokens, turn_count))| {
+            let mut parts = key.splitn(2, '\u{1f}');
+            let id = parts.next().unwrap_or(&key);
+            let label = parts.next().unwrap_or(id);
+            json!({ "id": id, "label": label, "turnCount": turn_count, "totalTokens": total_tokens })
+        }).collect();
         values.sort_by(|a, b| b["totalTokens"].as_i64().cmp(&a["totalTokens"].as_i64()));
         values
     };
