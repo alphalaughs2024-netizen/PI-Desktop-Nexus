@@ -2976,13 +2976,30 @@ pub fn get_token_usage_history(
     end_date: Option<i64>,
     bucket: &str,
 ) -> Result<Value> {
+    get_token_usage_history_filtered(db, start_date, end_date, bucket, &[], &[], &[], "")
+}
+
+pub fn get_token_usage_history_filtered(
+    db: &Database,
+    start_date: Option<i64>,
+    end_date: Option<i64>,
+    bucket: &str,
+    sources: &[String],
+    models: &[String],
+    providers: &[String],
+    query: &str,
+) -> Result<Value> {
     let bucket = normalize_usage_bucket(bucket);
     let (range_start, range_end) = resolve_history_range(start_date, end_date, bucket);
     let mut stmt = db.conn().prepare_cached(
-        "SELECT ended_at, input_tokens, output_tokens, usage_json
-         FROM turns
-         WHERE status = 'completed' AND ended_at IS NOT NULL AND ended_at >= ?1 AND ended_at <= ?2
-         ORDER BY ended_at ASC",
+        "SELECT t.ended_at, t.input_tokens, t.output_tokens, t.usage_json,
+                COALESCE(NULLIF(s.source, ''), 'PI-Desktop'),
+                COALESCE(NULLIF(t.model_id, ''), NULLIF(s.model_id, ''), 'Unknown model'),
+                COALESCE(NULLIF(t.provider_id, ''), NULLIF(s.provider_id, ''), 'Unknown provider'),
+                COALESCE(s.title, ''), s.id
+         FROM turns t JOIN sessions s ON s.id = t.session_id
+         WHERE t.status = 'completed' AND t.ended_at IS NOT NULL AND t.ended_at >= ?1 AND t.ended_at <= ?2
+         ORDER BY t.ended_at ASC",
     )?;
 
     let rows = stmt.query_map(params![range_start, range_end], |row| {
@@ -2991,6 +3008,11 @@ pub fn get_token_usage_history(
             row.get::<_, i64>(1)?,
             row.get::<_, i64>(2)?,
             row.get::<_, Option<String>>(3)?,
+            row.get::<_, String>(4)?,
+            row.get::<_, String>(5)?,
+            row.get::<_, String>(6)?,
+            row.get::<_, String>(7)?,
+            row.get::<_, String>(8)?,
         ))
     })?;
 
@@ -3002,9 +3024,19 @@ pub fn get_token_usage_history(
     let mut total_cache_read = 0i64;
     let mut total_cache_write = 0i64;
     let mut total_reasoning = 0i64;
+    let mut facet_sources: std::collections::HashMap<String, (i64, i64)> = std::collections::HashMap::new();
+    let mut facet_models: std::collections::HashMap<String, (i64, i64)> = std::collections::HashMap::new();
+    let mut facet_providers: std::collections::HashMap<String, (i64, i64)> = std::collections::HashMap::new();
+    let mut facet_sessions: std::collections::HashMap<String, (i64, i64)> = std::collections::HashMap::new();
+    let query = query.trim().to_lowercase();
 
     for row in rows {
-        let (ended_at, input_tokens, output_tokens, usage_json) = row?;
+        let (ended_at, input_tokens, output_tokens, usage_json, source, model, provider, title, session_id) = row?;
+        let haystack = format!("{} {} {} {} {}", source, model, provider, title, session_id).to_lowercase();
+        if (!sources.is_empty() && !sources.iter().any(|v| v == &source))
+            || (!models.is_empty() && !models.iter().any(|v| v == &model))
+            || (!providers.is_empty() && !providers.iter().any(|v| v == &provider))
+            || (!query.is_empty() && !haystack.contains(&query)) { continue; }
         let Some(dt) = local_from_ms(ended_at) else {
             continue;
         };
@@ -3033,6 +3065,15 @@ pub fn get_token_usage_history(
         total_cache_read += cache_read;
         total_cache_write += cache_write;
         total_reasoning += reasoning;
+        for (map, key) in [(&mut facet_sources, source), (&mut facet_models, model), (&mut facet_providers, provider)] {
+            let entry = map.entry(key).or_insert((0, 0));
+            entry.0 += input_tokens + output_tokens + cache_read + cache_write;
+            entry.1 += 1;
+        }
+        let session_label = if title.trim().is_empty() { session_id.clone() } else { title };
+        let entry = facet_sessions.entry(session_label).or_insert((0, 0));
+        entry.0 += input_tokens + output_tokens + cache_read + cache_write;
+        entry.1 += 1;
 
         let key = usage_bucket_key(&dt, bucket);
         bucket_map.entry(key).or_default().add(
@@ -3056,6 +3097,11 @@ pub fn get_token_usage_history(
         })
         .collect();
 
+    let facets = |map: std::collections::HashMap<String, (i64, i64)>| {
+        let mut values: Vec<Value> = map.into_iter().map(|(id, (total_tokens, turn_count))| json!({ "id": id, "label": id, "turnCount": turn_count, "totalTokens": total_tokens })).collect();
+        values.sort_by(|a, b| b["totalTokens"].as_i64().cmp(&a["totalTokens"].as_i64()));
+        values
+    };
     Ok(json!({
         "bucket": bucket,
         "rangeStart": range_start,
@@ -3069,7 +3115,8 @@ pub fn get_token_usage_history(
             "cacheWriteTokens": total_cache_write,
             "reasoningTokens": total_reasoning,
             "turnCount": total_turns,
-        }
+        },
+        "facets": { "sources": facets(facet_sources), "models": facets(facet_models), "providers": facets(facet_providers), "sessions": facets(facet_sessions) }
     }))
 }
 

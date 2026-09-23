@@ -36,6 +36,9 @@ test("native usage page exposes the Token Insights dashboard surfaces", async ()
   );
   assert.match(usage, /usage-heatmap/);
   assert.match(usage, /usage-kpi-grid/);
-  assert.match(usage, /usageLatest/);
+  assert.match(usage, /usageModelsTitle/);
+  assert.match(usage, /aria-pressed/);
+  assert.match(usage, /usage-filter-control/);
+  assert.match(usage, /usageClearFilters/);
   assert.doesNotMatch(usage, /cost|price|currency/i);
 });

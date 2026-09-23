@@ -2197,6 +2197,23 @@ export type TokenUsageHistoryItem = {
   turnCount: number;
 };
 
+export type TokenUsageFacet = {
+  id: string;
+  label: string;
+  turnCount: number;
+  totalTokens: number;
+};
+
+export type TokenUsageHistoryQuery = {
+  startDate?: number;
+  endDate?: number;
+  bucket?: TokenUsageBucket;
+  sources?: string[];
+  models?: string[];
+  providers?: string[];
+  query?: string;
+};
+
 export type TokenUsageHistoryResult = {
   bucket: TokenUsageBucket;
   rangeStart: number;
@@ -2210,6 +2227,12 @@ export type TokenUsageHistoryResult = {
     cacheWriteTokens: number;
     reasoningTokens: number;
     turnCount: number;
+  };
+  facets: {
+    sources: TokenUsageFacet[];
+    models: TokenUsageFacet[];
+    providers: TokenUsageFacet[];
+    sessions: TokenUsageFacet[];
   };
 };
 

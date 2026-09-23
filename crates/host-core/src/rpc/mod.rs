@@ -2207,11 +2207,16 @@ async fn handle_request(
                 .unwrap_or("day");
 
             let st = state.lock().await;
-            let history = sessions::get_token_usage_history(
+            let strings = |key: &str| params.get(key).and_then(|v| v.as_array()).map(|values| values.iter().filter_map(|v| v.as_str().map(str::to_owned)).collect::<Vec<_>>()).unwrap_or_default();
+            let history = sessions::get_token_usage_history_filtered(
                 &st.db,
                 params.get("startDate").and_then(|v| v.as_i64()),
                 params.get("endDate").and_then(|v| v.as_i64()),
                 bucket,
+                &strings("sources"),
+                &strings("models"),
+                &strings("providers"),
+                params.get("query").and_then(|v| v.as_str()).unwrap_or(""),
             )
             .map_err(|e| rpc_err(1000, e.to_string(), "INTERNAL"))?;
             Ok(history)
