@@ -194,6 +194,16 @@
   color: var(--ds-text-primary);
 }
 
+.footer-scheduled {
+  width: auto;
+  min-width: 32px;
+  padding: 0 9px;
+  gap: 6px;
+  font-size: var(--text-xs-plus);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+}
+
 .composer-toolbar .icon-btn {
   height: 28px;
   min-width: 28px;
