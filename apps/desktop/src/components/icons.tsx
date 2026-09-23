@@ -18,6 +18,7 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  CornerDownLeft,
   CircleAlert,
   CircleCheck,
   CircleHelp,
@@ -167,6 +168,7 @@ export const IconDiff = icon(FileDiff);
 export const IconSidebar = icon(PanelLeft);
 export const IconArrowUp = icon(ArrowUp);
 export const IconArrowDown = icon(ArrowDown);
+export const IconCornerDownLeft = icon(CornerDownLeft);
 export const IconCopy = icon(Copy);
 export const IconCode = icon(Code2);
 export const IconCheck = icon(Check);

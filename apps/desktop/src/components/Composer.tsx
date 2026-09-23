@@ -71,6 +71,7 @@ import { PlanApprovalBar } from "./PlanApprovalBar";
 import {
   IconArrowUp,
   IconArrowDown,
+  IconCornerDownLeft,
   IconPencil,
   IconUndo2,
   IconPlus,
@@ -2163,7 +2164,9 @@ export function Composer({
                   </TooltipButton>
                   <button
                     type="button"
-                    className="composer-queued-prompt-send-now"
+                    className={`composer-queued-prompt-send-now${isRunning ? " composer-queued-prompt-steer" : ""}`}
+                    aria-label={isRunning ? "Steer active turn" : t("chat.sendNow")}
+                    title={isRunning ? "Steer active turn" : t("chat.sendNow")}
                     disabled={
                       approvalPending ||
                       locked
@@ -2178,7 +2181,7 @@ export function Composer({
                   >
                     {promoted
                       ? t("chat.sendNowPending")
-                      : isRunning ? "Steer" : t("chat.sendNow")}
+                      : isRunning ? <IconCornerDownLeft size={14} aria-hidden /> : t("chat.sendNow")}
                   </button>
                   <TooltipButton type="button" className="composer-queued-prompt-action" tooltip="Edit queued prompt" ariaLabel="Edit queued prompt" disabled={locked} onClick={() => editQueuedPrompt(item.id)}><IconPencil size={13} aria-hidden /></TooltipButton>
                 </div>
