@@ -113,7 +113,7 @@ export function UsagePage() {
     <div className="settings-stack usage-page">
       <div className="usage-plugin-topbar usage-page-header">
         <div className="usage-page-title"><strong>{t("settings.usagePricing")}</strong><span>Local Nexus history · {range.toUpperCase()} · {totals.turnCount} completed turns · {facets.models.length} models</span></div>
-        <div className="usage-page-header-actions"><button type="button" className="usage-info-button" aria-expanded={privacyOpen} aria-controls="usage-privacy" onClick={() => setPrivacyOpen((value) => !value)}>ⓘ</button><Button variant="secondary" size="sm" onClick={() => void load()} disabled={loading}>{t("settings.refresh")}</Button>{privacyOpen ? <div id="usage-privacy" className="usage-privacy-popover" role="tooltip">This dashboard uses aggregate token and turn counts from the local Nexus host. Message content and tool arguments are not read.</div> : null}</div>
+        <div className="usage-page-header-actions"><button type="button" className="usage-info-button" aria-expanded={privacyOpen} aria-controls="usage-privacy" onClick={() => setPrivacyOpen((value) => !value)}>ⓘ</button>{privacyOpen ? <div id="usage-privacy" className="usage-privacy-popover" role="tooltip">This dashboard uses aggregate token and turn counts from the local Nexus host. Message content and tool arguments are not read.</div> : null}</div>
       </div>
       <div className="usage-dashboard-toolbar">
         <div className="usage-plugin-filters" role="group" aria-label={t("settings.usageFilters")}>
@@ -143,7 +143,7 @@ export function UsagePage() {
             <option value="week">{t("settings.usageWeekly")}</option>
             <option value="month">{t("settings.usageMonthly")}</option>
           </Select>
-          <span className="usage-legacy-refresh" />
+          <Button variant="secondary" size="sm" onClick={() => void load()} disabled={loading}>{t("settings.refresh")}</Button>
         </div>
       </div>
       <section className="usage-dashboard-section usage-local-overview"><div className="usage-section-heading"><div><span className="usage-section-kicker">Local Nexus usage</span><h2>Usage overview</h2><p>Token activity and cost estimates from this installation.</p></div><span className="usage-source-badge is-estimate">Catalog estimate</span></div><div className="usage-overview-grid"><div><span>Total local tokens</span><strong>{formatTokens(totals.totalTokens)}</strong><small>{totals.turnCount} completed turns · {activeDays} active days</small></div><div><span>Current range</span><strong>{range.toUpperCase()}</strong><small>{t("settings.usageTokensInRange")}</small></div><div><span>Estimated spend</span><strong>{costEstimate.priced ? `$${costEstimate.total.toFixed(2)}` : "—"}</strong><small>Calculated from available model pricing</small></div></div></section>
