@@ -80,6 +80,9 @@ test("pricing sections follow the token activity dashboard", async () => {
   assert.ok(usage.indexOf("usage-token-activity") < usage.indexOf("usage-cost-sources"));
   assert.ok(usage.indexOf("usage-cost-sources") < usage.indexOf("usage-provider-accounts"));
   assert.doesNotMatch(usage, /usage-cost-card/);
+  assert.match(usage, /<h2>Pricing<\/h2>/);
+  assert.match(usage, /Cost by model/);
+  assert.doesNotMatch(usage, /usage-primary-summary/);
 });
 
 test("cost popover state is initialized before its provider-account effect", async () => {
