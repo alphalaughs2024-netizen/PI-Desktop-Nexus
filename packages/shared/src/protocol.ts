@@ -260,6 +260,7 @@ export const IPC = {
     fsRead: "pi-desktop/fs/read",
     fsReadImageDataUrl: "pi-desktop/fs/readImageDataUrl",
     statsGetTokenUsageHistory: "pi-desktop/stats/getTokenUsageHistory",
+    providerAccountGet: "pi-desktop/provider-account/get",
     fsReveal: "pi-desktop/fs/reveal",
     fsOpen: "pi-desktop/fs/open",
     fsIndex: "pi-desktop/fs/index",
