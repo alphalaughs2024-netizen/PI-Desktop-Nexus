@@ -51,6 +51,7 @@ export function UsagePage() {
   const [history, setHistory] = useState<TokenUsageHistoryResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [privacyOpen, setPrivacyOpen] = useState(false);
 
   const load = async (nextBucket = bucket) => {
     setLoading(true);
@@ -110,8 +111,11 @@ export function UsagePage() {
 
   return (
     <div className="settings-stack usage-page">
-      <div className="usage-plugin-topbar">
-        <strong>{t("settings.usagePricing")}</strong>
+      <div className="usage-plugin-topbar usage-page-header">
+        <div className="usage-page-title"><strong>{t("settings.usagePricing")}</strong><span>Local Nexus history · {range.toUpperCase()} · {totals.turnCount} completed turns · {facets.models.length} models</span></div>
+        <div className="usage-page-header-actions"><button type="button" className="usage-info-button" aria-expanded={privacyOpen} aria-controls="usage-privacy" onClick={() => setPrivacyOpen((value) => !value)}>ⓘ</button><Button variant="secondary" size="sm" onClick={() => void load()} disabled={loading}>{t("settings.refresh")}</Button>{privacyOpen ? <div id="usage-privacy" className="usage-privacy-popover" role="tooltip">This dashboard uses aggregate token and turn counts from the local Nexus host. Message content and tool arguments are not read.</div> : null}</div>
+      </div>
+      <div className="usage-dashboard-toolbar">
         <div className="usage-plugin-filters" role="group" aria-label={t("settings.usageFilters")}>
           <div className="usage-range-pills" role="group" aria-label={t("settings.usageRange")}>{(["7d", "30d", "90d", "1y", "all"] as Range[]).map((value) => <button aria-pressed={range === value} className={range === value ? "active" : ""} key={value} type="button" onClick={() => setRange(value)}>{value.toUpperCase()}</button>)}</div>
           <label className="usage-filter-control"><span className="sr-only">{t("settings.usageAllTools")}</span><select value={source} onChange={(event) => setSource(event.target.value)}><option value="">{t("settings.usageAllTools")}</option>{facets.sources.map((item) => <option value={item.id} key={item.id}>{item.label}</option>)}</select></label>
@@ -120,8 +124,12 @@ export function UsagePage() {
           <label className="usage-filter-search"><span aria-hidden="true">⌕</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t("settings.usageFilterPlaceholder")} aria-label={t("settings.usageFilterPlaceholder")} /></label>
           {(range !== "30d" || source || model || provider || query) ? <button className="usage-clear-filters" type="button" onClick={clearFilters}>{t("settings.usageClearFilters")}</button> : null}
         </div>
+        </div>
       </div>
-      <div className="usage-hero">
+      <section className="usage-dashboard-section usage-primary-summary">
+        <div className="usage-primary-summary-main"><span className="usage-section-kicker">Selected range</span><strong>{costEstimate.priced ? `$${costEstimate.total.toFixed(2)}` : "—"}</strong><span className="usage-source-badge is-estimate">Catalog estimate</span><small>{formatTokens(totals.totalTokens)} tokens · {totals.turnCount} completed turns · {facets.models.length} of {providerModels.length || facets.models.length} models</small></div><div className="usage-summary-metrics"><div><span>Estimated spend</span><strong>{costEstimate.priced ? `$${costEstimate.total.toFixed(2)}` : "—"}</strong><small>Catalog estimate</small></div><div><span>Completed turns</span><strong>{totals.turnCount}</strong><small>Selected range</small></div><div><span>Tokens</span><strong>{formatTokens(totals.totalTokens)}</strong><small>Input + output + cache</small></div><div><span>Models used</span><strong>{facets.models.length}</strong><small>Configured models</small></div></div>
+      </section>
+      <div className="usage-hero legacy-usage-context">
         <div>
           <div className="usage-hero-top"><p className="usage-hero-greeting">{t("settings.usageGreeting")}</p><div className="usage-hero-badges">
             <span>{t("settings.usageStreak", { current: insights?.streak.current ?? 0 })} <strong>{t("settings.usageLongest", { longest: insights?.streak.longest ?? 0 })}</strong></span>
@@ -139,7 +147,7 @@ export function UsagePage() {
             <option value="week">{t("settings.usageWeekly")}</option>
             <option value="month">{t("settings.usageMonthly")}</option>
           </Select>
-          <Button variant="secondary" size="sm" onClick={() => void load()} disabled={loading}>{t("settings.refresh")}</Button>
+          <span className="usage-legacy-refresh" />
         </div>
       </div>
       <section className="usage-dashboard-section usage-local-overview"><div className="usage-section-heading"><div><span className="usage-section-kicker">Local Nexus usage</span><h2>Usage overview</h2><p>Token activity and cost estimates from this installation.</p></div><span className="usage-source-badge is-estimate">Catalog estimate</span></div><div className="usage-overview-grid"><div><span>Total local tokens</span><strong>{formatTokens(totals.totalTokens)}</strong><small>{totals.turnCount} completed turns · {activeDays} active days</small></div><div><span>Current range</span><strong>{range.toUpperCase()}</strong><small>{t("settings.usageTokensInRange")}</small></div><div><span>Estimated spend</span><strong>{costEstimate.priced ? `$${costEstimate.total.toFixed(2)}` : "—"}</strong><small>Calculated from available model pricing</small></div></div></section>
@@ -159,7 +167,7 @@ export function UsagePage() {
           <div className="usage-heatmap-footer"><span>{history?.items[0]?.date ?? ""}</span><span>{latest?.date ?? ""}</span></div>
         </div>
       </section>
-      <section className="usage-dashboard-section usage-cost-sources"><div className="usage-section-heading"><div><span className="usage-section-kicker">Cost transparency</span><h2>Cost sources</h2><p>Every value is labeled by how it was obtained.</p></div></div><div className="usage-source-grid"><div><span>Provider reported</span><strong>—</strong><small>Not wired yet</small></div><div><span>Catalog estimate</span><strong>{costEstimate.priced ? `$${costEstimate.total.toFixed(2)}` : "—"}</strong><small>{costEstimate.priced} priced models</small></div><div><span>Unpriced</span><strong>{costEstimate.unpriced}</strong><small>No catalog value</small></div><div><span>Unavailable</span><strong>—</strong><small>Provider account data</small></div></div></section>
+      <section className="usage-dashboard-section usage-cost-sources"><div className="usage-section-heading"><div><span className="usage-section-kicker">Cost transparency</span><h2>Cost sources</h2><p>Every value is labeled by how it was obtained.</p></div></div><div className="usage-source-grid"><div><span>Provider reported</span><strong>—</strong><small>No request-level cost</small></div><div><span>Provider reconciled</span><strong>—</strong><small>No reconciled requests</small></div><div><span>Catalog estimate</span><strong>{costEstimate.priced ? `$${costEstimate.total.toFixed(2)}` : "—"}</strong><small>{costEstimate.priced} priced models</small></div><div><span>Unpriced / unavailable</span><strong>{costEstimate.unpriced}</strong><small>No catalog value</small></div></div></section>
       <section className="usage-dashboard-section usage-provider-accounts"><div className="usage-section-heading"><div><span className="usage-section-kicker">Configured providers</span><h2>Provider accounts</h2><p>Quota and spend data for configured providers.</p></div></div><div className="usage-provider-grid">{configuredProviders.length ? configuredProviders.map((item) => <div className="usage-provider-card" key={item.id}><div><strong>{item.name ?? item.id}</strong><span>{item.baseUrl ?? "Configured provider"}</span></div><em>Account data unavailable</em><div className="usage-provider-slots"><span>Wallet <b>—</b></span><span>Spend <b>—</b></span><span>Reset <b>—</b></span></div><small>Local token usage and catalog estimates remain available.</small></div>) : <div className="usage-provider-card usage-provider-card-muted"><div><strong>No configured providers</strong><span>Provider accounts</span></div><em>Unavailable</em><p>Configure a provider to view account data.</p></div>}</div></section>
       <section className="usage-dashboard-section usage-token-activity"><div className="usage-section-heading"><div><span className="usage-section-kicker">Local history</span><h2>Token activity</h2><p>Explore the usage patterns behind the estimate.</p></div></div><div className="usage-dashboard-grid">
         <div className="settings-card-block usage-detail-card">

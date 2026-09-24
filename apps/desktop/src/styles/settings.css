@@ -2294,6 +2294,23 @@
 
 .usage-page { color: var(--ds-text-primary); }
 .usage-dashboard-section { display: grid; gap: 14px; margin-top: 18px; }
+.usage-page-header { position: relative; align-items: center; }
+.usage-page-title { display: grid; gap: 4px; }
+.usage-page-title > strong { font-size: 1.35rem; }
+.usage-page-title > span { color: var(--ds-text-muted); font-size: var(--text-xs-plus); }
+.usage-page-header-actions { position: relative; display: flex; align-items: center; gap: 8px; }
+.usage-info-button { width: 28px; height: 28px; border: 1px solid var(--ds-border-subtle); border-radius: 50%; background: var(--ds-bg-hover); color: var(--ds-text-secondary); cursor: pointer; }
+.usage-privacy-popover { position: absolute; top: 36px; right: 0; z-index: 4; width: 280px; padding: 10px 12px; border: 1px solid var(--ds-border-strong); border-radius: 10px; background: var(--ds-bg-elevated-opaque); box-shadow: var(--ds-shadow-dialog); color: var(--ds-text-secondary); font-size: var(--text-xs); line-height: 1.45; }
+.usage-dashboard-toolbar { display: flex; overflow-x: auto; padding-bottom: 2px; }
+.usage-primary-summary { display: grid; grid-template-columns: minmax(260px, 1fr) 2fr; gap: 18px; padding: 18px; border: 1px solid var(--ds-border-strong); border-radius: 14px; background: color-mix(in srgb, var(--ds-bg-secondary) 94%, transparent); }
+.usage-primary-summary-main { display: grid; align-content: center; gap: 7px; }
+.usage-primary-summary-main > strong { font-size: 2.15rem; font-variant-numeric: tabular-nums; }
+.usage-primary-summary-main > small { color: var(--ds-text-muted); font-size: var(--text-xs-plus); }
+.usage-summary-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.usage-summary-metrics > div { display: grid; align-content: center; gap: 5px; padding: 12px; border-radius: 10px; background: var(--ds-tile); }
+.usage-summary-metrics span, .usage-summary-metrics small { color: var(--ds-text-muted); font-size: var(--text-xs); }
+.usage-summary-metrics strong { font-size: 1.1rem; font-variant-numeric: tabular-nums; }
+.legacy-usage-context { display: none; }
 .usage-section-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; }
 .usage-section-kicker { color: var(--ds-accent); font-size: var(--text-xs); font-weight: var(--font-weight-medium); text-transform: uppercase; letter-spacing: .08em; }
 .usage-section-heading h2 { margin: 3px 0 3px; font-size: 1.15rem; }
@@ -2558,6 +2575,8 @@
 
 @media (max-width: 700px) {
   .usage-overview-grid, .usage-source-grid, .usage-provider-grid { grid-template-columns: 1fr; }
+  .usage-primary-summary { grid-template-columns: 1fr; }
+  .usage-summary-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .usage-plugin-filters { align-items: stretch; }
   .usage-filter-search { min-width: 100%; }
   .usage-filter-control { flex: 1 1 calc(50% - 4px); }
