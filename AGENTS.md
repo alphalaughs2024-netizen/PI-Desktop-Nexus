@@ -26,7 +26,7 @@ until the reported problem has been independently verified.
    close the issue when the conclusion is clear. If verification is
    inconclusive, comment with what was tried and leave the issue open.
 4. If the problem **does** exist: follow the isolated development workflow,
-   implement the smallest coherent fix, merge into local `main`, then comment
+   implement the focused, future-ready fix, merge into local `main`, then comment
    on the issue and close it.
 5. Write the issue comment in the issue's language (the language of the
    original title and body). Repository docs, code, and commits stay English.
@@ -161,6 +161,22 @@ Every completed logical change must be committed.
 * No unrelated cleanup
 * Leave the request worktree clean
 
+### 2a. Design for Planned Evolution
+
+Keep requests focused on their intended capability, not on minimizing file count
+or line count. Nexus will evolve substantially, so implementations must account
+for the product direction, existing architectural boundaries, and likely future
+extensions when those are known.
+
+* Prefer durable interfaces, explicit ownership, and reusable contracts over
+  local patches that would obviously be replaced by the next planned phase.
+* Change every layer genuinely required for a correct, extensible result,
+  including shared types, host boundaries, runtime behavior, UI, tests, and
+  specifications when applicable.
+* Do not preserve an inadequate structure solely to keep a diff small.
+* Keep unrelated cleanup out of the request so larger feature work remains
+  reviewable and attributable to its intended capability.
+
 ### 3. Keep E2E Documentation Synchronized
 
 Every user-visible or protocol-visible behavior change must add or update a scenario in:
@@ -233,7 +249,7 @@ Requirements:
 3. Create and enter a dedicated worktree
 4. Read the baseline and relevant specs
 5. Identify affected specs, ADRs, E2E scenarios, and validation
-6. Implement the smallest coherent change
+6. Implement the focused, future-ready change
 7. Update documentation as required
 8. Run targeted, risk-based checks
 9. Review the complete diff
