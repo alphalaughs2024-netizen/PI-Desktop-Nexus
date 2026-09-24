@@ -1605,6 +1605,22 @@ async function resolveAgentRuntimeLaunch(
     typeof session.projectPath === "string" && session.projectPath.trim()
       ? session.projectPath.trim()
       : undefined;
+  const contextVaultHint = await (async () => {
+    const query = typeof overrides.prompt === "string" ? overrides.prompt.trim().slice(0, 2000) : "";
+    if (!projectPath || !query) return { available: false, matchCount: 0, possiblyStaleCount: 0 };
+    try {
+      const request = host.call<{ count?: number; possiblyStale?: number }>("contextVault.relevance", { projectPath, query });
+      const result = await Promise.race([
+        request,
+        new Promise<undefined>((resolve) => setTimeout(() => resolve(undefined), 350)),
+      ]);
+      return result
+        ? { available: Number(result.count ?? 0) > 0, matchCount: Math.max(0, Number(result.count ?? 0)), possiblyStaleCount: Math.max(0, Number(result.possiblyStale ?? 0)) }
+        : { available: false, matchCount: 0, possiblyStaleCount: 0 };
+    } catch {
+      return { available: false, matchCount: 0, possiblyStaleCount: 0 };
+    }
+  })();
   const gitReadiness = await inspectGitWorkspace(dataDir, projectPath);
   const workspaceMode = getGitWorkspaceMode(dataDir, sessionId) ?? gitReadiness.workspaceMode;
   // Most launch inputs come from independent stores. Start them together so a
@@ -1942,6 +1958,7 @@ async function resolveAgentRuntimeLaunch(
       projectPath,
       gitWorktreeEnabled: workspaceMode === "managed-isolation" && gitReadiness.ready,
       projectInstructions,
+      contextVaultHint,
       provider: {
         id: provider.id,
         name: provider.name,

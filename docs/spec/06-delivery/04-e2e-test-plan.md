@@ -23,6 +23,19 @@ Phase 1 closure scenarios include:
 
 Queued steering scenarios include:
 
+Context Vault Phase 1 scenarios include:
+
+- Agent mode exposes `context_search`, `context_brief`, `context_review`, and
+  `context_save` in the initial tool list; Plan/Goal expose search, brief, and
+  review but not save.
+- A prompt with relevant project claims receives a bounded metadata-only
+  relevance hint before runtime launch; unrelated prompts receive no hint.
+- `context_brief` remains an explicit agent action and rechecks evidence before
+  returning claims; claim bodies are never written to lifecycle diagnostics.
+- Prompt Inspector shows Context Vault availability and context lifecycle events
+  without exposing prompt text or evidence excerpts.
+- Context Vault remains isolated by project when sessions or workspaces switch.
+
 - Steering a queued prompt sends it into the active turn and removes it from
   both the renderer queue and Host-owned durable queue after successful
   admission.
