@@ -1574,8 +1574,6 @@ export class DesktopAgentRuntime {
   private progressTurnRerunAttempted = false;
   private progressTurnRerunInProgress = false;
   private suppressProgressTurnRunEnd = false;
-  /** Keep the Host turn open while an admitted steer restarts the agent loop. */
-  private suppressSteeringRunEnd = false;
   private activeToolCalls = new Map<
     string,
     { toolName: string; args: unknown }
@@ -5952,7 +5950,6 @@ export class DesktopAgentRuntime {
         this.emit({ type: "agent_start" });
         break;
       case "turn_start":
-        this.suppressSteeringRunEnd = false;
         if (
           this.providerRetryInProgress ||
           this.silentTurnRerunInProgress ||
@@ -6363,7 +6360,6 @@ export class DesktopAgentRuntime {
           this.suppressProviderRetryRunEnd ||
           this.suppressSilentTurnRunEnd ||
           this.suppressProgressTurnRunEnd ||
-          this.suppressSteeringRunEnd ||
           this.keepTurnOpenForDelegates()
         )
           break;
@@ -6381,7 +6377,6 @@ export class DesktopAgentRuntime {
           this.suppressProviderRetryRunEnd ||
           this.suppressSilentTurnRunEnd ||
           this.suppressProgressTurnRunEnd ||
-          this.suppressSteeringRunEnd ||
           this.keepTurnOpenForDelegates()
         )
           break;
@@ -6841,36 +6836,16 @@ export class DesktopAgentRuntime {
     }
     const content = promptContent(input);
     const agentMessage: AgentMessage = { role: "user", content, timestamp: Date.now() };
-    // pi-agent-core owns the active-turn queue. Admit the message first, then
-    // interrupt the in-flight provider request and resume the same agent loop
-    // so the queued steer is actually delivered. Suppress the abort-generated
-    // terminal events until the resumed loop emits its next turn_start; this
-    // keeps the Host session active and prevents a post-steer queue drain.
+    // pi-agent-core owns the active-turn queue and drains it between provider
+    // turns. Keep an active run intact so its normal loop consumes the steer;
+    // only restart the loop when the provider has already gone idle.
     try {
-      this.suppressSteeringRunEnd = true;
       this.agent.steer(agentMessage);
-      // `state.isStreaming` can clear before pi-agent-core finishes its
-      // abort/agent_end listeners. Use the active signal as the authoritative
-      // indication that a run still owns the agent, otherwise continue() can
-      // race the old run and reject before the queued steer is delivered.
-      if (this.agent.signal) {
-        this.agent.abort();
-        await this.agent.waitForIdle();
-        // `abort()` marks the whole runtime run as cancelled. Steering is an
-        // in-place handoff, not a user cancellation, so clear that marker
-        // before resuming the same agent loop.
-        this.runCancelled = false;
-      }
-      // The interrupted provider request reports an `aborted` assistant
-      // message. That is an internal handoff boundary, not a failed user turn;
-      // clear the terminal marker before the resumed request starts.
-      this.turnHadError = false;
-      this.setAgentActivity({ phase: "recovering", since: Date.now() });
-      if (!this.disposed && !this.runCancelled && expectedTurnId === this.turnId) {
+      if (!this.agent.signal && !this.disposed && !this.runCancelled && expectedTurnId === this.turnId) {
+        this.setAgentActivity({ phase: "recovering", since: Date.now() });
         await this.agent.continue();
       }
     } catch (error) {
-      this.suppressSteeringRunEnd = false;
       const reason = error instanceof Error ? error.message : String(error);
       this.emitLifecycle("steering_failed", { expectedTurnId, reason });
       return { state: "failed", reason };
