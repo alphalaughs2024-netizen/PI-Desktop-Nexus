@@ -43,6 +43,10 @@ test("native usage page exposes the Token Insights dashboard surfaces", async ()
   assert.match(usage, /usageClearFilters/);
   assert.match(usage, /usage-cost-card/);
   assert.match(usage, /usage-dashboard-section/);
+  assert.match(usage, /usage-page-header/);
+  assert.match(usage, /usage-privacy-popover/);
+  assert.match(usage, /usage-primary-summary/);
+  assert.doesNotMatch(usage, /Future provider wiring/);
   assert.match(usage, /usage-local-overview/);
   assert.match(usage, /usage-cost-sources/);
   assert.match(usage, /usage-provider-accounts/);
