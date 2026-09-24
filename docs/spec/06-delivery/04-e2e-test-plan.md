@@ -36,6 +36,9 @@ Queued steering scenarios include:
   locked during admission.
 - Canceling a pending renderer row before Host admission prevents the later
   durable queue entry from appearing.
+- A late queue snapshot cannot reintroduce a sent or canceled durable entry.
+- The queued-row action uses the active session's run state, so it remains a
+  steer action after unrelated session/UI state updates.
 
 - Steering returns an authoritative typed outcome through the runtime, sidecar,
   Electron IPC, API, and renderer store.
