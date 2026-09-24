@@ -75,6 +75,13 @@ test("Usage & Pricing JSX keeps the filter toolbar tree balanced", async () => {
   assert.doesNotMatch(usage, /usage-plugin-filters[\s\S]{0,500}<\/div>\s*<\/div>\s*<\/div>\s*<section className="usage-dashboard-section usage-primary-summary"/);
 });
 
+test("pricing sections follow the token activity dashboard", async () => {
+  const usage = await readFile(new URL("../src/components/settings/UsagePage.tsx", import.meta.url), "utf8");
+  assert.ok(usage.indexOf("usage-token-activity") < usage.indexOf("usage-cost-sources"));
+  assert.ok(usage.indexOf("usage-cost-sources") < usage.indexOf("usage-provider-accounts"));
+  assert.doesNotMatch(usage, /usage-cost-card/);
+});
+
 test("cost popover state is initialized before its provider-account effect", async () => {
   const app = await readFile(new URL("../src/App.tsx", import.meta.url), "utf8");
   const stateIndex = app.indexOf('const [costOpen, setCostOpen] = useState(false);');
