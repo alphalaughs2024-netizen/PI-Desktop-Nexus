@@ -158,6 +158,8 @@ export class AgentHost {
   private readonly runtimeAliases = new Map<string, string>();
   private readonly idempotency = new Map<string, IdempotencyEntry>();
   private readonly draining = new Set<string>();
+  /** Queue records removed by drain but not yet admitted by runtime.prompt. */
+  private readonly startingTurns = new Set<string>();
 
   constructor(options: AgentHostOptions) {
     this.runtime = options.runtime;
@@ -534,8 +536,12 @@ export class AgentHost {
     this.requireRole(principal, "turn/cancel");
     const state = this.stateForTurn(turnId);
     const turn = state.turns.get(turnId)!;
+    if (this.startingTurns.has(turnId)) return { consumed: false, alreadyStarted: true };
     const queued = await this.queue.remove(state.id, turnId);
-    if (queued || turn.status === "queued") {
+    // `turn.status === queued` is not enough to claim it: drain() shifts the
+    // record before runtime.prompt resolves, leaving that status temporarily
+    // queued while the durable queue no longer contains the record.
+    if (queued) {
       turn.status = "canceled";
       turn.queuePosition = undefined;
       turn.endedAt = new Date(this.clock.now()).toISOString();
@@ -698,6 +704,7 @@ export class AgentHost {
         const record = await this.queue.shift(sessionId);
         if (!record) return;
         const turn = this.ensureTurn(state, record.id);
+        this.startingTurns.add(record.id);
         try {
           const started = await this.runtime.prompt({
             sessionId,
@@ -736,6 +743,8 @@ export class AgentHost {
           this.emit(state, "turn.failed", { turn: this.toRacpTurn(state, turn) }, { turnId: turn.id });
           this.renumberQueue(state);
           this.notifyQueue(sessionId);
+        } finally {
+          this.startingTurns.delete(record.id);
         }
       }
     } finally {

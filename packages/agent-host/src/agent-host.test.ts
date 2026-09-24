@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type {
   AgentEvent,
   AgentEventEnvelope,
@@ -255,6 +255,7 @@ describe("AgentHost turns", () => {
 
     host.ingest(envelope("s1", first.turn.id, { type: "agent_end", messageIds: [] }));
     await new Promise((resolve) => setTimeout(resolve, 0));
+    await new Promise((resolve) => setTimeout(resolve, 0));
     expect(runtime.prompts.map((prompt) => prompt.content)).toEqual(["one", "two"]);
     host.ingest(envelope("s1", "rt_2", { type: "agent_start" }));
     const started = received.filter((event) => event.kind === "turn.started");
@@ -278,6 +279,16 @@ describe("AgentHost turns", () => {
     expect(host.getTurn(bad.turn.id).status).toBe("failed");
     expect(received.some((event) => event.kind === "turn.failed")).toBe(true);
     expect(runtime.prompts.map((prompt) => prompt.content)).toEqual(["one", "good"]);
+  });
+
+  it("does not claim a queue turn while drain has already shifted it for runtime admission", async () => {
+    const { host, runtime } = build();
+    const first = await host.startTurn(controller, { sessionId: "s1", input: { text: "one" }, context: { requestId: "r1" } });
+    host.ingest(envelope("s1", first.turn.id, { type: "agent_start" }));
+    const queued = await host.startTurn(controller, { sessionId: "s1", admission: "queue", input: { text: "two" }, context: { requestId: "r2" } });
+    (host as any).startingTurns.add(queued.turn.id);
+    expect(await host.consumeForSteering(controller, queued.turn.id)).toEqual({ consumed: false, alreadyStarted: true });
+    expect(runtime.prompts.map((prompt) => prompt.content)).toEqual(["one"]);
   });
 
   it("holds a restored queue until a controller attaches", async () => {
@@ -490,4 +501,3 @@ describe("AgentHost queue extras", () => {
     expect(runtime.prompts.map((prompt) => prompt.content)).toEqual(["later"]);
   });
 });
-
