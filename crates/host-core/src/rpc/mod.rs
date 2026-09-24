@@ -2217,6 +2217,7 @@ async fn handle_request(
                 &strings("models"),
                 &strings("providers"),
                 params.get("query").and_then(|v| v.as_str()).unwrap_or(""),
+                params.get("sessionId").and_then(|v| v.as_str()),
             )
             .map_err(|e| rpc_err(1000, e.to_string(), "INTERNAL"))?;
             Ok(history)

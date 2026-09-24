@@ -2310,6 +2310,8 @@ export type TokenUsageFacet = {
 export type TokenUsageHistoryQuery = {
   startDate?: number;
   endDate?: number;
+  /** Restrict results to one conversation session. */
+  sessionId?: string;
   bucket?: TokenUsageBucket;
   sources?: string[];
   models?: string[];

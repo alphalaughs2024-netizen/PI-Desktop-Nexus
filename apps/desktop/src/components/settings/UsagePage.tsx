@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { TokenUsageHistoryResult } from "@pi-desktop/shared";
+import { estimateUsageCost, type TokenUsageHistoryResult } from "@pi-desktop/shared";
 import { api } from "../../lib/api";
 import { useAppStore } from "../../stores/app-store";
 import { Button, Select } from "../ui";
@@ -98,21 +98,9 @@ export function UsagePage() {
   const facets = history?.facets ?? { sources: [], models: [], providers: [], sessions: [] };
   const activeDays = (history?.items ?? []).filter((item) => item.turnCount > 0).length;
   const costEstimate = useMemo(() => {
-    let total = 0;
-    let priced = 0;
-    for (const model of facets.models) {
-      const info = Object.values(providerModels).flat().find((candidate) => candidate.modelId === model.id || candidate.displayName === model.label);
-      if (!info?.cost) continue;
-      const cost = info.cost;
-      total += ((model.inputTokens ?? 0) * (cost.input ?? 0) + (model.outputTokens ?? 0) * (cost.output ?? 0) + (model.cacheReadTokens ?? 0) * (cost.cacheRead ?? 0) + (model.cacheWriteTokens ?? 0) * (cost.cacheWrite ?? 0)) / 1_000_000;
-      priced += 1;
-    }
-    return { total, priced, models: facets.models.length, rows: facets.models.map((model) => {
-      const info = Object.values(providerModels).flat().find((candidate) => candidate.modelId === model.id || candidate.displayName === model.label);
-      if (!info?.cost) return { ...model, cost: null };
-      return { ...model, cost: ((model.inputTokens ?? 0) * (info.cost.input ?? 0) + (model.outputTokens ?? 0) * (info.cost.output ?? 0) + (model.cacheReadTokens ?? 0) * (info.cost.cacheRead ?? 0) + (model.cacheWriteTokens ?? 0) * (info.cost.cacheWrite ?? 0)) / 1_000_000 };
-    }) };
-  }, [facets.models, providerModels]);
+    const estimate = history ? estimateUsageCost(history, providerModels) : { total: 0, priced: 0, unpriced: 0, rows: [] };
+    return { ...estimate, models: facets.models.length };
+  }, [history, facets.models.length, providerModels]);
   const insights = history?.insights;
   const locale = i18n.resolvedLanguage ?? i18n.language;
   const peakHour = insights?.peakHour == null ? null : new Intl.DateTimeFormat(locale, { hour: "numeric" }).format(new Date(2026, 0, 1, insights.peakHour));

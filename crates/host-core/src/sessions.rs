@@ -2976,7 +2976,7 @@ pub fn get_token_usage_history(
     end_date: Option<i64>,
     bucket: &str,
 ) -> Result<Value> {
-    get_token_usage_history_filtered(db, start_date, end_date, bucket, &[], &[], &[], "")
+    get_token_usage_history_filtered(db, start_date, end_date, bucket, &[], &[], &[], "", None)
 }
 
 pub fn get_token_usage_history_filtered(
@@ -2988,6 +2988,7 @@ pub fn get_token_usage_history_filtered(
     models: &[String],
     providers: &[String],
     query: &str,
+    session_id: Option<&str>,
 ) -> Result<Value> {
     let bucket = normalize_usage_bucket(bucket);
     let (range_start, range_end) = resolve_history_range(start_date, end_date, bucket);
@@ -3001,10 +3002,11 @@ pub fn get_token_usage_history_filtered(
          FROM turns t JOIN sessions s ON s.id = t.session_id
               LEFT JOIN providers p ON p.id = COALESCE(NULLIF(t.provider_id, ''), NULLIF(s.provider_id, ''))
          WHERE t.status = 'completed' AND t.ended_at IS NOT NULL AND t.ended_at >= ?1 AND t.ended_at <= ?2
+           AND (?3 IS NULL OR t.session_id = ?3)
          ORDER BY t.ended_at ASC",
     )?;
 
-    let rows = stmt.query_map(params![range_start, range_end], |row| {
+    let rows = stmt.query_map(params![range_start, range_end, session_id], |row| {
         Ok((
             row.get::<_, i64>(0)?,
             row.get::<_, i64>(1)?,

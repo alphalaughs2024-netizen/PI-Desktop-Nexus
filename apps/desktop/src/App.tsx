@@ -14,6 +14,7 @@ import {
 import i18n from "i18next";
 import { useTranslation } from "react-i18next";
 import {
+  estimateUsageCost,
   KEYBOARD_SHORTCUTS,
   builtInThemeBase,
   builtInThemeMetadata,
@@ -190,6 +191,22 @@ function AppShell() {
   const refreshPluginThemes = useAppStore((s) => s.refreshPluginThemes);
   const plugins = useAppStore((s) => s.plugins);
   const projectPath = useAppStore((s) => s.workspace?.path ?? null);
+  const providerModels = useAppStore((s) => s.providerModels);
+  const [costSummary, setCostSummary] = useState<{ overall: number; session: number; turns: number } | null>(null);
+  useEffect(() => {
+    let alive = true;
+    void Promise.all([
+      api.getTokenUsageHistory({ bucket: "month" }),
+      activeSessionId ? api.getTokenUsageHistory({ bucket: "month", sessionId: activeSessionId }) : Promise.resolve(null),
+    ]).then(([overall, session]) => {
+      if (!alive) return;
+      const overallCost = estimateUsageCost(overall, providerModels).total;
+      const sessionCost = session ? estimateUsageCost(session, providerModels).total : 0;
+      setCostSummary({ overall: overallCost, session: sessionCost, turns: session?.totals.turnCount ?? 0 });
+    }).catch(() => { if (alive) setCostSummary(null); });
+    return () => { alive = false; };
+  }, [activeSessionId, providerModels]);
+
 
   const [searchOpen, setSearchOpen] = useState(false);
   const [costOpen, setCostOpen] = useState(false);
@@ -1029,9 +1046,10 @@ function AppShell() {
           {costOpen && (
             <div className="cost-summary-popover" role="dialog" aria-label={i18n.t("settings.usageBreakdown")}>
               <strong>{i18n.t("settings.usageBreakdown")}</strong>
-              <div className="cost-summary-row"><span>{i18n.t("settings.usageTotal")}</span><b>—</b></div>
-              <div className="cost-summary-row"><span>{i18n.t("settings.usageTurns")}</span><b>—</b></div>
-              <small>{i18n.t("settings.usageDescription")}</small>
+              <div className="cost-summary-row"><span>Current session</span><b>{costSummary ? `$${costSummary.session.toFixed(2)}` : "—"}</b></div>
+              <div className="cost-summary-row"><span>Overall</span><b>{costSummary ? `$${costSummary.overall.toFixed(2)}` : "—"}</b></div>
+              <div className="cost-summary-row"><span>{i18n.t("settings.usageTurns")}</span><b>{costSummary?.turns ?? "—"}</b></div>
+              <small>Estimated from available model pricing. Open Settings for detailed usage metrics.</small>
             </div>
           )}
 

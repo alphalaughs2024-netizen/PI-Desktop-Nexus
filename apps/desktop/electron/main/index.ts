@@ -7989,7 +7989,7 @@ function registerIpc() {
 
   handle(
     IPC.invoke.statsGetTokenUsageHistory,
-    async (input?: { startDate?: number; endDate?: number; bucket?: string }) => {
+    async (input?: { startDate?: number; endDate?: number; bucket?: string; sessionId?: string }) => {
       if (!host) throw new Error("host unavailable");
       return host.call("stats.getTokenUsageHistory", input ?? {});
     },
