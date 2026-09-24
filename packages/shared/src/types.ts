@@ -316,7 +316,12 @@ export type MessageUsage = {
   cacheWriteTokens?: number;
   reasoningTokens?: number;
   totalTokens: number;
+  cost?: UsageCost;
 };
+
+export type UsageCostProvenance = "provider_reported" | "provider_generation" | "provider_account" | "catalog_estimate" | "unpriced" | "unavailable";
+export type UsageCostScope = "request" | "session" | "local_history" | "account" | "organization";
+export type UsageCost = { amountUsd?: string; provenance: UsageCostProvenance; scope: UsageCostScope; provider?: string; model?: string; generationId?: string; observedAt?: number };
 
 /** Sum two provider usage records. Used for turn rollups, never to rewrite a message. */
 export function addUsage(
