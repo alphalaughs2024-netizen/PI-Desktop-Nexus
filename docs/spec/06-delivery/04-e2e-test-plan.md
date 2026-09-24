@@ -42,8 +42,8 @@ Queued steering scenarios include:
   handoff must not leave the session idle waiting for a new prompt.
 - The provider-delivery regression counts requests across the abort handoff and
   verifies the sequence is exactly: original prompt, steered prompt.
-- Active steering does not abort the current provider run; pi-agent-core's
-  native steering queue delivers the message at the next turn boundary.
+- Active steering aborts the current provider request after queue admission, then
+  resumes the same agent loop so the steered message is delivered immediately.
 - Legacy accepted steering responses receive the same durable queue cleanup as
   typed accepted/queued outcomes.
 - A promoted "send now" row remains cancelable while move/edit actions stay

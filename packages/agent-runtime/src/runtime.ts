@@ -6836,12 +6836,18 @@ export class DesktopAgentRuntime {
     }
     const content = promptContent(input);
     const agentMessage: AgentMessage = { role: "user", content, timestamp: Date.now() };
-    // pi-agent-core owns the active-turn queue and drains it between provider
-    // turns. Keep an active run intact so its normal loop consumes the steer;
-    // only restart the loop when the provider has already gone idle.
+    // Queue the steer first, then interrupt the active provider request. Once
+    // pi-agent-core settles the aborted run, continue() drains the steering
+    // queue immediately instead of waiting for the original generation.
     try {
       this.agent.steer(agentMessage);
-      if (!this.agent.signal && !this.disposed && !this.runCancelled && expectedTurnId === this.turnId) {
+      if (this.agent.signal) {
+        this.agent.abort();
+        await this.agent.waitForIdle();
+        this.runCancelled = false;
+        this.turnHadError = false;
+      }
+      if (!this.disposed && !this.runCancelled && expectedTurnId === this.turnId) {
         this.setAgentActivity({ phase: "recovering", since: Date.now() });
         await this.agent.continue();
       }
