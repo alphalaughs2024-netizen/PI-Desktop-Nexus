@@ -2303,6 +2303,16 @@
 .usage-privacy-popover { position: absolute; top: 36px; right: 0; z-index: 4; width: 280px; padding: 10px 12px; border: 1px solid var(--ds-border-strong); border-radius: 10px; background: var(--ds-bg-elevated-opaque); box-shadow: var(--ds-shadow-dialog); color: var(--ds-text-secondary); font-size: var(--text-xs); line-height: 1.45; }
 .usage-dashboard-toolbar { display: flex; overflow-x: auto; padding-bottom: 2px; }
 .usage-primary-summary { display: grid; grid-template-columns: minmax(260px, 1fr) 2fr; gap: 18px; padding: 18px; border: 1px solid var(--ds-border-strong); border-radius: 14px; background: color-mix(in srgb, var(--ds-bg-secondary) 94%, transparent); }
+.usage-pricing-section { margin-top: 28px; padding-top: 22px; border-top: 1px solid var(--ds-border-strong); }
+.usage-pricing-summary-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.usage-pricing-summary-grid > div { display: grid; gap: 5px; padding: 12px; border: 1px solid var(--ds-border-subtle); border-radius: 10px; background: var(--ds-bg-secondary); }
+.usage-pricing-summary-grid span, .usage-pricing-summary-grid small, .usage-cost-model-hint { color: var(--ds-text-muted); font-size: var(--text-xs); }
+.usage-pricing-summary-grid strong { font-variant-numeric: tabular-nums; }
+.usage-pricing-section .usage-cost-model-list { display: grid; gap: 10px; padding: 14px 0 0; }
+.usage-pricing-section .usage-cost-model-list h3 { margin: 0; font-size: var(--text-sm-plus); }
+.usage-pricing-section .usage-cost-model-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 5px 12px; }
+.usage-pricing-section .usage-cost-model-row > div { display: grid; gap: 3px; }
+.usage-pricing-section .usage-cost-model-row small { color: var(--ds-text-faint); font-size: var(--text-xs); }
 .usage-primary-summary-main { display: grid; align-content: center; gap: 7px; }
 .usage-primary-summary-main > strong { font-size: 2.15rem; font-variant-numeric: tabular-nums; }
 .usage-primary-summary-main > small { color: var(--ds-text-muted); font-size: var(--text-xs-plus); }
@@ -2577,6 +2587,7 @@
   .usage-overview-grid, .usage-source-grid, .usage-provider-grid { grid-template-columns: 1fr; }
   .usage-primary-summary { grid-template-columns: 1fr; }
   .usage-summary-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .usage-pricing-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .usage-plugin-filters { align-items: stretch; }
   .usage-filter-search { min-width: 100%; }
   .usage-filter-control { flex: 1 1 calc(50% - 4px); }
