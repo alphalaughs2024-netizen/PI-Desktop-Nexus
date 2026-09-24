@@ -6852,6 +6852,10 @@ export class DesktopAgentRuntime {
       if (this.agent.state.isStreaming) {
         this.agent.abort();
         await this.agent.waitForIdle();
+        // `abort()` marks the whole runtime run as cancelled. Steering is an
+        // in-place handoff, not a user cancellation, so clear that marker
+        // before resuming the same agent loop.
+        this.runCancelled = false;
       }
       if (!this.disposed && !this.runCancelled && expectedTurnId === this.turnId) {
         await this.agent.continue();

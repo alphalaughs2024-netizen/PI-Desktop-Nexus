@@ -54,7 +54,10 @@ describe("Slice 2 steering contract", () => {
     (runtime as any).agent = {
       state: { isStreaming: true, messages: [] },
       steer: vi.fn((message: any) => { queued = message; delivered.push("admitted"); }),
-      abort: vi.fn(() => { (runtime as any).agent.state.isStreaming = false; }),
+      abort: vi.fn(() => {
+        (runtime as any).runCancelled = true;
+        (runtime as any).agent.state.isStreaming = false;
+      }),
       waitForIdle: vi.fn(async () => undefined),
       continue: vi.fn(async () => {
         if (queued) delivered.push(String(queued.content));
@@ -66,6 +69,7 @@ describe("Slice 2 steering contract", () => {
     expect((runtime as any).agent.steer).toHaveBeenCalledTimes(1);
     expect((runtime as any).agent.abort).toHaveBeenCalledTimes(1);
     expect((runtime as any).agent.continue).toHaveBeenCalledTimes(1);
+    expect((runtime as any).runCancelled).toBe(false);
     expect(delivered).toEqual(["admitted", "queued once"]);
     await runtime.dispose();
   });
