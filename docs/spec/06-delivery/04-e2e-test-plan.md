@@ -25,6 +25,20 @@ Queued steering scenarios include:
 
 Context Vault Phase 1 scenarios include:
 
+Context Vault Phase 3–4 scenarios include:
+
+- A qualifying architecture/refactor/resume prompt with relevant claims runs a
+  bounded `contextVault.brief`, injects only reviewed/fresh claims, and records
+  metadata-only retrieval provenance.
+- Greetings, trivial prompts, and prompts without project relevance do not run
+  an automatic brief; brief timeout/failure falls back to normal prompting.
+- Stale, conflicted, superseded, unavailable, duplicate, and over-budget claims
+  are omitted from model context and remain visible only as warnings.
+- `context_save` remains an explicit Agent-only action; saved agent claims start
+  unverified and become eligible only after user review.
+- Plan/Goal can search, brief, and review claims but cannot save claims; project
+  switching cannot leak retrieval or capture across projects.
+
 - Agent mode exposes `context_search`, `context_brief`, `context_review`, and
   `context_save` in the initial tool list; Plan/Goal expose search, brief, and
   review but not save.

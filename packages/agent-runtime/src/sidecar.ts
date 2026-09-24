@@ -112,6 +112,7 @@ type RuntimeParams = {
   gitWorktreeEnabled?: boolean;
   projectInstructions?: ProjectInstructions;
   contextVaultHint?: import("@pi-desktop/shared").ContextVaultHint;
+  contextVaultContext?: import("@pi-desktop/shared").ContextVaultContext;
   compactionSettings?: ContextCompactionSettings;
   attachmentsDir?: string;
   userMessageId?: string;
@@ -334,6 +335,7 @@ async function runtimeFor(
     subagentProviders,
     projectInstructions: params.projectInstructions,
     contextVaultHint: params.contextVaultHint,
+    contextVaultContext: params.contextVaultContext,
     projectPath: params.projectPath,
     gitWorktreeEnabled: params.gitWorktreeEnabled,
     commandShell: params.commandShell,
@@ -395,6 +397,7 @@ async function runtimeFor(
     gitWorktreeEnabled: params.gitWorktreeEnabled,
     projectInstructions: params.projectInstructions,
     contextVaultHint: params.contextVaultHint,
+    contextVaultContext: params.contextVaultContext,
     scratchDir:
       typeof params.scratchDir === "string" && params.scratchDir
         ? params.scratchDir
