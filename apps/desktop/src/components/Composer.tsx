@@ -2170,21 +2170,16 @@ export function Composer({
                     className={`composer-queued-prompt-send-now${isRunning ? " composer-queued-prompt-steer" : ""}`}
                     aria-label={isRunning ? "Steer active turn" : t("chat.sendNow")}
                     title={isRunning ? "Steer active turn" : t("chat.sendNow")}
-                    disabled={
-                      approvalPending ||
-                      locked
-                    }
+                     disabled={approvalPending || pendingAdmission}
                     onClick={() => {
-                      if (isRunning && !locked) {
+                       if (isRunning && !pendingAdmission) {
                         void steerPrompt(item.content, item.draft, item.id);
-                      } else {
+                       } else if (!promoted) {
                         void sendQueuedNow(item.id);
                       }
                     }}
                   >
-                    {promoted
-                      ? t("chat.sendNowPending")
-                      : isRunning ? <IconCornerDownLeft size={14} aria-hidden /> : t("chat.sendNow")}
+                     {isRunning ? <IconCornerDownLeft size={14} aria-hidden /> : promoted ? t("chat.sendNowPending") : t("chat.sendNow")}
                   </button>
                   <TooltipButton type="button" className="composer-queued-prompt-action" tooltip="Edit queued prompt" ariaLabel="Edit queued prompt" disabled={locked} onClick={() => editQueuedPrompt(item.id)}><IconPencil size={13} aria-hidden /></TooltipButton>
                 </div>

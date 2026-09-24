@@ -1574,6 +1574,7 @@ export class DesktopAgentRuntime {
   private progressTurnRerunAttempted = false;
   private progressTurnRerunInProgress = false;
   private suppressProgressTurnRunEnd = false;
+  private suppressSteeringRunEnd = false;
   private activeToolCalls = new Map<
     string,
     { toolName: string; args: unknown }
@@ -5950,6 +5951,7 @@ export class DesktopAgentRuntime {
         this.emit({ type: "agent_start" });
         break;
       case "turn_start":
+        this.suppressSteeringRunEnd = false;
         if (
           this.providerRetryInProgress ||
           this.silentTurnRerunInProgress ||
@@ -6360,7 +6362,8 @@ export class DesktopAgentRuntime {
           this.suppressProviderRetryRunEnd ||
           this.suppressSilentTurnRunEnd ||
           this.suppressProgressTurnRunEnd ||
-          this.keepTurnOpenForDelegates()
+          this.keepTurnOpenForDelegates() ||
+          this.suppressSteeringRunEnd
         )
           break;
         const subagentUsage = this.turnSubagentUsage;
@@ -6377,7 +6380,8 @@ export class DesktopAgentRuntime {
           this.suppressProviderRetryRunEnd ||
           this.suppressSilentTurnRunEnd ||
           this.suppressProgressTurnRunEnd ||
-          this.keepTurnOpenForDelegates()
+          this.keepTurnOpenForDelegates() ||
+          this.suppressSteeringRunEnd
         )
           break;
         this.autonomousExecution = false;
@@ -6840,6 +6844,7 @@ export class DesktopAgentRuntime {
     // explicitly resume the agent so the queued message is consumed immediately
     // instead of waiting for the old response to finish naturally.
     try {
+      this.suppressSteeringRunEnd = true;
       this.agent.steer(agentMessage);
       this.agent.abort();
       await this.agent.waitForIdle();
