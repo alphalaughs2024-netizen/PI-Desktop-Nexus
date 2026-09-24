@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { createAssistantMessageEventStream } from "@earendil-works/pi-ai";
 import { createPromptLifecycleEvent } from "./lifecycle.js";
 import { DesktopAgentRuntime } from "./runtime.js";
 
@@ -52,7 +53,8 @@ describe("Slice 2 steering contract", () => {
     const delivered: string[] = [];
     let queued: any;
     (runtime as any).agent = {
-      state: { isStreaming: true, messages: [] },
+      state: { isStreaming: false, messages: [] },
+      signal: {},
       steer: vi.fn((message: any) => { queued = message; delivered.push("admitted"); }),
       abort: vi.fn(() => {
         (runtime as any).runCancelled = true;
@@ -64,6 +66,7 @@ describe("Slice 2 steering contract", () => {
         (runtime as any).agent.state.isStreaming = true;
       }),
     };
+    (runtime as any).agentActivity = { phase: "waiting-model", since: Date.now() };
 
     await expect((runtime as any).steer({ text: "queued once" }, "turn-1")).resolves.toMatchObject({ state: "accepted" });
     expect((runtime as any).agent.steer).toHaveBeenCalledTimes(1);
@@ -71,6 +74,66 @@ describe("Slice 2 steering contract", () => {
     expect((runtime as any).agent.continue).toHaveBeenCalledTimes(1);
     expect((runtime as any).runCancelled).toBe(false);
     expect(delivered).toEqual(["admitted", "queued once"]);
+    await runtime.dispose();
+  });
+
+  it("delivers the steered text to the provider exactly once after an abort race", async () => {
+    const runtime = new DesktopAgentRuntime({
+      host: { call: vi.fn(), onNotification: vi.fn(() => () => {}) } as never,
+      sessionId: "session-1",
+      mode: "agent",
+      turnId: "turn-1",
+      provider: {
+        id: "local", name: "Local", baseUrl: "http://localhost/v1", apiKey: "", authKind: "none",
+        modelId: "model-1", supportsReasoning: false, supportedThinkingLevels: ["off"],
+        modelConfig: { source: "generic", name: "Test", baseUrl: "http://localhost/v1", reasoning: false, input: ["text"], contextWindow: 4096, maxTokens: 256 },
+      },
+      commandShell: { id: "bash", label: "Bash", dialect: "posix", available: true, isDefault: true },
+      thinkingLevel: "off",
+      onEvent: vi.fn(),
+    });
+    const agent = (runtime as any).agent;
+    const providerInputs: string[] = [];
+    let requestCount = 0;
+    agent.streamFunction = (_model: unknown, context: any, options: any) => {
+      requestCount += 1;
+      const stream = createAssistantMessageEventStream();
+      const userMessages = context.messages.filter((message: any) => message.role === "user");
+      const last = userMessages.at(-1);
+      providerInputs.push(typeof last?.content === "string" ? last.content : last?.content?.[0]?.text ?? "");
+      if (requestCount === 1) {
+        options?.signal?.addEventListener("abort", () => {
+          const aborted = {
+            role: "assistant", content: [], api: "openai-completions", provider: "local", model: "model-1",
+            usage: { input: 1, output: 0, cacheRead: 0, cacheWrite: 0, totalTokens: 1, cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 } },
+            stopReason: "aborted", timestamp: Date.now(),
+          } as any;
+          stream.push({ type: "start", partial: aborted });
+          stream.push({ type: "done", reason: "stop", message: aborted });
+          stream.end(aborted);
+        }, { once: true });
+      } else {
+        const complete = {
+          role: "assistant", content: [{ type: "text", text: "reply to steer" }], api: "openai-completions", provider: "local", model: "model-1",
+          usage: { input: 1, output: 2, cacheRead: 0, cacheWrite: 0, totalTokens: 3, cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 } },
+          stopReason: "stop", timestamp: Date.now(),
+        } as any;
+        queueMicrotask(() => {
+          stream.push({ type: "start", partial: complete });
+          stream.push({ type: "done", reason: "stop", message: complete });
+          stream.end(complete);
+        });
+      }
+      return stream;
+    };
+
+    const prompt = runtime.prompt("initial", "initial-user", "turn-1");
+    for (let attempt = 0; attempt < 20 && requestCount === 0; attempt += 1) await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(requestCount).toBe(1);
+    await expect(runtime.steer({ text: "steer exactly once" }, "turn-1")).resolves.toMatchObject({ state: "accepted" });
+    await prompt;
+    expect(providerInputs).toEqual(["initial", "steer exactly once"]);
+    expect(requestCount).toBe(2);
     await runtime.dispose();
   });
 });

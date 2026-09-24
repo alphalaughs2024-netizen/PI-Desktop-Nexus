@@ -6849,7 +6849,11 @@ export class DesktopAgentRuntime {
     try {
       this.suppressSteeringRunEnd = true;
       this.agent.steer(agentMessage);
-      if (this.agent.state.isStreaming) {
+      // `state.isStreaming` can clear before pi-agent-core finishes its
+      // abort/agent_end listeners. Use the active signal as the authoritative
+      // indication that a run still owns the agent, otherwise continue() can
+      // race the old run and reject before the queued steer is delivered.
+      if (this.agent.signal) {
         this.agent.abort();
         await this.agent.waitForIdle();
         // `abort()` marks the whole runtime run as cancelled. Steering is an
@@ -6857,6 +6861,11 @@ export class DesktopAgentRuntime {
         // before resuming the same agent loop.
         this.runCancelled = false;
       }
+      // The interrupted provider request reports an `aborted` assistant
+      // message. That is an internal handoff boundary, not a failed user turn;
+      // clear the terminal marker before the resumed request starts.
+      this.turnHadError = false;
+      this.setAgentActivity({ phase: "recovering", since: Date.now() });
       if (!this.disposed && !this.runCancelled && expectedTurnId === this.turnId) {
         await this.agent.continue();
       }
