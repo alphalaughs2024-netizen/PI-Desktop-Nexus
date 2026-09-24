@@ -332,7 +332,7 @@ function normalizePlansChangedEvent(value: unknown): PlanningStateEvent {
 }
 
 export const api = {
-  getProviderAccount: (input: { providerId: string; vendorKey?: string; baseUrl: string; period?: "day" | "week" | "month" }) => invoke<any>("pi-desktop/provider-account/get", input),
+  getProviderAccount: (input: { providerId: string; vendorKey?: string; baseUrl: string; period?: "day" | "week" | "month" }) => invoke<any>(IPC.invoke.providerAccountGet, input),
   getVersion: () => invoke<AppVersionInfo>(IPC.invoke.appGetVersion),
   health: () => invoke<HostHealth>(IPC.invoke.appHealth),
   exportSupportBundle: () =>

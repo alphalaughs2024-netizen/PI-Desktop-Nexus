@@ -74,3 +74,12 @@ test("cost popover state is initialized before its provider-account effect", asy
   assert.ok(effectIndex >= 0);
   assert.ok(stateIndex < effectIndex);
 });
+
+test("provider account refresh uses the canonical whitelisted IPC channel", async () => {
+  const protocol = await readFile(new URL("../../../packages/shared/src/protocol.ts", import.meta.url), "utf8");
+  const api = await readFile(new URL("../src/lib/api.ts", import.meta.url), "utf8");
+  const main = await readFile(new URL("../electron/main/index.ts", import.meta.url), "utf8");
+  assert.match(protocol, /providerAccountGet:\s*"pi-desktop\/provider-account\/get"/);
+  assert.match(api, /IPC\.invoke\.providerAccountGet/);
+  assert.match(main, /handle\(IPC\.invoke\.providerAccountGet/);
+});

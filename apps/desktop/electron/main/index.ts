@@ -8028,7 +8028,7 @@ function registerIpc() {
     },
   );
 
-  handle("pi-desktop/provider-account/get", async (input: { providerId: string; vendorKey?: string; baseUrl: string; period?: "day" | "week" | "month" }) => {
+  handle(IPC.invoke.providerAccountGet, async (input: { providerId: string; vendorKey?: string; baseUrl: string; period?: "day" | "week" | "month" }) => {
     if (!host) throw new Error("host unavailable");
     const provider = await host.call<any>("providers.get", { id: input.providerId });
     const secret = await host.call<{ value?: string }>("providers.getSecret", { id: input.providerId });
