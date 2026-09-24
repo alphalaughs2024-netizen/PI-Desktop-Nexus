@@ -4,11 +4,12 @@ import test from "node:test";
 
 const read = (path) => readFile(new URL(path, import.meta.url), "utf8");
 
-const [store, composer, main, attachments] = await Promise.all([
+const [store, composer, main, attachments, runtime] = await Promise.all([
   read("../src/stores/app-store.ts"),
   read("../src/components/Composer.tsx"),
   read("../electron/main/index.ts"),
   read("../electron/main/prompt-attachments.ts"),
+  read("../../../packages/agent-runtime/src/runtime.ts"),
 ]);
 
 test("composer send/stop button follows draft content and the visible session's run state", () => {
@@ -121,6 +122,7 @@ test("late Host snapshots cannot reintroduce sent or canceled durable entries", 
 test("queued action mode follows the active session run state", () => {
   assert.match(composer, /s\.activeSessionId \? s\.runningSessions\[s\.activeSessionId\]/);
 });
+
 
 test("Main cleans queued steering entries for legacy accepted responses too", () => {
   assert.match(main, /accepted\?: boolean/);
