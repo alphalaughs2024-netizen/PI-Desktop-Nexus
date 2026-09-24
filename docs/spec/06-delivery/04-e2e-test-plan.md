@@ -30,6 +30,8 @@ Queued steering scenarios include:
 - Rejected or failed steering preserves the queued prompt for retry or editing.
 - The durable queued prompt ID is passed with steering so Main removes the Host
   entry in the same admission path, preventing queue snapshots from restoring it.
+- Legacy accepted steering responses receive the same durable queue cleanup as
+  typed accepted/queued outcomes.
 
 - Steering returns an authoritative typed outcome through the runtime, sidecar,
   Electron IPC, API, and renderer store.

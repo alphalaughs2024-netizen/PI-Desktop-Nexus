@@ -8873,12 +8873,16 @@ function registerIpc() {
     if (!activeTurnId) return { state: "rejected", reason: "not_running" };
     if (activeTurnId !== req.expectedTurnId) return { state: "rejected", reason: "stale_turn" };
     const outcome = await sidecar.call("agent.steer", req);
+    const admitted = Boolean(
+      outcome &&
+        typeof outcome === "object" &&
+        (((outcome as { state?: string }).state === "accepted") ||
+          ((outcome as { state?: string }).state === "queued") ||
+          ((outcome as { accepted?: boolean }).accepted === true)),
+    );
     if (
       req.queuedPromptId &&
-      outcome &&
-      typeof outcome === "object" &&
-      ((outcome as { state?: string }).state === "accepted" ||
-        (outcome as { state?: string }).state === "queued")
+      admitted
     ) {
       try {
         await agentHostBridge?.queue.remove(req.queuedPromptId);

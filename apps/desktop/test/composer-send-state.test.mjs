@@ -98,6 +98,11 @@ test("queued steering sends the durable queue ID to Main for atomic cleanup", ()
   assert.match(main, /agentHostBridge\?\.queue\.remove\(req\.queuedPromptId\)/);
 });
 
+test("Main cleans queued steering entries for legacy accepted responses too", () => {
+  assert.match(main, /accepted\?: boolean/);
+  assert.match(main, /\(outcome as \{ accepted\?: boolean \}\)\.accepted === true/);
+});
+
 test("new task persists or reuses an empty session and keeps the run flag scoped", () => {
   const newSession = store.match(
     /newSession: async [\s\S]*?\n  forkSession: async/,
