@@ -38,6 +38,8 @@ Queued steering scenarios include:
 - After successful steering, the runtime resumes the interrupted agent loop so
   the assistant produces a reply; the interrupted provider request is not
   treated as the terminal end of the Host turn.
+- Steering clears the runtime's internal abort marker before resuming; the
+  handoff must not leave the session idle waiting for a new prompt.
 - Legacy accepted steering responses receive the same durable queue cleanup as
   typed accepted/queued outcomes.
 - A promoted "send now" row remains cancelable while move/edit actions stay
