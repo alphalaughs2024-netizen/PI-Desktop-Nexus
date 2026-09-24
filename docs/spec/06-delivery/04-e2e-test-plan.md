@@ -32,6 +32,9 @@ Queued steering scenarios include:
   entry in the same admission path, preventing queue snapshots from restoring it.
 - Main consumes that durable queue entry before provider steering begins, so the
   post-turn Host drain cannot execute the steered prompt a second time.
+- Host steering admission atomically distinguishes a queued record from one
+  already shifted into execution; an already-started record is acknowledged
+  without sending duplicate provider content.
 - Legacy accepted steering responses receive the same durable queue cleanup as
   typed accepted/queued outcomes.
 - A promoted "send now" row remains cancelable while move/edit actions stay

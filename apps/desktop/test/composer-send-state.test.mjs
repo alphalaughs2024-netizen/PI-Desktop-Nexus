@@ -96,17 +96,23 @@ test("successful queued steering removes the durable queue entry before refreshi
 test("queued steering sends the durable queue ID to Main for atomic cleanup", () => {
   assert.match(store, /queuedPromptId: durableQueuedPrompt/);
   assert.match(main, /req\.queuedPromptId/);
-  assert.match(main, /agentHostBridge\?\.queue\.remove\(req\.queuedPromptId\)/);
+  assert.match(main, /consumeForSteering\(req\.queuedPromptId\)/);
 });
 
 test("Main consumes the durable queue entry before steering reaches the provider", () => {
   const handler = main.match(/handle\(IPC\.invoke\.agentSteer[\s\S]*?\n  \}\);/)?.[0] ?? "";
   assert.ok(handler.length > 0, "agentSteer handler not found");
-  assert.match(handler, /await agentHostBridge\?\.queue\.remove\(req\.queuedPromptId\)/);
+  assert.match(handler, /consumeForSteering\(req\.queuedPromptId\)/);
   assert.ok(
-    handler.indexOf("queue.remove(req.queuedPromptId)") < handler.indexOf('sidecar.call("agent.steer"'),
+    handler.indexOf("consumeForSteering(req.queuedPromptId)") < handler.indexOf('sidecar.call("agent.steer"'),
     "durable queue removal must happen before provider steering",
   );
+});
+
+test("steering uses the Host atomic consume-for-steering operation", () => {
+  assert.match(main, /queue\.consumeForSteering\(req\.queuedPromptId\)/);
+  assert.match(main, /alreadyStarted/);
+  assert.match(main, /return \{ state: "accepted", sessionId: req\.sessionId/);
 });
 
 test("promoted queued prompts remain cancelable while ordering actions stay locked", () => {

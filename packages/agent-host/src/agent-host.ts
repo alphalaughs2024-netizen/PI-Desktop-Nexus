@@ -522,6 +522,34 @@ export class AgentHost {
     return this.cancelQueued(state, turn);
   }
 
+  /**
+   * Atomically claim a queued turn for desktop steering. This closes the race
+   * where drain() has already shifted the record while the runtime steer is
+   * being admitted: callers must not send the same content through two paths.
+   */
+  async consumeForSteering(
+    principal: Principal,
+    turnId: string,
+  ): Promise<{ consumed: boolean; alreadyStarted: boolean }> {
+    this.requireRole(principal, "turn/cancel");
+    const state = this.stateForTurn(turnId);
+    const turn = state.turns.get(turnId)!;
+    const queued = await this.queue.remove(state.id, turnId);
+    if (queued || turn.status === "queued") {
+      turn.status = "canceled";
+      turn.queuePosition = undefined;
+      turn.endedAt = new Date(this.clock.now()).toISOString();
+      this.emit(state, "turn.canceled", { turn: this.toRacpTurn(state, turn) }, { turnId });
+      this.renumberQueue(state);
+      this.notifyQueue(state.id);
+      return { consumed: true, alreadyStarted: false };
+    }
+    return {
+      consumed: false,
+      alreadyStarted: turn.status === "running" || state.activeTurnId === turnId,
+    };
+  }
+
   /** Move a queued turn to the head of its session's queue ("send now"). */
   async prioritizeTurn(principal: Principal, turnId: string): Promise<RacpTurn> {
     this.requireRole(principal, "turn/prioritize");
