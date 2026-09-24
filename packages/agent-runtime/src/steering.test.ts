@@ -66,9 +66,9 @@ describe("Slice 2 steering contract", () => {
 
     await expect((runtime as any).steer({ text: "queued once" }, "turn-1")).resolves.toMatchObject({ state: "accepted" });
     expect((runtime as any).agent.steer).toHaveBeenCalledTimes(1);
-    expect((runtime as any).agent.abort).not.toHaveBeenCalled();
-    expect((runtime as any).agent.continue).not.toHaveBeenCalled();
-    expect(delivered).toEqual(["admitted"]);
+    expect((runtime as any).agent.abort).toHaveBeenCalledTimes(1);
+    expect((runtime as any).agent.continue).toHaveBeenCalledTimes(1);
+    expect(delivered).toEqual(["admitted", "queued once"]);
     await runtime.dispose();
   });
 
@@ -97,16 +97,12 @@ describe("Slice 2 steering contract", () => {
       const last = userMessages.at(-1);
       providerInputs.push(typeof last?.content === "string" ? last.content : last?.content?.[0]?.text ?? "");
       if (requestCount === 1) {
-        setTimeout(() => {
-          const first = {
-            role: "assistant", content: [{ type: "text", text: "first reply" }], api: "openai-completions", provider: "local", model: "model-1",
-            usage: { input: 1, output: 2, cacheRead: 0, cacheWrite: 0, totalTokens: 3, cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 } },
-            stopReason: "stop", timestamp: Date.now(),
-          } as any;
-          stream.push({ type: "start", partial: first });
-          stream.push({ type: "done", reason: "stop", message: first });
-          stream.end(first);
-        }, 10);
+        options?.signal?.addEventListener("abort", () => {
+          const aborted = { role: "assistant", content: [], api: "openai-completions", provider: "local", model: "model-1", usage: { input: 1, output: 0, cacheRead: 0, cacheWrite: 0, totalTokens: 1, cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 } }, stopReason: "aborted", timestamp: Date.now() } as any;
+          stream.push({ type: "start", partial: aborted });
+          stream.push({ type: "done", reason: "stop", message: aborted });
+          stream.end(aborted);
+        }, { once: true });
       } else {
         const complete = {
           role: "assistant", content: [{ type: "text", text: "reply to steer" }], api: "openai-completions", provider: "local", model: "model-1",
