@@ -30,6 +30,8 @@ Queued steering scenarios include:
 - Rejected or failed steering preserves the queued prompt for retry or editing.
 - The durable queued prompt ID is passed with steering so Main removes the Host
   entry in the same admission path, preventing queue snapshots from restoring it.
+- Main consumes that durable queue entry before provider steering begins, so the
+  post-turn Host drain cannot execute the steered prompt a second time.
 - Legacy accepted steering responses receive the same durable queue cleanup as
   typed accepted/queued outcomes.
 - A promoted "send now" row remains cancelable while move/edit actions stay
