@@ -6843,6 +6843,11 @@ export class DesktopAgentRuntime {
     // safe boundary and keeps one authoritative turn lifecycle.
     try {
       this.agent.steer(agentMessage);
+      // Native steering queues the message, but pi-agent-core will not read
+      // that queue until the current provider request yields. Interrupt the
+      // current request after admission; this is the steer handoff, not a
+      // second prompt/continue cycle.
+      if (this.agent.state.isStreaming) this.agent.abort();
     } catch (error) {
       const reason = error instanceof Error ? error.message : String(error);
       this.emitLifecycle("steering_failed", { expectedTurnId, reason });

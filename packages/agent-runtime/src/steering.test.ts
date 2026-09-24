@@ -23,7 +23,7 @@ describe("Slice 2 steering contract", () => {
     );
     const steeringBody = source.slice(source.indexOf("async steer("), source.indexOf("/** Ask pi-agent-core", source.indexOf("async steer(")));
     expect(steeringBody).toContain("this.agent.steer(agentMessage)");
-    expect(steeringBody).not.toContain("this.agent.abort()");
+    expect(steeringBody).toContain("this.agent.abort()");
     expect(steeringBody).not.toContain("await this.agent.continue()");
   });
 });
