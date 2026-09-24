@@ -8877,7 +8877,10 @@ function registerIpc() {
     // record after the steer and execute it a second time.
     if (req.queuedPromptId) {
       try {
-        await agentHostBridge?.queue.remove(req.queuedPromptId);
+        const claim = await agentHostBridge?.queue.consumeForSteering(req.queuedPromptId);
+        if (claim?.alreadyStarted) {
+          return { state: "accepted", sessionId: req.sessionId, expectedTurnId: req.expectedTurnId };
+        }
       } catch (error) {
         logger.app("session", "warn", "steered queue pre-cleanup failed", {
           sessionId: req.sessionId,

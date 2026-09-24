@@ -274,6 +274,9 @@ export function createAgentHostBridge(options: AgentHostBridgeOptions) {
     async remove(turnId: string): Promise<void> {
       await forIpc(() => agentHost.cancelTurn(DESKTOP_PRINCIPAL, turnId));
     },
+    async consumeForSteering(turnId: string): Promise<{ consumed: boolean; alreadyStarted: boolean }> {
+      return forIpc(() => agentHost.consumeForSteering(DESKTOP_PRINCIPAL, turnId));
+    },
     async prioritize(turnId: string): Promise<void> {
       await forIpc(() => agentHost.prioritizeTurn(DESKTOP_PRINCIPAL, turnId));
     },
