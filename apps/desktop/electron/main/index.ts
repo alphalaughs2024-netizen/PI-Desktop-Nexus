@@ -8872,27 +8872,20 @@ function registerIpc() {
     const activeTurnId = activeTurns.get(req.sessionId);
     if (!activeTurnId) return { state: "rejected", reason: "not_running" };
     if (activeTurnId !== req.expectedTurnId) return { state: "rejected", reason: "stale_turn" };
-    const outcome = await sidecar.call("agent.steer", req);
-    const admitted = Boolean(
-      outcome &&
-        typeof outcome === "object" &&
-        (((outcome as { state?: string }).state === "accepted") ||
-          ((outcome as { state?: string }).state === "queued") ||
-          ((outcome as { accepted?: boolean }).accepted === true)),
-    );
-    if (
-      req.queuedPromptId &&
-      admitted
-    ) {
+    // Consume the queued turn before handing its content to the provider. If
+    // cleanup waits for steering to return, agent_end can drain the same Host
+    // record after the steer and execute it a second time.
+    if (req.queuedPromptId) {
       try {
         await agentHostBridge?.queue.remove(req.queuedPromptId);
       } catch (error) {
-        logger.app("session", "warn", "steered queue entry cleanup failed", {
+        logger.app("session", "warn", "steered queue pre-cleanup failed", {
           sessionId: req.sessionId,
           data: { queuedPromptId: req.queuedPromptId, error: String(error) },
         });
       }
     }
+    const outcome = await sidecar.call("agent.steer", req);
     return outcome;
   });
 

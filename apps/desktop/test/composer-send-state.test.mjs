@@ -99,6 +99,16 @@ test("queued steering sends the durable queue ID to Main for atomic cleanup", ()
   assert.match(main, /agentHostBridge\?\.queue\.remove\(req\.queuedPromptId\)/);
 });
 
+test("Main consumes the durable queue entry before steering reaches the provider", () => {
+  const handler = main.match(/handle\(IPC\.invoke\.agentSteer[\s\S]*?\n  \}\);/)?.[0] ?? "";
+  assert.ok(handler.length > 0, "agentSteer handler not found");
+  assert.match(handler, /await agentHostBridge\?\.queue\.remove\(req\.queuedPromptId\)/);
+  assert.ok(
+    handler.indexOf("queue.remove(req.queuedPromptId)") < handler.indexOf('sidecar.call("agent.steer"'),
+    "durable queue removal must happen before provider steering",
+  );
+});
+
 test("promoted queued prompts remain cancelable while ordering actions stay locked", () => {
   assert.match(composer, /const promoted = item\.priority !== undefined/);
   assert.match(composer, /const pendingAdmission = item\.id\.startsWith\("pending:"\)/);
@@ -124,10 +134,6 @@ test("queued action mode follows the active session run state", () => {
 });
 
 
-test("Main cleans queued steering entries for legacy accepted responses too", () => {
-  assert.match(main, /accepted\?: boolean/);
-  assert.match(main, /\(outcome as \{ accepted\?: boolean \}\)\.accepted === true/);
-});
 
 test("new task persists or reuses an empty session and keeps the run flag scoped", () => {
   const newSession = store.match(
