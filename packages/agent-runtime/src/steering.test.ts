@@ -16,4 +16,14 @@ describe("Slice 2 steering contract", () => {
     expect(response.reason).toBe("stale_turn");
     expect(vi.fn()).not.toHaveBeenCalled();
   });
+
+  it("uses native steering without aborting the active turn", async () => {
+    const source = await import("node:fs/promises").then((fs) =>
+      fs.readFile(new URL("./runtime.ts", import.meta.url), "utf8"),
+    );
+    const steeringBody = source.slice(source.indexOf("async steer("), source.indexOf("/** Ask pi-agent-core", source.indexOf("async steer(")));
+    expect(steeringBody).toContain("this.agent.steer(agentMessage)");
+    expect(steeringBody).not.toContain("this.agent.abort()");
+    expect(steeringBody).not.toContain("await this.agent.continue()");
+  });
 });

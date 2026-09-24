@@ -5950,7 +5950,6 @@ export class DesktopAgentRuntime {
         this.emit({ type: "agent_start" });
         break;
       case "turn_start":
-        this.suppressSteeringRunEnd = false;
         if (
           this.providerRetryInProgress ||
           this.silentTurnRerunInProgress ||
@@ -6837,14 +6836,13 @@ export class DesktopAgentRuntime {
     }
     const content = promptContent(input);
     const agentMessage: AgentMessage = { role: "user", content, timestamp: Date.now() };
-    // Queue the steering message, abort the in-flight provider request, then
-    // explicitly resume the agent so the queued message is consumed immediately
-    // instead of waiting for the old response to finish naturally.
+    // pi-agent-core owns the active-turn queue. Do not abort and immediately
+    // continue here: that creates an old terminal event which can race the
+    // replacement turn and make the renderer believe the session is idle (or
+    // block the next send). Native steering is consumed at the provider's next
+    // safe boundary and keeps one authoritative turn lifecycle.
     try {
       this.agent.steer(agentMessage);
-      this.agent.abort();
-      await this.agent.waitForIdle();
-      if (!this.disposed && !this.runCancelled && expectedTurnId === this.turnId) await this.agent.continue();
     } catch (error) {
       const reason = error instanceof Error ? error.message : String(error);
       this.emitLifecycle("steering_failed", { expectedTurnId, reason });
