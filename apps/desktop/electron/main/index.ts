@@ -1621,6 +1621,20 @@ async function resolveAgentRuntimeLaunch(
       return { available: false, matchCount: 0, possiblyStaleCount: 0 };
     }
   })();
+  const contextVaultContext = await (async () => {
+    const prompt = typeof overrides.prompt === "string" ? overrides.prompt.trim().slice(0, 2000) : "";
+    const trigger = /\b(architecture|convention|decision|repository rule|refactor|modify|change|update|migrate|continue|resume|recurring|gotcha|prior decision|provider|runtime|workspace|host|session|queue|build)\b/i.test(prompt);
+    if (!projectPath || !prompt || !trigger || contextVaultHint.matchCount < 1) return undefined;
+    try {
+      const result = await Promise.race([
+        host.call<{ claims?: any[] }>("contextVault.brief", { projectPath, query: prompt }),
+        new Promise<undefined>((resolve) => setTimeout(() => resolve(undefined), 700)),
+      ]);
+      if (!result?.claims) return undefined;
+      const selected = result.claims.filter((item) => item?.claim?.verification?.state === "reviewed" && item?.claim?.freshness === "fresh").map((item) => item.claim);
+      return { claims: selected.slice(0, 8), selections: selected.slice(0, 8).map((claim) => ({ claimId: claim.id, include: true, reason: "reviewed and fresh", tokens: Math.ceil(String(claim.claim ?? "").length / 4) })), warnings: result.claims.filter((item) => item?.claim && !(item.claim.verification?.state === "reviewed" && item.claim.freshness === "fresh")).map((item) => ({ claimId: item.claim.id, reason: item.claim.freshness ?? "unverified" })) };
+    } catch { return undefined; }
+  })();
   const gitReadiness = await inspectGitWorkspace(dataDir, projectPath);
   const workspaceMode = getGitWorkspaceMode(dataDir, sessionId) ?? gitReadiness.workspaceMode;
   // Most launch inputs come from independent stores. Start them together so a
@@ -1959,6 +1973,7 @@ async function resolveAgentRuntimeLaunch(
       gitWorktreeEnabled: workspaceMode === "managed-isolation" && gitReadiness.ready,
       projectInstructions,
       contextVaultHint,
+      contextVaultContext,
       provider: {
         id: provider.id,
         name: provider.name,
