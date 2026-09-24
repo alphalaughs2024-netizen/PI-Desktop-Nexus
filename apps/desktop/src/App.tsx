@@ -196,6 +196,12 @@ function AppShell() {
   const [costSummary, setCostSummary] = useState<{ overall: number; session: number; turns: number } | null>(null);
   const [providerAccount, setProviderAccount] = useState<any>(null);
   const [costOpen, setCostOpen] = useState(false);
+  const refreshUsageSummary = useCallback(() => {
+    const sessionId = useAppStore.getState().activeSessionId;
+    void Promise.all([api.getTokenUsageHistory({ bucket: "month" }), sessionId ? api.getTokenUsageHistory({ bucket: "month", sessionId }) : Promise.resolve(null)])
+      .then(([overall, session]) => setCostSummary({ overall: estimateUsageCost(overall, providerModels).total, session: session ? estimateUsageCost(session, providerModels).total : 0, turns: session?.totals.turnCount ?? 0 }))
+      .catch(() => setCostSummary(null));
+  }, [providerModels]);
   useEffect(() => {
     let alive = true;
     void Promise.all([
@@ -209,6 +215,7 @@ function AppShell() {
     }).catch(() => { if (alive) setCostSummary(null); });
     return () => { alive = false; };
   }, [activeSessionId, providerModels]);
+  useEffect(() => { if (costOpen) refreshUsageSummary(); }, [costOpen, refreshUsageSummary]);
   useEffect(() => {
     if (!costOpen) return;
     const providers = useAppStore.getState().providers ?? [];
@@ -220,6 +227,10 @@ function AppShell() {
       .then(setProviderAccount)
       .catch(() => setProviderAccount((previous: any) => previous ? { ...previous, snapshot: { ...previous.snapshot, state: "stale", error: "refresh_failed" } } : { snapshot: { provider: provider.id, state: "unavailable", error: "refresh_failed" } }));
   }, [costOpen, draftConfiguration?.providerId, settings?.defaultProviderId]);
+  useEffect(() => {
+    const off = api.onAgentEvent((envelope) => { if (envelope.sessionId === activeSessionId && ["agent_end", "turn_end", "error"].includes(envelope.event.type)) window.setTimeout(refreshUsageSummary, 150); });
+    return off;
+  }, [activeSessionId, refreshUsageSummary]);
 
 
   const [searchOpen, setSearchOpen] = useState(false);
