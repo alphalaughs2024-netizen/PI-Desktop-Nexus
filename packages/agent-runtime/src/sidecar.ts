@@ -111,6 +111,7 @@ type RuntimeParams = {
   /** False only when the host resolved the session to direct-folder mode. */
   gitWorktreeEnabled?: boolean;
   projectInstructions?: ProjectInstructions;
+  contextVaultHint?: import("@pi-desktop/shared").ContextVaultHint;
   compactionSettings?: ContextCompactionSettings;
   attachmentsDir?: string;
   userMessageId?: string;
@@ -332,6 +333,7 @@ async function runtimeFor(
     subagents,
     subagentProviders,
     projectInstructions: params.projectInstructions,
+    contextVaultHint: params.contextVaultHint,
     projectPath: params.projectPath,
     gitWorktreeEnabled: params.gitWorktreeEnabled,
     commandShell: params.commandShell,
@@ -392,6 +394,7 @@ async function runtimeFor(
     projectPath: params.projectPath,
     gitWorktreeEnabled: params.gitWorktreeEnabled,
     projectInstructions: params.projectInstructions,
+    contextVaultHint: params.contextVaultHint,
     scratchDir:
       typeof params.scratchDir === "string" && params.scratchDir
         ? params.scratchDir

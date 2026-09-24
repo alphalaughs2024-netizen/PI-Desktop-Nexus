@@ -864,6 +864,11 @@ export type PromptCompositionSection = {
   sensitive: boolean;
   context?: ContextPromptProvenance;
 };
+export type ContextVaultHint = {
+  available: boolean;
+  matchCount: number;
+  possiblyStaleCount: number;
+};
 export type PromptCompositionSnapshot = {
   version: 1;
   hash: string;
@@ -875,7 +880,7 @@ export type PromptCompositionSnapshot = {
   sections: PromptCompositionSection[];
 };
 export type PromptLifecycleKind = "prompt_accepted" | "context_assembled" | "prompt_sent" | "steering_requested" | "steering_accepted" | "steering_queued" | "steering_rejected" | "steering_unavailable" | "steering_failed" | "context_requested" | "context_completed" | "retry_started" | "resume_started" | "resume_success" | "resume_unavailable" | "resume_failed" | "reconnect" | "turn_completed" | "turn_failed";
-export type PromptLifecycleEvent = { id: string; kind: PromptLifecycleKind; ts: number; turnId?: string; preview?: string; compositionHash?: string; reason?: string; expectedTurnId?: string; sensitive?: boolean; parentToolCallId?: string; agentName?: string };
+export type PromptLifecycleEvent = { id: string; kind: PromptLifecycleKind; ts: number; turnId?: string; preview?: string; compositionHash?: string; reason?: string; expectedTurnId?: string; sensitive?: boolean; parentToolCallId?: string; agentName?: string; contextTool?: string; contextIds?: string[]; contextMatchCount?: number; contextPossiblyStaleCount?: number; contextOmissionReasons?: string[] };
 export type PromptLifecycleFilter = "all" | "steering" | "context" | "recovery" | "turn";
 
 export type PersistedLifecycleEvent = PromptLifecycleEvent & {

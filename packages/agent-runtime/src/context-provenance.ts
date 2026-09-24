@@ -12,7 +12,7 @@ export function selectContextClaims(claims: ContextVaultClaim[], budget = 1200):
     seen.add(key);
     if (claim.verification.state === "conflicted") return { claim, include: false, reason: "conflicted", tokens };
     if (claim.verification.state === "superseded") return { claim, include: false, reason: "superseded", tokens };
-    if (used + tokens > budget) return { claim, include: false, reason: "budget", tokens };
+    if (used > 0 && used + tokens > budget) return { claim, include: false, reason: "budget", tokens };
     used += tokens;
     return { claim, include: true, reason: "verified project context", tokens };
   });
