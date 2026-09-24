@@ -25,7 +25,6 @@ describe("Slice 2 steering contract", () => {
     );
     const steeringBody = source.slice(source.indexOf("async steer("), source.indexOf("/** Ask pi-agent-core", source.indexOf("async steer(")));
     expect(steeringBody).toContain("this.agent.steer(agentMessage)");
-    expect(steeringBody).toContain("this.agent.abort()");
     expect(steeringBody).toContain("await this.agent.continue()");
   });
 
@@ -53,13 +52,10 @@ describe("Slice 2 steering contract", () => {
     const delivered: string[] = [];
     let queued: any;
     (runtime as any).agent = {
-      state: { isStreaming: false, messages: [] },
+      state: { isStreaming: true, messages: [] },
       signal: {},
       steer: vi.fn((message: any) => { queued = message; delivered.push("admitted"); }),
-      abort: vi.fn(() => {
-        (runtime as any).runCancelled = true;
-        (runtime as any).agent.state.isStreaming = false;
-      }),
+      abort: vi.fn(),
       waitForIdle: vi.fn(async () => undefined),
       continue: vi.fn(async () => {
         if (queued) delivered.push(String(queued.content));
@@ -70,10 +66,9 @@ describe("Slice 2 steering contract", () => {
 
     await expect((runtime as any).steer({ text: "queued once" }, "turn-1")).resolves.toMatchObject({ state: "accepted" });
     expect((runtime as any).agent.steer).toHaveBeenCalledTimes(1);
-    expect((runtime as any).agent.abort).toHaveBeenCalledTimes(1);
-    expect((runtime as any).agent.continue).toHaveBeenCalledTimes(1);
-    expect((runtime as any).runCancelled).toBe(false);
-    expect(delivered).toEqual(["admitted", "queued once"]);
+    expect((runtime as any).agent.abort).not.toHaveBeenCalled();
+    expect((runtime as any).agent.continue).not.toHaveBeenCalled();
+    expect(delivered).toEqual(["admitted"]);
     await runtime.dispose();
   });
 
@@ -102,16 +97,16 @@ describe("Slice 2 steering contract", () => {
       const last = userMessages.at(-1);
       providerInputs.push(typeof last?.content === "string" ? last.content : last?.content?.[0]?.text ?? "");
       if (requestCount === 1) {
-        options?.signal?.addEventListener("abort", () => {
-          const aborted = {
-            role: "assistant", content: [], api: "openai-completions", provider: "local", model: "model-1",
-            usage: { input: 1, output: 0, cacheRead: 0, cacheWrite: 0, totalTokens: 1, cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 } },
-            stopReason: "aborted", timestamp: Date.now(),
+        setTimeout(() => {
+          const first = {
+            role: "assistant", content: [{ type: "text", text: "first reply" }], api: "openai-completions", provider: "local", model: "model-1",
+            usage: { input: 1, output: 2, cacheRead: 0, cacheWrite: 0, totalTokens: 3, cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 } },
+            stopReason: "stop", timestamp: Date.now(),
           } as any;
-          stream.push({ type: "start", partial: aborted });
-          stream.push({ type: "done", reason: "stop", message: aborted });
-          stream.end(aborted);
-        }, { once: true });
+          stream.push({ type: "start", partial: first });
+          stream.push({ type: "done", reason: "stop", message: first });
+          stream.end(first);
+        }, 10);
       } else {
         const complete = {
           role: "assistant", content: [{ type: "text", text: "reply to steer" }], api: "openai-completions", provider: "local", model: "model-1",
