@@ -110,7 +110,7 @@ export function UsagePage() {
   return (
     <div className="settings-stack usage-page">
       <div className="usage-plugin-topbar">
-        <strong>{t("settings.usagePluginTitle")}</strong>
+        <strong>{t("settings.usagePricing")}</strong>
         <div className="usage-plugin-filters" role="group" aria-label={t("settings.usageFilters")}>
           <div className="usage-range-pills" role="group" aria-label={t("settings.usageRange")}>{(["7d", "30d", "90d", "1y", "all"] as Range[]).map((value) => <button aria-pressed={range === value} className={range === value ? "active" : ""} key={value} type="button" onClick={() => setRange(value)}>{value.toUpperCase()}</button>)}</div>
           <label className="usage-filter-control"><span className="sr-only">{t("settings.usageAllTools")}</span><select value={source} onChange={(event) => setSource(event.target.value)}><option value="">{t("settings.usageAllTools")}</option>{facets.sources.map((item) => <option value={item.id} key={item.id}>{item.label}</option>)}</select></label>

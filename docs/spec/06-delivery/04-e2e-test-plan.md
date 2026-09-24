@@ -27,6 +27,10 @@ Context Vault Phase 1 scenarios include:
 
 Context Vault Phase 3–4 scenarios include:
 
+Usage & Pricing reliability scenarios include active-provider account selection,
+XKIRO stale-cache fallback, provider switching, and the Usage & Pricing settings
+label across shipped locales.
+
 - A qualifying architecture/refactor/resume prompt with relevant claims runs a
   bounded `contextVault.brief`, injects only reviewed/fresh claims, and records
   metadata-only retrieval provenance.

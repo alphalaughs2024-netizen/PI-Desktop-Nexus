@@ -192,6 +192,7 @@ function AppShell() {
   const plugins = useAppStore((s) => s.plugins);
   const projectPath = useAppStore((s) => s.workspace?.path ?? null);
   const providerModels = useAppStore((s) => s.providerModels);
+  const draftConfiguration = useAppStore((s) => s.draftConfiguration);
   const [costSummary, setCostSummary] = useState<{ overall: number; session: number; turns: number } | null>(null);
   const [providerAccount, setProviderAccount] = useState<any>(null);
   const [costOpen, setCostOpen] = useState(false);
@@ -208,7 +209,17 @@ function AppShell() {
     }).catch(() => { if (alive) setCostSummary(null); });
     return () => { alive = false; };
   }, [activeSessionId, providerModels]);
-  useEffect(() => { if (!costOpen) return; const provider = useAppStore.getState().providers?.[0]; if (!provider) return; void api.getProviderAccount({ providerId: provider.id, vendorKey: provider.vendorKey, baseUrl: provider.baseUrl ?? "https://api.xkiro.com/v1" }).then(setProviderAccount).catch(() => setProviderAccount(null)); }, [costOpen]);
+  useEffect(() => {
+    if (!costOpen) return;
+    const providers = useAppStore.getState().providers ?? [];
+    const provider = providers.find((candidate) => candidate.id === draftConfiguration?.providerId)
+      ?? providers.find((candidate) => candidate.id === settings?.defaultProviderId);
+    if (!provider) { setProviderAccount(null); return; }
+    setProviderAccount((previous: any) => previous ? { ...previous, snapshot: { ...previous.snapshot, state: "loading" } } : { snapshot: { provider: provider.id, state: "loading" } });
+    void api.getProviderAccount({ providerId: provider.id, vendorKey: provider.vendorKey, baseUrl: provider.baseUrl ?? "" })
+      .then(setProviderAccount)
+      .catch(() => setProviderAccount((previous: any) => previous ? { ...previous, snapshot: { ...previous.snapshot, state: "stale", error: "refresh_failed" } } : { snapshot: { provider: provider.id, state: "unavailable", error: "refresh_failed" } }));
+  }, [costOpen, draftConfiguration?.providerId, settings?.defaultProviderId]);
 
 
   const [searchOpen, setSearchOpen] = useState(false);

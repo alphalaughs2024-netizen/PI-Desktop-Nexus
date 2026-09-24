@@ -243,10 +243,10 @@ export const SETTINGS_NAV: SettingsNavEntry[] = [
   },
   {
     id: "usage",
-    labelKey: "settings.nav.usage",
-    titleKey: "settings.usage",
+    labelKey: "settings.nav.usagePricing",
+    titleKey: "settings.usagePricing",
     group: "system",
-    keywordKeys: ["settings.usageDescription", "settings.usageHistory", "settings.usageBreakdown", "settings.tokens"],
+    keywordKeys: ["settings.usageDescription", "settings.usageHistory", "settings.usageBreakdown", "settings.tokens", "settings.usagePricing"],
   },
   {
     id: "about",
