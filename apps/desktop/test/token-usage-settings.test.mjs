@@ -42,4 +42,26 @@ test("native usage page exposes the Token Insights dashboard surfaces", async ()
   assert.match(usage, /usage-filter-control/);
   assert.match(usage, /usageClearFilters/);
   assert.match(usage, /usage-cost-card/);
+  assert.match(usage, /usage-dashboard-section/);
+  assert.match(usage, /usage-local-overview/);
+  assert.match(usage, /usage-cost-sources/);
+  assert.match(usage, /usage-provider-accounts/);
+  assert.match(usage, /usage-token-activity/);
+  assert.match(usage, /Catalog estimate/);
+  assert.match(usage, /Provider reported/);
+  assert.match(usage, /Unpriced/);
+  assert.match(usage, /Unavailable/);
+});
+
+test("chat spend popover has session and provider-account UI without billing wiring", async () => {
+  const app = await readFile(new URL("../src/App.tsx", import.meta.url), "utf8");
+  const chrome = await readFile(new URL("../src/styles/chrome.css", import.meta.url), "utf8");
+  assert.match(app, /Spend &amp; limits/);
+  assert.match(app, /This Nexus session/);
+  assert.match(app, /Provider account/);
+  assert.match(app, /XKIRO/);
+  assert.match(app, /View usage details/);
+  assert.match(chrome, /cost-summary-provider-grid/);
+  assert.match(chrome, /width: min\(360px/);
+  assert.doesNotMatch(app, /contextVault|billing|usage\/history|api\.xkiro/);
 });

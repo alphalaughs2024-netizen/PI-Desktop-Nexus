@@ -1044,12 +1044,11 @@ function AppShell() {
           <WindowControls contained />
 
           {costOpen && (
-            <div className="cost-summary-popover" role="dialog" aria-label={i18n.t("settings.usageBreakdown")}>
-              <strong>{i18n.t("settings.usageBreakdown")}</strong>
-              <div className="cost-summary-row"><span>Current session</span><b>{costSummary ? `$${costSummary.session.toFixed(2)}` : "—"}</b></div>
-              <div className="cost-summary-row"><span>Overall</span><b>{costSummary ? `$${costSummary.overall.toFixed(2)}` : "—"}</b></div>
-              <div className="cost-summary-row"><span>{i18n.t("settings.usageTurns")}</span><b>{costSummary?.turns ?? "—"}</b></div>
-              <small>Estimated from available model pricing. Open Settings for detailed usage metrics.</small>
+            <div className="cost-summary-popover" role="dialog" aria-label="Spend & limits">
+              <header className="cost-summary-header"><div><strong>Spend &amp; limits</strong><small>This Nexus session</small></div><button type="button" className="cost-summary-settings" onClick={() => { setCostOpen(false); useAppStore.getState().setSettingsTab("usage"); }}>Settings</button></header>
+              <section className="cost-summary-session"><div className="cost-summary-session-top"><span>Session spend</span><b>{costSummary && costSummary.session > 0 ? `$${costSummary.session.toFixed(2)}` : "—"}</b></div><div className="cost-summary-meta"><span>Catalog estimate</span><span>{costSummary?.turns ?? "—"} turns</span></div><div className="cost-summary-scope">Local Nexus session</div></section>
+              <section className="cost-summary-account"><div className="cost-summary-section-heading"><span>Provider account</span><em>Not connected</em></div><div className="cost-summary-provider"><strong>XKIRO</strong><span>Wallet, spend windows, and reset status will appear here.</span></div><div className="cost-summary-provider-grid"><span>Balance <b>—</b></span><span>Limit <b>—</b></span><span>Reset <b>—</b></span></div></section>
+              <footer className="cost-summary-footer"><span>Account data is separate from session spend.</span><button type="button" onClick={() => { setCostOpen(false); useAppStore.getState().setSettingsTab("usage"); }}>View usage details <span aria-hidden="true">→</span></button></footer>
             </div>
           )}
 
