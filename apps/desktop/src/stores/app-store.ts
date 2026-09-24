@@ -2154,6 +2154,13 @@ export const useAppStore = create<AppState>((set, get) => ({
         ...(attachments.length ? { attachments } : {}),
       })
       .then((entry) => {
+        if (canceledPendingQueueEntries.delete(item.id)) {
+          queuedDrafts.delete(entry.id);
+          void api.removeQueuedPrompt(entry.id)
+            .catch(() => undefined)
+            .finally(() => get().refreshQueuedPrompts(sessionId));
+          return;
+        }
         queuedDrafts.set(entry.id, queuedDraft);
         set((state) => ({
           queuedPrompts: removeQueuedPrompt(state.queuedPrompts, sessionId, item.id),
@@ -2182,7 +2189,10 @@ export const useAppStore = create<AppState>((set, get) => ({
       ),
     }));
     queuedDrafts.delete(promptId);
-    if (promptId.startsWith("pending:")) return;
+    if (promptId.startsWith("pending:")) {
+      canceledPendingQueueEntries.add(promptId);
+      return;
+    }
     void api.removeQueuedPrompt(promptId).catch((error) => {
       get().showToast(
         error instanceof Error ? error.message : String(error),
@@ -4794,6 +4804,7 @@ useAppStore.subscribe((state, previous) => {
 
 /** Composer drafts behind Host queue entries, so removing one restores it. */
 const queuedDrafts = new Map<string, ComposerDraftSnapshot>();
+const canceledPendingQueueEntries = new Set<string>();
 
 function toQueuedPrompt(
   entry: QueuedTurnSummary,

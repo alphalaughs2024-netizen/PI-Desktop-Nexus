@@ -32,6 +32,10 @@ Queued steering scenarios include:
   entry in the same admission path, preventing queue snapshots from restoring it.
 - Legacy accepted steering responses receive the same durable queue cleanup as
   typed accepted/queued outcomes.
+- A promoted "send now" row remains cancelable while move/edit actions stay
+  locked during admission.
+- Canceling a pending renderer row before Host admission prevents the later
+  durable queue entry from appearing.
 
 - Steering returns an authoritative typed outcome through the runtime, sidecar,
   Electron IPC, API, and renderer store.

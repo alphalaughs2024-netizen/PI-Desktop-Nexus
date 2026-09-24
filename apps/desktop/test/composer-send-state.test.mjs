@@ -98,6 +98,19 @@ test("queued steering sends the durable queue ID to Main for atomic cleanup", ()
   assert.match(main, /agentHostBridge\?\.queue\.remove\(req\.queuedPromptId\)/);
 });
 
+test("promoted queued prompts remain cancelable while ordering actions stay locked", () => {
+  assert.match(composer, /const promoted = item\.priority !== undefined/);
+  assert.match(composer, /const pendingAdmission = item\.id\.startsWith\("pending:"\)/);
+  assert.match(composer, /disabled=\{pendingAdmission\}/);
+});
+
+test("canceling a pending renderer row prevents later Host admission from restoring it", () => {
+  assert.match(store, /const canceledPendingQueueEntries = new Set<string>\(\)/);
+  assert.match(store, /canceledPendingQueueEntries\.delete\(item\.id\)/);
+  assert.match(store, /canceledPendingQueueEntries\.add\(promptId\)/);
+  assert.match(store, /api\.removeQueuedPrompt\(entry\.id\)/);
+});
+
 test("Main cleans queued steering entries for legacy accepted responses too", () => {
   assert.match(main, /accepted\?: boolean/);
   assert.match(main, /\(outcome as \{ accepted\?: boolean \}\)\.accepted === true/);
