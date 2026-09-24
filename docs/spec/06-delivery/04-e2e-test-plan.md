@@ -40,6 +40,8 @@ Queued steering scenarios include:
   treated as the terminal end of the Host turn.
 - Steering clears the runtime's internal abort marker before resuming; the
   handoff must not leave the session idle waiting for a new prompt.
+- The provider-delivery regression counts requests across the abort handoff and
+  verifies the sequence is exactly: original prompt, steered prompt.
 - Legacy accepted steering responses receive the same durable queue cleanup as
   typed accepted/queued outcomes.
 - A promoted "send now" row remains cancelable while move/edit actions stay
