@@ -8881,11 +8881,13 @@ function registerIpc() {
         if (claim?.alreadyStarted) {
           return { state: "accepted", sessionId: req.sessionId, expectedTurnId: req.expectedTurnId };
         }
+        if (!claim?.consumed) return { state: "failed", reason: "queued turn was not admitted for steering" };
       } catch (error) {
         logger.app("session", "warn", "steered queue pre-cleanup failed", {
           sessionId: req.sessionId,
           data: { queuedPromptId: req.queuedPromptId, error: String(error) },
         });
+        return { state: "failed", reason: "queued turn admission failed" };
       }
     }
     const outcome = await sidecar.call("agent.steer", req);

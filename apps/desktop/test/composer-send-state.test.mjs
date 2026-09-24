@@ -112,6 +112,8 @@ test("Main consumes the durable queue entry before steering reaches the provider
 test("steering uses the Host atomic consume-for-steering operation", () => {
   assert.match(main, /queue\.consumeForSteering\(req\.queuedPromptId\)/);
   assert.match(main, /alreadyStarted/);
+  assert.match(main, /!claim\?\.consumed/);
+  assert.match(main, /queued turn was not admitted for steering/);
   assert.match(main, /return \{ state: "accepted", sessionId: req\.sessionId/);
 });
 
