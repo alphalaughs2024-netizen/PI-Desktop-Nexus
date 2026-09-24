@@ -581,7 +581,7 @@ export const es = {
       "workspaces": "Espacios de trabajo",
        "info": "Información",
        "diagnostics": "Diagnóstico",
-       "usage": "Uso"
+       "usagePricing": "Uso y precios"
     },
     "general": "General",
     "scenicThemes": "Temas escénicos",
@@ -1148,7 +1148,7 @@ export const es = {
     "fontSizePercent": "{{value}}%",
     "fontSizeSaveError": "No se pudo guardar el tamaño de fuente.",
      "diagnostics": "Diagnóstico",
-     "usage": "Uso",
+     "usagePricing": "Uso y precios",
      "tokens": "Tokens",
      "usageDescription": "Revise el uso de tokens de turnos completados del host local de Nexus.",
      "usageEyebrow": "Telemetría de Nexus",

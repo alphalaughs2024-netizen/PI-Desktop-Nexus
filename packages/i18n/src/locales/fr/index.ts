@@ -581,7 +581,7 @@ export const fr = {
       "workspaces": "Espaces de travail",
        "info": "Informations",
        "diagnostics": "Diagnostics",
-       "usage": "Utilisation"
+       "usagePricing": "Utilisation et tarifs"
     },
     "general": "Général",
     "scenicThemes": "Thèmes panoramiques",
@@ -1148,7 +1148,7 @@ export const fr = {
     "fontSizePercent": "{{value}}%",
     "fontSizeSaveError": "Impossible d'enregistrer la taille de la police.",
      "diagnostics": "Diagnostics",
-     "usage": "Utilisation",
+     "usagePricing": "Utilisation et tarifs",
      "tokens": "Tokens",
      "usageDescription": "Consultez l’utilisation des tokens des tours terminés par l’hôte local Nexus.",
      "usageEyebrow": "Télémétrie Nexus",

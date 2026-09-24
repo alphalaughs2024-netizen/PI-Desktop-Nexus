@@ -588,7 +588,7 @@ export const de = {
       "workspaces": "Arbeitsbereiche",
        "info": "Informationen",
        "diagnostics": "Diagnose",
-       "usage": "Nutzung"
+       "usagePricing": "Nutzung & Preise"
     },
     "general": "Allgemein",
     "scenicThemes": "Szenische Themen",
@@ -1155,7 +1155,7 @@ export const de = {
     "fontSizePercent": "{{value}}%",
     "fontSizeSaveError": "Die Schriftgröße konnte nicht gespeichert werden.",
      "diagnostics": "Diagnose",
-     "usage": "Nutzung",
+     "usagePricing": "Nutzung & Preise",
      "tokens": "Token",
      "usageDescription": "Abgeschlossene Token-Nutzung des lokalen Nexus-Hosts anzeigen.",
      "usageEyebrow": "Nexus-Telemetrie",
