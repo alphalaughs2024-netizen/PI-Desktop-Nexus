@@ -65,3 +65,12 @@ test("chat spend popover has session and provider-account UI without billing wir
   assert.match(chrome, /width: min\(360px/);
   assert.doesNotMatch(app, /contextVault|billing|usage\/history|api\.xkiro/);
 });
+
+test("cost popover state is initialized before its provider-account effect", async () => {
+  const app = await readFile(new URL("../src/App.tsx", import.meta.url), "utf8");
+  const stateIndex = app.indexOf('const [costOpen, setCostOpen] = useState(false);');
+  const effectIndex = app.indexOf('if (!costOpen) return;');
+  assert.ok(stateIndex >= 0);
+  assert.ok(effectIndex >= 0);
+  assert.ok(stateIndex < effectIndex);
+});

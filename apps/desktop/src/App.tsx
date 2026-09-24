@@ -194,6 +194,7 @@ function AppShell() {
   const providerModels = useAppStore((s) => s.providerModels);
   const [costSummary, setCostSummary] = useState<{ overall: number; session: number; turns: number } | null>(null);
   const [providerAccount, setProviderAccount] = useState<any>(null);
+  const [costOpen, setCostOpen] = useState(false);
   useEffect(() => {
     let alive = true;
     void Promise.all([
@@ -211,7 +212,6 @@ function AppShell() {
 
 
   const [searchOpen, setSearchOpen] = useState(false);
-  const [costOpen, setCostOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(() => loadSidebarWidth());
   const [sidebarExiting, setSidebarExiting] = useState(false);
