@@ -679,6 +679,13 @@ export class AgentHost {
             ...(record.idempotencyKey ? { idempotencyKey: record.idempotencyKey } : {}),
             principal: { subject: record.principalSubject, roles: ["controller"] },
           });
+          // Cancellation can race the async runtime admission after `shift`
+          // has removed the record from the durable queue. Never resurrect a
+          // turn that the user canceled during that window.
+          if (turn.status === "canceled") {
+            await this.runtime.abort(state.id, started.turnId).catch(() => undefined);
+            continue;
+          }
           turn.runtimeTurnId = started.turnId;
           this.runtimeAliases.set(started.turnId, turn.id);
           if (!isActive(turn.status)) turn.status = "running";
