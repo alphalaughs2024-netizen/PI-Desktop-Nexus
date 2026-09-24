@@ -2156,6 +2156,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       .then((entry) => {
         if (canceledPendingQueueEntries.delete(item.id)) {
           queuedDrafts.delete(entry.id);
+          hiddenQueueEntries.add(entry.id);
           void api.removeQueuedPrompt(entry.id)
             .catch(() => undefined)
             .finally(() => get().refreshQueuedPrompts(sessionId));
@@ -2193,7 +2194,9 @@ export const useAppStore = create<AppState>((set, get) => ({
       canceledPendingQueueEntries.add(promptId);
       return;
     }
+    hiddenQueueEntries.add(promptId);
     void api.removeQueuedPrompt(promptId).catch((error) => {
+      hiddenQueueEntries.delete(promptId);
       get().showToast(
         error instanceof Error ? error.message : String(error),
         { variant: "error" },
@@ -2278,27 +2281,41 @@ export const useAppStore = create<AppState>((set, get) => ({
     if (!sessionId || !expectedTurnId) return { state: "rejected", reason: "invalid" };
     if (!state.runningSessions[sessionId]) return { state: "rejected", reason: "not_running" };
     if (state.pendingPlans[sessionId]?.status === "pending") return { state: "rejected", reason: "plan_pending" };
+    const durableQueuedPrompt = promptId?.startsWith("pending:") ? undefined : promptId;
+    if (durableQueuedPrompt) {
+      hiddenQueueEntries.add(durableQueuedPrompt);
+      set((current) => ({
+        queuedPrompts: removeQueuedPrompt(current.queuedPrompts, sessionId, durableQueuedPrompt),
+      }));
+    }
     const message = optimisticUserMessage(crypto.randomUUID(), content, draft?.fileReferences ?? []);
     message.steering = true;
     insertOptimisticUserMessage(sessionId, message);
     try {
-      const response = await api.steer({ sessionId, expectedTurnId, content, messageId: message.id, queuedPromptId: promptId?.startsWith("pending:") ? undefined : promptId, attachments: draft ? promptAttachmentsFromDraft(draft.fileReferences) : [] });
+      const response = await api.steer({ sessionId, expectedTurnId, content, messageId: message.id, queuedPromptId: durableQueuedPrompt, attachments: draft ? promptAttachmentsFromDraft(draft.fileReferences) : [] });
       const outcome = "state" in response ? response : { state: "accepted" as const, sessionId, expectedTurnId: response.turnId };
-      if ((outcome.state === "accepted" || outcome.state === "queued") && promptId) {
-        set((current) => ({ queuedPrompts: removeQueuedPrompt(current.queuedPrompts, sessionId, promptId) }));
-        queuedDrafts.delete(promptId);
-        if (!promptId.startsWith("pending:")) {
-          try {
-            await api.removeQueuedPrompt(promptId);
-          } finally {
-            await get().refreshQueuedPrompts(sessionId);
-          }
+      if ((outcome.state === "accepted" || outcome.state === "queued") && durableQueuedPrompt) {
+        queuedDrafts.delete(durableQueuedPrompt);
+        try {
+          await api.removeQueuedPrompt(durableQueuedPrompt);
+        } finally {
+          await get().refreshQueuedPrompts(sessionId);
         }
       }
-      if (outcome.state !== "accepted" && outcome.state !== "queued") retractOptimisticUserMessage(sessionId, message);
+      if (outcome.state !== "accepted" && outcome.state !== "queued") {
+        if (durableQueuedPrompt) {
+          hiddenQueueEntries.delete(durableQueuedPrompt);
+          await get().refreshQueuedPrompts(sessionId);
+        }
+        retractOptimisticUserMessage(sessionId, message);
+      }
       return outcome;
     }
     catch (error) {
+      if (durableQueuedPrompt) {
+        hiddenQueueEntries.delete(durableQueuedPrompt);
+        await get().refreshQueuedPrompts(sessionId);
+      }
       retractOptimisticUserMessage(sessionId, message);
       const reason = error instanceof Error ? error.message : String(error);
       const lower = reason.toLowerCase();
@@ -4805,6 +4822,7 @@ useAppStore.subscribe((state, previous) => {
 /** Composer drafts behind Host queue entries, so removing one restores it. */
 const queuedDrafts = new Map<string, ComposerDraftSnapshot>();
 const canceledPendingQueueEntries = new Set<string>();
+const hiddenQueueEntries = new Set<string>();
 
 function toQueuedPrompt(
   entry: QueuedTurnSummary,
@@ -4824,7 +4842,10 @@ function applyQueueEntries(sessionId: string, entries: QueuedTurnSummary[]): voi
   useAppStore.setState((state) => {
     const current = state.queuedPrompts[sessionId] ?? [];
     const pending = current.filter(isPendingQueuedPrompt);
-    const mirrored = entries.map(toQueuedPrompt);
+    const mirrored = entries.filter((entry) => !hiddenQueueEntries.has(entry.id)).map(toQueuedPrompt);
+    for (const id of [...hiddenQueueEntries]) {
+      if (!entries.some((entry) => entry.id === id)) hiddenQueueEntries.delete(id);
+    }
     for (const item of current) {
       if (!item.id.startsWith("pending:") && !entries.some((entry) => entry.id === item.id)) {
         queuedDrafts.delete(item.id);

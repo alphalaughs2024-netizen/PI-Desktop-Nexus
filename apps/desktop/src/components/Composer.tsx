@@ -634,7 +634,9 @@ export function Composer({
   const steerPrompt = useAppStore((s) => s.steerPrompt);
   const editQueuedPrompt = useAppStore((s) => s.editQueuedPrompt);
   const abort = useAppStore((s) => s.abort);
-  const isRunning = useAppStore((s) => s.isRunning);
+  const isRunning = useAppStore((s) =>
+    s.activeSessionId ? s.runningSessions[s.activeSessionId] ?? false : false,
+  );
   const planningState = useAppStore((s) =>
     s.activeSessionId ? s.planningStates[s.activeSessionId] : undefined,
   );

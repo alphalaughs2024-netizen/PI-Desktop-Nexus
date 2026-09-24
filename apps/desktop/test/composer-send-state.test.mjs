@@ -29,7 +29,7 @@ test("composer send/stop button follows draft content and the visible session's 
     "Stop and Send should be the two mutually exclusive branches of one slot",
   );
   assert.match(composer, /const runActive = isRunning \|\| executionActive;/);
-  assert.match(composer, /const isRunning = useAppStore\(\(s\) => s\.isRunning\);/);
+  assert.match(composer, /s\.activeSessionId \? s\.runningSessions\[s\.activeSessionId\]/);
   assert.match(submitSlot, /stopGenerating/);
   assert.match(submitSlot, /onClick=\{\(\) => void abort\(\)\}/);
   assert.doesNotMatch(composerRight, /\{runActive \? \(/);
@@ -87,13 +87,13 @@ test("running prompts use a removable per-session FIFO queue", () => {
 test("successful queued steering removes the durable queue entry before refreshing", () => {
   const steering = store.match(/steerPrompt: async [\s\S]*?\n  refreshQueuedPrompts:/)?.[0] ?? "";
   assert.ok(steering.length > 0, "steerPrompt implementation not found");
-  assert.match(steering, /await api\.removeQueuedPrompt\(promptId\)/);
+  assert.match(steering, /await api\.removeQueuedPrompt\(durableQueuedPrompt\)/);
   assert.match(steering, /await get\(\)\.refreshQueuedPrompts\(sessionId\)/);
-  assert.match(steering, /queuedDrafts\.delete\(promptId\)/);
+  assert.match(steering, /queuedDrafts\.delete\(durableQueuedPrompt\)/);
 });
 
 test("queued steering sends the durable queue ID to Main for atomic cleanup", () => {
-  assert.match(store, /queuedPromptId: promptId\?\.startsWith\("pending:"\)/);
+  assert.match(store, /queuedPromptId: durableQueuedPrompt/);
   assert.match(main, /req\.queuedPromptId/);
   assert.match(main, /agentHostBridge\?\.queue\.remove\(req\.queuedPromptId\)/);
 });
@@ -109,6 +109,17 @@ test("canceling a pending renderer row prevents later Host admission from restor
   assert.match(store, /canceledPendingQueueEntries\.delete\(item\.id\)/);
   assert.match(store, /canceledPendingQueueEntries\.add\(promptId\)/);
   assert.match(store, /api\.removeQueuedPrompt\(entry\.id\)/);
+});
+
+test("late Host snapshots cannot reintroduce sent or canceled durable entries", () => {
+  assert.match(store, /const hiddenQueueEntries = new Set<string>\(\)/);
+  assert.match(store, /hiddenQueueEntries\.has\(entry\.id\)/);
+  assert.match(store, /hiddenQueueEntries\.add\(promptId\)/);
+  assert.match(store, /hiddenQueueEntries\.delete\(id\)/);
+});
+
+test("queued action mode follows the active session run state", () => {
+  assert.match(composer, /s\.activeSessionId \? s\.runningSessions\[s\.activeSessionId\]/);
 });
 
 test("Main cleans queued steering entries for legacy accepted responses too", () => {
