@@ -193,6 +193,7 @@ function AppShell() {
   const projectPath = useAppStore((s) => s.workspace?.path ?? null);
   const providerModels = useAppStore((s) => s.providerModels);
   const [costSummary, setCostSummary] = useState<{ overall: number; session: number; turns: number } | null>(null);
+  const [providerAccount, setProviderAccount] = useState<any>(null);
   useEffect(() => {
     let alive = true;
     void Promise.all([
@@ -206,6 +207,7 @@ function AppShell() {
     }).catch(() => { if (alive) setCostSummary(null); });
     return () => { alive = false; };
   }, [activeSessionId, providerModels]);
+  useEffect(() => { if (!costOpen) return; const provider = useAppStore.getState().providers?.[0]; if (!provider) return; void api.getProviderAccount({ providerId: provider.id, vendorKey: provider.vendorKey, baseUrl: provider.baseUrl ?? "https://api.xkiro.com/v1" }).then(setProviderAccount).catch(() => setProviderAccount(null)); }, [costOpen]);
 
 
   const [searchOpen, setSearchOpen] = useState(false);
@@ -1047,7 +1049,7 @@ function AppShell() {
             <div className="cost-summary-popover" role="dialog" aria-label="Spend & limits">
               <header className="cost-summary-header"><div><strong>Spend &amp; limits</strong><small>This Nexus session</small></div><button type="button" className="cost-summary-settings" onClick={() => { setCostOpen(false); useAppStore.getState().setSettingsTab("usage"); }}>Settings</button></header>
               <section className="cost-summary-session"><div className="cost-summary-session-top"><span>Session spend</span><b>{costSummary && costSummary.session > 0 ? `$${costSummary.session.toFixed(2)}` : "—"}</b></div><div className="cost-summary-meta"><span>Catalog estimate</span><span>{costSummary?.turns ?? "—"} turns</span></div><div className="cost-summary-scope">Local Nexus session</div></section>
-              <section className="cost-summary-account"><div className="cost-summary-section-heading"><span>Provider account</span><em>Not connected</em></div><div className="cost-summary-provider"><strong>XKIRO</strong><span>Wallet, spend windows, and reset status will appear here.</span></div><div className="cost-summary-provider-grid"><span>Balance <b>—</b></span><span>Limit <b>—</b></span><span>Reset <b>—</b></span></div></section>
+              <section className="cost-summary-account"><div className="cost-summary-section-heading"><span>Provider account</span><em>{providerAccount?.snapshot?.state === "ready" ? "Updated" : "Unavailable"}</em></div><div className="cost-summary-provider"><strong>{providerAccount?.snapshot?.provider ?? "XKIRO"}</strong><span>Account data is separate from session spend.</span></div><div className="cost-summary-provider-grid"><span>Balance <b>{providerAccount?.snapshot?.wallet?.balanceUsd ? `$${providerAccount.snapshot.wallet.balanceUsd}` : "—"}</b></span><span>Limit <b>{providerAccount?.snapshot?.windows?.[0]?.remainingUsd ? `$${providerAccount.snapshot.windows[0].remainingUsd}` : "—"}</b></span><span>Reset <b>{providerAccount?.snapshot?.windows?.[0]?.resetsInSec ? `${Math.ceil(providerAccount.snapshot.windows[0].resetsInSec / 3600)}h` : "—"}</b></span></div></section>
               <footer className="cost-summary-footer"><span>Account data is separate from session spend.</span><button type="button" onClick={() => { setCostOpen(false); useAppStore.getState().setSettingsTab("usage"); }}>View usage details <span aria-hidden="true">→</span></button></footer>
             </div>
           )}

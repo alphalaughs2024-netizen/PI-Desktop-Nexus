@@ -2,7 +2,8 @@ import type { ModelInfo, TokenUsageFacet, TokenUsageHistoryResult } from "./type
 
 export type UsageCostRow = TokenUsageFacet & {
   cost: number | null;
-  provenance: "catalog" | "unpriced";
+  provenance: "provider_reported" | "provider_generation" | "catalog_estimate" | "unpriced" | "unavailable";
+  reportedCost?: string;
 };
 
 export type UsageCostEstimate = {
@@ -28,7 +29,7 @@ export function estimateUsageCost(
       (facet.cacheReadTokens ?? 0) * (cost.cacheRead ?? 0) +
       (facet.cacheWriteTokens ?? 0) * (cost.cacheWrite ?? 0)
     ) / 1_000_000;
-    return { ...facet, cost: amount, provenance: "catalog" as const };
+    return { ...facet, cost: amount, provenance: "catalog_estimate" as const };
   });
   return {
     total: rows.reduce((sum, row) => sum + (row.cost ?? 0), 0),

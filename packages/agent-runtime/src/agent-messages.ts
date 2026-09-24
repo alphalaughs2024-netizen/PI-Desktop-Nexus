@@ -68,6 +68,7 @@ export function usageFromPi(
     ...(cacheWriteTokens > 0 ? { cacheWriteTokens } : {}),
     ...(reasoningTokens !== undefined ? { reasoningTokens } : {}),
     totalTokens,
+    ...((usage as any).cost !== undefined ? { cost: { amountUsd: String((usage as any).cost), provenance: "provider_reported" as const, scope: "request" as const, observedAt: Date.now() } } : {}),
   };
 }
 

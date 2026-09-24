@@ -28,6 +28,7 @@ import {
   currentNetworkProxy,
   testNetworkProxy,
 } from "./network-proxy";
+import { providerAccountAdapters } from "./provider-account-adapters";
 import {
   APP_ID,
   APP_NAME,
@@ -8026,6 +8027,16 @@ function registerIpc() {
       return host.call("stats.getTokenUsageHistory", input ?? {});
     },
   );
+
+  handle("pi-desktop/provider-account/get", async (input: { providerId: string; vendorKey?: string; baseUrl: string; period?: "day" | "week" | "month" }) => {
+    if (!host) throw new Error("host unavailable");
+    const provider = await host.call<any>("providers.get", { id: input.providerId });
+    const secret = await host.call<{ value?: string }>("providers.getSecret", { id: input.providerId });
+    const adapter = providerAccountAdapters.find((candidate) => candidate.matches({ providerId: input.providerId, vendorKey: input.vendorKey, baseUrl: input.baseUrl })) ?? providerAccountAdapters.at(-1)!;
+    const snapshot = await adapter.getSnapshot({ providerId: input.providerId, baseUrl: input.baseUrl, apiKey: secret.value ?? "" });
+    const history = adapter.getHistory && input.period ? await adapter.getHistory({ providerId: input.providerId, baseUrl: input.baseUrl, apiKey: secret.value ?? "", period: input.period }) : undefined;
+    return { snapshot, history };
+  });
 
   handle(
     IPC.invoke.browserNavigate,

@@ -128,6 +128,8 @@ pub struct MessageUsage {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub reasoning_tokens: Option<i64>,
     pub total_tokens: i64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub cost: Option<Value>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -284,6 +286,7 @@ pub(crate) fn ui_to_record(message: &UiMessage) -> (MessageRecord, Option<String
                 "cacheWriteTokens": usage.cache_write_tokens,
                 "reasoningTokens": usage.reasoning_tokens,
                 "totalTokens": usage.total_tokens,
+                "cost": usage.cost,
             }),
         );
     }
@@ -420,6 +423,7 @@ pub(crate) fn record_to_ui(record: MessageRecord) -> UiMessage {
             cache_write_tokens: value.get("cacheWriteTokens").and_then(|v| v.as_i64()),
             reasoning_tokens: value.get("reasoningTokens").and_then(|v| v.as_i64()),
             total_tokens,
+            cost: value.get("cost").cloned(),
         })
     });
     let error = meta.get("error").cloned();
@@ -3996,6 +4000,7 @@ mod tests {
                 cache_write_tokens: None,
                 reasoning_tokens: Some(5),
                 total_tokens: 48,
+                cost: None,
             }),
             response_duration_ms: Some(2_000),
             response_output_tokens: Some(34),
