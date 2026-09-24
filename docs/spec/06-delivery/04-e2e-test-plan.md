@@ -35,6 +35,9 @@ Queued steering scenarios include:
 - Host steering admission atomically distinguishes a queued record from one
   already shifted into execution; an already-started record is acknowledged
   without sending duplicate provider content.
+- After successful steering, the runtime resumes the interrupted agent loop so
+  the assistant produces a reply; the interrupted provider request is not
+  treated as the terminal end of the Host turn.
 - Legacy accepted steering responses receive the same durable queue cleanup as
   typed accepted/queued outcomes.
 - A promoted "send now" row remains cancelable while move/edit actions stay

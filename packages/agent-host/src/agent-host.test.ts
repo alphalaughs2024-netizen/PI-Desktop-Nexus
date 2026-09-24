@@ -43,14 +43,30 @@ class FakeRuntime implements RuntimePort {
   inputs: AskToolResolution[] = [];
   private counter = 0;
   failNext = false;
+  pauseNextPrompt = false;
+  private pausedPrompt?: () => void;
   async prompt(request: TurnStartRequest): Promise<{ turnId: string }> {
     if (this.failNext) {
       this.failNext = false;
       throw Object.assign(new Error("runtime rejected"), { code: "AGENT_UNAVAILABLE" });
     }
     this.prompts.push(request);
+    if (this.pauseNextPrompt) {
+      this.pauseNextPrompt = false;
+      await new Promise<void>((resolve) => {
+        this.pausedPrompt = resolve;
+      });
+    }
     this.counter += 1;
     return { turnId: `rt_${this.counter}` };
+  }
+  releasePrompt(): void {
+    const resolve = this.pausedPrompt;
+    this.pausedPrompt = undefined;
+    resolve?.();
+  }
+  get isPromptPaused(): boolean {
+    return this.pausedPrompt !== undefined;
   }
   async stop(sessionId: string): Promise<{ requested: boolean }> {
     this.stops.push(sessionId);
@@ -289,6 +305,28 @@ describe("AgentHost turns", () => {
     (host as any).startingTurns.add(queued.turn.id);
     expect(await host.consumeForSteering(controller, queued.turn.id)).toEqual({ consumed: false, alreadyStarted: true });
     expect(runtime.prompts.map((prompt) => prompt.content)).toEqual(["one"]);
+  });
+
+  it("does not deliver a shifted queued turn twice when steering races admission", async () => {
+    const { host, runtime } = build();
+    const first = await host.startTurn(controller, { sessionId: "s1", input: { text: "one" }, context: { requestId: "r1" } });
+    host.ingest(envelope("s1", first.turn.id, { type: "agent_start" }));
+    const queued = await host.startTurn(controller, { sessionId: "s1", admission: "queue", input: { text: "steer me" }, context: { requestId: "r2" } });
+
+    runtime.pauseNextPrompt = true;
+    host.ingest(envelope("s1", first.turn.id, { type: "agent_end", messageIds: [] }));
+    for (let attempt = 0; attempt < 10 && !runtime.isPromptPaused; attempt += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    }
+    expect(runtime.prompts.map((prompt) => prompt.content)).toEqual(["one", "steer me"]);
+    expect(await host.consumeForSteering(controller, queued.turn.id)).toEqual({ consumed: false, alreadyStarted: true });
+
+    runtime.releasePrompt();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(runtime.prompts.map((prompt) => prompt.content)).toEqual(["one", "steer me"]);
+    host.ingest(envelope("s1", "rt_2", { type: "agent_end", messageIds: [] }));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(runtime.prompts.map((prompt) => prompt.content)).toEqual(["one", "steer me"]);
   });
 
   it("holds a restored queue until a controller attaches", async () => {
