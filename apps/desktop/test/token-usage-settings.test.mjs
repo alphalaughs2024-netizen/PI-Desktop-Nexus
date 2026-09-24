@@ -70,6 +70,11 @@ test("chat spend popover has session and provider-account UI without billing wir
   assert.doesNotMatch(app, /contextVault|billing|usage\/history|api\.xkiro/);
 });
 
+test("Usage & Pricing JSX keeps the filter toolbar tree balanced", async () => {
+  const usage = await readFile(new URL("../src/components/settings/UsagePage.tsx", import.meta.url), "utf8");
+  assert.doesNotMatch(usage, /usage-plugin-filters[\s\S]{0,500}<\/div>\s*<\/div>\s*<\/div>\s*<section className="usage-dashboard-section usage-primary-summary"/);
+});
+
 test("cost popover state is initialized before its provider-account effect", async () => {
   const app = await readFile(new URL("../src/App.tsx", import.meta.url), "utf8");
   const stateIndex = app.indexOf('const [costOpen, setCostOpen] = useState(false);');
