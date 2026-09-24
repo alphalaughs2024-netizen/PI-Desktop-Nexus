@@ -2135,7 +2135,8 @@ export function Composer({
           >
             {queuedPrompts.map((item, index) => {
               const promoted = item.priority !== undefined;
-              const locked = promoted || item.id.startsWith("pending:");
+              const pendingAdmission = item.id.startsWith("pending:");
+              const locked = promoted || pendingAdmission;
               const label =
                 item.content.trim() ||
                 item.draft.fileReferences.map((reference) => reference.name).join(", ") ||
@@ -2157,7 +2158,7 @@ export function Composer({
                     className="composer-queued-prompt-action"
                     tooltip={t("chat.removeQueuedPrompt")}
                     ariaLabel={t("chat.removeQueuedPrompt")}
-                    disabled={locked}
+                     disabled={pendingAdmission}
                     onClick={() => removeQueuedPrompt(item.id)}
                   >
                     <IconX size={13} aria-hidden />
