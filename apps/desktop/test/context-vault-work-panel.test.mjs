@@ -96,8 +96,8 @@ test("Context Vault keeps disabled scenic-theme button labels readable", () => {
   assert.match(styles, /context-vault-action:disabled/);
   assert.match(styles, /opacity: 1/);
   assert.match(styles, /context-vault-action-primary:disabled/);
-  assert.match(twilight, /context-vault-action:disabled/);
-  assert.match(twilight, /color: rgba\(240, 247, 255, 0\.86\)/);
+  assert.match(styles, /context-vault-action:disabled/);
+  assert.match(twilight, /--context-vault-control-disabled-text/);
 });
 
 test("Context Vault defines semantic theme tokens for every scenic palette", () => {
@@ -108,6 +108,16 @@ test("Context Vault defines semantic theme tokens for every scenic palette", () 
   assert.match(styles, /var\(--context-vault-control-disabled-text\)/);
   assert.match(styles, /opacity: 1/);
   assert.match(styles, /context-vault-action:disabled:hover/);
+});
+
+test("Context Vault surfaces consume semantic tokens instead of scenic component overrides", () => {
+  assert.match(styles, /\.context-vault-rail[\s\S]*background: var\(--context-vault-surface-raised\)/);
+  assert.match(styles, /\.context-vault-main[\s\S]*background: var\(--context-vault-surface\)/);
+  assert.match(styles, /\.context-vault-search-shell:focus-within[\s\S]*var\(--context-vault-focus\)/);
+  assert.match(styles, /\.context-vault-category\.active[\s\S]*var\(--context-vault-category-active-surface\)/);
+  assert.match(styles, /\.context-vault-empty-icon[\s\S]*var\(--context-vault-empty-surface\)/);
+  assert.doesNotMatch(twilight, /\.context-vault-action \{/);
+  assert.doesNotMatch(twilight, /\.context-vault-action-primary \{/);
 });
 
 test("empty work panel exposes Context Vault beside Browser and Files", () => {
