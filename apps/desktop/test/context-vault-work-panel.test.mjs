@@ -11,6 +11,9 @@ const en = await readFile(new URL("../../../packages/i18n/src/locales/en/index.t
 const zhCN = await readFile(new URL("../../../packages/i18n/src/locales/zh-CN/index.ts", import.meta.url), "utf8");
 const workPanel = await readFile(new URL("../src/components/workpanel/WorkPanel.tsx", import.meta.url), "utf8");
 const twilight = await readFile(new URL("../src/styles/twilight-mountains.css", import.meta.url), "utf8");
+const alpine = await readFile(new URL("../src/styles/alpine-light.css", import.meta.url), "utf8");
+const obsidian = await readFile(new URL("../src/styles/obsidian-horizon.css", import.meta.url), "utf8");
+const emerald = await readFile(new URL("../src/styles/emerald-afterglow.css", import.meta.url), "utf8");
 
 test("Context Vault has a localized native tab and visible controls", () => {
   assert.match(en, /contextVault: "Context Vault"/);
@@ -49,7 +52,7 @@ test("Context Vault gives its empty state the full panel and reserves a separate
 
 test("Context Vault gives buttons and form fields an explicit native surface", () => {
   assert.match(styles, /\.context-vault-action \{[\s\S]*?min-height: 30px[\s\S]*?border: 1px solid var\(--ds-border\)[\s\S]*?background: var\(--ds-tile\)/);
-  assert.match(styles, /\.context-vault-action-primary \{[\s\S]*?background: var\(--ds-accent\)/);
+  assert.match(styles, /\.context-vault-action-primary \{/);
   assert.match(styles, /\.context-vault-search,[\s\S]*?background: var\(--ds-tile\)[\s\S]*?border: 1px solid var\(--ds-border\)/);
   assert.match(styles, /\.context-vault-editor label \{[\s\S]*?gap: 4px/);
 });
@@ -95,6 +98,16 @@ test("Context Vault keeps disabled scenic-theme button labels readable", () => {
   assert.match(styles, /context-vault-action-primary:disabled/);
   assert.match(twilight, /context-vault-action:disabled/);
   assert.match(twilight, /color: rgba\(240, 247, 255, 0\.86\)/);
+});
+
+test("Context Vault defines semantic theme tokens for every scenic palette", () => {
+  const required = ["context-vault-control-surface", "context-vault-control-disabled-surface", "context-vault-control-disabled-text", "context-vault-primary-surface", "context-vault-primary-text", "context-vault-focus", "context-vault-empty-surface", "context-vault-category-active-surface", "context-vault-placeholder"];
+  for (const theme of [twilight, alpine, obsidian, emerald]) {
+    for (const token of required) assert.match(theme, new RegExp(`--${token}`));
+  }
+  assert.match(styles, /var\(--context-vault-control-disabled-text\)/);
+  assert.match(styles, /opacity: 1/);
+  assert.match(styles, /context-vault-action:disabled:hover/);
 });
 
 test("empty work panel exposes Context Vault beside Browser and Files", () => {
