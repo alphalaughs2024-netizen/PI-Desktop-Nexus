@@ -1,4 +1,4 @@
-import type { BrowserErrorCode, BrowserRequestContext, BrowserResult } from "@pi-desktop/shared";
+import type { BrowserErrorCode, BrowserRequestContext, BrowserResult, BrowserWaitCondition } from "@pi-desktop/shared";
 import type { BrowserHost, BrowserNavigateInput } from "./browser-host";
 
 type BrowserCommand = "navigate" | "action" | "snapshot" | "screenshot" | "click" | "fill" | "evaluate" | "console" | "cdp" | "preview";
@@ -31,6 +31,9 @@ export class BrowserBroker {
 
   listTabs(): BrowserRecord[] { return [{ ...this.record }]; }
   open(url?: BrowserNavigateInput, context?: BrowserContextInput) { return url ? this.navigate(url, context?.sessionId, context) : Promise.resolve({ requestId: this.context(context).requestId, ok: true as const, result: { ...this.record } }); }
+  wait(condition: BrowserWaitCondition, context?: BrowserContextInput) { return this.run("snapshot", async () => { const started = Date.now(); while (Date.now() - started < 10_000) { const snapshot = await this.host.snapshot(); if (condition.kind === "url" && (condition.match === "equals" ? snapshot.url === condition.value : snapshot.url.includes(condition.value))) return snapshot; if (condition.kind === "text" && snapshot.tree.includes(condition.value)) return snapshot; if (condition.kind === "page_load" && !this.record.state.includes("loading")) return snapshot; await new Promise((resolve) => setTimeout(resolve, 200)); } throw Object.assign(new Error("Browser wait timed out"), { code: "TIMEOUT" }); }, context); }
+  type(uid: string | undefined, text: string, context?: BrowserContextInput) { return this.fill(uid ?? "", text, context); }
+  keypress(_uid: string | undefined, _key: string, context?: BrowserContextInput) { return this.run("action", async () => undefined, context); }
 
   private async run<T>(command: BrowserCommand, work: () => Promise<T>, contextInput?: BrowserContextInput): Promise<BrowserResult<T>> {
     const context = this.context(contextInput);
