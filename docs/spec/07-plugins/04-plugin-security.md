@@ -254,6 +254,12 @@ Plan is an additional host policy boundary for agent tools:
 
 ### 8.0 Egress allowlist
 
+Browser compatibility calls do not weaken the built-in Browser security
+boundary. `pi.browser.*` delegates through the Main Browser policy/broker;
+plugin code never receives WebContents, CDP sessions, raw IPC, page data, or
+unredacted Browser errors. Browser telemetry excludes URLs, paths, page text,
+screenshots, credentials, form values, evaluated code, and raw CDP payloads.
+
 A permission cannot express "read broadly but leak nothing", so the range lives
 in the manifest: `net.domains` is a single per-plugin hostname allowlist and every
 outbound path the host owns answers to it.

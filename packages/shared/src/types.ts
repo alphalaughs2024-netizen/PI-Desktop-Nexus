@@ -2270,6 +2270,21 @@ export type BrowserRequestContext = { requestId: BrowserRequestId; sessionId: st
 export type BrowserResult<T = unknown> = { requestId: BrowserRequestId; ok: boolean; code?: BrowserErrorCode; retryable?: boolean; possiblyApplied?: boolean; message?: string; result?: T };
 export type BrowserWaitCondition = { kind: "url"; match: "equals" | "contains"; value: string } | { kind: "text"; value: string } | { kind: "page_load" };
 export type BrowserToolName = "browser_list_tabs" | "browser_open" | "browser_navigate" | "browser_snapshot" | "browser_screenshot" | "browser_click" | "browser_fill" | "browser_type" | "browser_keypress" | "browser_wait" | "browser_console" | "browser_evaluate" | "browser_cdp";
+export type BrowserReadiness = "uninitialized" | "starting" | "ready" | "loading" | "unavailable" | "blocked" | "closed";
+export type BrowserDiagnostics = {
+  capabilityEnabled: boolean;
+  readiness: BrowserReadiness;
+  browserId?: BrowserId;
+  guestGeneration?: number;
+  chromeSessionId?: string;
+  lastTransition?: { state: BrowserReadiness; reason: "startup" | "navigation" | "guest-loss" | "policy" | "recovery" | "shutdown"; at: number };
+  pendingRequestCount: number;
+  activeQueueCount: number;
+  compatibilityAdapter: "available" | "blocked" | "unavailable";
+  lastErrorCode?: BrowserErrorCode;
+  lastErrorReason?: string;
+  safeSuggestedAction?: string;
+};
 
 export type BrowserState = {
   url: string;

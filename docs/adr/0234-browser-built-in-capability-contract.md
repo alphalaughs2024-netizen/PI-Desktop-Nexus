@@ -17,6 +17,15 @@ disable the core capability through its dedicated setting. The old bundled
 assets remain only until the Phase 9 clean-profile and compatibility removal
 gate passes.
 
+## Phase 8 security and observability gates
+
+Browser policy is Main-owned and shared by the broker, host, CDP, Preview, and
+compatibility adapter. Browser telemetry is privacy-safe: identifiers are
+hashed, sizes/times are bucketed, and URLs, paths, page data, screenshots,
+credentials, form values, evaluated code, and raw CDP payloads are forbidden.
+Guest isolation, workspace containment, CDP allowlisting, lifecycle generation,
+diagnostics, and recovery are release-blocking security contracts.
+
 ## Decision
 
 Browser is a core Nexus capability. Core owns the Browser Work Panel view,

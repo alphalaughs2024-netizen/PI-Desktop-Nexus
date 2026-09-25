@@ -125,6 +125,6 @@ test("legacy renderer browser IPC cannot place an unclamped guest", () => {
   assert.match(body, /Plugin chrome owns the clamped hole/);
   const visible = mainSource.slice(mainSource.indexOf("IPC.invoke.browserSetVisible"));
   const visibleBody = visible.slice(0, visible.indexOf("\n  handle("));
-  assert.match(visibleBody, /plugins\.getLoaded\(BROWSER_PLUGIN_ID\)/);
+  assert.match(visibleBody, /isBrowserCapabilityEnabled\(\)/);
   assert.doesNotMatch(visibleBody, /browserPane\.setVisible/);
 });

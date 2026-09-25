@@ -7,6 +7,11 @@ Browser is a core Work Panel view with readiness states `uninitialized`,
 view is registered by core, not discovered through `pluginViews`. `BrowserPreview`
 and the Browser agent tools use the same Main-owned BrowserHost resource.
 
+Phase 8 diagnostics and recovery are privacy-safe and capability-owned: the
+panel may show readiness, generation, queue counts, stable error codes, and safe
+suggested actions, but never URLs, paths, page text, credentials, WebContents
+IDs, CDP target IDs, or raw errors.
+
 > Layout and IA reference: [01-ui-ia.md](01-ui-ia.md)  
 > Design tokens and foundations: [07-ui-design-system.md](07-ui-design-system.md)  
 > Interaction behavior: [09-interaction-patterns.md](09-interaction-patterns.md)

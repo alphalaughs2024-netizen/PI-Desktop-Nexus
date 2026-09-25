@@ -69,6 +69,10 @@ export type SnapshotResult = {
   truncation?: { nodes?: boolean; depth?: boolean; text?: boolean; bytes?: boolean };
 };
 
+function boundedText(value: unknown, max = BROWSER_SNAPSHOT_LIMITS.maxTextLength): string {
+  return String(value ?? "").replace(/\s+/g, " ").trim().slice(0, max);
+}
+
 export function isAllowedCdpMethod(method: string): boolean {
   return BROWSER_CDP_ALLOWLIST.has(method.trim());
 }
@@ -97,9 +101,10 @@ export function flattenAxTree(nodes: AxNode[]): {
   let next = 1;
 
   const walk = (node: AxNode, depth: number) => {
+    if (depth > BROWSER_SNAPSHOT_LIMITS.maxDepth || next > BROWSER_SNAPSHOT_LIMITS.maxNodes) return;
     if (!node.ignored) {
-      const role = node.role?.value?.trim() || "Generic";
-      const name = node.name?.value?.trim() ?? "";
+      const role = boundedText(node.role?.value || "Generic", 128);
+      const name = boundedText(node.name?.value);
       const uid = `e${next}`;
       next += 1;
       if (typeof node.backendDOMNodeId === "number") {
@@ -178,7 +183,7 @@ export class BrowserCdp {
         method === "Console.messageAdded"
           ? String((record.message as { text?: string } | undefined)?.text ?? "")
           : consoleText(record.args);
-      this.messages.push({ type, text, timestamp: Date.now() });
+      this.messages.push({ type, text: boundedText(text), timestamp: Date.now() });
       if (this.messages.length > MAX_CONSOLE_MESSAGES) this.messages.shift();
     };
     wc.debugger.on("message", this.onDebuggerMessage);

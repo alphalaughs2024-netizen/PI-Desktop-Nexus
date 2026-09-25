@@ -1431,9 +1431,10 @@ visible session's workspace.
   restoring the snapshot; it returns `rolledBack`, `alreadyRolledBack`,
   `conflict`, or `unavailable` and never overwrites a conflicting later edit.
 
-### browser (D100, D333)
+### browser (D100, D333, Phase 8 security)
 
-Chrome and agent CDP live in bundled plugin `pi.browser` over `pi.browser.*`.
+Browser is a core Main-owned capability. `pi.browser.*` is compatibility only;
+all Browser IPC, Preview, and plugin calls use the same policy/broker boundary.
 Renderer IPC kept for the Plan-safe preview facade and URL fallback:
 
 - `browser/openExternal({url?})` — allowlisted http(s)/mailto, or the current

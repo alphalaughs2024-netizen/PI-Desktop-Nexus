@@ -1,5 +1,6 @@
 import type { BrowserErrorCode, BrowserRequestContext, BrowserResult, BrowserWaitCondition } from "@pi-desktop/shared";
 import type { BrowserHost, BrowserNavigateInput } from "./browser-host";
+import { decideCapability, decideCdp, decideMode, decideNavigation } from "./browser-policy";
 
 type BrowserCommand = "navigate" | "action" | "snapshot" | "screenshot" | "click" | "fill" | "evaluate" | "console" | "cdp" | "preview";
 type BrowserContextInput = Partial<Omit<BrowserRequestContext, "requestId" | "browserId">> & { browserId?: string };
@@ -24,6 +25,7 @@ export class BrowserBroker {
   private latestSnapshot?: { snapshotId: string; generation: number; browserId: string };
   private readonly host: BrowserHost;
   private readonly isCapabilityEnabled: () => boolean;
+  private lastError?: { code: BrowserErrorCode; reason: string; at: number };
   constructor(host: BrowserHost, isCapabilityEnabled: () => boolean = () => true) { this.host = host; this.isCapabilityEnabled = isCapabilityEnabled; }
 
   private context(input?: BrowserContextInput): BrowserRequestContext {
@@ -31,6 +33,7 @@ export class BrowserBroker {
   }
 
   listTabs(): BrowserRecord[] { return [{ ...this.record }]; }
+  diagnostics(): Record<string, unknown> { return { capabilityEnabled: this.isCapabilityEnabled(), readiness: this.record.state, browserId: this.browserId, guestGeneration: this.record.guestGeneration, chromeSessionId: this.record.chromeSessionId, pendingRequestCount: 0, activeQueueCount: 0, compatibilityAdapter: "available", ...(this.lastError ? { lastErrorCode: this.lastError.code, lastErrorReason: this.lastError.reason, safeSuggestedAction: "Retry or inspect the Browser panel." } : {}) }; }
   open(url?: BrowserNavigateInput, context?: BrowserContextInput) { return url ? this.navigate(url, context?.sessionId, context) : Promise.resolve({ requestId: this.context(context).requestId, ok: true as const, result: { ...this.record } }); }
   wait(condition: BrowserWaitCondition, context?: BrowserContextInput) { return this.run("snapshot", async () => { const started = Date.now(); while (Date.now() - started < 10_000) { const snapshot = await this.host.snapshot(); if (condition.kind === "url" && (condition.match === "equals" ? snapshot.url === condition.value : snapshot.url.includes(condition.value))) return snapshot; if (condition.kind === "text" && snapshot.tree.includes(condition.value)) return snapshot; if (condition.kind === "page_load" && !this.record.state.includes("loading")) return snapshot; await new Promise((resolve) => setTimeout(resolve, 200)); } throw Object.assign(new Error("Browser wait timed out"), { code: "TIMEOUT" }); }, context); }
   type(uid: string | undefined, text: string, context?: BrowserContextInput) { return this.fill(uid ?? "", text, context); }
@@ -40,7 +43,7 @@ export class BrowserBroker {
     const context = this.context(contextInput);
     const execute = async (): Promise<BrowserResult<T>> => {
       if (!this.isCapabilityEnabled()) return { requestId: context.requestId, ok: false, code: "BROWSER_POLICY_BLOCKED", retryable: false, message: "Browser is disabled by the core capability setting. Re-enable Browser in Settings and retry." };
-      if (context.mode === "plan" && (command === "click" || command === "fill" || command === "evaluate" || command === "cdp")) return { requestId: context.requestId, ok: false, code: "BROWSER_POLICY_BLOCKED", retryable: false, message: `${command} is unavailable in Plan mode.` };
+      const policy = decideMode(context.mode, command); if (!policy.allowed) { this.lastError = { code: policy.code, reason: policy.reason, at: Date.now() }; return { requestId: context.requestId, ok: false, code: policy.code, retryable: false, message: policy.message }; }
       let timer: ReturnType<typeof setTimeout> | undefined;
       try {
         this.record = { ...this.record, state: command === "navigate" || command === "action" ? "loading" : this.record.state, ownerSessionId: context.sessionId || this.record.ownerSessionId, updatedAt: Date.now() };
@@ -48,7 +51,7 @@ export class BrowserBroker {
         this.record = { ...this.record, state: "ready", updatedAt: Date.now() };
         return { requestId: context.requestId, ok: true, result };
       } catch (error) {
-        const code = errorCode(error);
+        const code = errorCode(error); this.lastError = { code, reason: error instanceof Error ? error.name : "unknown", at: Date.now() };
         const timeout = code === "BROWSER_UNKNOWN_ERROR" && error instanceof Error && error.message === "Browser command timed out";
         this.record = { ...this.record, state: timeout ? "unavailable" : this.record.state, updatedAt: Date.now() };
         return { requestId: context.requestId, ok: false, code: timeout && MUTATIONS.has(command) ? "BROWSER_POSSIBLY_APPLIED" : timeout ? "BROWSER_TIMEOUT" : code, retryable: !MUTATIONS.has(command), possiblyApplied: timeout && MUTATIONS.has(command), message: timeout && MUTATIONS.has(command) ? "The Browser action may have reached the page. Take a fresh snapshot before retrying." : timeout ? "The Browser command timed out before dispatch completed. Retry is safe." : error instanceof Error ? error.message : "Browser command failed." };
@@ -59,7 +62,7 @@ export class BrowserBroker {
     return chained;
   }
 
-  navigate(input: BrowserNavigateInput, sessionId?: string, context?: BrowserContextInput) { return this.run("navigate", () => this.host.navigate(input, sessionId), { ...context, sessionId }); }
+  navigate(input: BrowserNavigateInput, sessionId?: string, context?: BrowserContextInput) { return this.run("navigate", async () => { if (input.url) { const policy = decideNavigation(input.url, undefined); if (!policy.allowed) throw Object.assign(new Error(policy.message), { code: policy.code }); } return this.host.navigate(input, sessionId); }, { ...context, sessionId }); }
   action(action: "back" | "forward" | "reload" | "stop", context?: BrowserContextInput) { return this.run("action", async () => { this.host.action(action); return undefined; }, context); }
   async snapshot(context?: BrowserContextInput) {
     const result = await this.run("snapshot", () => this.host.snapshot(), context);
@@ -71,9 +74,10 @@ export class BrowserBroker {
   fill(uid: string, text: string, context?: BrowserContextInput) { return this.refAction("fill", uid, () => this.host.fill(uid, text), context); }
   evaluate(expression: string, context?: BrowserContextInput) { return this.run("evaluate", () => this.host.evaluate(expression), context); }
   console(limit?: number, context?: BrowserContextInput) { return this.run("console", async () => this.host.console(limit), context); }
-  cdp(method: string, params?: unknown, context?: BrowserContextInput) { return this.run("cdp", () => this.host.cdpCommand(method, params), context); }
+  cdp(method: string, params?: unknown, context?: BrowserContextInput) { return this.run("cdp", async () => { const policy = decideCdp(method, params); if (!policy.allowed) throw Object.assign(new Error(policy.message), { code: policy.code }); return this.host.cdpCommand(method, params); }, context); }
   preview(sessionId: string, path: string, root: string, context?: BrowserContextInput) { return this.run("preview", () => this.host.previewWorkspaceFile(sessionId, path, root), { ...context, sessionId }); }
   guestDisposed(): void { this.record = { ...this.record, state: "unavailable", guestGeneration: this.record.guestGeneration + 1, updatedAt: Date.now() }; }
+  invalidate(): void { this.latestSnapshot = undefined; this.guestDisposed(); }
   guestReady(): void { this.record = { ...this.record, state: "ready", guestGeneration: this.record.guestGeneration + 1, updatedAt: Date.now() }; }
   private refAction<T>(command: "click" | "fill", uid: string, work: () => Promise<T>, context?: BrowserContextInput) {
     if (context?.mode === "plan") return this.run(command, work, context);

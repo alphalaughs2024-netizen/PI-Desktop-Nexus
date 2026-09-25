@@ -236,6 +236,7 @@ import {
   type BrowserRect,
 } from "./browser-host";
 import { BrowserBroker } from "./browser-broker";
+import { BrowserTelemetry } from "./browser-telemetry";
 import { discoverProviderModels } from "./model-discovery";
 import {
   ModelsDevCatalog,
@@ -989,6 +990,7 @@ const browserHost = new BrowserHost({
   onState: emitBrowserState,
 });
 const browserBroker = new BrowserBroker(browserHost, isBrowserCapabilityEnabled);
+const browserTelemetry = new BrowserTelemetry((event, fields) => logger.app("diagnostics", "info", event, { data: fields }));
 pluginViews.onSurface = (surface) => {
   browserHost.setChromeSurface(surface);
 };
@@ -6388,8 +6390,9 @@ function registerIpc() {
     return { ok: true, state: browserHost.getState() };
   });
   handle(IPC.invoke.browserDiagnostics, async () => ({
+    ...browserBroker.diagnostics(),
     capability: browserCapabilityEnabled ? "enabled" : "disabled",
-    readiness: browserHost.getState()?.state ?? "uninitialized",
+    readiness: browserHost.getState()?.isLoading ? "loading" : (browserHost.getState() ? "ready" : "uninitialized"),
     compatibilityAdapter: "available",
   }));
   handle(IPC.invoke.browserCoreSurfaceSet, async (input: { sessionId?: string; visible?: boolean; bounds?: BrowserRect }) => {

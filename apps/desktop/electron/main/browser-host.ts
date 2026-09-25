@@ -255,6 +255,10 @@ export class BrowserHost {
     this.holePluginId = null;
   }
 
+  diagnostics(): { chromeSessionId?: string; hasGuest: boolean; visible: boolean } {
+    return { chromeSessionId: this.chromeSessionId ?? undefined, hasGuest: Boolean(this.pane.getWebContents()), visible: Boolean(this.chrome?.visible) };
+  }
+
   private guestBounds(): BrowserRect | null {
     if (!this.chrome?.visible || !this.hole) return null;
     return clampGuestBounds(this.chrome.bounds, this.hole);

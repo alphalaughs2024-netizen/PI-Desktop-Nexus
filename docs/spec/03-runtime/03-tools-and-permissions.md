@@ -16,6 +16,11 @@ Browser ADR. Requests bind to their originating session/turn/mode and snapshot
 refs expire with their BrowserId/SnapshotId generation. Ambiguous mutating
 timeouts are never replayed.
 
+Phase 8 security gate: all Browser callers use the Main-owned policy boundary.
+URL/path containment, CDP allowlisting, payload budgets, lifecycle invalidation,
+diagnostics/recovery, and privacy-safe telemetry are shared by core tools,
+BrowserPreview, and `pi.browser.*` before dispatch.
+
 | Topic | Decision |
 |---|---|
 | Default mode | Agent |

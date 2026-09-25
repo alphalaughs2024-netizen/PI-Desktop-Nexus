@@ -17,6 +17,18 @@
   error to core tools, BrowserPreview, and compatibility callers; re-enable
   requires explicit recovery.
 
+### Browser built-in Phase 8 security matrix
+
+- Verify Electron isolation flags, no Browser UI privileged imports, workspace
+  real-path containment, popup/permission denial, typed CDP allowlisting, and
+  bounded snapshot/screenshot/console/evaluate payloads.
+- Force guest loss, debugger detach, capability disablement, and session switch;
+  verify pending work and refs invalidate, background work cannot steal focus,
+  and recovery never replays mutations.
+- Inject URLs, paths, page text, screenshots, credentials, form values, code,
+  and raw CDP payloads through Browser operations; verify Browser telemetry only
+  contains hashed identifiers, buckets, stable codes, and safe reason fields.
+
 Before Browser core registration, contract/source coverage must verify:
 
 - exactly one intended core Browser tool and Work Panel view;
