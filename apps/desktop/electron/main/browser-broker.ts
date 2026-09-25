@@ -21,6 +21,7 @@ export class BrowserBroker {
   private readonly browserId = "browser-core-1" as BrowserRequestContext["browserId"];
   private readonly createdAt = Date.now();
   private record: BrowserRecord = { browserId: this.browserId, state: "starting", createdAt: this.createdAt, updatedAt: this.createdAt, guestGeneration: 0 };
+  private latestSnapshot?: { snapshotId: string; generation: number; browserId: string };
   private readonly host: BrowserHost;
   constructor(host: BrowserHost) { this.host = host; }
 
@@ -55,14 +56,27 @@ export class BrowserBroker {
 
   navigate(input: BrowserNavigateInput, sessionId?: string, context?: BrowserContextInput) { return this.run("navigate", () => this.host.navigate(input, sessionId), { ...context, sessionId }); }
   action(action: "back" | "forward" | "reload" | "stop", context?: BrowserContextInput) { return this.run("action", async () => { this.host.action(action); return undefined; }, context); }
-  snapshot(context?: BrowserContextInput) { return this.run("snapshot", () => this.host.snapshot(), context); }
+  async snapshot(context?: BrowserContextInput) {
+    const result = await this.run("snapshot", () => this.host.snapshot(), context);
+    if (result.ok && result.result?.snapshotId) this.latestSnapshot = { snapshotId: result.result.snapshotId, generation: result.result.documentGeneration ?? 0, browserId: String(this.browserId) };
+    return result;
+  }
   screenshot(input: { fullPage?: boolean } = {}, sessionId?: string, context?: BrowserContextInput) { return this.run("screenshot", () => this.host.screenshot(input, sessionId), { ...context, sessionId }); }
-  click(uid: string, context?: BrowserContextInput) { return this.run("click", () => this.host.click(uid), context); }
-  fill(uid: string, text: string, context?: BrowserContextInput) { return this.run("fill", () => this.host.fill(uid, text), context); }
+  click(uid: string, context?: BrowserContextInput) { return this.refAction("click", uid, () => this.host.click(uid), context); }
+  fill(uid: string, text: string, context?: BrowserContextInput) { return this.refAction("fill", uid, () => this.host.fill(uid, text), context); }
   evaluate(expression: string, context?: BrowserContextInput) { return this.run("evaluate", () => this.host.evaluate(expression), context); }
   console(limit?: number, context?: BrowserContextInput) { return this.run("console", async () => this.host.console(limit), context); }
   cdp(method: string, params?: unknown, context?: BrowserContextInput) { return this.run("cdp", () => this.host.cdpCommand(method, params), context); }
   preview(sessionId: string, path: string, root: string, context?: BrowserContextInput) { return this.run("preview", () => this.host.previewWorkspaceFile(sessionId, path, root), { ...context, sessionId }); }
   guestDisposed(): void { this.record = { ...this.record, state: "unavailable", guestGeneration: this.record.guestGeneration + 1, updatedAt: Date.now() }; }
   guestReady(): void { this.record = { ...this.record, state: "ready", guestGeneration: this.record.guestGeneration + 1, updatedAt: Date.now() }; }
+  private refAction<T>(command: "click" | "fill", uid: string, work: () => Promise<T>, context?: BrowserContextInput) {
+    if (context?.mode === "plan") return this.run(command, work, context);
+    // Compatibility callers may still send legacy uid-only actions during the
+    // migration window; typed callers must provide a current snapshot first.
+    if (!this.latestSnapshot && !context?.browserId) return this.run(command, work, context);
+    if (!this.latestSnapshot) return Promise.resolve({ requestId: this.context(context).requestId, ok: false as const, code: "BROWSER_STALE_REF" as const, retryable: true, message: "The element reference expired. Call browser_snapshot again." });
+    if (this.latestSnapshot.browserId !== String(this.browserId)) return Promise.resolve({ requestId: this.context(context).requestId, ok: false as const, code: "BROWSER_STALE_REF" as const, retryable: true, message: "The element reference expired. Call browser_snapshot again." });
+    return this.run(command, work, context);
+  }
 }
