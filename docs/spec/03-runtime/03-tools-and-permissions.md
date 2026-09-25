@@ -5,6 +5,17 @@
 
 ## 0. Frozen policy summary
 
+### Built-in Browser contract (Phase 0)
+
+Browser is a core capability, not an ordinary plugin tool. Core registers one
+Browser tool and one Browser Work Panel view; `pi.browser.*` is compatibility
+only and must not register duplicates. Plan permits list/open/navigate/back/
+forward/reload and snapshot/screenshot/console/wait subject to URL policy;
+click/fill/type/keypress/evaluate/cdp remain Agent-only as defined by the
+Browser ADR. Requests bind to their originating session/turn/mode and snapshot
+refs expire with their BrowserId/SnapshotId generation. Ambiguous mutating
+timeouts are never replayed.
+
 | Topic | Decision |
 |---|---|
 | Default mode | Agent |

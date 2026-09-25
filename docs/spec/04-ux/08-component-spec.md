@@ -1,5 +1,12 @@
 # 08. Component Spec
 
+## Built-in Browser Work Panel contract (Phase 0)
+
+Browser is a core Work Panel view with readiness states `uninitialized`,
+`starting`, `ready`, `loading`, `unavailable`, `blocked`, and `closed`. Its
+view is registered by core, not discovered through `pluginViews`. `BrowserPreview`
+and the Browser agent tools use the same Main-owned BrowserHost resource.
+
 > Layout and IA reference: [01-ui-ia.md](01-ui-ia.md)  
 > Design tokens and foundations: [07-ui-design-system.md](07-ui-design-system.md)  
 > Interaction behavior: [09-interaction-patterns.md](09-interaction-patterns.md)

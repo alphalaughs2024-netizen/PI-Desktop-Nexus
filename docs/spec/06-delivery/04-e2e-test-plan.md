@@ -1,5 +1,20 @@
 # 04. E2E Test Plan
 
+## Browser built-in Phase 0 contract matrix
+
+Before Browser core registration, contract/source coverage must verify:
+
+- exactly one intended core Browser tool and Work Panel view;
+- compatibility `pi.browser.*` does not duplicate registration;
+- BrowserPreview is conceptually independent of plugin activation;
+- Plan/Agent action policy matches the Browser ADR;
+- Browser result/error codes and branded identity contracts exist;
+- snapshot refs are scoped to BrowserId/SnapshotId;
+- ambiguous mutating actions are not automatically replayed;
+- Electron security invariants are documented and tested.
+
+Phase 0 is documentation/contracts only; no Browser runtime behavior changes.
+
 > Scope: MVP acceptance scenarios plus current shipped product increments for PI-Desktop
 > Status: Accepted (protocol/Electron automation is active; full desktop Playwright remains planned)
 > Cross-references: [acceptance-criteria](02-acceptance-criteria.md) · [milestones](01-mvp-milestones.md) · [ai-development-workflow](03-ai-development-workflow.md) · [change-checklist](05-change-checklist.md)
