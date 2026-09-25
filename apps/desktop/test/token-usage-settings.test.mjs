@@ -93,6 +93,7 @@ test("pricing rows expose provider, token, turn, provenance, and grouping hooks"
   assert.match(usage, /row\.turnCount/);
   assert.match(usage, /pricedSpendPercent/);
   assert.match(usage, /statusLabel/);
+  assert.match(usage, /Object\.values\(providerModels\)\.flat\(\)/);
 });
 
 test("usage refresh control sits with the bucket selector and header card has no refresh action", async () => {
