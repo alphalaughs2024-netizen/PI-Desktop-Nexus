@@ -1,4 +1,4 @@
-import type { BrowserRequestContext, BrowserResult } from "@pi-desktop/shared";
+import type { BrowserErrorCode, BrowserRequestContext, BrowserResult } from "@pi-desktop/shared";
 import type { BrowserHost, BrowserNavigateInput } from "./browser-host";
 
 type BrowserCommand = "navigate" | "action" | "snapshot" | "screenshot" | "click" | "fill" | "evaluate" | "console" | "cdp" | "preview";
@@ -7,7 +7,7 @@ type BrowserContextInput = Partial<Omit<BrowserRequestContext, "requestId" | "br
 const MUTATIONS = new Set<BrowserCommand>(["navigate", "action", "click", "fill", "evaluate", "cdp", "preview"]);
 const TIMEOUTS: Record<BrowserCommand, number> = { navigate: 20_000, action: 20_000, snapshot: 10_000, screenshot: 15_000, click: 10_000, fill: 10_000, evaluate: 10_000, console: 10_000, cdp: 10_000, preview: 20_000 };
 
-function errorCode(error: unknown): string {
+function errorCode(error: unknown): BrowserErrorCode {
   const code = typeof error === "object" && error && "code" in error ? String((error as { code?: unknown }).code) : "";
   if (code === "UNAVAILABLE") return "BROWSER_UNAVAILABLE";
   if (code === "PERMISSION_DENIED") return "BROWSER_POLICY_BLOCKED";

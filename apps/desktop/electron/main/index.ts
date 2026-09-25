@@ -993,8 +993,8 @@ plugins.setServices({
   agentExtensionsChanged: () =>
     sendToRenderer(IPC.event.pluginChanged, { reason: "agentExtensions" }),
   browser: {
-    navigate: (input, sessionId) => browserBroker.navigate(input, sessionId),
-    action: (action) => browserBroker.action(action),
+    navigate: async (input, sessionId) => { await browserBroker.navigate(input, sessionId); },
+    action: async (action) => { await browserBroker.action(action); },
     setBounds: (pluginId, hole) => browserHost.setGuestHole(pluginId, hole),
     setVisible: (pluginId, visible) => browserHost.setGuestVisible(pluginId, visible),
     getState: () => browserHost.getState(),
