@@ -1257,6 +1257,11 @@
 .prompt-inspector-list article > div:first-child span, .prompt-inspector-list article small { display: block; margin-top: 3px; color: var(--ds-text-muted); font-size: var(--text-xs); }
 .prompt-inspector-list article > div:last-child { text-align: right; }
 .prompt-inspector-list article.is-excluded { opacity: .62; }
+.prompt-inspector-list article.is-included { border-left: 2px solid var(--ds-accent); }
+.prompt-inspector-list article.is-excluded strong { color: var(--ds-text-muted); }
+.prompt-inspector-summary.is-ready { border: 1px solid var(--ds-border-subtle); border-radius: var(--radius-sm); background: var(--ds-tile); }
+.prompt-inspector-context { display: grid; gap: 4px; margin-top: 12px; padding: 10px; border: 1px solid var(--ds-border-subtle); border-left: 2px solid var(--ds-accent); border-radius: var(--radius-sm); background: var(--ds-tile); }
+.prompt-inspector-context span, .prompt-inspector-context small { color: var(--ds-text-muted); font-size: var(--text-xs); }
 .prompt-inspector-empty { display: grid; height: 100%; place-items: center; padding: 24px; color: var(--ds-text-muted); text-align: center; }
 .prompt-inspector-timeline-title { margin: 18px 0 8px; color: var(--ds-text-secondary); font-size: var(--text-xs-plus); text-transform: uppercase; letter-spacing: .06em; }
 .prompt-inspector-timeline { display: grid; gap: 5px; }
