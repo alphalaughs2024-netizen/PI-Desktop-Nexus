@@ -3,6 +3,7 @@ import type { BrowserHost, BrowserNavigateInput } from "./browser-host";
 
 type BrowserCommand = "navigate" | "action" | "snapshot" | "screenshot" | "click" | "fill" | "evaluate" | "console" | "cdp" | "preview";
 type BrowserContextInput = Partial<Omit<BrowserRequestContext, "requestId" | "browserId">> & { browserId?: string };
+export type BrowserRecord = { browserId: BrowserRequestContext["browserId"]; ownerSessionId?: string; chromeSessionId?: string; state: "starting" | "ready" | "loading" | "unavailable" | "blocked" | "closed"; location?: string; createdAt: number; updatedAt: number; guestGeneration: number };
 
 const MUTATIONS = new Set<BrowserCommand>(["navigate", "action", "click", "fill", "evaluate", "cdp", "preview"]);
 const TIMEOUTS: Record<BrowserCommand, number> = { navigate: 20_000, action: 20_000, snapshot: 10_000, screenshot: 15_000, click: 10_000, fill: 10_000, evaluate: 10_000, console: 10_000, cdp: 10_000, preview: 20_000 };
@@ -17,12 +18,18 @@ function errorCode(error: unknown): BrowserErrorCode {
 export class BrowserBroker {
   private queue: Promise<unknown> = Promise.resolve();
   private sequence = 0;
+  private readonly browserId = "browser-core-1" as BrowserRequestContext["browserId"];
+  private readonly createdAt = Date.now();
+  private record: BrowserRecord = { browserId: this.browserId, state: "starting", createdAt: this.createdAt, updatedAt: this.createdAt, guestGeneration: 0 };
   private readonly host: BrowserHost;
   constructor(host: BrowserHost) { this.host = host; }
 
   private context(input?: BrowserContextInput): BrowserRequestContext {
-    return { requestId: `browser-${++this.sequence}` as BrowserRequestContext["requestId"], sessionId: input?.sessionId ?? "", turnId: input?.turnId, effectiveAgentId: input?.effectiveAgentId, mode: input?.mode ?? "agent", permissionEpoch: input?.permissionEpoch ?? 0, browserId: (input?.browserId ?? "singleton") as BrowserRequestContext["browserId"] };
+    return { requestId: `browser-${++this.sequence}` as BrowserRequestContext["requestId"], sessionId: input?.sessionId ?? "", turnId: input?.turnId, effectiveAgentId: input?.effectiveAgentId, mode: input?.mode ?? "agent", permissionEpoch: input?.permissionEpoch ?? 0, browserId: (input?.browserId ?? this.browserId) as BrowserContextInput["browserId"] as BrowserRequestContext["browserId"] };
   }
+
+  listTabs(): BrowserRecord[] { return [{ ...this.record }]; }
+  open(url?: BrowserNavigateInput, context?: BrowserContextInput) { return url ? this.navigate(url, context?.sessionId, context) : Promise.resolve({ requestId: this.context(context).requestId, ok: true as const, result: { ...this.record } }); }
 
   private async run<T>(command: BrowserCommand, work: () => Promise<T>, contextInput?: BrowserContextInput): Promise<BrowserResult<T>> {
     const context = this.context(contextInput);
@@ -30,11 +37,14 @@ export class BrowserBroker {
       if (context.mode === "plan" && (command === "click" || command === "fill" || command === "evaluate" || command === "cdp")) return { requestId: context.requestId, ok: false, code: "BROWSER_POLICY_BLOCKED", retryable: false, message: `${command} is unavailable in Plan mode.` };
       let timer: ReturnType<typeof setTimeout> | undefined;
       try {
+        this.record = { ...this.record, state: command === "navigate" || command === "action" ? "loading" : this.record.state, ownerSessionId: context.sessionId || this.record.ownerSessionId, updatedAt: Date.now() };
         const result = await Promise.race([work(), new Promise<never>((_, reject) => { timer = setTimeout(() => reject(Object.assign(new Error("Browser command timed out"), { code: "TIMEOUT" })), TIMEOUTS[command]); })]);
+        this.record = { ...this.record, state: "ready", updatedAt: Date.now() };
         return { requestId: context.requestId, ok: true, result };
       } catch (error) {
         const code = errorCode(error);
         const timeout = code === "BROWSER_UNKNOWN_ERROR" && error instanceof Error && error.message === "Browser command timed out";
+        this.record = { ...this.record, state: timeout ? "unavailable" : this.record.state, updatedAt: Date.now() };
         return { requestId: context.requestId, ok: false, code: timeout && MUTATIONS.has(command) ? "BROWSER_POSSIBLY_APPLIED" : timeout ? "BROWSER_TIMEOUT" : code, retryable: !MUTATIONS.has(command), possiblyApplied: timeout && MUTATIONS.has(command), message: timeout && MUTATIONS.has(command) ? "The Browser action may have reached the page. Take a fresh snapshot before retrying." : timeout ? "The Browser command timed out before dispatch completed. Retry is safe." : error instanceof Error ? error.message : "Browser command failed." };
       } finally { if (timer) clearTimeout(timer); }
     };
@@ -53,4 +63,6 @@ export class BrowserBroker {
   console(limit?: number, context?: BrowserContextInput) { return this.run("console", async () => this.host.console(limit), context); }
   cdp(method: string, params?: unknown, context?: BrowserContextInput) { return this.run("cdp", () => this.host.cdpCommand(method, params), context); }
   preview(sessionId: string, path: string, root: string, context?: BrowserContextInput) { return this.run("preview", () => this.host.previewWorkspaceFile(sessionId, path, root), { ...context, sessionId }); }
+  guestDisposed(): void { this.record = { ...this.record, state: "unavailable", guestGeneration: this.record.guestGeneration + 1, updatedAt: Date.now() }; }
+  guestReady(): void { this.record = { ...this.record, state: "ready", guestGeneration: this.record.guestGeneration + 1, updatedAt: Date.now() }; }
 }
