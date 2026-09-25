@@ -1260,18 +1260,32 @@
 .prompt-inspector-list article { display: flex; justify-content: space-between; gap: 12px; padding: 10px; border: 1px solid var(--ds-border-subtle); border-radius: var(--radius-sm); background: var(--ds-tile); }
 .prompt-inspector-list article > div:first-child span, .prompt-inspector-list article small { display: block; margin-top: 3px; color: var(--ds-text-muted); font-size: var(--text-xs); }
 .prompt-inspector-list article > div:last-child { text-align: right; }
-.prompt-inspector-list article.is-excluded { opacity: .62; }
+.prompt-inspector-list article.is-excluded { border-left: 2px solid var(--ds-text-muted); background: color-mix(in srgb, var(--ds-tile) 82%, var(--ds-bg) 18%); }
 .prompt-inspector-list article.is-included { border-left: 2px solid var(--ds-accent); }
 .prompt-inspector-list article.is-excluded strong { color: var(--ds-text-muted); }
 .prompt-inspector-summary.is-ready { border: 1px solid var(--ds-border-subtle); border-radius: var(--radius-sm); background: var(--ds-tile); }
 .prompt-inspector-context { display: grid; gap: 4px; margin-top: 12px; padding: 10px; border: 1px solid var(--ds-border-subtle); border-left: 2px solid var(--ds-accent); border-radius: var(--radius-sm); background: var(--ds-tile); }
 .prompt-inspector-context span, .prompt-inspector-context small { color: var(--ds-text-muted); font-size: var(--text-xs); }
+.prompt-inspector-context button { justify-self: start; margin-top: 4px; }
+.prompt-inspector-filters { display: flex; flex-wrap: wrap; gap: 4px; padding: 8px 0; }
+.prompt-inspector-filters button { min-height: 30px; padding: 0 10px; border: 1px solid var(--ds-border-subtle); border-radius: 999px; background: transparent; color: var(--ds-text-muted); cursor: pointer; font: inherit; font-size: var(--text-xs); }
+.prompt-inspector-filters button:hover, .prompt-inspector-filters button:focus-visible { color: var(--ds-text-primary); background: var(--ds-bg-hover); outline: none; }
+.prompt-inspector-filters button.active { border-color: var(--ds-accent); background: var(--ds-bg-hover); color: var(--ds-text-primary); }
 .prompt-inspector-empty { display: grid; height: 100%; place-items: center; padding: 24px; color: var(--ds-text-muted); text-align: center; }
 .prompt-inspector-timeline-title { margin: 18px 0 8px; color: var(--ds-text-secondary); font-size: var(--text-xs-plus); text-transform: uppercase; letter-spacing: .06em; }
 .prompt-inspector-timeline { display: grid; gap: 5px; }
 .prompt-inspector-timeline article { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; padding: 7px 9px; border-left: 2px solid var(--ds-accent); background: var(--ds-tile); color: var(--ds-text-secondary); font-size: var(--text-xs); }
 .prompt-inspector-timeline article span { color: var(--ds-text-muted); }
 .prompt-inspector-timeline article small { grid-column: 1 / -1; color: var(--ds-text-muted); }
+.prompt-inspector-timeline article.is-context { border-left-color: var(--ds-accent); }
+.prompt-inspector-timeline article.is-steering { border-left-color: var(--ds-purple, var(--ds-accent)); }
+.prompt-inspector-timeline article.is-recovery { border-left-color: var(--ds-warning); }
+.prompt-inspector-timeline-group { display: grid; gap: 5px; }
+.prompt-inspector-timeline-group h3 { margin: 10px 0 2px; color: var(--ds-text-secondary); font-size: var(--text-xs); font-weight: 600; }
+@media (max-width: 520px) {
+  .prompt-inspector-list article { display: grid; grid-template-columns: 1fr; }
+  .prompt-inspector-list article > div:last-child { text-align: left; }
+}
 .context-vault-workspace { min-width: 0; min-height: 0; flex: 1; display: grid; grid-template-columns: minmax(124px, 0.32fr) minmax(0, 1fr); overflow: hidden; border: 1px solid var(--ds-border); border-radius: var(--radius-md); background: var(--ds-bg-primary); }
 .context-vault-rail { display: flex; min-width: 0; min-height: 0; flex-direction: column; gap: 3px; padding: 8px; border-right: 1px solid var(--ds-border); background: var(--ds-bg-secondary); overflow: auto; }
 .context-vault-category { display: flex; min-height: 30px; align-items: center; justify-content: space-between; gap: 6px; padding: 0 7px; border-radius: var(--radius-sm); color: var(--ds-text-secondary); font-size: var(--text-xs); text-align: left; }
