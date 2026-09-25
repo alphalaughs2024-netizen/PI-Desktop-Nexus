@@ -50,7 +50,7 @@
   --ds-bg-elevated-primary: rgba(12, 31, 59, 0.88);
 }
 
-:root[data-theme="dark"][data-scenic-theme="twilight-mountains"] .context-vault-tab { --context-vault-control-disabled-text: rgba(240, 247, 255, .86); --context-vault-surface: rgba(5, 24, 61, .24); --context-vault-surface-raised: rgba(8, 37, 91, .34); --context-vault-control-surface: rgba(92, 145, 228, .42); --context-vault-control-disabled-surface: rgba(75, 119, 190, .5); --context-vault-empty-surface: rgba(8, 38, 96, .3); }
+:root[data-theme="dark"][data-scenic-theme="twilight-mountains"] .context-vault-tab { --context-vault-surface: rgba(5, 24, 61, .24); --context-vault-surface-raised: rgba(8, 37, 91, .34); --context-vault-control-surface: rgba(92, 145, 228, .42); --context-vault-primary-surface: #4d8fe8; --context-vault-primary-hover: #6ca9ff; --context-vault-primary-text: #f8fbff; --context-vault-secondary-surface: rgba(63, 116, 202, .48); --context-vault-secondary-hover: rgba(106, 164, 246, .58); --context-vault-secondary-border: rgba(205, 229, 255, .4); --context-vault-secondary-text: #f4f9ff; --context-vault-disabled-primary-surface: rgba(75, 119, 190, .5); --context-vault-disabled-primary-border: rgba(205, 229, 255, .34); --context-vault-disabled-primary-text: rgba(240, 247, 255, .86); --context-vault-disabled-secondary-surface: rgba(38, 73, 130, .48); --context-vault-disabled-secondary-border: rgba(205, 229, 255, .26); --context-vault-disabled-secondary-text: rgba(226, 240, 255, .76); --context-vault-focus: #a9d2ff; --context-vault-empty-surface: rgba(8, 38, 96, .3); }
 
 
 :root[data-scenic-theme="twilight-mountains"] .app-scenic-backdrop {

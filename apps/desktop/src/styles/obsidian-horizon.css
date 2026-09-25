@@ -31,7 +31,7 @@
   --ds-shadow-composer: 0 16px 42px rgba(0, 0, 0, 0.46);
 }
 
-:root[data-theme="dark"][data-scenic-theme="obsidian-horizon"] .context-vault-tab { --context-vault-surface: rgba(8, 15, 26, .28); --context-vault-surface-raised: rgba(17, 28, 44, .4); --context-vault-control-surface: rgba(18, 30, 47, .54); --context-vault-empty-surface: rgba(17, 28, 44, .32); }
+:root[data-theme="dark"][data-scenic-theme="obsidian-horizon"] .context-vault-tab { --context-vault-surface: rgba(8, 15, 26, .28); --context-vault-surface-raised: rgba(17, 28, 44, .4); --context-vault-control-surface: rgba(18, 30, 47, .54); --context-vault-primary-surface: #6f9ed3; --context-vault-primary-hover: #9dbfe8; --context-vault-primary-text: #08111f; --context-vault-secondary-surface: rgba(30, 52, 80, .62); --context-vault-secondary-hover: rgba(92, 133, 183, .56); --context-vault-secondary-border: rgba(190, 211, 238, .3); --context-vault-secondary-text: #eef5ff; --context-vault-disabled-primary-surface: rgba(72, 105, 145, .58); --context-vault-disabled-primary-border: rgba(190, 211, 238, .26); --context-vault-disabled-primary-text: rgba(232, 242, 255, .78); --context-vault-disabled-secondary-surface: rgba(21, 36, 55, .58); --context-vault-disabled-secondary-border: rgba(190, 211, 238, .2); --context-vault-disabled-secondary-text: rgba(215, 231, 250, .7); --context-vault-focus: #b9d8ff; --context-vault-empty-surface: rgba(17, 28, 44, .32); }
 
 
 :root[data-scenic-theme="obsidian-horizon"] .app-scenic-backdrop {
