@@ -234,6 +234,7 @@ import {
   BROWSER_PLUGIN_ID,
   BROWSER_VIEW_ID,
 } from "./browser-host";
+import { BrowserBroker } from "./browser-broker";
 import { discoverProviderModels } from "./model-discovery";
 import {
   ModelsDevCatalog,
@@ -984,6 +985,7 @@ const browserHost = new BrowserHost({
   },
   onState: emitBrowserState,
 });
+const browserBroker = new BrowserBroker(browserHost);
 pluginViews.onSurface = (surface) => {
   browserHost.setChromeSurface(surface);
 };
@@ -991,19 +993,19 @@ plugins.setServices({
   agentExtensionsChanged: () =>
     sendToRenderer(IPC.event.pluginChanged, { reason: "agentExtensions" }),
   browser: {
-    navigate: (input, sessionId) => browserHost.navigate(input, sessionId),
-    action: (action) => browserHost.action(action),
+    navigate: (input, sessionId) => browserBroker.navigate(input, sessionId),
+    action: (action) => browserBroker.action(action),
     setBounds: (pluginId, hole) => browserHost.setGuestHole(pluginId, hole),
     setVisible: (pluginId, visible) => browserHost.setGuestVisible(pluginId, visible),
     getState: () => browserHost.getState(),
     openExternal: () => browserHost.openExternal(),
-    snapshot: () => browserHost.snapshot(),
-    screenshot: (input, sessionId) => browserHost.screenshot(input, sessionId),
-    click: (uid) => browserHost.click(uid),
-    fill: (uid, text) => browserHost.fill(uid, text),
-    evaluate: (expression) => browserHost.evaluate(expression),
-    console: (limit) => browserHost.console(limit),
-    cdp: (method, params) => browserHost.cdpCommand(method, params),
+    snapshot: () => browserBroker.snapshot(),
+    screenshot: (input, sessionId) => browserBroker.screenshot(input, sessionId),
+    click: (uid) => browserBroker.click(uid),
+    fill: (uid, text) => browserBroker.fill(uid, text),
+    evaluate: (expression) => browserBroker.evaluate(expression),
+    console: (limit) => browserBroker.console(limit),
+    cdp: (method, params) => browserBroker.cdp(method, params),
   },
   onPluginUnload: (pluginId) => {
     if (pluginId === BROWSER_PLUGIN_ID) browserHost.disposeGuest();

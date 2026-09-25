@@ -1,0 +1,56 @@
+import type { BrowserRequestContext, BrowserResult } from "@pi-desktop/shared";
+import type { BrowserHost, BrowserNavigateInput } from "./browser-host";
+
+type BrowserCommand = "navigate" | "action" | "snapshot" | "screenshot" | "click" | "fill" | "evaluate" | "console" | "cdp" | "preview";
+type BrowserContextInput = Partial<Omit<BrowserRequestContext, "requestId" | "browserId">> & { browserId?: string };
+
+const MUTATIONS = new Set<BrowserCommand>(["navigate", "action", "click", "fill", "evaluate", "cdp", "preview"]);
+const TIMEOUTS: Record<BrowserCommand, number> = { navigate: 20_000, action: 20_000, snapshot: 10_000, screenshot: 15_000, click: 10_000, fill: 10_000, evaluate: 10_000, console: 10_000, cdp: 10_000, preview: 20_000 };
+
+function errorCode(error: unknown): string {
+  const code = typeof error === "object" && error && "code" in error ? String((error as { code?: unknown }).code) : "";
+  if (code === "UNAVAILABLE") return "BROWSER_UNAVAILABLE";
+  if (code === "PERMISSION_DENIED") return "BROWSER_POLICY_BLOCKED";
+  return "BROWSER_UNKNOWN_ERROR";
+}
+
+export class BrowserBroker {
+  private queue: Promise<unknown> = Promise.resolve();
+  private sequence = 0;
+  private readonly host: BrowserHost;
+  constructor(host: BrowserHost) { this.host = host; }
+
+  private context(input?: BrowserContextInput): BrowserRequestContext {
+    return { requestId: `browser-${++this.sequence}` as BrowserRequestContext["requestId"], sessionId: input?.sessionId ?? "", turnId: input?.turnId, effectiveAgentId: input?.effectiveAgentId, mode: input?.mode ?? "agent", permissionEpoch: input?.permissionEpoch ?? 0, browserId: (input?.browserId ?? "singleton") as BrowserRequestContext["browserId"] };
+  }
+
+  private async run<T>(command: BrowserCommand, work: () => Promise<T>, contextInput?: BrowserContextInput): Promise<BrowserResult<T>> {
+    const context = this.context(contextInput);
+    const execute = async (): Promise<BrowserResult<T>> => {
+      if (context.mode === "plan" && (command === "click" || command === "fill" || command === "evaluate" || command === "cdp")) return { requestId: context.requestId, ok: false, code: "BROWSER_POLICY_BLOCKED", retryable: false, message: `${command} is unavailable in Plan mode.` };
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      try {
+        const result = await Promise.race([work(), new Promise<never>((_, reject) => { timer = setTimeout(() => reject(Object.assign(new Error("Browser command timed out"), { code: "TIMEOUT" })), TIMEOUTS[command]); })]);
+        return { requestId: context.requestId, ok: true, result };
+      } catch (error) {
+        const code = errorCode(error);
+        const timeout = code === "BROWSER_UNKNOWN_ERROR" && error instanceof Error && error.message === "Browser command timed out";
+        return { requestId: context.requestId, ok: false, code: timeout && MUTATIONS.has(command) ? "BROWSER_POSSIBLY_APPLIED" : timeout ? "BROWSER_TIMEOUT" : code, retryable: !MUTATIONS.has(command), possiblyApplied: timeout && MUTATIONS.has(command), message: timeout && MUTATIONS.has(command) ? "The Browser action may have reached the page. Take a fresh snapshot before retrying." : timeout ? "The Browser command timed out before dispatch completed. Retry is safe." : error instanceof Error ? error.message : "Browser command failed." };
+      } finally { if (timer) clearTimeout(timer); }
+    };
+    const chained = MUTATIONS.has(command) ? this.queue.then(execute, execute) : execute();
+    if (MUTATIONS.has(command)) this.queue = chained.then(() => undefined, () => undefined);
+    return chained;
+  }
+
+  navigate(input: BrowserNavigateInput, sessionId?: string, context?: BrowserContextInput) { return this.run("navigate", () => this.host.navigate(input, sessionId), { ...context, sessionId }); }
+  action(action: "back" | "forward" | "reload" | "stop", context?: BrowserContextInput) { return this.run("action", async () => { this.host.action(action); return undefined; }, context); }
+  snapshot(context?: BrowserContextInput) { return this.run("snapshot", () => this.host.snapshot(), context); }
+  screenshot(input: { fullPage?: boolean } = {}, sessionId?: string, context?: BrowserContextInput) { return this.run("screenshot", () => this.host.screenshot(input, sessionId), { ...context, sessionId }); }
+  click(uid: string, context?: BrowserContextInput) { return this.run("click", () => this.host.click(uid), context); }
+  fill(uid: string, text: string, context?: BrowserContextInput) { return this.run("fill", () => this.host.fill(uid, text), context); }
+  evaluate(expression: string, context?: BrowserContextInput) { return this.run("evaluate", () => this.host.evaluate(expression), context); }
+  console(limit?: number, context?: BrowserContextInput) { return this.run("console", async () => this.host.console(limit), context); }
+  cdp(method: string, params?: unknown, context?: BrowserContextInput) { return this.run("cdp", () => this.host.cdpCommand(method, params), context); }
+  preview(sessionId: string, path: string, root: string, context?: BrowserContextInput) { return this.run("preview", () => this.host.previewWorkspaceFile(sessionId, path, root), { ...context, sessionId }); }
+}
