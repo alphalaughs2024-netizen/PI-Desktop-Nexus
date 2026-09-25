@@ -52,6 +52,8 @@
 
 :root[data-theme="dark"][data-scenic-theme="twilight-mountains"] .context-vault-tab { --context-vault-control-disabled-text: rgba(240, 247, 255, .86); }
 
+:root[data-theme="dark"][data-scenic-theme="twilight-mountains"] .context-vault-tab { --context-vault-surface: rgba(5, 24, 61, .38); --context-vault-surface-raised: rgba(8, 37, 91, .5); --context-vault-control-surface: rgba(92, 145, 228, .5); --context-vault-empty-surface: rgba(8, 38, 96, .42); }
+
 :root[data-scenic-theme="twilight-mountains"] .app-scenic-backdrop {
   display: block;
   position: absolute;
