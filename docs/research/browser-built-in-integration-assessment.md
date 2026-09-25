@@ -526,5 +526,168 @@ Nexus host-owned Browser engine
   + Paseo-style typed command/broker/error contracts
   + OpenCode-style session-bound authorization and snapshot generations
   + Codex-style Electron bridge hardening and deterministic UI contracts
-  = built-in Browser capability with a thin pi.browser compatibility adapter
+= built-in Browser capability with a thin pi.browser compatibility adapter
+
+## Linux Codex reference research
+
+The cloned repository is:
+
+```text
+C:\Games\codex-desktop-linux
+```
+
+The most relevant files are:
+
+- `docs/linux-computer-use.md`;
+- `linux-features/computer-use-linux/native-protocol.mjs`;
+- `linux-features/computer-use-linux/native-client.mjs`;
+- `linux-features/computer-use-linux/native-backend-service.mjs`;
+- `computer-use-linux/src/chrome_runtime.rs`;
+- `linux-features/browser-proxy/README.md`;
+- `docs/troubleshooting.md`.
+
+This repository is broader than a web Browser implementation: it combines
+browser automation, native Linux desktop Computer Use, Chrome integration, and
+optional feature staging. Its most useful lessons for Nexus are boundary and
+agent-output patterns.
+
+### Native backend RPC boundary
+
+Linux Codex keeps privileged Computer Use in a native Rust backend and exposes a
+small validated RPC surface to the JavaScript client. The protocol rejects:
+
+- unknown methods;
+- unknown parameters;
+- malformed app/window IDs;
+- invalid screenshot dimensions, scale, format, quality, or byte limits;
+- unsupported operations.
+
+Portable Nexus lesson: the built-in Browser should keep all WebContents/CDP
+authority in Main and expose a schema-validated command envelope. The renderer
+and agent tool should not receive arbitrary host handles or raw Electron APIs.
+
+### Compact accessibility snapshots and diff suppression
+
+The Linux client projects backend accessibility nodes into compact records,
+removing noisy text/control metadata and bounding traversal with `maxNodes` and
+`maxDepth`. It remembers the previous projection and returns an
+`accessibility_tree_unchanged` result when the compact state is unchanged.
+
+Portable Nexus improvements:
+
+- add a snapshot generation/hash to Browser accessibility snapshots;
+- return an unchanged marker when the page tree is identical;
+- bound node count/depth and text/value sizes;
+- let the agent request `compact: false` only when richer metadata is needed;
+- keep snapshot refs scoped to the snapshot generation.
+
+This can reduce token and latency cost significantly for polling-heavy Browser
+tasks.
+
+### Explicit coordinate metadata
+
+Linux Codex distinguishes:
+
+- accessibility bounds in screen coordinates;
+- input coordinates relative to the captured window;
+- screenshot `coordinate_width`/`coordinate_height`;
+- resized image dimensions.
+
+It explicitly warns agents not to pass accessibility bounds directly to input
+actions because display scaling may differ.
+
+Portable Nexus lesson: every screenshot/snapshot result should state the action
+coordinate space and viewport dimensions. Browser click/fill refs should remain
+preferred, but screenshot-coordinate fallback must carry scale/viewport metadata.
+
+### Screenshot payload controls
+
+The Linux protocol bounds screenshot width, height, byte size, scale, format, and
+quality. Screenshot methods emit an image once and return metadata separately;
+the client avoids duplicate image emission.
+
+Portable Nexus lesson: add explicit screenshot budgets and metadata to Browser
+results, preserve one image emission, and avoid returning oversized base64 data
+inside ordinary text tool output.
+
+### Input failure is never silently replayed
+
+The Linux native backend treats input as non-idempotent. If a backend command
+fails or times out after input may have reached the desktop, it returns an error
+and does not retry through another backend.
+
+Portable Nexus lesson: Browser click/fill/evaluate/CDP actions should never be
+automatically replayed after an ambiguous timeout. Return a structured
+`possibly_applied`/retryable result and require the agent to inspect state before
+trying again.
+
+### Capability readiness and diagnostics
+
+Linux Codex exposes a `doctor`/setup path and separates browser access from
+native Any App access. It documents backend prerequisites, permissions, portal
+capabilities, display scaling, and X11/Wayland differences.
+
+Portable Nexus lesson: built-in Browser should have an explicit readiness state
+and diagnostics path:
+
+```text
+Ready
+Guest unavailable
+CDP unavailable
+Workspace preview unavailable
+Permission/policy blocked
+```
+
+The agent should receive a concise next-step error rather than a generic plugin
+disabled message.
+
+### Browser proxy isolation
+
+The Linux `browser-proxy` feature wraps the Browser Use helper and copies only a
+defined proxy-variable family from the parent when the child has no explicit
+value. It preserves URL policy, user consent, and Browser Use security mode; it
+does not silently change Chrome page routing. Proxy values are not logged.
+
+Portable Nexus lesson: any built-in Browser network/proxy integration should be
+explicitly scoped to the helper/agent path, preserve page URL-policy and consent
+checks, and avoid leaking proxy credentials. The feature should be opt-in and
+diagnosable rather than an implicit environment mutation.
+
+### Browser client trust and runtime integrity
+
+`chrome_runtime.rs` records a configured browser-client path and trusted SHA-256
+hashes before starting the Browser Use bridge. This is a useful defense when a
+browser helper is external to the main app.
+
+Portable Nexus lesson: if Browser gains an external helper, extension bridge, or
+sidecar process during the built-in migration, record/version-check the helper
+and validate its integrity before connecting. Do not trust an arbitrary local
+CDP endpoint solely because it is reachable.
+
+### What not to copy directly
+
+- Linux AT-SPI, X11, Wayland, portals, and `/dev/uinput` are platform-specific;
+  Nexus’s Electron Browser remains the cross-platform authority.
+- The Linux Computer Use feature is opt-in and staged as a feature package;
+  Nexus Browser should be core and always discoverable.
+- Native desktop app IDs and screen coordinates should not replace Browser DOM
+  accessibility refs.
+
+## Final combined recommendations
+
+The current Nexus Browser host is the right cross-platform foundation. The
+reference implementations suggest these concrete upgrades before or during the
+built-in promotion:
+
+1. Core registration without plugin activation or ToolSearch.
+2. A typed command broker with request IDs, timeouts, stable errors, and session
+   affinity.
+3. Snapshot generations, compact tree projection, unchanged markers, and bounded
+   accessibility/text payloads.
+4. Explicit screenshot viewport/coordinate metadata and byte limits.
+5. No automatic replay of ambiguous mutating actions.
+6. Browser readiness/diagnostics separate from plugin lifecycle errors.
+7. Optional, scoped proxy support that preserves URL policy and consent.
+8. Integrity checks for any external Browser helper or extension bridge.
+9. A first-class Browser E2E suite covering all of the above.
 ```
