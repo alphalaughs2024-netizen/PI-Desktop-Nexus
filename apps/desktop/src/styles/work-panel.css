@@ -1263,7 +1263,7 @@
 .prompt-inspector-state { padding: 3px 8px; border: 1px solid var(--ds-border-subtle); border-radius: 999px; font-size: var(--text-2xs); text-transform: capitalize; }
 .prompt-inspector-state.is-live { border-color: var(--ds-accent); color: var(--ds-accent); }
 .prompt-inspector-state.is-unavailable { border-color: var(--ds-danger, var(--ds-border)); color: var(--ds-danger, var(--ds-text-muted)); }
-.prompt-inspector-summary-value { color: var(--ds-text-primary); font-size: 32px; font-variant-numeric: tabular-nums; font-weight: 700; line-height: 1; }
+.prompt-inspector-summary-value { color: var(--ds-text-primary); font-size: 30px; font-variant-numeric: tabular-nums; font-weight: 700; line-height: 1; }
 .prompt-inspector-summary-value small { display: block; margin-top: 5px; color: var(--ds-text-muted); font-size: var(--text-xs); font-weight: 500; }
 .prompt-inspector-summary-metrics { display: flex; flex-wrap: wrap; gap: 16px; }
 .prompt-inspector-summary-metrics span { color: var(--ds-text-muted); }
@@ -1271,7 +1271,7 @@
 .prompt-inspector-summary-reason { color: var(--ds-text-muted); }
 .prompt-inspector-list { display: grid; gap: 2px; }
 .prompt-inspector-section-group { margin-top: 18px; }
-.prompt-inspector-section-group h2 { margin: 0 0 7px; color: var(--ds-text-muted); font-size: var(--text-2xs); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.prompt-inspector-section-group h2 { margin: 0 0 7px; padding-left: 4px; color: var(--ds-text-muted); font-size: var(--text-xs); font-weight: 700; letter-spacing: .04em; }
 .prompt-inspector-list article { display: grid; grid-template-columns: 3px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px 4px 10px 0; border-bottom: 1px solid var(--ds-border-subtle); background: transparent; }
 .prompt-inspector-list article > div:first-child span, .prompt-inspector-list article small { display: block; margin-top: 3px; color: var(--ds-text-muted); font-size: var(--text-xs); }
 .prompt-inspector-list article > div:last-child { text-align: right; }
@@ -1295,12 +1295,12 @@
 .prompt-inspector-timeline-title { margin: 18px 0 8px; color: var(--ds-text-secondary); font-size: var(--text-xs-plus); text-transform: uppercase; letter-spacing: .06em; }
 .prompt-inspector-stepper { display: grid; gap: 18px; }
 .prompt-inspector-timeline-group { display: grid; gap: 8px; }
-.prompt-inspector-timeline-group h2 { display: flex; align-items: center; justify-content: space-between; margin: 0; color: var(--ds-text-primary); font-size: var(--text-sm); }
+.prompt-inspector-timeline-group h2 { display: flex; align-items: center; justify-content: space-between; margin: 0; padding: 8px 10px; border-bottom: 1px solid var(--ds-border-subtle); border-radius: var(--radius-sm); background: color-mix(in srgb, var(--ds-tile) 70%, transparent); color: var(--ds-text-primary); font-size: var(--text-sm); }
 .prompt-inspector-group-status { color: var(--ds-text-muted); font-size: var(--text-xs); font-weight: 400; }
 .prompt-inspector-stepper-events { position: relative; display: grid; gap: 1px; padding-left: 18px; }
-.prompt-inspector-stepper-events::before { position: absolute; top: 8px; bottom: 8px; left: 4px; width: 1px; background: var(--ds-border); content: ""; }
+.prompt-inspector-stepper-events::before { position: absolute; top: 8px; bottom: 8px; left: 4px; width: 2px; background: var(--ds-border); content: ""; }
 .prompt-inspector-step { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; min-height: 32px; padding: 6px 0; }
-.prompt-inspector-step-node { position: absolute; top: 11px; left: -18px; width: 9px; height: 9px; border: 2px solid var(--ds-bg-primary); border-radius: 50%; background: var(--ds-text-muted); box-shadow: 0 0 0 1px var(--ds-border); }
+.prompt-inspector-step-node { position: absolute; top: 10px; left: -19px; width: 11px; height: 11px; border: 2px solid var(--ds-bg-primary); border-radius: 50%; background: var(--ds-text-muted); box-shadow: 0 0 0 1px var(--ds-border); }
 .prompt-inspector-step-node.is-context { background: var(--ds-accent); }
 .prompt-inspector-step-node.is-steering { background: var(--ds-purple, var(--ds-accent)); }
 .prompt-inspector-step-node.is-recovery { background: var(--ds-warning); }
@@ -1308,6 +1308,7 @@
 .prompt-inspector-step-body { display: grid; min-width: 0; gap: 2px; }
 .prompt-inspector-step-body strong, .prompt-inspector-step-toggle { overflow: hidden; color: var(--ds-text-secondary); font: inherit; font-size: var(--text-xs); font-weight: 600; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
 .prompt-inspector-step-toggle { border: 0; background: transparent; cursor: pointer; }
+.prompt-inspector-step.is-routine-group { margin-left: -4px; padding-left: 4px; border-radius: var(--radius-sm); background: color-mix(in srgb, var(--ds-tile) 42%, transparent); }
 .prompt-inspector-step-body time { color: var(--ds-text-muted); font-size: var(--text-2xs); }
 .prompt-inspector-step-body small { color: var(--ds-text-muted); font-size: var(--text-2xs); }
 .prompt-inspector-group-status { float: right; color: var(--ds-text-muted); font-weight: 400; }

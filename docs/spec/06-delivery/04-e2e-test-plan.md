@@ -10818,6 +10818,19 @@ foreground rather than inheriting the selected theme's general text color.
 - **Status**: Renderer/source coverage; scenic dark/light, high-detail imagery,
   narrow-width, and keyboard interaction remain manual/E2E validation.
 
+#### E2E-Prompt-Context-Inspector-Focused-Fixes: Terminal state and lifecycle polish
+
+- **Preconditions**: A completed or failed session has retained live records,
+  duplicate Context lifecycle records, and configured provider/model identity.
+- **Expected**: Terminal sessions show `Historical`, active sessions show
+  `Live`, duplicate Context preparation records collapse into one expandable
+  routine group, provider/model identity appears when available, summary
+  durations use `<1ms` for sub-millisecond values, and composition rows do not
+  repeat Included/Excluded labels in the value column. Section kickers use
+  sentence case and Timeline group headers/statuses remain visually distinct.
+- **Status**: Renderer/source coverage; completed, failed, active, duplicate,
+  provider-resolved, and narrow-panel visual validation remains manual/E2E.
+
 - Sidebar project groups persist names, membership, ordering, and collapsed
   state without changing project paths or session ownership.
 - Context Vault project memory remains scoped to the active project and only

@@ -32,3 +32,12 @@ test("P3 prompt inspector uses briefing canvas, grouped rows, and stepper contro
   assert.match(component, /aria-expanded/);
   assert.match(component, /No claims selected/);
 });
+
+test("focused fixes keep historical state, compact duration, and semantic routine labels", () => {
+  assert.match(source, /if \(args\.running\) return "live"/);
+  assert.match(source, /formatPromptDuration/);
+  assert.match(source, /Context preparation/);
+  assert.match(component, /prompt-inspector-summary-metrics/);
+  assert.match(component, /Included in prompt/);
+  assert.doesNotMatch(component, /<small>Excluded<\/small>/);
+});
