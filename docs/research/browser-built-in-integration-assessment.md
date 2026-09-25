@@ -447,3 +447,84 @@ Migration order:
 The Browser engine does not need to be rewritten. The key change is product
 ownership and agent discoverability, with Paseo providing useful patterns for
 command routing, validation, failure handling, and E2E coverage.
+
+## Additional supplied-folder review
+
+### Codex analysis package
+
+`C:\Games\Codex-Analysis-26.915.3509.0` is a static analysis of a compiled
+Electron desktop package, not a source implementation we can directly reuse.
+It does provide one relevant security confirmation:
+
+- browser windows use `sandbox: true`;
+- `contextIsolation: true`;
+- `nodeIntegration: false`;
+- the renderer communicates through a named `contextBridge`/IPC boundary.
+
+This reinforces Nexus’s existing BrowserPane posture. It is useful as a security
+baseline and review checklist, but not as a Browser-agent architecture source.
+The package is compiled, lacks complete source maps, and was not executed; its
+static strings are evidence only.
+
+### OpenCode custom
+
+`C:\Games\opencode-custom` does not contain a directly comparable embedded
+Browser host, but it has relevant session and permission design patterns:
+
+- permissions and tool authorization remain scoped to the effective agent that
+  issued the provider turn;
+- a later agent/session switch cannot change the policy of a pending call;
+- active-session registries distinguish foreground drains from background tasks;
+- context snapshots use explicit epochs, stable source keys, and atomic durable
+  advancement;
+- browser-safe client bundles are protected by import-boundary tests;
+- UI changes are expected to carry screenshot/video evidence in review.
+
+Portable lessons for built-in Nexus Browser:
+
+1. Bind every Browser request to the originating session/turn and effective mode
+   at dispatch time; do not let a later session switch redirect a pending click,
+   fill, or CDP call.
+2. Keep visible Browser state, agent ownership, and background sessions distinct;
+   a background session must not steal the visible guest.
+3. Treat Browser capability/context snapshots as explicit state with stable
+   generations rather than incidental renderer state.
+4. Add import-boundary/security tests proving browser-safe code cannot reach
+   privileged host modules.
+5. Require visual evidence for the built-in Browser Work Panel migration.
+
+What not to copy: OpenCode’s durable Context Epoch model is for system prompt
+context, not Browser tabs. It should inform ownership and snapshot semantics,
+not be transplanted into Browser persistence.
+
+### Codex CLI
+
+`C:\Games\cli` contains useful general tool/runtime, snapshot-test, and secure
+agent infrastructure, but no comparable embedded browser-agent host or CDP
+broker was found in the targeted search. It is therefore not a primary design
+reference for this migration.
+
+Its relevant indirect lesson is testing discipline: UI/tool-output changes should
+carry deterministic snapshot or contract coverage. Nexus should apply that to
+Browser accessibility snapshots, structured tool results, and Work Panel states,
+not copy unrelated CLI internals.
+
+## Updated source recommendations
+
+| Source | Use for Nexus Browser | Do not use for |
+|---|---|---|
+| Current Nexus `pi.browser` | Host/CDP security, workspace file boundary, UID snapshots, Plan-safe actions | Final product ownership/lifecycle |
+| Paseo | Broker routing, browser IDs, request/timeouts, wait/type/keypress, browser E2E | Direct multi-host complexity on day one |
+| Codex analysis package | Electron hardening checklist and bridge isolation | Source-level Browser implementation |
+| OpenCode custom | Session-bound permissions, active/background separation, snapshot generations, import tests | Browser persistence schema/context epochs |
+| Codex CLI | Contract/snapshot testing discipline | Embedded Browser architecture |
+
+The combined recommendation is now:
+
+```text
+Nexus host-owned Browser engine
+  + Paseo-style typed command/broker/error contracts
+  + OpenCode-style session-bound authorization and snapshot generations
+  + Codex-style Electron bridge hardening and deterministic UI contracts
+  = built-in Browser capability with a thin pi.browser compatibility adapter
+```
