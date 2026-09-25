@@ -690,4 +690,26 @@ built-in promotion:
 7. Optional, scoped proxy support that preserves URL policy and consent.
 8. Integrity checks for any external Browser helper or extension bridge.
 9. A first-class Browser E2E suite covering all of the above.
+
+## Implementation guide
+
+The decision-complete cross-reference and migration guide is maintained outside
+this repository at:
+
+```text
+C:\Games\nexus-browser-built-in-implementation-guide.md
+```
+
+It records the final source-by-source adoption decisions, rejected approaches,
+target architecture, core command/result contracts, security invariants,
+migration phases, rollout gates, and future implementation checklist.
+
+Final decision:
+
+> Replace Browser’s ordinary bundled-plugin ownership with a built-in Nexus
+> capability. Preserve the current Main-owned Browser engine and CDP safeguards;
+> adopt Paseo’s command/broker contracts, Linux Codex’s compact/bounded payload
+> and non-replay patterns, OpenCode’s session-bound authorization model, and
+> Codex Desktop’s Electron bridge hardening. Keep `pi.browser.*` only as a thin,
+> non-duplicating compatibility adapter for third-party extensions.
 ```
