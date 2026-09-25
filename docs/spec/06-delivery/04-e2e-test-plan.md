@@ -10797,6 +10797,27 @@ foreground rather than inheriting the selected theme's general text color.
 - **Status**: Renderer/source coverage; scenic dark/light and narrow-panel
   visual validation remains manual/E2E validation.
 
+#### E2E-Prompt-Context-Inspector-P3: Runtime briefing visual hierarchy
+
+- **Preconditions**: A session has prompt composition records, lifecycle events,
+  optional Context Vault metadata, and a scenic or standard application theme.
+- **Steps**: Open **Prompt context** in Composition and Timeline views. Inspect
+  the summary, included/excluded groups, Context Vault state, lifecycle stepper,
+  routine-event disclosure, filters, and safe metadata action at desktop and
+  narrow Work Panel widths.
+- **Expected**: One high-contrast briefing canvas contains the inspector while
+  scenic art remains peripheral. Summary metrics use a structured overview card,
+  composition rows are grouped with aligned values, and no-claim Context Vault
+  state remains compact. Timeline events render as a vertical stepper with
+  expandable routine groups, readable turn ordinals, status/duration hierarchy,
+  and consistent Live/Historical state.
+- **Accessibility and privacy**: Tabs, filters, and routine-event disclosure
+  remain keyboard accessible with valid ARIA state. Prompt text, claim bodies,
+  evidence, tool arguments, credentials, raw provider payloads, and raw UUIDs
+  never appear in primary UI labels or safe metadata copy.
+- **Status**: Renderer/source coverage; scenic dark/light, high-detail imagery,
+  narrow-width, and keyboard interaction remain manual/E2E validation.
+
 - Sidebar project groups persist names, membership, ordering, and collapsed
   state without changing project paths or session ownership.
 - Context Vault project memory remains scoped to the active project and only

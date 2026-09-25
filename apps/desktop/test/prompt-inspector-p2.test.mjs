@@ -24,3 +24,11 @@ test("P2 prompt inspector keeps privacy-safe metadata boundaries", () => {
   assert.doesNotMatch(component, /toolArgs|authorization|apiKey|rawPayload/);
 });
 
+test("P3 prompt inspector uses briefing canvas, grouped rows, and stepper controls", () => {
+  assert.match(component, /prompt-inspector-summary-value/);
+  assert.match(component, /Included context/);
+  assert.match(component, /Excluded context/);
+  assert.match(component, /prompt-inspector-stepper/);
+  assert.match(component, /aria-expanded/);
+  assert.match(component, /No claims selected/);
+});
