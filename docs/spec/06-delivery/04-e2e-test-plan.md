@@ -10754,6 +10754,26 @@ page backdrop through a failed card image. The copy tile owns its cool-white
 foreground rather than inheriting the selected theme's general text color.
 # Productivity upgrades
 
+#### E2E-Prompt-Context-Inspector-P1: Runtime context explanation
+
+- **Preconditions**: An active session has a recorded prompt composition and
+  lifecycle events, including an optional Context Vault event.
+- **Steps**: Open **Prompt context**, inspect the summary and Composition tab,
+  switch to Timeline, change each lifecycle filter, and trigger a history
+  reload while live events are arriving.
+- **Expected**: The summary shows labeled estimated tokens, included/excluded
+  counts, composition duration, reload reason, and live/historical/loading/
+  unavailable state. Composition rows use readable section labels and explicit
+  inclusion state/reasons. Context Vault metadata appears only when relevant
+  and offers navigation to the Context Vault panel. Timeline events use human-
+  readable labels, hide sensitive previews, preserve live events during history
+  loading, deduplicate records, and provide accessible filters and retry.
+- **Privacy**: Safe metadata copy contains hashes, section names, token
+  estimates, and lifecycle metadata only; prompt content, tool arguments,
+  secrets, and provider payloads never appear in the inspector or copied data.
+- **Status**: Renderer/source and accessibility coverage; rendered narrow-panel
+  validation remains manual/E2E validation.
+
 - Sidebar project groups persist names, membership, ordering, and collapsed
   state without changing project paths or session ownership.
 - Context Vault project memory remains scoped to the active project and only
