@@ -17,5 +17,5 @@ test("Context Vault owns one translucent outer surface and transparent inner lay
 
 test("Phase 1 does not alter Context Vault behavior or JSX disabled logic", () => {
   assert.match(component, /disabled=\{busy !== null\}/);
-  assert.match(component, /disabled=\{busy !== null \|\| claims\.length === 0\}/);
+  assert.match(component, /disabled=\{actionsDisabled \|\| claims\.length === 0\}/);
 });
