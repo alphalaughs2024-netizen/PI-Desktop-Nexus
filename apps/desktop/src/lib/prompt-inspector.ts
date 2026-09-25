@@ -20,6 +20,8 @@ export function promptReasonLabel(reason: string): string {
   return labels[reason] ?? reason.replaceAll(/[-_]+/g, " ").replace(/^\w/, (character) => character.toUpperCase());
 }
 
+const ROUTINE_DEDUPE_WINDOW_MS = 2_000;
+
 function richerEvent(a: PromptLifecycleEvent, b: PromptLifecycleEvent): PromptLifecycleEvent {
   const score = (event: PromptLifecycleEvent) => Object.keys(event).filter((key) => !["id", "kind", "ts", "turnId"].includes(key)).length;
   if (score(b) > score(a)) return b;
@@ -33,11 +35,15 @@ export function normalizePromptLifecycle(events: readonly PromptLifecycleEvent[]
   const sorted = [...events].sort((a, b) => a.ts - b.ts);
   const result: PromptLifecycleEvent[] = [];
   for (const event of sorted) {
-  const isTerminal = event.kind === "turn_completed";
     const equivalent = result.findIndex((candidate) => {
-      if (candidate.turnId !== event.turnId || candidate.ts !== event.ts) return false;
-      if (event.kind === "context_assembled" && candidate.kind === "context_assembled") return true;
-      return isTerminal && candidate.kind === "turn_completed";
+      if (candidate.turnId !== event.turnId || Math.abs(candidate.ts - event.ts) > ROUTINE_DEDUPE_WINDOW_MS) return false;
+      if (candidate.kind === "context_assembled" && event.kind === "context_assembled") {
+        return candidate.reason === event.reason && candidate.compositionHash === event.compositionHash && candidate.contextTrigger === event.contextTrigger;
+      }
+      if ((candidate.kind === "context_requested" || candidate.kind === "context_completed") && candidate.kind === event.kind) {
+        return candidate.reason === event.reason && candidate.compositionHash === event.compositionHash && candidate.contextTrigger === event.contextTrigger;
+      }
+      return candidate.kind === "turn_completed" && event.kind === "turn_completed";
     });
     if (equivalent < 0) result.push(event);
     else result[equivalent] = richerEvent(result[equivalent], event);
@@ -68,8 +74,20 @@ export function groupPromptLifecycle(events: readonly PromptLifecycleEvent[]): P
 export function derivePromptInspectorState(args: { loading: boolean; error: boolean; liveEvents: readonly PromptLifecycleEvent[]; running: boolean; hasEvents: boolean }): PromptInspectorDataState {
   if (args.loading) return "loading";
   if (args.error && !args.hasEvents) return "unavailable";
-  if (args.running || args.liveEvents.length > 0) return "live";
+  if (args.running) return "live";
   return "historical";
+}
+
+export function formatPromptDuration(durationMs: number | undefined): string {
+  if (!Number.isFinite(durationMs)) return "—";
+  if (durationMs! > 0 && durationMs! < 1) return "<1ms";
+  return `${durationMs!.toFixed(1)}ms`;
+}
+
+export function promptRoutineLabel(event: PromptLifecycleEvent, count: number): string {
+  if (event.kind === "context_assembled") return `Context preparation · ${count} events`;
+  if (event.kind === "prompt_accepted") return `Prompt preparation · ${count} events`;
+  return `${promptEventLabel(event.kind)} · ${count} events`;
 }
 
 export function resolvePromptProviderModel(session: SessionSummary | undefined, providers: readonly ProviderPublic[], providerModels: Record<string, readonly ModelInfo[]>): { providerLabel?: string; modelLabel?: string; providerId?: string; modelId?: string } {
