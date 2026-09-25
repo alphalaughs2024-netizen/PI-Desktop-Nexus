@@ -330,3 +330,120 @@ should first choose the ownership boundary:
 
 The current Browser engine is a good foundation. The migration target is a
 product-level promotion, not a replacement of the secure browser implementation.
+
+## External reference research
+
+The directly useful supplied reference is **Paseo**:
+
+```text
+C:\Games\paseo\packages\server\src\server\browser-tools\
+C:\Games\paseo\packages\app\e2e\browser\
+```
+
+Other supplied folders were not used as primary Browser references: they did not
+contain a comparable embedded browser-agent host/broker, or were general agent,
+memory, CLI, or workspace material.
+
+### Paseo patterns worth adopting
+
+Paseo separates agent-facing tool schemas, a `BrowserToolsBroker`, connected
+browser hosts, explicit browser IDs, command/result envelopes, policy/config
+enablement, and browser-specific unit/E2E suites.
+
+#### Explicit tab identity
+
+Paseo provides `browser_list_tabs`, `browser_new_tab`, and tab-scoped actions
+requiring a `browserId`. Nexus currently has a singleton guest and implicit
+session affinity. Preserve the singleton for the first built-in migration, but
+introduce opaque browser/tab handles internally so snapshot refs are scoped to a
+tab and snapshot generation rather than only global `eN` values.
+
+#### Broker and host routing
+
+Paseo tracks registered hosts, supported commands, pending requests, timeouts,
+disconnects, stranded tab ownership, and reconnections. Nexus should add
+request IDs, bounded timeouts, explicit “guest unavailable” versus “tab not
+found” errors, and stale UID invalidation without requiring a remote host model.
+
+#### More focused action surface
+
+Paseo exposes focused tools for `list_tabs`, `new_tab`, `navigate`, `snapshot`,
+`click`, `fill`, `wait`, `type`, and `keypress`. Nexus should add a typed core
+facade for common operations while retaining the current union `Browser(action)`
+tool as a compatibility alias. Keep raw `cdp` and `evaluate` privileged and
+out of the primary workflow.
+
+#### Stronger validation and descriptions
+
+Paseo validates HTTP(S)-only URLs, browser IDs, `@eN` refs, click buttons and
+modifiers, and wait conditions with bounded timeouts. Nexus should expose these
+constraints directly in schemas and explain that refs expire after navigation or
+a new snapshot.
+
+#### Waiting primitives
+
+Paseo has bounded `browser_wait` for text or URL conditions. Nexus should add
+safe waits for URL match, accessible text, and page-load completion rather than
+forcing repeated snapshot polling. Arbitrary JavaScript remains separate and
+Agent-only.
+
+#### Disconnect and timeout semantics
+
+Paseo returns structured categories such as no host, unsupported command, tab
+not found, retryable disconnect, and timeout. Nexus should adopt stable,
+model-readable codes such as:
+
+```text
+BROWSER_UNAVAILABLE
+BROWSER_TAB_NOT_FOUND
+BROWSER_TIMEOUT
+```
+
+Each should include a next-step hint.
+
+#### Browser-specific E2E discipline
+
+Paseo has a dedicated browser E2E directory and CI routing. Nexus should add a
+first-class Browser suite covering tool availability without plugin activation,
+open/navigate/snapshot/click/fill/type/keypress/wait, stale refs, session/tab
+affinity, host reconnect, Plan-safe versus Agent-only actions, local HTML
+preview, screenshots, console limits, and Work Panel lifecycle.
+
+### What not to copy directly
+
+Paseo’s remote multi-host broker is broader than Nexus needs initially. Nexus’s
+existing Electron-local `BrowserHost`, workspace-root checks, sandboxed guest,
+and CDP allowlist are already strong and should remain authoritative. Paseo’s
+browser enablement policy should become a Nexus core capability setting, not
+another user-installed plugin toggle.
+
+## Research-derived built-in proposal
+
+```text
+Core Browser capability
+├── BrowserHost / BrowserPane / BrowserCdp
+├── built-in Work Panel view
+├── always-available Browser tools
+├── BrowserPreview
+└── Plan-safe action enforcement
+
+Compatibility adapter
+└── pi.browser.* for third-party plugins
+```
+
+Migration order:
+
+1. Register the Browser tool and Work Panel view in the core app so ToolSearch
+   and plugin activation are not prerequisites.
+2. Preserve the current host/CDP security boundary and singleton guest.
+3. Add request IDs, stable error categories, bounded timeouts, and stale-ref
+   guidance.
+4. Add explicit tab/session handles before attempting multi-tab support.
+5. Add `wait`, `type`, and `keypress` primitives.
+6. Mark Browser as Built-in in Extensions; remove uninstall semantics.
+7. Retain `pi.browser.*` as a compatibility adapter without duplicate tool/view
+   registration.
+
+The Browser engine does not need to be rewritten. The key change is product
+ownership and agent discoverability, with Paseo providing useful patterns for
+command routing, validation, failure handling, and E2E coverage.
