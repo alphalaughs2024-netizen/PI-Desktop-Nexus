@@ -1421,7 +1421,9 @@ export const es = {
       "browser": "Navegador",
       "file": "Archivos",
       "plugin": "Vista de complemento",
-      "contextVault": "Bóveda de contexto",`r`n      "promptInspector": "Contexto del prompt"`r`n    },
+      "contextVault": "Bóveda de contexto",
+      "promptInspector": "Contexto del prompt",
+    },
     "pluginView": {
       "failed": "Esta vista no se pudo cargar. Vuelva a cargar el complemento e inténtelo de nuevo."
     },
