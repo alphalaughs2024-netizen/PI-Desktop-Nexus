@@ -1,4 +1,5 @@
 import type { WebContents } from "electron";
+import { createHash } from "node:crypto";
 
 /** Chrome DevTools Protocol revision attached to the work-panel guest. */
 export const BROWSER_CDP_PROTOCOL = "1.3";
@@ -39,6 +40,7 @@ export const BROWSER_CDP_ALLOWLIST = new Set([
 const MAX_EVALUATE_CHARS = 64 * 1024;
 const MAX_CONSOLE_MESSAGES = 100;
 const SCREENSHOT_MAX_WIDTH = 1280;
+export const BROWSER_SNAPSHOT_LIMITS = { maxNodes: 2000, maxDepth: 64, maxTextLength: 4000, maxBytes: 512 * 1024, maxScreenshotHeight: 4096, maxScreenshotBytes: 4 * 1024 * 1024, maxConsoleBytes: 256 * 1024 } as const;
 
 export type BrowserConsoleMessage = {
   type: string;
@@ -59,6 +61,12 @@ export type SnapshotResult = {
   tree: string;
   url: string;
   title: string;
+  contentHash?: string;
+  snapshotId?: string;
+  documentGeneration?: number;
+  unchanged?: boolean;
+  nodeCount?: number;
+  truncation?: { nodes?: boolean; depth?: boolean; text?: boolean; bytes?: boolean };
 };
 
 export function isAllowedCdpMethod(method: string): boolean {
@@ -132,6 +140,9 @@ export class BrowserCdp {
   private attachedId: number | null = null;
   private uids = new Map<string, number>();
   private messages: BrowserConsoleMessage[] = [];
+  private snapshotSequence = 0;
+  private documentGeneration = 0;
+  private lastSnapshotHash: string | undefined;
   private onDebuggerMessage?: (
     event: unknown,
     method: string,
@@ -193,6 +204,8 @@ export class BrowserCdp {
     this.onDebuggerMessage = undefined;
     this.attachedId = null;
     this.uids.clear();
+    this.documentGeneration += 1;
+    this.lastSnapshotHash = undefined;
   }
 
   async send(wc: WebContents, method: string, params?: unknown): Promise<unknown> {
@@ -214,11 +227,25 @@ export class BrowserCdp {
       nodes?: AxNode[];
     };
     const flattened = flattenAxTree(Array.isArray(raw?.nodes) ? raw.nodes : []);
+    const compactTree = flattened.tree.slice(0, BROWSER_SNAPSHOT_LIMITS.maxBytes);
+    const truncation = compactTree.length < flattened.tree.length ? { bytes: true } : undefined;
+    const url = wc.getURL();
+    const title = wc.getTitle();
+    const contentHash = createHash("sha256").update(JSON.stringify({ tree: compactTree, url: new URL(url || "about:blank").origin + new URL(url || "about:blank").pathname, title, generation: this.documentGeneration })).digest("hex");
+    const snapshotId = `snapshot-${++this.snapshotSequence}`;
     this.uids = flattened.uids;
+    const unchanged = this.lastSnapshotHash === contentHash;
+    this.lastSnapshotHash = contentHash;
     return {
-      tree: flattened.tree,
-      url: wc.getURL(),
-      title: wc.getTitle(),
+      tree: unchanged ? "(unchanged)" : compactTree,
+      url,
+      title,
+      contentHash,
+      snapshotId,
+      documentGeneration: this.documentGeneration,
+      unchanged,
+      nodeCount: flattened.uids.size,
+      truncation,
     };
   }
 
@@ -247,6 +274,8 @@ export class BrowserCdp {
     if (typeof result?.data !== "string" || !result.data) {
       throw new Error("screenshot produced no data");
     }
+    const byteLength = Buffer.byteLength(result.data, "base64");
+    if (byteLength > BROWSER_SNAPSHOT_LIMITS.maxScreenshotBytes) throw new Error("screenshot exceeds browser payload limit");
     return { mimeType: "image/jpeg", data: result.data };
   }
 
@@ -336,7 +365,9 @@ export class BrowserCdp {
 
   console(limit = 50): BrowserConsoleMessage[] {
     const cap = Math.min(MAX_CONSOLE_MESSAGES, Math.max(1, Math.floor(limit) || 50));
-    return this.messages.slice(-cap);
+    const messages = this.messages.slice(-cap);
+    let bytes = 0;
+    return messages.reverse().filter((message) => { const size = Buffer.byteLength(message.text, "utf8"); if (bytes + size > BROWSER_SNAPSHOT_LIMITS.maxConsoleBytes) return false; bytes += size; return true; }).reverse();
   }
 
   private requireUid(uid: string): number {
