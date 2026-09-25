@@ -1428,7 +1428,8 @@ export const de = {
       "browser": "Browser",
       "file": "Dateien",
       "plugin": "Plugin-Ansicht",
-      "contextVault": "Kontextspeicher"
+      "contextVault": "Kontextspeicher",
+      "promptInspector": "Prompt-Kontext",
     },
     "pluginView": {
       "failed": "Diese Ansicht konnte nicht geladen werden. Laden Sie das Plugin neu und versuchen Sie es erneut."

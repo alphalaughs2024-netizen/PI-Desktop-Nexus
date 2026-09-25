@@ -1431,6 +1431,7 @@ export const zhTW = {
       file: "檔案",
       plugin: "外掛檢視",
       contextVault: "內容保管庫",
+      promptInspector: "提示詞內容",
     },
     pluginView: {
       failed: "無法載入該檢視。請重新載入外掛後重試。",

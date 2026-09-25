@@ -1427,6 +1427,7 @@ export const zhCN = {
       file: "文件",
       plugin: "插件视图",
       contextVault: "上下文保险库",
+      promptInspector: "提示词上下文",
     },
     pluginView: {
       failed: "无法加载该视图。请重新加载插件后重试。",

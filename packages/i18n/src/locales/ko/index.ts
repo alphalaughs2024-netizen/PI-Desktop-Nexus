@@ -1441,6 +1441,7 @@ export const ko = {
       file: "파일",
       plugin: "플러그인 화면",
       contextVault: "컨텍스트 보관함",
+      promptInspector: "프롬프트 컨텍스트",
     },
     pluginView: {
       failed: "이 화면을 불러올 수 없습니다. 플러그인을 새로 고친 후 다시 시도하세요.",

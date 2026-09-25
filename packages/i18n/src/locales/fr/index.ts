@@ -1421,7 +1421,8 @@ export const fr = {
       "browser": "Navigateur",
       "file": "Fichiers",
       "plugin": "Vue du plugin",
-      "contextVault": "Coffre de contexte"
+      "contextVault": "Coffre de contexte",
+      "promptInspector": "Contexte du prompt",
     },
     "pluginView": {
       "failed": "Cette vue n'a pas pu être chargée. Rechargez le plugin et réessayez."
