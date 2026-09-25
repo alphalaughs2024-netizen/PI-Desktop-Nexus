@@ -2,6 +2,7 @@ export type WorkPanelTabKind =
   | "review"
   | "promptInspector"
   | "contextVault"
+  | "browser"
   | "file"
   | "plugin";
 
@@ -97,7 +98,7 @@ export const BROWSER_PLUGIN_TAB = {
   viewId: "browser",
 } as const;
 
-export const CORE_BROWSER_TAB: WorkPanelTab = { id: "browser", kind: "plugin", resource: "core://browser" };
+export const CORE_BROWSER_TAB: WorkPanelTab = { id: "browser", kind: "browser", resource: "core://browser" };
 
 export function browserPluginTab(location?: string): WorkPanelTab {
   return {

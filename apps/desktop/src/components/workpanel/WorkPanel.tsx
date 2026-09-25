@@ -34,6 +34,7 @@ import {
 import { ReviewTab } from "./ReviewTab";
 import { FilesTab } from "./FilesTab";
 import { PluginViewTab } from "./PluginViewTab";
+import { BrowserCoreTab } from "./BrowserCoreTab";
 import { WorkTabEmpty } from "./WorkTabEmpty";
 import { SubagentPanel } from "./SubagentPanel";
 import { ContextVaultTab } from "./ContextVaultTab";
@@ -50,6 +51,7 @@ const TAB_ICONS = {
   file: IconFileText,
   plugin: IconPlug,
   contextVault: IconBookOpen,
+  browser: IconPanel,
   promptInspector: IconFileText,
 } as const;
 
@@ -733,6 +735,12 @@ export function WorkPanel({
               of the same plugin re-measures rather than reusing a stale rect.
               The host process keeps the page alive across that remount, so the
               plugin does not lose its state. */}
+          {!subagentPanel &&
+            activeTab?.kind === "browser" && (
+              <div key={activeTab.id} id={`work-panel-surface-${activeTab.id}`} className="work-panel-tabpane" role="tabpanel" aria-labelledby={`work-panel-title-${activeTab.id}`}>
+                <BrowserCoreTab sessionId={activeSessionId ?? undefined} location={activeTab.location} blocked={exiting || panelBlocked || contextOpen} />
+              </div>
+            )}
           {!subagentPanel &&
             activeTab?.kind === "plugin" &&
             (() => {
