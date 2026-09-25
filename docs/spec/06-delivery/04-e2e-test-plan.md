@@ -963,25 +963,23 @@ Each scenario is documented in this format:
 - **Status**: Unit-covered (`agent-runtime` deferred-tool tests); live-model
   request capture and full Electron journey pending
 
-#### E2E-008b: Bundled Browser plugin chrome and CDP
+#### E2E-008b: Built-in Browser chrome, typed tools, and CDP
 
-- **Preconditions**: Packaged or checkout build with bundled plugins; Agent
+- **Preconditions**: Packaged or checkout build with a clean profile; Agent
   session with a workspace HTML file; Plan session available.
-- **Steps**: 1) Confirm Plugins lists `pi.browser`, enabled, not uninstallable.
-  2) Open the work panel and launch Browser from plugin views. 3) Ask the
-  agent to preview a workspace HTML file (`BrowserPreview`) then snapshot via
-  ToolSearch `cdp` / `Browser`. 4) Switch to Plan and call the plugin Browser
-  tool. 5) Disable `pi.browser`. 6) Call `BrowserPreview` and click an http(s)
-  transcript link. 7) From a third-party or test caller, send
-  `Network.getAllCookies` through `pi.browser.cdp`.
-- **Expected**: The launcher has no host Browser row. Preview opens the plugin
-  view and live-reloads the file. Plugin tool `plugin_pi_browser_Browser` can
-  snapshot after ToolSearch. Plan denies the plugin tool
-  (`PLUGIN_DISABLED_IN_PLAN`) while `BrowserPreview` remains callable. Disable
-  hides the view and tools; `BrowserPreview` errors; http(s) chips use
-  `openExternal`. Cookie CDP is denied. Guest bounds stay inside the plugin
-  view.
-- **Specs linked**: ADR 0170, D333, `07-plugins/03-plugin-api.md`,
+- **Steps**: 1) Confirm Extensions shows Browser as Built-in with no plugin
+  lifecycle controls. 2) Open the core Browser Work Panel. 3) Preview workspace
+  HTML, then call `browser_snapshot` without ToolSearch. 4) Run typed navigate,
+  wait, snapshot, screenshot, and console workflows. 5) Switch to Plan and
+  verify inspection succeeds while mutation/evaluate/CDP are blocked. 6) Disable
+  the Browser core capability and verify structured policy errors. 7) From a
+  third-party fixture, send a forbidden cookie CDP method through
+  `pi.browser.cdp`.
+- **Expected**: Browser opens from core, preview live-reloads, typed tools are
+  directly available, Plan policy is enforced by the broker, capability
+  disablement returns `BROWSER_POLICY_BLOCKED`, cookie CDP is denied, and guest
+  bounds remain inside the core surface.
+- **Specs linked**: ADR 0234, D395/D406, `07-plugins/03-plugin-api.md`,
   `03-runtime/03-tools-and-permissions.md`
 - **Acceptance**: E (plugin view + tool) + security allowlist
 - **Milestone**: M5
@@ -10527,43 +10525,24 @@ sample extensions under `apps/desktop/test/fixtures/pi-extensions/`.
 - **Milestone**: M6+
 - **Status**: Source-contract covered; desktop hover/focus automation pending
 
-#### E2E-PLAN-005: Plan-mode plugin tools with `planSafeActions` are read-only (D384)
+#### E2E-PLAN-005: Plan-mode built-in Browser tools are read-only (D384)
 
-- **Preconditions**: PI-Desktop is built with the bundled Browser
-  plugin (`pi.browser`) enabled and a workspace that exposes one
-  http(s) URL the planner can reach. The catalog list is the default
-  bundled one; no third-party plugin needs to be installed for this
-  scenario.
-- **Steps**: 1) Create a new session and switch it to Plan mode from
-  the mode selector. 2) Send the prompt "Use the browser plugin to
-  read `https://example.com`, summarize the page, and tell me what
-  to change." 3) Wait for the planner to call
-  `plugin_pi_browser_Browser` with `action="navigate"` followed by
-  `action="snapshot"`, and to submit a plan with the requested
-  summary. 4) Approve the plan and confirm the Agent run completes.
-  5) Reject the plan, re-send the same prompt in Plan mode, and
-  confirm the planner can still call `navigate` + `snapshot`.
-  6) Ask the planner to "click the sign-in button" through the
-  browser plugin and confirm the call is rejected with
-  `PERMISSION_DENIED` (a Plan call can never click). 7) Inspect the
-  active session tool list and confirm it shows the Browser plugin
-  with the description suffix `Plan mode: only navigate, snapshot,
-  screenshot, console actions`. 8) Switch back to Agent mode and
-  confirm the same prompt lets the model call `click` and `fill`
-  without the suffix.
-- **Expected**: Plan mode can drive the Browser plugin for the four
-  declared read-only actions, the description tells the model which
-  actions are allowed, and any mutating action is denied with a
-  structured `PERMISSION_DENIED` error before the plugin sees the
-  call. Agent mode keeps the full plugin surface.
+- **Preconditions**: PI-Desktop is built with the core Browser capability
+  enabled and a workspace that exposes one HTTP(S) URL the planner can reach.
+- **Steps**: 1) Create a new session and switch it to Plan mode. 2) Send the
+  prompt "Use the built-in browser to read `https://example.com`, summarize the
+  page, and tell me what to change." 3) Wait for `browser_navigate` followed by
+  `browser_snapshot`, and for plan submission. 4) Approve the plan and confirm
+  the Agent run completes.
+- **Expected**: Plan mode can call the built-in inspection tools, while click,
+  fill, type, keypress, evaluate, and CDP are denied with a structured Browser+  policy error. Agent mode exposes the corresponding typed interaction tools.
 - **Specs linked**: `03-runtime/02-agent-runtime.md`,
   `03-runtime/03-tools-and-permissions.md`, `07-plugins/README.md`,
   ADR 0211
 - **Acceptance**: Functional, Quality
 - **Milestone**: M6
 - **Status**: Unit/source-contract covered (`runtime.test.ts`
-  plan-safe filtering, `bundled-plugins.test.mjs` Browser
-  declaration, `mode-prompts.test.ts` updated wording); desktop
+  plan-safe filtering and built-in Browser registration tests; desktop
   journey is Draft (do not run E2E locally unless explicitly
   requested)
 

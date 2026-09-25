@@ -24,6 +24,7 @@ export type LocalToolHandler = (input: {
   sessionId: string;
   toolCallId: string;
   args: unknown;
+  mode?: "agent" | "plan" | "goal";
 }) => Promise<LocalToolResult>;
 
 export type ProjectInstructionResolver = (input: {
@@ -508,6 +509,7 @@ export class AgentSidecar {
                   sessionId: String(params.sessionId ?? ""),
                   toolCallId: String(params.toolCallId ?? ""),
                   args: params.args,
+                  mode: params.mode,
                 });
           this.writeToChild(
             JSON.stringify({ jsonrpc: "2.0", id: msg.id, result }) + "\n",

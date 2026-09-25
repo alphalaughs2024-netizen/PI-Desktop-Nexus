@@ -231,11 +231,11 @@ import { collectWorkspaceDiff } from "./git-diff";
 import { BrowserPane, resolveLocalFile } from "./browser-view";
 import {
   BrowserHost,
-  BROWSER_PLUGIN_ID,
   BROWSER_VIEW_ID,
   type BrowserRect,
 } from "./browser-host";
 import { BrowserBroker } from "./browser-broker";
+import { createBrowserTypedTools, BROWSER_TYPED_TOOL_NAMES } from "./browser-typed-tools";
 import { BrowserTelemetry } from "./browser-telemetry";
 import { discoverProviderModels } from "./model-discovery";
 import {
@@ -894,7 +894,6 @@ const plugins: PluginRuntime = new PluginRuntime({
     // surface. Drop it; the renderer re-opens it on the pluginChanged event if
     // the tab is still active and the plugin came back.
     pluginViews.closePlugin(pluginId);
-    if (pluginId === BROWSER_PLUGIN_ID) browserHost.disposeGuest();
     sendToRenderer(IPC.event.pluginChanged,{ reason: "crash", pluginId });
   },
   // Supervision state is UI-only: the runtime owns restarts, the renderer just
@@ -921,7 +920,6 @@ const plugins: PluginRuntime = new PluginRuntime({
     });
     // Views were loaded from the previous revision of the plugin's files.
     pluginViews.closePlugin(pluginId);
-    if (pluginId === BROWSER_PLUGIN_ID) browserHost.disposeGuest();
     sendToRenderer(IPC.event.pluginChanged,{ reason: "reload", pluginId });
   },
 }, undefined, dataDir);
@@ -990,10 +988,9 @@ const browserHost = new BrowserHost({
   onState: emitBrowserState,
 });
 const browserBroker = new BrowserBroker(browserHost, isBrowserCapabilityEnabled);
+const browserTypedTools = createBrowserTypedTools(browserBroker);
 const browserTelemetry = new BrowserTelemetry((event, fields) => logger.app("diagnostics", "info", event, { data: fields }));
-pluginViews.onSurface = (surface) => {
-  browserHost.setChromeSurface(surface);
-};
+pluginViews.onSurface = () => undefined;
 plugins.setServices({
   agentExtensionsChanged: () =>
     sendToRenderer(IPC.event.pluginChanged, { reason: "agentExtensions" }),
@@ -1015,7 +1012,7 @@ plugins.setServices({
     cdp: (method, params) => browserBroker.cdp(method, params),
   },
   onPluginUnload: (pluginId) => {
-    if (pluginId === BROWSER_PLUGIN_ID) return;
+    if (pluginId === "pi.browser") return;
   },
 });
 
@@ -5354,6 +5351,14 @@ async function startSidecar(): Promise<void> {
       content: `Previewing ${raw} in the built-in Browser. Live reload is active — subsequent edits to the file or sibling assets re-render automatically.`,
     };
   });
+  for (const descriptor of browserTypedTools) {
+    s.setLocalTool(descriptor.name, async ({ args, sessionId, mode }) => {
+      const result = await descriptor.execute(args, { sessionId, mode: mode === "plan" ? "plan" : "agent" });
+      return result && typeof result === "object" && "ok" in (result as Record<string, unknown>)
+        ? result as { ok: boolean; content?: unknown; isError?: boolean; errorCode?: string }
+        : { ok: true, content: result };
+    });
+  }
   // Plugin skills (D174): the model loads a declared skill document by id.
   // Served in main because the plugin runtime — and the plugin directories —
   // live here, not in host-core.
@@ -6304,7 +6309,7 @@ async function bootBackends() {
     const listed = await host!.call<{ plugins: any[] }>("plugins.list");
     rememberPluginScopes(listed.plugins ?? []);
     for (const p of listed.plugins ?? []) {
-      if (p.id === BROWSER_PLUGIN_ID) continue;
+      if (p.id === "pi.browser") continue;
       if (p.enabled && p.path) {
         try {
           await plugins.loadFromPath(p.path, p.permissions ?? [], {
@@ -8130,10 +8135,10 @@ function registerIpc() {
 
   handle(IPC.invoke.browserSetVisible, async (input: { visible?: boolean } = {}) => {
     if (!isBrowserCapabilityEnabled() || input.visible !== true) {
-      browserHost.setGuestVisible(BROWSER_PLUGIN_ID, false);
+      browserHost.setGuestVisible("core", false);
       return { ok: true };
     }
-    browserHost.setGuestVisible(BROWSER_PLUGIN_ID, true);
+    browserHost.setGuestVisible("core", true);
     return { ok: true };
   });
 
@@ -9198,11 +9203,11 @@ function registerIpc() {
         }
       }),
     );
-    return { ...result, plugins: pluginsWithSettings.filter((plugin) => plugin?.id !== BROWSER_PLUGIN_ID) };
+    return { ...result, plugins: pluginsWithSettings.filter((plugin) => plugin?.id !== "pi.browser") };
   });
 
   handle(IPC.invoke.pluginSettingsGet, async (id: string) => {
-    if (id === BROWSER_PLUGIN_ID) throw new Error("Browser is built into Nexus and has no plugin settings.");
+    if (id === "pi.browser") throw new Error("Browser is built into Nexus and has no plugin settings.");
     const settings = await plugins.getPluginSettings(String(id ?? ""));
     return { settings };
   });
@@ -9210,7 +9215,7 @@ function registerIpc() {
   handle(
     IPC.invoke.pluginSettingsSet,
     async (payload: { id?: string; settings?: Record<string, unknown> }) => {
-      if (payload?.id === BROWSER_PLUGIN_ID) throw new Error("Browser is built into Nexus and has no plugin settings.");
+      if (payload?.id === "pi.browser") throw new Error("Browser is built into Nexus and has no plugin settings.");
       const settings = await plugins.setPluginSettings(
         String(payload?.id ?? ""),
         payload?.settings ?? {},
@@ -9370,7 +9375,7 @@ function registerIpc() {
 
   handle(IPC.invoke.pluginEnable, async (id: string) => {
     if (!host) throw new Error("host unavailable");
-    if (id === BROWSER_PLUGIN_ID) throw new Error("Browser is built into Nexus. Use the Browser capability setting.");
+    if (id === "pi.browser") throw new Error("Browser is built into Nexus. Use the Browser capability setting.");
     const res = await host.call<{ plugin: any }>("plugins.enable", { id });
     if (res.plugin?.path) {
       await plugins.loadFromPath(res.plugin.path, res.plugin.permissions ?? [], {
@@ -9385,7 +9390,7 @@ function registerIpc() {
 
   handle(IPC.invoke.pluginDisable, async (id: string) => {
     if (!host) throw new Error("host unavailable");
-    if (id === BROWSER_PLUGIN_ID) throw new Error("Browser is built into Nexus. Use the Browser capability setting.");
+    if (id === "pi.browser") throw new Error("Browser is built into Nexus. Use the Browser capability setting.");
     pluginViews.closePlugin(id);
     await plugins.unload(id);
     logger.app("plugin", "info", "plugin disabled", { pluginId: id });
@@ -9396,7 +9401,7 @@ function registerIpc() {
 
   handle(IPC.invoke.pluginUninstall, async (id: string) => {
     if (!host) throw new Error("host unavailable");
-    if (id === BROWSER_PLUGIN_ID) throw new Error("Browser is built into Nexus and cannot be uninstalled. Use the Browser capability setting.");
+    if (id === "pi.browser") throw new Error("Browser is built into Nexus and cannot be uninstalled. Use the Browser capability setting.");
     pluginViews.closePlugin(id);
     await plugins.unload(id);
     logger.app("plugin", "info", "plugin uninstalled", { pluginId: id });
@@ -9407,7 +9412,7 @@ function registerIpc() {
 
   handle(IPC.invoke.pluginSetAutoUpdate, async (payload: { id: string; enabled: boolean }) => {
     if (!host) throw new Error("host unavailable");
-    if (payload.id === BROWSER_PLUGIN_ID) throw new Error("Browser is built into Nexus and has no plugin updates.");
+    if (payload.id === "pi.browser") throw new Error("Browser is built into Nexus and has no plugin updates.");
     return host.call("plugins.setAutoUpdate", {
       id: payload.id,
       enabled: payload.enabled,
@@ -9418,7 +9423,7 @@ function registerIpc() {
     IPC.invoke.pluginSetScope,
     async (payload: { id: string; scope: ActivationScope }) => {
       if (!host) throw new Error("host unavailable");
-      if (payload.id === BROWSER_PLUGIN_ID) throw new Error("Browser is a global core capability and has no plugin scope.");
+      if (payload.id === "pi.browser") throw new Error("Browser is a global core capability and has no plugin scope.");
       const res = await host.call<{ plugin?: { id?: string; scope?: ActivationScope } }>(
         "plugins.setScope",
         { id: payload.id, scope: payload.scope },
@@ -9912,10 +9917,11 @@ function registerIpc() {
       const viewId = String(payload?.viewId ?? "");
       const sessionId = String(payload?.sessionId ?? "").trim();
       const location = String(payload?.location ?? "").trim();
-      const isBrowserView = pluginId === BROWSER_PLUGIN_ID && viewId === BROWSER_VIEW_ID;
-      if (isBrowserView && sessionId) browserHost.setChromeSession(sessionId);
-      if (isBrowserView && sessionId && location) {
-        browserHost.rememberLocation(sessionId, location);
+      const legacyBrowserView = pluginId === "pi.browser" && viewId === BROWSER_VIEW_ID;
+      if (legacyBrowserView) {
+        if (sessionId) browserHost.setChromeSession(sessionId);
+        if (sessionId && location) browserHost.rememberLocation(sessionId, location);
+        return { ok: true, compatibility: "core-browser" };
       }
       const loaded = plugins.getLoaded(pluginId);
       if (!loaded) throw new Error("plugin not loaded");
@@ -9939,7 +9945,7 @@ function registerIpc() {
         htmlPath,
         netDomains: loaded.manifest.net?.domains?.map((domain) => String(domain)),
       });
-      if (isBrowserView && location) {
+      if (legacyBrowserView && location) {
         void browserHost.navigate(
           { path: location, url: location },
           sessionId || undefined,
@@ -9979,7 +9985,7 @@ function registerIpc() {
       if (
         payload?.visible === true &&
         sessionId &&
-        pluginId === BROWSER_PLUGIN_ID &&
+        pluginId === "pi.browser" &&
         viewId === BROWSER_VIEW_ID
       ) {
         browserHost.setChromeSession(sessionId);

@@ -118,45 +118,9 @@ test("Review still opens itself from workspace edit artifacts", () => {
   assert.match(storeSource, /toolWorkPanelTab\("review"\)/);
 });
 
-test("Browser ships as an ordinary plugin over the public CDP API", () => {
-  const browserManifest = JSON.parse(read("resources/plugins/pi.browser/manifest.json"));
-  const browserMain = read("resources/plugins/pi.browser/main.js");
-  const browserView = read("resources/plugins/pi.browser/views/browser.html");
-  assert.equal(browserManifest.id, "pi.browser");
-  assert.deepEqual(browserManifest.contributes.views.map((v) => v.id), ["browser"]);
-  assert.deepEqual(
-    [...browserManifest.permissions].sort(),
-    ["agent.tool.register", "browser.cdp", "ui.view"],
-  );
-  assert.equal(typeof browserManifest.contributes.views[0].title.en, "string");
-  assert.equal(typeof browserManifest.contributes.views[0].title["zh-CN"], "string");
-  assert.match(browserMain, /pi\.agent\.registerTool/);
-  assert.match(browserMain, /pi\.browser\.(navigate|snapshot|cdp)/);
-  assert.match(browserView, /pluginBridge/);
-  assert.match(browserView, /browser\.setBounds/);
-  assert.doesNotMatch(browserView, /require\(|ipcRenderer|webview/);
-});
-
-test("Browser declares plan-safe actions for Plan-mode URL inspection (ADR 0211)", () => {
-  const browserMain = read("resources/plugins/pi.browser/main.js");
-  // The planSafeActions list must be declared on the registered tool.
-  assert.match(browserMain, /planSafeActions\s*:\s*PLAN_SAFE_ACTIONS/);
-  // The list itself must declare the four read-only actions the user needs.
-  assert.match(
-    browserMain,
-    /PLAN_SAFE_ACTIONS\s*=\s*\[\s*"navigate"\s*,\s*"snapshot"\s*,\s*"screenshot"\s*,\s*"console"\s*\]/,
-  );
-  // The mutating actions must NOT appear in PLAN_SAFE_ACTIONS, otherwise
-  // Plan mode would be able to click/fill/evaluate arbitrary pages.
-  const planSafeMatch = browserMain.match(/PLAN_SAFE_ACTIONS\s*=\s*\[([\s\S]*?)\]/);
-  assert.ok(planSafeMatch, "PLAN_SAFE_ACTIONS array must exist");
-  for (const unsafe of ["click", "fill", "evaluate", "cdp"]) {
-    assert.doesNotMatch(
-      planSafeMatch[1],
-      new RegExp('"' + unsafe + '"'),
-      `mutating action ${unsafe} must not appear in PLAN_SAFE_ACTIONS`,
-    );
-  }
+test("Browser is core-owned and ordinary bundled plugins remain covered", () => {
+  assert.doesNotMatch(panelSource, /plugin_pi_browser_Browser/);
+  assert.doesNotMatch(panelSource, /Browser plugin is disabled/);
 });
 
 

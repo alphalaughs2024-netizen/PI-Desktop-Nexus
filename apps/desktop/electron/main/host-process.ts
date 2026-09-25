@@ -120,6 +120,7 @@ export class HostProcess {
         // source checkout, so it resolves the bundled-plugin directory and
         // host-core simply reconciles its registry against it (ADR 0105).
         ...(builtinPlugins ? { PI_DESKTOP_BUILTIN_PLUGINS_DIR: builtinPlugins } : {}),
+        PI_DESKTOP_EXCLUDE_BUILTIN_BROWSER: "1",
       },
     });
 

@@ -514,6 +514,19 @@ const AGENT_CORE_TOOL_NAMES = new Set([
   ASK_TOOL_NAME,
   SKILL_TOOL_NAME,
   WORKFLOW_TOOL_NAME,
+  "browser_list_tabs",
+  "browser_open",
+  "browser_navigate",
+  "browser_snapshot",
+  "browser_screenshot",
+  "browser_click",
+  "browser_fill",
+  "browser_type",
+  "browser_keypress",
+  "browser_wait",
+  "browser_console",
+  "browser_evaluate",
+  "browser_cdp",
 ]);
 
 const GIT_WORKTREE_HARD_FAILURE_CODES = new Set([
@@ -2441,6 +2454,19 @@ export class DesktopAgentRuntime {
       switch (toolName) {
         case "BrowserPreview":
           return "Open a workspace HTML file in PI-Desktop's built-in browser panel. `path` is workspace-relative (e.g. \"demo/index.html\"). The preview live-reloads on later edits to the file or its sibling assets, so call once per page.";
+        case "browser_list_tabs": return "List the built-in Browser tab and readiness state.";
+        case "browser_open": return "Open or reuse the built-in Browser tab. Browser is core and available without ToolSearch.";
+        case "browser_navigate": return "Navigate the built-in Browser. Use browser_snapshot after navigation.";
+        case "browser_snapshot": return "Return a bounded Browser accessibility snapshot. Refs are scoped to browserId and snapshotId.";
+        case "browser_screenshot": return "Capture a bounded Browser screenshot with CSS-pixel metadata.";
+        case "browser_click": return "Agent-only: click a ref from the latest browser_snapshot; stale refs require a fresh snapshot.";
+        case "browser_fill": return "Agent-only: fill a ref from the latest browser_snapshot; never retry an ambiguous mutation automatically.";
+        case "browser_type": return "Agent-only: type into a focused or snapshot-scoped Browser target.";
+        case "browser_keypress": return "Agent-only: send a bounded keypress to the Browser.";
+        case "browser_wait": return "Wait for one bounded URL, text, or page-load Browser condition.";
+        case "browser_console": return "Read bounded Browser console entries.";
+        case "browser_evaluate": return "Agent-only: evaluate bounded JavaScript; results are sanitized.";
+        case "browser_cdp": return "Agent-only: call one allowlisted CDP method; cookies/storage/targets are denied.";
         case "Read":
           return (
             "Read a bounded window from an existing regular text file, never a directory. " +
@@ -2507,6 +2533,19 @@ export class DesktopAgentRuntime {
         path: pathParam("File to preview; workspace-relative."),
         file_path: aliasParam("path"),
       },
+      browser_list_tabs: {},
+      browser_open: { url: Type.Optional(Type.String()), background: Type.Optional(Type.Boolean()) },
+      browser_navigate: { browserId: Type.String(), url: Type.String(), sessionId: Type.Optional(Type.String()) },
+      browser_snapshot: { browserId: Type.String(), compact: Type.Optional(Type.Boolean()), maxNodes: Type.Optional(Type.Number()), maxDepth: Type.Optional(Type.Number()), sessionId: Type.Optional(Type.String()) },
+      browser_screenshot: { browserId: Type.String(), fullPage: Type.Optional(Type.Boolean()), maxWidth: Type.Optional(Type.Number()), maxHeight: Type.Optional(Type.Number()), maxBytes: Type.Optional(Type.Number()), format: Type.Optional(Type.Union([Type.Literal("jpeg"), Type.Literal("png")])), quality: Type.Optional(Type.Number()) },
+      browser_click: { browserId: Type.String(), snapshotId: Type.String(), ref: Type.String(), button: Type.Optional(Type.String()) },
+      browser_fill: { browserId: Type.String(), snapshotId: Type.String(), ref: Type.String(), text: Type.String() },
+      browser_type: { browserId: Type.String(), snapshotId: Type.Optional(Type.String()), ref: Type.Optional(Type.String()), text: Type.String(), clearFirst: Type.Optional(Type.Boolean()) },
+      browser_keypress: { browserId: Type.String(), snapshotId: Type.Optional(Type.String()), ref: Type.Optional(Type.String()), key: Type.String(), modifiers: Type.Optional(Type.Array(Type.String())) },
+      browser_wait: { browserId: Type.String(), condition: Type.Object({ kind: Type.String() }), timeoutMs: Type.Optional(Type.Number()) },
+      browser_console: { browserId: Type.String(), limit: Type.Optional(Type.Number()) },
+      browser_evaluate: { browserId: Type.String(), source: Type.String() },
+      browser_cdp: { browserId: Type.String(), method: Type.String(), params: Type.Optional(Type.Object({})) },
       Glob: {
         pattern: pathParam("Glob pattern, for example **/*.ts."),
         query: aliasParam("pattern"),
@@ -3009,10 +3048,23 @@ export class DesktopAgentRuntime {
             "Glob",
             "Grep",
             "BrowserPreview",
+            "browser_list_tabs",
+            "browser_open",
+            "browser_navigate",
+            "browser_snapshot",
+            "browser_screenshot",
+            "browser_click",
+            "browser_fill",
+            "browser_type",
+            "browser_keypress",
+            "browser_wait",
+            "browser_console",
+            "browser_evaluate",
+            "browser_cdp",
             "PluginCheck",
             "GitWorktree",
           ]
-        : ["Read", "Glob", "Grep", "BrowserPreview", "Bash"];
+        : ["Read", "Glob", "Grep", "BrowserPreview", "Bash", "browser_list_tabs", "browser_open", "browser_navigate", "browser_snapshot", "browser_screenshot", "browser_wait", "browser_console"];
     if (this.mode === "agent") {
       tools.push("PluginScaffold", "PluginPack");
     }
@@ -3243,6 +3295,13 @@ export class DesktopAgentRuntime {
               "Grep",
               "Bash",
               "BrowserPreview",
+              "browser_list_tabs",
+              "browser_open",
+              "browser_navigate",
+              "browser_snapshot",
+              "browser_screenshot",
+              "browser_wait",
+              "browser_console",
               SKILL_TOOL_NAME,
               WORKFLOW_TOOL_NAME,
               ASK_TOOL_NAME,

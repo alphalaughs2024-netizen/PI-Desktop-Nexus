@@ -4,7 +4,6 @@ import { BrowserCdp } from "./browser-cdp";
 import { writeFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 
-export const BROWSER_PLUGIN_ID = "pi.browser";
 export const BROWSER_VIEW_ID = "browser";
 
 export type BrowserRect = {

@@ -86,7 +86,7 @@ Plan is not itself the workspace security boundary. Host-core resolves the
 durable session mode for every `tools.execute` call and applies the Plan matrix
 before permission modes, grants, plugin risk, or renderer/sidecar state. Plan
 denies Write/Edit/plugin/unknown tools, while BrowserPreview is the explicit
-read-only UI inspection exception (it reveals bundled `pi.browser` chrome; raw
+read-only UI inspection capability backed by the built-in Browser core; raw
 CDP plugin tools stay denied in Plan). Bash remains available in Plan: Ask and
 Accept edits prompt, and Auto runs without confirmation and may mutate the
 workspace or scratch directory. The UI must state this tradeoff. `SubmitPlan`

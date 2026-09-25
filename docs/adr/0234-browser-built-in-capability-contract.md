@@ -26,6 +26,20 @@ credentials, form values, evaluated code, and raw CDP payloads are forbidden.
 Guest isolation, workspace containment, CDP allowlisting, lifecycle generation,
 diagnostics, and recovery are release-blocking security contracts.
 
+## Phase 9 final ownership and removal
+
+The Browser product package is removed from bundled-plugin reconciliation and
+shipping assets after clean-profile, upgrade-profile, security, E2E, and
+third-party compatibility gates pass. `pi.browser.*` remains permanently as a
+Main-owned compatibility adapter, and legacy Browser tab/reference normalizers
+remain for migration. The final shipped ownership is:
+
+```text
+Core: Browser tools, Work Panel, BrowserPreview, Host/Pane/CDP, Broker, policy,
+      diagnostics, telemetry
+Compatibility only: pi.browser.* and legacy tab/reference normalization
+```
+
 ## Decision
 
 Browser is a core Nexus capability. Core owns the Browser Work Panel view,

@@ -43,12 +43,3 @@ test("primary editable surfaces disable browser text correction", async () => {
     }
   }
 });
-
-test("bundled browser URL bar disables text correction", async () => {
-  const src = await read(
-    "../resources/plugins/pi.browser/views/browser.html",
-  );
-  assert.ok(src.includes('spellcheck="false"'));
-  assert.ok(src.includes('autocorrect="off"'));
-  assert.ok(src.includes('autocapitalize="off"'));
-});

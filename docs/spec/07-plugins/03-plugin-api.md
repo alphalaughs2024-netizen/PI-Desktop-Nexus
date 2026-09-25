@@ -404,6 +404,11 @@ pi.shell.openExternal(url: string): Promise<void>
 hrefs (D330 / ADR 0168). Other schemes fail with `INVALID_ARGUMENT`.
 
 ### browser (requires `browser.cdp`)
+
+`pi.browser.*` is a compatibility host API only. The built-in Browser product,
+typed tools, Work Panel view, and BrowserPreview no longer come from a bundled
+plugin package. Compatibility calls route through the Main BrowserBroker and
+cannot register tools/views or control the core visual surface.
 ```ts
 pi.browser.navigate(input: { url?: string; path?: string }): Promise<BrowserState | null>
 pi.browser.action(input: { action: "back" | "forward" | "reload" | "stop" }): Promise<void>

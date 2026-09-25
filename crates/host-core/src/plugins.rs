@@ -538,6 +538,9 @@ impl PluginManager {
                     // rather than refusing to start the whole host.
                     Err(_) => continue,
                 };
+                if manifest.id == "pi.browser" && std::env::var("PI_DESKTOP_EXCLUDE_BUILTIN_BROWSER").ok().as_deref() == Some("1") {
+                    continue;
+                }
                 let previous = self.runtime.iter().find(|p| p.id == manifest.id);
                 let now = Utc::now().to_rfc3339();
                 let enabled = previous
