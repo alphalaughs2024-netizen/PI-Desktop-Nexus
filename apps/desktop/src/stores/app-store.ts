@@ -4774,15 +4774,6 @@ export const useAppStore = create<AppState>((set, get) => ({
     get().openWorkPanelTab(fileWorkPanelTab(path, mimeType));
   },
   openUrlInWorkPanel: (url) => {
-    const hasBrowser = get().pluginViews.some(
-      (view) => view.pluginId === "pi.browser" && view.viewId === "browser",
-    );
-    if (!hasBrowser) {
-      get().showToast("Browser is not available in this Nexus installation", {
-        variant: "error",
-      });
-      return;
-    }
     get().openWorkPanelTab(browserPluginTab(url));
   },
 
