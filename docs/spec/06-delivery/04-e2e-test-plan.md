@@ -10774,6 +10774,29 @@ foreground rather than inheriting the selected theme's general text color.
 - **Status**: Renderer/source and accessibility coverage; rendered narrow-panel
   validation remains manual/E2E validation.
 
+#### E2E-Prompt-Context-Inspector-P2: Runtime correctness and visual polish
+
+- **Preconditions**: A session has live and persisted lifecycle records,
+  configured provider/model identity, and optional Context Vault metadata.
+- **Steps**: Open **Prompt context** after a completed turn, inspect both tabs,
+  switch filters, then repeat while a turn is running and while duplicate live/
+  history lifecycle records are present.
+- **Expected**: Duplicate context/terminal rows collapse in the UI; groups use
+  `Turn 1` ordinals and readable status/duration badges; completed turns show
+  `Historical`, active turns show `Live`, and loading/unavailable states remain
+  distinct. Provider/model labels use human-readable configured names. Reload
+  reasons are translated into user-facing copy. Composition rows do not repeat
+  inclusion labels, and the Context Vault block shows only safe selected,
+  stale, warning, budget, and trigger metadata.
+- **Accessibility and responsive behavior**: Composition/Timeline tabs support
+  keyboard navigation and valid ARIA relationships. Timeline rows remain
+  readable at narrow widths and long provider/model names truncate safely.
+- **Privacy**: Full turn IDs remain outside the primary hierarchy; prompt text,
+  claim bodies, evidence, tool arguments, credentials, and raw provider payloads
+  never appear in the visible inspector or safe metadata copy.
+- **Status**: Renderer/source coverage; scenic dark/light and narrow-panel
+  visual validation remains manual/E2E validation.
+
 - Sidebar project groups persist names, membership, ordering, and collapsed
   state without changing project paths or session ownership.
 - Context Vault project memory remains scoped to the active project and only
