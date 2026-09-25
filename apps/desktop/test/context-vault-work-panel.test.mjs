@@ -10,6 +10,7 @@ const protocol = await readFile(new URL("../../../packages/shared/src/protocol.t
 const en = await readFile(new URL("../../../packages/i18n/src/locales/en/index.ts", import.meta.url), "utf8");
 const zhCN = await readFile(new URL("../../../packages/i18n/src/locales/zh-CN/index.ts", import.meta.url), "utf8");
 const workPanel = await readFile(new URL("../src/components/workpanel/WorkPanel.tsx", import.meta.url), "utf8");
+const twilight = await readFile(new URL("../src/styles/twilight-mountains.css", import.meta.url), "utf8");
 
 test("Context Vault has a localized native tab and visible controls", () => {
   assert.match(en, /contextVault: "Context Vault"/);
@@ -86,6 +87,14 @@ test("Context Vault provides a complete native editing workspace instead of a si
   assert.match(styles, /\.context-vault-modal-backdrop \{/);
   assert.match(styles, /\.context-vault-purpose-cards \{/);
   assert.match(styles, /\.context-vault-evidence-row \{/);
+});
+
+test("Context Vault keeps disabled scenic-theme button labels readable", () => {
+  assert.match(styles, /context-vault-action:disabled/);
+  assert.match(styles, /opacity: 1/);
+  assert.match(styles, /context-vault-action-primary:disabled/);
+  assert.match(twilight, /context-vault-action:disabled/);
+  assert.match(twilight, /color: rgba\(240, 247, 255, 0\.86\)/);
 });
 
 test("empty work panel exposes Context Vault beside Browser and Files", () => {
