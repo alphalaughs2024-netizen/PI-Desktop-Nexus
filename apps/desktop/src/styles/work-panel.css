@@ -1245,7 +1245,7 @@
   border-radius: var(--radius-sm);
 }
 
-.context-vault-tab { height: 100%; display: flex; min-width: 0; flex-direction: column; gap: 10px; padding: 10px; overflow: hidden; }
+.context-vault-tab { --context-vault-surface: var(--ds-bg-primary); --context-vault-surface-raised: var(--ds-bg-secondary); --context-vault-control-surface: var(--ds-tile); --context-vault-control-border: var(--ds-border); --context-vault-control-text: var(--ds-text-primary); --context-vault-control-hover: var(--ds-bg-hover); --context-vault-control-disabled-surface: var(--ds-bg-secondary); --context-vault-control-disabled-border: var(--ds-border-subtle); --context-vault-control-disabled-text: var(--ds-text-secondary); --context-vault-primary-surface: var(--ds-accent); --context-vault-primary-hover: var(--ds-accent-hover); --context-vault-primary-text: var(--ds-bg-primary); --context-vault-focus: var(--ds-focus); --context-vault-empty-surface: var(--ds-tile); --context-vault-empty-border: var(--ds-border); --context-vault-category-text: var(--ds-text-secondary); --context-vault-category-muted: var(--ds-text-muted); --context-vault-category-active-surface: var(--ds-bg-hover); --context-vault-category-active-border: var(--ds-border-strong); --context-vault-category-active-text: var(--ds-text-primary); --context-vault-placeholder: var(--ds-text-muted); height: 100%; display: flex; min-width: 0; flex-direction: column; gap: 10px; padding: 10px; overflow: hidden; background: var(--context-vault-surface); color: var(--context-vault-control-text); }
 .prompt-inspector-tab { height: 100%; min-height: 0; overflow: auto; padding: 16px; color: var(--ds-text-primary); background: color-mix(in srgb, var(--ds-bg-primary) 92%, transparent); backdrop-filter: blur(18px); }
 .prompt-inspector-tabs { display: flex; gap: 4px; padding: 4px; border: 1px solid var(--ds-border-subtle); border-radius: var(--radius-sm); background: var(--ds-tile); }
 .prompt-inspector-tabs button { min-height: 32px; padding: 0 12px; border: 0; border-radius: var(--radius-sm); background: transparent; color: var(--ds-text-muted); cursor: pointer; font: inherit; font-size: var(--text-xs); }
@@ -1324,7 +1324,7 @@
   .prompt-inspector-row-rail { display: none; }
   .prompt-inspector-context { align-items: flex-start; flex-direction: column; }
 }
-.context-vault-workspace { min-width: 0; min-height: 0; flex: 1; display: grid; grid-template-columns: minmax(124px, 0.32fr) minmax(0, 1fr); overflow: hidden; border: 1px solid var(--ds-border); border-radius: var(--radius-md); background: var(--ds-bg-primary); }
+.context-vault-workspace { min-width: 0; min-height: 0; flex: 1; display: grid; grid-template-columns: minmax(124px, 0.32fr) minmax(0, 1fr); overflow: hidden; border: 1px solid var(--context-vault-control-border); border-radius: var(--radius-md); background: var(--context-vault-surface); }
 .context-vault-rail { display: flex; min-width: 0; min-height: 0; flex-direction: column; gap: 3px; padding: 8px; border-right: 1px solid var(--ds-border); background: var(--ds-bg-secondary); overflow: auto; }
 .context-vault-category { display: flex; min-height: 30px; align-items: center; justify-content: space-between; gap: 6px; padding: 0 7px; border-radius: var(--radius-sm); color: var(--ds-text-secondary); font-size: var(--text-xs); text-align: left; }
 .context-vault-category span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -1335,7 +1335,7 @@
 .context-vault-rail-health { margin: auto 3px 2px; color: var(--ds-text-muted); font-size: var(--text-2xs); line-height: var(--leading-body); overflow-wrap: anywhere; }
 .context-vault-main { display: flex; min-width: 0; min-height: 0; flex: 1; flex-direction: column; padding: 10px; overflow: hidden; }
 .context-vault-toolbar { display: flex; min-width: 0; flex: 0 0 auto; align-items: center; gap: 8px; }
-.context-vault-search-shell { display: flex; min-width: 0; flex: 1; align-items: center; gap: 7px; padding: 0 9px; border: 1px solid var(--ds-border); border-radius: var(--radius-sm); background: var(--ds-tile); color: var(--ds-text-muted); }
+.context-vault-search-shell { display: flex; min-width: 0; flex: 1; align-items: center; gap: 7px; padding: 0 9px; border: 1px solid var(--context-vault-control-border); border-radius: var(--radius-sm); background: var(--context-vault-control-surface); color: var(--context-vault-placeholder); }
 .context-vault-search-shell:focus-within { border-color: var(--ds-focus); box-shadow: 0 0 0 2px color-mix(in oklab, var(--ds-focus) 20%, transparent); }
 .context-vault-header { display: flex; min-width: 0; flex: 0 0 auto; flex-direction: column; gap: 8px; }
 .context-vault-heading { min-width: 0; }
@@ -1345,10 +1345,10 @@
 .context-vault-heading span { margin-top: 2px; overflow-wrap: anywhere; }
 .context-vault-header button, .context-vault-editor button { margin-left: 0; }
 .context-vault-actions { display: flex; min-width: 0; flex-wrap: wrap; gap: 5px; padding-top: 8px; border-top: 1px solid var(--ds-border-subtle); }
-.context-vault-action { display: inline-flex; min-height: 30px; align-items: center; justify-content: center; padding: 0 10px; border: 1px solid var(--ds-border); border-radius: var(--radius-sm); background: var(--ds-tile); color: var(--ds-text-primary); font-size: var(--text-xs-plus); font-weight: var(--font-weight-medium); line-height: var(--leading-none); transition: background var(--motion-duration-fast) var(--motion-ease-out), border-color var(--motion-duration-fast) var(--motion-ease-out), color var(--motion-duration-fast) var(--motion-ease-out); }
-.context-vault-action:hover { border-color: var(--ds-border-default); background: var(--ds-bg-hover); }
-.context-vault-action-primary { border-color: var(--ds-accent); background: var(--ds-accent); color: var(--ds-bg-primary); }
-.context-vault-action-primary:hover { border-color: var(--ds-accent); background: color-mix(in oklab, var(--ds-accent) 84%, var(--ds-text-primary)); }
+.context-vault-action { display: inline-flex; min-height: 30px; align-items: center; justify-content: center; padding: 0 10px; border: 1px solid var(--context-vault-control-border); border-radius: var(--radius-sm); background: var(--context-vault-control-surface); color: var(--context-vault-control-text); font-size: var(--text-xs-plus); font-weight: var(--font-weight-medium); line-height: var(--leading-none); transition: background var(--motion-duration-fast) var(--motion-ease-out), border-color var(--motion-duration-fast) var(--motion-ease-out), color var(--motion-duration-fast) var(--motion-ease-out); }
+.context-vault-action:hover:not(:disabled) { border-color: var(--context-vault-control-border); background: var(--context-vault-control-hover); }
+.context-vault-action-primary { border-color: var(--context-vault-primary-surface); background: var(--context-vault-primary-surface); color: var(--context-vault-primary-text); }
+.context-vault-action-primary:hover:not(:disabled) { border-color: var(--context-vault-primary-hover); background: var(--context-vault-primary-hover); }
 .context-vault-action-danger { border-color: color-mix(in oklab, var(--ds-error) 45%, var(--ds-border)); color: var(--ds-error); }
 .context-vault-action-danger:hover { background: color-mix(in oklab, var(--ds-error) 12%, var(--ds-tile)); }
 .context-vault-actions button { flex: 0 0 auto; white-space: nowrap; }
@@ -1404,9 +1404,10 @@
 .context-vault-toolbar { gap: 10px; }
 .context-vault-actions { margin: 0; padding: 0; border: 0; justify-content: flex-end; }
 .context-vault-action { gap: 6px; min-height: 32px; border-radius: var(--radius-sm); }
-.context-vault-action:focus-visible, .context-vault-inline-button:focus-visible, .context-vault-icon-button:focus-visible, .context-vault-category:focus-visible { outline: 2px solid var(--ds-focus); outline-offset: 2px; }
-.context-vault-action:disabled, .context-vault-inline-button:disabled { cursor: not-allowed; opacity: 1; border-color: color-mix(in oklab, var(--ds-border) 70%, transparent); background: color-mix(in oklab, var(--ds-bg-secondary) 82%, transparent); color: var(--ds-text-secondary); }
-.context-vault-action-primary:disabled { border-color: color-mix(in oklab, var(--ds-accent) 35%, var(--ds-border)); background: color-mix(in oklab, var(--ds-accent) 28%, var(--ds-bg-secondary)); color: var(--ds-text-secondary); }
+.context-vault-action:focus-visible, .context-vault-inline-button:focus-visible, .context-vault-icon-button:focus-visible, .context-vault-category:focus-visible { outline: 2px solid var(--context-vault-focus); outline-offset: 2px; }
+.context-vault-action:disabled, .context-vault-inline-button:disabled { cursor: not-allowed; opacity: 1; border-color: var(--context-vault-control-disabled-border); background: var(--context-vault-control-disabled-surface); color: var(--context-vault-control-disabled-text); box-shadow: none; }
+.context-vault-action-primary:disabled { border-color: var(--context-vault-control-disabled-border); background: var(--context-vault-control-disabled-surface); color: var(--context-vault-control-disabled-text); }
+.context-vault-action:disabled:hover, .context-vault-action:disabled:focus-visible { border-color: var(--context-vault-control-disabled-border); background: var(--context-vault-control-disabled-surface); color: var(--context-vault-control-disabled-text); }
 .context-vault-search-shell { min-height: 34px; border-radius: var(--radius-md); }
 .context-vault-search { min-height: 32px; }
 .context-vault-message { margin: -2px 0 0; padding: 7px 9px; border-radius: var(--radius-sm); font-size: var(--text-xs); }

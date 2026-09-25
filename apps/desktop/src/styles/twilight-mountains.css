@@ -50,6 +50,8 @@
   --ds-bg-elevated-primary: rgba(12, 31, 59, 0.88);
 }
 
+:root[data-theme="dark"][data-scenic-theme="twilight-mountains"] .context-vault-tab { --context-vault-surface: rgba(5, 24, 61, .72); --context-vault-surface-raised: rgba(8, 37, 91, .72); --context-vault-control-surface: rgba(92, 145, 228, .24); --context-vault-control-border: rgba(204, 229, 255, .32); --context-vault-control-text: #f6f9ff; --context-vault-control-hover: rgba(126, 177, 246, .34); --context-vault-control-disabled-surface: rgba(75, 119, 190, .38); --context-vault-control-disabled-border: rgba(205, 229, 255, .32); --context-vault-control-disabled-text: rgba(240, 247, 255, .86); --context-vault-primary-surface: #4d8fe8; --context-vault-primary-hover: #6ca9ff; --context-vault-primary-text: #f8fbff; --context-vault-focus: #a9d2ff; --context-vault-empty-surface: rgba(8, 38, 96, .5); --context-vault-empty-border: rgba(204, 229, 255, .28); --context-vault-category-text: rgba(237, 245, 255, .82); --context-vault-category-muted: rgba(225, 238, 255, .68); --context-vault-category-active-surface: rgba(198, 221, 255, .18); --context-vault-category-active-border: rgba(204, 229, 255, .5); --context-vault-category-active-text: #fff; --context-vault-placeholder: rgba(225, 239, 255, .78); }
+
 :root[data-scenic-theme="twilight-mountains"] .app-scenic-backdrop {
   display: block;
   position: absolute;
