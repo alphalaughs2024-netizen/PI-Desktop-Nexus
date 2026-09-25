@@ -51,7 +51,6 @@ export function UsagePage() {
   const [history, setHistory] = useState<TokenUsageHistoryResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const [privacyOpen, setPrivacyOpen] = useState(false);
 
   const load = async (nextBucket = bucket) => {
     setLoading(true);
@@ -111,10 +110,6 @@ export function UsagePage() {
 
   return (
     <div className="settings-stack usage-page">
-      <div className="usage-plugin-topbar usage-page-header">
-        <div className="usage-page-title"><strong>{t("settings.usagePricing")}</strong><span>Local Nexus history · {range.toUpperCase()} · {totals.turnCount} completed turns · {facets.models.length} models</span></div>
-        <div className="usage-page-header-actions"><button type="button" className="usage-info-button" aria-expanded={privacyOpen} aria-controls="usage-privacy" onClick={() => setPrivacyOpen((value) => !value)}>ⓘ</button>{privacyOpen ? <div id="usage-privacy" className="usage-privacy-popover" role="tooltip">This dashboard uses aggregate token and turn counts from the local Nexus host. Message content and tool arguments are not read.</div> : null}</div>
-      </div>
       <div className="usage-dashboard-toolbar">
         <div className="usage-plugin-filters" role="group" aria-label={t("settings.usageFilters")}>
           <div className="usage-range-pills" role="group" aria-label={t("settings.usageRange")}>{(["7d", "30d", "90d", "1y", "all"] as Range[]).map((value) => <button aria-pressed={range === value} className={range === value ? "active" : ""} key={value} type="button" onClick={() => setRange(value)}>{value.toUpperCase()}</button>)}</div>

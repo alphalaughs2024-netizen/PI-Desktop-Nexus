@@ -91,6 +91,12 @@ test("usage refresh control sits with the bucket selector and header card has no
   assert.doesNotMatch(usage, /usage-page-header-actions[\s\S]*settings\.refresh/);
 });
 
+test("Usage & Pricing page does not render a duplicate in-page title tile", async () => {
+  const usage = await readFile(new URL("../src/components/settings/UsagePage.tsx", import.meta.url), "utf8");
+  assert.doesNotMatch(usage, /usage-page-header/);
+  assert.doesNotMatch(usage, /usage-page-title/);
+});
+
 test("cost popover state is initialized before its provider-account effect", async () => {
   const app = await readFile(new URL("../src/App.tsx", import.meta.url), "utf8");
   const stateIndex = app.indexOf('const [costOpen, setCostOpen] = useState(false);');
