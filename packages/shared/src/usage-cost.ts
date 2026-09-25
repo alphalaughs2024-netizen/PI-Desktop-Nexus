@@ -5,6 +5,7 @@ export type UsageCostRow = TokenUsageFacet & {
   provenance: "provider_reported" | "provider_generation" | "catalog_estimate" | "unpriced" | "unavailable";
   reportedCost?: string;
 };
+export type UsageCostRowView = UsageCostRow & { providerLabel: string; vendorKey?: string; baseUrl?: string; modelLabel: string; pricedSpendPercent?: number; statusLabel: string };
 
 export type UsageCostEstimate = {
   total: number;

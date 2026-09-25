@@ -85,6 +85,16 @@ test("pricing sections follow the token activity dashboard", async () => {
   assert.doesNotMatch(usage, /usage-primary-summary/);
 });
 
+test("pricing rows expose provider, token, turn, provenance, and grouping hooks", async () => {
+  const usage = await readFile(new URL("../src/components/settings/UsagePage.tsx", import.meta.url), "utf8");
+  assert.match(usage, /costGroups/);
+  assert.match(usage, /providerLabel/);
+  assert.match(usage, /formatTokens\(row\.totalTokens\)/);
+  assert.match(usage, /row\.turnCount/);
+  assert.match(usage, /pricedSpendPercent/);
+  assert.match(usage, /statusLabel/);
+});
+
 test("usage refresh control sits with the bucket selector and header card has no refresh action", async () => {
   const usage = await readFile(new URL("../src/components/settings/UsagePage.tsx", import.meta.url), "utf8");
   assert.match(usage, /usage-toolbar-actions[\s\S]*<Select[\s\S]*settings\.refresh/);
