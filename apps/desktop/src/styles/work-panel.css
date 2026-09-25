@@ -1387,7 +1387,7 @@
 }
 
 /* Native Context Vault workspace: project knowledge, not a plugin webview. */
-.context-vault-tab { position: relative; padding: 0; background: var(--ds-bg-primary); }
+.context-vault-tab { position: relative; padding: 0; background: var(--context-vault-surface); }
 .context-vault-workspace { border: 0; border-radius: 0; grid-template-columns: minmax(158px, .32fr) minmax(0, 1fr); }
 .context-vault-rail { gap: 4px; padding: 12px 8px 10px; background: var(--context-vault-surface-raised); }
 .context-vault-rail-brand { display: flex; align-items: center; gap: 7px; padding: 4px 7px 10px; color: var(--ds-text-primary); font-size: var(--text-xs-plus); font-weight: var(--font-weight-semibold); }
