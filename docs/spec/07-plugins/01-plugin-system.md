@@ -2,6 +2,13 @@
 
 ## 0. Frozen implementation defaults
 
+## Browser compatibility boundary (Phase 0)
+
+The core Browser tool and Work Panel view are not plugin-owned. `pi.browser.*`
+remains a compatibility host API for third-party extensions, but a compatibility
+adapter must not register a duplicate Browser tool/view or control core
+availability. BrowserPreview must not require plugin activation.
+
 - Plugin tool exposed names use forced prefix `plugin_<pluginIdSafe>_<toolName>` (D015)
 - enable→load failure auto-disables plugin (D017)
 - uninstall deletes plugin data by default (D016)
