@@ -1247,6 +1247,10 @@
 
 .context-vault-tab { height: 100%; display: flex; min-width: 0; flex-direction: column; gap: 10px; padding: 10px; overflow: hidden; }
 .prompt-inspector-tab { height: 100%; overflow: auto; padding: 14px; color: var(--ds-text-primary); }
+.prompt-inspector-tabs { display: flex; gap: 4px; padding: 4px; border: 1px solid var(--ds-border-subtle); border-radius: var(--radius-sm); background: var(--ds-tile); }
+.prompt-inspector-tabs button { min-height: 32px; padding: 0 12px; border: 0; border-radius: var(--radius-sm); background: transparent; color: var(--ds-text-muted); cursor: pointer; font: inherit; font-size: var(--text-xs); }
+.prompt-inspector-tabs button:hover, .prompt-inspector-tabs button:focus-visible { color: var(--ds-text-primary); background: var(--ds-bg-hover); outline: none; }
+.prompt-inspector-tabs button.active { background: var(--ds-bg-hover); color: var(--ds-text-primary); box-shadow: inset 0 -2px 0 var(--ds-accent); }
 .prompt-inspector-tab header { display: flex; justify-content: space-between; gap: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--ds-border-subtle); }
 .prompt-inspector-tab header strong, .prompt-inspector-tab header span { display: block; }
 .prompt-inspector-tab header span, .prompt-inspector-tab header small { color: var(--ds-text-muted); font-size: var(--text-xs); }

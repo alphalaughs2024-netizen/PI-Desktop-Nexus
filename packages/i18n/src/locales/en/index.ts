@@ -1435,6 +1435,7 @@ export const en = {
       file: "Files",
       plugin: "Plugin view",
       contextVault: "Context Vault",
+      promptInspector: "Prompt context",
     },
     pluginView: {
       failed: "This view could not be loaded. Reload the plugin and try again.",

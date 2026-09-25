@@ -539,7 +539,7 @@ export function WorkPanel({
                     <IconBookOpen size={15} /><span className="work-panel-menu-label">Context Vault</span>
                   </button>
                   <button type="button" role="menuitemradio" aria-checked={activeTab?.kind === "promptInspector"} tabIndex={-1} data-work-panel-menu-item="" className="work-panel-menu-item" onClick={() => void openPromptInspector()}>
-                    <IconFileText size={15} /><span className="work-panel-menu-label">Prompt inspector</span>
+                    <IconFileText size={15} /><span className="work-panel-menu-label">{t("panel.tabs.promptInspector")}</span>
                   </button>
                 </div>
                 {pluginViews.length > 0 && (
