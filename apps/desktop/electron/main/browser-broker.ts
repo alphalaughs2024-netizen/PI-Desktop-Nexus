@@ -23,7 +23,8 @@ export class BrowserBroker {
   private record: BrowserRecord = { browserId: this.browserId, state: "starting", createdAt: this.createdAt, updatedAt: this.createdAt, guestGeneration: 0 };
   private latestSnapshot?: { snapshotId: string; generation: number; browserId: string };
   private readonly host: BrowserHost;
-  constructor(host: BrowserHost) { this.host = host; }
+  private readonly isCapabilityEnabled: () => boolean;
+  constructor(host: BrowserHost, isCapabilityEnabled: () => boolean = () => true) { this.host = host; this.isCapabilityEnabled = isCapabilityEnabled; }
 
   private context(input?: BrowserContextInput): BrowserRequestContext {
     return { requestId: `browser-${++this.sequence}` as BrowserRequestContext["requestId"], sessionId: input?.sessionId ?? "", turnId: input?.turnId, effectiveAgentId: input?.effectiveAgentId, mode: input?.mode ?? "agent", permissionEpoch: input?.permissionEpoch ?? 0, browserId: (input?.browserId ?? this.browserId) as BrowserContextInput["browserId"] as BrowserRequestContext["browserId"] };
@@ -38,6 +39,7 @@ export class BrowserBroker {
   private async run<T>(command: BrowserCommand, work: () => Promise<T>, contextInput?: BrowserContextInput): Promise<BrowserResult<T>> {
     const context = this.context(contextInput);
     const execute = async (): Promise<BrowserResult<T>> => {
+      if (!this.isCapabilityEnabled()) return { requestId: context.requestId, ok: false, code: "BROWSER_POLICY_BLOCKED", retryable: false, message: "Browser is disabled by the core capability setting. Re-enable Browser in Settings and retry." };
       if (context.mode === "plan" && (command === "click" || command === "fill" || command === "evaluate" || command === "cdp")) return { requestId: context.requestId, ok: false, code: "BROWSER_POLICY_BLOCKED", retryable: false, message: `${command} is unavailable in Plan mode.` };
       let timer: ReturnType<typeof setTimeout> | undefined;
       try {

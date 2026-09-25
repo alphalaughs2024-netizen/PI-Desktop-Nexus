@@ -311,6 +311,8 @@ export type PluginHostServices = {
   }) => void;
   /** Work-panel guest + CDP, gated by `browser.cdp` in the runtime. */
   browser?: {
+    listTabs?: () => unknown;
+    open?: (input?: { url?: string; path?: string }, context?: { sessionId?: string; mode?: "plan" | "agent" }) => Promise<unknown>;
     navigate: (
       input: { url?: string; path?: string },
       sessionId?: string,
@@ -1715,7 +1717,7 @@ export class PluginRuntime {
         };
         const name = String(descriptor.name ?? "");
         if (!name) throw apiError("INVALID_ARGUMENT", "tool.name is required");
-        if (name === "Browser") throw apiError("PERMISSION_DENIED", "Browser is a built-in core tool; duplicate plugin registration is not allowed");
+        if (["Browser", "browser_list_tabs", "browser_open", "browser_navigate", "browser_snapshot", "browser_screenshot", "browser_click", "browser_fill", "browser_type", "browser_keypress", "browser_wait", "browser_console", "browser_evaluate", "browser_cdp"].includes(name)) throw apiError("PERMISSION_DENIED", "Browser is a built-in core capability; duplicate plugin registration is not allowed");
         const fullName = pluginToolName(pluginId, name);
         const planSafeActions = normalizePlanSafeActions(
           descriptor.planSafeActions,

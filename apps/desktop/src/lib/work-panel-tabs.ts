@@ -102,9 +102,14 @@ export const CORE_BROWSER_TAB: WorkPanelTab = { id: "browser", kind: "browser", 
 
 export function browserPluginTab(location?: string): WorkPanelTab {
   return {
-    ...pluginWorkPanelTab(BROWSER_PLUGIN_TAB.pluginId, BROWSER_PLUGIN_TAB.viewId),
+    ...CORE_BROWSER_TAB,
     ...(location ? { location } : {}),
   };
+}
+
+export function normalizeBrowserWorkPanelTab(tab: WorkPanelTab): WorkPanelTab {
+  const legacy = tab.kind === "plugin" && tab.resource === "pi.browser/browser";
+  return legacy || tab.id === "plugin:pi.browser/browser" ? { ...CORE_BROWSER_TAB, location: tab.location } : tab;
 }
 
 export function parsePluginViewRef(
@@ -136,7 +141,7 @@ export function isKnownWorkPanelTab(tab: WorkPanelTab): boolean {
 export function sanitizeWorkPanelTabsState(
   state: WorkPanelTabsState,
 ): WorkPanelTabsState {
-  const tabs = state.tabs.filter(isKnownWorkPanelTab);
+  const tabs = state.tabs.filter(isKnownWorkPanelTab).map(normalizeBrowserWorkPanelTab);
   if (tabs.length === state.tabs.length) return state;
   if (
     state.activeTabId === null ||

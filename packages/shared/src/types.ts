@@ -1353,6 +1353,8 @@ export function normalizeTwilightBackdropBlur(value: unknown): TwilightBackdropB
 export type CloseBehavior = "ask" | "tray" | "quit";
 
 export type AppSettings = {
+  /** Core capability policy. Missing entries use product defaults. */
+  coreCapabilities?: Partial<Record<CoreCapabilityId, { enabled: boolean }>>;
   defaultProviderId?: string;
   defaultModelId?: string;
   defaultMode: Mode;
@@ -1418,6 +1420,16 @@ export type AppSettings = {
    */
   linkOpenTarget?: LinkOpenTarget;
   onboardingDismissed: boolean;
+};
+
+export type CoreCapabilityId = "browser";
+export type CoreCapabilitySummary = {
+  id: CoreCapabilityId;
+  label: string;
+  enabled: boolean;
+  readiness?: string;
+  disablementSupported: true;
+  compatibilityAdapter: "available" | "unavailable";
 };
 
 export type LinkOpenTarget = "workpanel" | "external";

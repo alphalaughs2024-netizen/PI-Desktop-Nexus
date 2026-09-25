@@ -55,15 +55,13 @@ function asRect(value: unknown): BrowserRect | null {
 
 export type BrowserHostDeps = {
   pane: BrowserPane;
-  isPluginLoaded: (pluginId: string) => boolean;
+  isCapabilityEnabled?: () => boolean;
   getFileRoot: (sessionId?: string) => Promise<string | null>;
   getScratchDir?: (sessionId?: string) => string | null;
   onState: (state: BrowserState) => void;
 };
 
 type ChromeSurface = {
-  pluginId: string;
-  viewId: string;
   visible: boolean;
   bounds: BrowserRect;
 };
@@ -93,6 +91,14 @@ export class BrowserHost {
     this.applyGuest();
   }
 
+  setCoreSurface(surface: { visible: boolean; bounds: BrowserRect; sessionId?: string } | null): void {
+    if (surface?.sessionId) this.setChromeSession(surface.sessionId);
+    this.chrome = surface ? { visible: surface.visible, bounds: surface.bounds } : null;
+    this.hole = surface ? { x: 0, y: 0, width: surface.bounds.width, height: surface.bounds.height } : null;
+    this.holePluginId = surface ? "core" : null;
+    this.applyGuest();
+  }
+
   setChromeSession(sessionId: string | undefined): void {
     const next = sessionId?.trim() || null;
     if (this.chromeSessionId === next) return;
@@ -104,22 +110,22 @@ export class BrowserHost {
    * Content-relative hole inside the calling plugin view. Last writer wins
    * (v1 is a singleton guest).
    */
-  setGuestHole(pluginId: string, hole: unknown): BrowserRect | null {
+  setGuestHole(_pluginId: string, hole: unknown): BrowserRect | null {
     const rect = asRect(hole);
     if (!rect) {
       this.hole = null;
-      this.holePluginId = pluginId;
+      this.holePluginId = "core";
       this.applyGuest();
       return null;
     }
     this.hole = rect;
-    this.holePluginId = pluginId;
+    this.holePluginId = "core";
     this.applyGuest();
     return this.guestBounds();
   }
 
-  setGuestVisible(pluginId: string, visible: boolean): void {
-    if (!visible && this.holePluginId === pluginId) {
+  setGuestVisible(_pluginId: string, visible: boolean): void {
+    if (!visible) {
       this.pane.setVisible(false);
       return;
     }
@@ -218,11 +224,11 @@ export class BrowserHost {
     path: string,
     root: string,
   ): Promise<{ ok: true } | { ok: false; content: string }> {
-    if (!this.deps.isPluginLoaded(BROWSER_PLUGIN_ID)) {
+    if (this.deps.isCapabilityEnabled && !this.deps.isCapabilityEnabled()) {
       return {
         ok: false,
         content:
-          "BrowserPreview: the Browser plugin is disabled. Enable pi.browser in Plugins to preview HTML.",
+          "BrowserPreview is blocked by the Browser capability setting. Re-enable Browser in Settings and retry.",
       };
     }
     this.rememberLocation(sessionId, path);
@@ -236,6 +242,11 @@ export class BrowserHost {
     return { ok: true };
   }
 
+  recover(): void {
+    this.started = false;
+    this.applyGuest();
+  }
+
   disposeGuest(): void {
     this.cdp.detach(this.pane.getWebContents() ?? undefined);
     this.pane.dispose();
@@ -246,7 +257,6 @@ export class BrowserHost {
 
   private guestBounds(): BrowserRect | null {
     if (!this.chrome?.visible || !this.hole) return null;
-    if (this.holePluginId !== this.chrome.pluginId) return null;
     return clampGuestBounds(this.chrome.bounds, this.hole);
   }
 

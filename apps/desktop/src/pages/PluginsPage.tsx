@@ -568,6 +568,13 @@ export function PluginsPage() {
    * meaningful relative to it, so the control needs it as its default target.
    */
   const currentProjectPath = useAppStore((s) => s.workspace?.path ?? null);
+  const [browserCapability, setBrowserCapability] = useState<{ enabled: boolean; readiness?: string } | null>(null);
+  const refreshBrowserCapability = () => api.listCoreCapabilities().then((items: unknown) => {
+    const list = Array.isArray(items) ? items : [];
+    const browser = list.find((item: any) => item?.id === "browser") as any;
+    setBrowserCapability(browser ? { enabled: browser.enabled === true, readiness: browser.readiness } : null);
+  }).catch(() => setBrowserCapability(null));
+  useEffect(() => { void refreshBrowserCapability(); }, []);
 
   const [tab, setTab] = useState<TabId>("installed");
   const [installedQuery, setInstalledQuery] = useState("");
@@ -1163,6 +1170,18 @@ export function PluginsPage() {
             aria-labelledby="plugins-tab-installed"
             className="plugins-panel"
           >
+            {browserCapability ? (
+              <section className="plugins-group plugins-built-in-group">
+                <header className="plugins-group-head"><h2 className="plugins-group-label">Built-in capabilities</h2><span className="plugins-tag">Built-in</span></header>
+                <div className="plugins-list" role="list" aria-label="Built-in capabilities">
+                  <div className={cx("plugins-row", !browserCapability.enabled && "off")} role="listitem">
+                    <span className="plugins-glyph" aria-hidden><IconShield size={15} /></span>
+                    <div className="plugins-row-copy"><div className="plugins-row-title"><span className="plugins-row-name">Browser</span><span className="plugins-tag">Built-in</span></div><div className="plugins-row-meta">{browserCapability.enabled ? (browserCapability.readiness ?? "Ready") : "Disabled by core setting"}</div></div>
+                    <div className="plugins-row-controls"><ScopeControl target={{ enabled: browserCapability.enabled, scope: { kind: "global" } } as any} label="Browser" compact projects={[]} currentProjectPath={null} onSetEnabled={(enabled) => run(async () => { await api.setCoreCapabilityEnabled("browser", enabled); await refreshBrowserCapability(); })} onSetScope={() => {}} /></div>
+                  </div>
+                </div>
+              </section>
+            ) : null}
             {plugins.length === 0 ? (
               <div className="plugins-empty">
                 <span className="plugins-empty-icon" aria-hidden>

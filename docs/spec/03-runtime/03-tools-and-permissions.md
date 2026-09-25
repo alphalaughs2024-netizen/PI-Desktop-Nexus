@@ -42,7 +42,7 @@ Let the agent get things done, but stay under control by default.
 | `new_context` | low | Start a new context window at the next turn boundary; takes no parameters and changes no environment state |
 | `Glob` | low | List files by pattern |
 | `Grep` | low | Content search; uses system `rg` when installed, else in-process; mints a per-file `tag` |
-| `BrowserPreview` | low | Open a workspace-relative preview in the bundled Browser plugin (fails if `pi.browser` is disabled) |
+| `BrowserPreview` | low | Open a workspace-relative preview in the built-in Browser capability |
 | `EnterPlanMode` | low | Move the same Agent from Agent to Plan after host validation |
 | `SubmitPlan` | low | Preserve exact Markdown bytes in a new `.pi/plan/*.md` artifact and request approval |
 | `EnterGoalMode` | low | Move the same Agent from Agent to Goal after host validation |

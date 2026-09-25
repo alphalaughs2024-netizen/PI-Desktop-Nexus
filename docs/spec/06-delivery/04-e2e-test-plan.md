@@ -2,6 +2,21 @@
 
 ## Browser built-in Phase 0 contract matrix
 
+### Browser built-in Phase 7 compatibility matrix
+
+- Browser appears in a Built-in capabilities section, defaults enabled, and is
+  controlled only by the core capability setting; uninstall/marketplace/plugin
+  scope actions are absent.
+- The core Browser panel uses the core surface bridge without `pluginViews` or
+  `pi.browser` chrome, while legacy `pi.browser/browser` tabs normalize to
+  `core://browser`.
+- Compatibility `pi.browser.*` calls continue through BrowserBroker and remain
+  permission/mode/capability checked; duplicate Browser tool/view registration
+  is rejected.
+- Disabling Browser hides/disposes the guest and returns a capability-policy
+  error to core tools, BrowserPreview, and compatibility callers; re-enable
+  requires explicit recovery.
+
 Before Browser core registration, contract/source coverage must verify:
 
 - exactly one intended core Browser tool and Work Panel view;

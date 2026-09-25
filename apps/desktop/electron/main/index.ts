@@ -233,6 +233,7 @@ import {
   BrowserHost,
   BROWSER_PLUGIN_ID,
   BROWSER_VIEW_ID,
+  type BrowserRect,
 } from "./browser-host";
 import { BrowserBroker } from "./browser-broker";
 import { discoverProviderModels } from "./model-discovery";
@@ -945,6 +946,8 @@ const pluginScopes = new Map<string, ActivationScope>();
  * can hold sessions on different projects, so this cannot be a single value.
  */
 const sessionProjects = new Map<string, string | null>();
+let browserCapabilityEnabled = true;
+const isBrowserCapabilityEnabled = () => browserCapabilityEnabled;
 const emitBrowserState = (state: BrowserState) => {
   sendToRenderer(IPC.event.browserState, state);
   pluginPanels.broadcast("browser:state", state);
@@ -961,7 +964,7 @@ const pluginViews = new PluginViewHost(({ pluginId, url }) => {
 pluginPanels.addSenderResolver((senderId) => pluginViews.pluginIdForSender(senderId));
 const browserHost = new BrowserHost({
   pane: browserPane,
-  isPluginLoaded: (pluginId) => Boolean(plugins.getLoaded(pluginId)),
+  isCapabilityEnabled: isBrowserCapabilityEnabled,
   getFileRoot: async (sessionId) => {
     if (sessionId) {
       try {
@@ -985,7 +988,7 @@ const browserHost = new BrowserHost({
   },
   onState: emitBrowserState,
 });
-const browserBroker = new BrowserBroker(browserHost);
+const browserBroker = new BrowserBroker(browserHost, isBrowserCapabilityEnabled);
 pluginViews.onSurface = (surface) => {
   browserHost.setChromeSurface(surface);
 };
@@ -1010,9 +1013,10 @@ plugins.setServices({
     cdp: (method, params) => browserBroker.cdp(method, params),
   },
   onPluginUnload: (pluginId) => {
-    if (pluginId === BROWSER_PLUGIN_ID) browserHost.disposeGuest();
+    if (pluginId === BROWSER_PLUGIN_ID) return;
   },
 });
+
 let scannedImportSessions = new Map<string, ExternalSessionSummary>();
 let scannedModelConfigs = new Map<string, ModelConfigImportDraft>();
 
@@ -5345,7 +5349,7 @@ async function startSidecar(): Promise<void> {
     });
     return {
       ok: true,
-      content: `Previewing ${raw} in the work-panel Browser plugin. Live reload is active — subsequent edits to the file or sibling assets re-render automatically.`,
+      content: `Previewing ${raw} in the built-in Browser. Live reload is active — subsequent edits to the file or sibling assets re-render automatically.`,
     };
   });
   // Plugin skills (D174): the model loads a declared skill document by id.
@@ -6298,6 +6302,7 @@ async function bootBackends() {
     const listed = await host!.call<{ plugins: any[] }>("plugins.list");
     rememberPluginScopes(listed.plugins ?? []);
     for (const p of listed.plugins ?? []) {
+      if (p.id === BROWSER_PLUGIN_ID) continue;
       if (p.enabled && p.path) {
         try {
           await plugins.loadFromPath(p.path, p.permissions ?? [], {
@@ -6351,6 +6356,47 @@ function registerIpc() {
       });
     }
   };
+
+  handle(IPC.invoke.coreCapabilityList, async () => ([{
+    id: "browser",
+    label: "Browser",
+    enabled: browserCapabilityEnabled,
+    readiness: browserHost.getState()?.state,
+    disablementSupported: true,
+    compatibilityAdapter: "available",
+  }]));
+  handle(IPC.invoke.coreCapabilitySetEnabled, async (input: { id?: string; enabled?: boolean }) => {
+    if (input?.id !== "browser" || typeof input.enabled !== "boolean") throw new Error("invalid core capability");
+    browserCapabilityEnabled = input.enabled;
+    if (!input.enabled) browserHost.disposeGuest();
+    else browserHost.recover();
+    if (host) {
+      const current = await host.call<any>("settings.get");
+      await host.call("settings.set", {
+        ...current,
+        coreCapabilities: {
+          ...(current?.coreCapabilities ?? {}),
+          browser: { enabled: input.enabled },
+        },
+      });
+    }
+    return { id: "browser", enabled: browserCapabilityEnabled };
+  });
+  handle(IPC.invoke.browserRecover, async () => {
+    if (!browserCapabilityEnabled) return { ok: false, code: "BROWSER_POLICY_BLOCKED" };
+    browserHost.recover();
+    return { ok: true, state: browserHost.getState() };
+  });
+  handle(IPC.invoke.browserDiagnostics, async () => ({
+    capability: browserCapabilityEnabled ? "enabled" : "disabled",
+    readiness: browserHost.getState()?.state ?? "uninitialized",
+    compatibilityAdapter: "available",
+  }));
+  handle(IPC.invoke.browserCoreSurfaceSet, async (input: { sessionId?: string; visible?: boolean; bounds?: BrowserRect }) => {
+    const bounds = input?.bounds ?? { x: 0, y: 0, width: 0, height: 0 };
+    browserHost.setCoreSurface({ sessionId: input?.sessionId, visible: input?.visible === true, bounds });
+    return { ok: true };
+  });
 
   handle(IPC.invoke.pluginLauncherToggle, async () => {
     await togglePluginLauncher();
@@ -7326,14 +7372,17 @@ function registerIpc() {
   handle(IPC.invoke.settingsGet, async () => {
     if (!host) throw new Error("host unavailable");
     const settings = await host.call("settings.get");
-    return normalizeSettings(settings);
+    const normalized = normalizeSettings(settings) as typeof settings & { coreCapabilities?: { browser?: { enabled?: boolean } } };
+    browserCapabilityEnabled = normalized.coreCapabilities?.browser?.enabled !== false;
+    return normalized;
   });
   handle(IPC.invoke.networkProxyTest, async (settings: unknown) => {
     return testNetworkProxy(settings);
   });
   handle(IPC.invoke.settingsSet, async (settings: unknown) => {
     if (!host) throw new Error("host unavailable");
-    const validatedSettings = validateSettingsWrite(settings);
+    const validatedSettings = validateSettingsWrite(settings) as typeof settings & { coreCapabilities?: { browser?: { enabled?: boolean } } };
+    browserCapabilityEnabled = validatedSettings.coreCapabilities?.browser?.enabled !== false;
     const result = await host.call("settings.set", validatedSettings);
     await applyNetworkProxyFromAppSettings(validatedSettings);
     if (sidecar) {
@@ -8045,11 +8094,7 @@ function registerIpc() {
   handle(
     IPC.invoke.browserNavigate,
     async (input: { url?: string; sessionId?: string } = {}) => {
-      if (!plugins.getLoaded(BROWSER_PLUGIN_ID)) {
-        throw Object.assign(new Error("Browser plugin is disabled"), {
-          errorCode: "UNAVAILABLE",
-        });
-      }
+      if (!isBrowserCapabilityEnabled()) throw Object.assign(new Error("Browser is disabled by the core capability setting"), { errorCode: "BROWSER_POLICY_BLOCKED" });
       return browserHost.navigate(
         { url: String(input.url ?? "") },
         input.sessionId,
@@ -8058,11 +8103,7 @@ function registerIpc() {
   );
 
   handle(IPC.invoke.browserAction, async (input: { action?: string } = {}) => {
-    if (!plugins.getLoaded(BROWSER_PLUGIN_ID)) {
-      throw Object.assign(new Error("Browser plugin is disabled"), {
-        errorCode: "UNAVAILABLE",
-      });
-    }
+    if (!isBrowserCapabilityEnabled()) throw Object.assign(new Error("Browser is disabled by the core capability setting"), { errorCode: "BROWSER_POLICY_BLOCKED" });
     const action = String(input.action ?? "");
     if (
       action === "back" ||
@@ -8085,7 +8126,7 @@ function registerIpc() {
   );
 
   handle(IPC.invoke.browserSetVisible, async (input: { visible?: boolean } = {}) => {
-    if (!plugins.getLoaded(BROWSER_PLUGIN_ID) || input.visible !== true) {
+    if (!isBrowserCapabilityEnabled() || input.visible !== true) {
       browserHost.setGuestVisible(BROWSER_PLUGIN_ID, false);
       return { ok: true };
     }
@@ -9154,10 +9195,11 @@ function registerIpc() {
         }
       }),
     );
-    return { ...result, plugins: pluginsWithSettings };
+    return { ...result, plugins: pluginsWithSettings.filter((plugin) => plugin?.id !== BROWSER_PLUGIN_ID) };
   });
 
   handle(IPC.invoke.pluginSettingsGet, async (id: string) => {
+    if (id === BROWSER_PLUGIN_ID) throw new Error("Browser is built into Nexus and has no plugin settings.");
     const settings = await plugins.getPluginSettings(String(id ?? ""));
     return { settings };
   });
@@ -9165,6 +9207,7 @@ function registerIpc() {
   handle(
     IPC.invoke.pluginSettingsSet,
     async (payload: { id?: string; settings?: Record<string, unknown> }) => {
+      if (payload?.id === BROWSER_PLUGIN_ID) throw new Error("Browser is built into Nexus and has no plugin settings.");
       const settings = await plugins.setPluginSettings(
         String(payload?.id ?? ""),
         payload?.settings ?? {},
@@ -9324,6 +9367,7 @@ function registerIpc() {
 
   handle(IPC.invoke.pluginEnable, async (id: string) => {
     if (!host) throw new Error("host unavailable");
+    if (id === BROWSER_PLUGIN_ID) throw new Error("Browser is built into Nexus. Use the Browser capability setting.");
     const res = await host.call<{ plugin: any }>("plugins.enable", { id });
     if (res.plugin?.path) {
       await plugins.loadFromPath(res.plugin.path, res.plugin.permissions ?? [], {
@@ -9338,8 +9382,8 @@ function registerIpc() {
 
   handle(IPC.invoke.pluginDisable, async (id: string) => {
     if (!host) throw new Error("host unavailable");
+    if (id === BROWSER_PLUGIN_ID) throw new Error("Browser is built into Nexus. Use the Browser capability setting.");
     pluginViews.closePlugin(id);
-    if (id === BROWSER_PLUGIN_ID) browserHost.disposeGuest();
     await plugins.unload(id);
     logger.app("plugin", "info", "plugin disabled", { pluginId: id });
     const res = await host.call("plugins.disable", { id });
@@ -9349,6 +9393,7 @@ function registerIpc() {
 
   handle(IPC.invoke.pluginUninstall, async (id: string) => {
     if (!host) throw new Error("host unavailable");
+    if (id === BROWSER_PLUGIN_ID) throw new Error("Browser is built into Nexus and cannot be uninstalled. Use the Browser capability setting.");
     pluginViews.closePlugin(id);
     await plugins.unload(id);
     logger.app("plugin", "info", "plugin uninstalled", { pluginId: id });
@@ -9359,6 +9404,7 @@ function registerIpc() {
 
   handle(IPC.invoke.pluginSetAutoUpdate, async (payload: { id: string; enabled: boolean }) => {
     if (!host) throw new Error("host unavailable");
+    if (payload.id === BROWSER_PLUGIN_ID) throw new Error("Browser is built into Nexus and has no plugin updates.");
     return host.call("plugins.setAutoUpdate", {
       id: payload.id,
       enabled: payload.enabled,
@@ -9369,6 +9415,7 @@ function registerIpc() {
     IPC.invoke.pluginSetScope,
     async (payload: { id: string; scope: ActivationScope }) => {
       if (!host) throw new Error("host unavailable");
+      if (payload.id === BROWSER_PLUGIN_ID) throw new Error("Browser is a global core capability and has no plugin scope.");
       const res = await host.call<{ plugin?: { id?: string; scope?: ActivationScope } }>(
         "plugins.setScope",
         { id: payload.id, scope: payload.scope },

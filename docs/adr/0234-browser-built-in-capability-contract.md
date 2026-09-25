@@ -4,6 +4,19 @@
 
 **Date:** 2026-09-25
 
+## Phase 7 ownership completion
+
+Browser is persisted as a core capability (`coreCapabilities.browser.enabled`,
+defaulting to enabled). The `pi.browser.*` namespace remains a compatibility
+adapter only; it does not own Browser chrome, a Work Panel view, or agent tool
+registration. Core Browser surfaces use `core://browser` and a dedicated Main
+surface bridge. Legacy `pi.browser/browser` tab references normalize to that
+identity, and reserved Browser tool/view names are rejected from plugins with a
+capability-specific error. Browser cannot be uninstalled as a plugin; users may
+disable the core capability through its dedicated setting. The old bundled
+assets remain only until the Phase 9 clean-profile and compatibility removal
+gate passes.
+
 ## Decision
 
 Browser is a core Nexus capability. Core owns the Browser Work Panel view,

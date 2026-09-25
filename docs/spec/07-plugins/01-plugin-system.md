@@ -10,6 +10,15 @@ adapter must not register a duplicate Browser tool/view or control core
 availability. BrowserPreview must not require plugin activation.
 
 - Plugin tool exposed names use forced prefix `plugin_<pluginIdSafe>_<toolName>` (D015)
+
+### Phase 7 core ownership
+
+Browser is a built-in core capability, not an ordinary bundled plugin. The
+Extensions page presents it separately as Built-in; it has no plugin scope,
+marketplace, update, reload, or uninstall lifecycle. Its optional disablement
+is controlled by the core capability setting. `pi.browser.*` remains a
+permission-gated compatibility host API and delegates through BrowserBroker;
+it cannot register Browser tools/views or control the core guest surface.
 - enable→load failure auto-disables plugin (D017)
 - uninstall deletes plugin data by default (D016)
 - plugin settings secrets not allowed in MVP (D018)

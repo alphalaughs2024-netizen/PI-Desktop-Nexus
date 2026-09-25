@@ -875,6 +875,11 @@ export const api = {
       visible,
       sessionId,
     }),
+  listCoreCapabilities: () => invoke(IPC.invoke.coreCapabilityList),
+  setCoreCapabilityEnabled: (id: "browser", enabled: boolean) => invoke(IPC.invoke.coreCapabilitySetEnabled, { id, enabled }),
+  browserCoreSurfaceSet: (input: { sessionId?: string; visible: boolean; bounds: { x: number; y: number; width: number; height: number } }) => invoke(IPC.invoke.browserCoreSurfaceSet, input),
+  browserRecover: () => invoke(IPC.invoke.browserRecover),
+  browserDiagnostics: () => invoke(IPC.invoke.browserDiagnostics),
   marketRefresh: (force = true) =>
     invoke<{
       providerId: string;
