@@ -33,7 +33,6 @@
 
 :root[data-theme="light"][data-scenic-theme="alpine-light"] .context-vault-tab { --context-vault-surface: rgba(247, 251, 255, .18); --context-vault-surface-raised: rgba(235, 243, 255, .28); --context-vault-control-surface: rgba(255, 255, 255, .58); --context-vault-empty-surface: rgba(247, 251, 255, .24); }
 
-:root[data-theme="light"][data-scenic-theme="alpine-light"] .context-vault-tab { --context-vault-surface: rgba(247, 251, 255, .3); --context-vault-surface-raised: rgba(235, 243, 255, .42); --context-vault-control-surface: rgba(255, 255, 255, .64); --context-vault-empty-surface: rgba(247, 251, 255, .36); }
 
 :root[data-scenic-theme="alpine-light"] .app-scenic-backdrop {
   display: block;
