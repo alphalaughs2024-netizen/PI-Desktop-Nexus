@@ -1715,6 +1715,7 @@ export class PluginRuntime {
         };
         const name = String(descriptor.name ?? "");
         if (!name) throw apiError("INVALID_ARGUMENT", "tool.name is required");
+        if (name === "Browser") throw apiError("PERMISSION_DENIED", "Browser is a built-in core tool; duplicate plugin registration is not allowed");
         const fullName = pluginToolName(pluginId, name);
         const planSafeActions = normalizePlanSafeActions(
           descriptor.planSafeActions,
