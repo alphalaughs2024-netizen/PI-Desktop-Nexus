@@ -18,7 +18,7 @@ test("Context Vault button states have explicit enabled and disabled semantics",
 
 test("Ready empty projects keep primary actions available while loading/busy state is explicit", () => {
   assert.match(component, /const actionsDisabled = claimsLoading \|\| busy !== null/);
-  assert.match(component, /context-vault-empty-action[^>]*disabled=\{actionsDisabled\}/);
+  assert.match(component, /context-vault-empty-action[^>]*disabled=\{!canCreate\}/);
   assert.match(component, /context-vault-operation-status/);
-  assert.match(component, /disabled=\{actionsDisabled \|\| claims\.length === 0\}/);
+  assert.match(component, /disabled=\{!canExport\}/);
 });
