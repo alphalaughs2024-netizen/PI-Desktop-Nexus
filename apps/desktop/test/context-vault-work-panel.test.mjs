@@ -76,7 +76,7 @@ test("Context Vault previews an import and applies only the user's selected clai
 
 test("Context Vault provides a complete native editing workspace instead of a single-evidence form", () => {
   assert.match(tab, /context-vault-rail-brand/);
-  assert.match(tab, /context-vault-purpose-cards/);
+  assert.doesNotMatch(tab, /context-vault-purpose-cards/);
   assert.match(tab, /context-vault-evidence-row/);
   assert.match(tab, /context-vault-relationship-section/);
   assert.match(tab, /context-vault-relationship-row/);

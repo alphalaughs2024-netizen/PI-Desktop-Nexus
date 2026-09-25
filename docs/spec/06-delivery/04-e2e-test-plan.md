@@ -10754,6 +10754,21 @@ page backdrop through a failed card image. The copy tile owns its cool-white
 foreground rather than inheriting the selected theme's general text color.
 # Productivity upgrades
 
+#### E2E-Context-Vault-Polish: Accessible actions and explicit empty states
+
+- **Preconditions**: Open Context Vault with no project, an empty project, a
+  populated project, and a scenic dark/light theme.
+- **Expected**: Toolbar order is search, New claim, Import, Export. Disabled
+  labels remain readable and explain busy/unavailable state. Empty, search-empty,
+  loading, error, importing, exporting, and editing states are distinct. The
+  empty state has one clear primary action, readable secondary actions, no
+  purpose-chip clutter, and category/tag controls expose selected state.
+- **Accessibility**: Search, sidebar controls, toolbar actions, empty-state
+  actions, and modal controls are keyboard reachable with visible focus rings;
+  status and error announcements use appropriate ARIA roles.
+- **Status**: Renderer/source coverage; scenic and narrow-panel visual review
+  remains manual/E2E validation.
+
 #### E2E-Prompt-Context-Inspector-P1: Runtime context explanation
 
 - **Preconditions**: An active session has a recorded prompt composition and
