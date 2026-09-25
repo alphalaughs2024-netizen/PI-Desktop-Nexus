@@ -50,7 +50,7 @@
   --ds-bg-elevated-primary: rgba(12, 31, 59, 0.88);
 }
 
-:root[data-theme="dark"][data-scenic-theme="twilight-mountains"] .context-vault-tab { --context-vault-control-disabled-text: rgba(240, 247, 255, .86); }
+:root[data-theme="dark"][data-scenic-theme="twilight-mountains"] .context-vault-tab { --context-vault-control-disabled-text: rgba(240, 247, 255, .86); --context-vault-surface: rgba(5, 24, 61, .24); --context-vault-surface-raised: rgba(8, 37, 91, .34); --context-vault-control-surface: rgba(92, 145, 228, .42); --context-vault-control-disabled-surface: rgba(75, 119, 190, .5); --context-vault-empty-surface: rgba(8, 38, 96, .3); }
 
 :root[data-theme="dark"][data-scenic-theme="twilight-mountains"] .context-vault-tab { --context-vault-surface: rgba(5, 24, 61, .38); --context-vault-surface-raised: rgba(8, 37, 91, .5); --context-vault-control-surface: rgba(92, 145, 228, .5); --context-vault-empty-surface: rgba(8, 38, 96, .42); }
 
