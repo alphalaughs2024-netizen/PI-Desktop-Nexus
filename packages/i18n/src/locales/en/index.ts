@@ -2158,5 +2158,5 @@ type DeepStringify<T> = {
   [K in keyof T]: T[K] extends string ? string : DeepStringify<T[K]>;
 };
 
-export type EnglishCatalog = Record<string, unknown>;
+export type EnglishCatalog = any;
 export default en;

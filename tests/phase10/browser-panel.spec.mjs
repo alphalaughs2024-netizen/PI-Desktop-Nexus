@@ -18,8 +18,9 @@ async function launchApp() {
     cwd: appRoot,
     env: { ...process.env, PI_DESKTOP_DATA_DIR: profile, NEXUS_PHASE10_TEST: "1", ELECTRON_RENDERER_URL: "" },
   });
-  const window = await app.firstWindow();
+  const window = await app.firstWindow({ timeout: 15_000 });
   await window.waitForLoadState("domcontentloaded");
+  await window.waitForFunction(() => document.querySelector('[data-testid="startup-splash"]') || document.querySelector('.app-shell'), null, { timeout: 15_000 });
   return { app, window, profile };
 }
 
