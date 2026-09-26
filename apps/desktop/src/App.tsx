@@ -652,7 +652,7 @@ function AppShell() {
       const store = useAppStore.getState();
       if (event.background && event.sessionId !== store.activeSessionId) return;
       if (event.sessionId !== store.activeSessionId) return;
-      store.openWorkPanelTabForSession(event.sessionId, browserPluginTab(event.location));
+      store.openWorkPanelTabForSession(event.sessionId, browserPluginTab(event.location ?? "about:blank"));
       if (event.focus === "address") window.setTimeout(() => document.querySelector<HTMLInputElement>(".browser-toolbar-address")?.focus(), 0);
     });
     const offHostStatus = api.onHostStatus((status) => {

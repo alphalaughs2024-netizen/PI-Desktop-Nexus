@@ -3,7 +3,7 @@ import type { BrowserHost, BrowserNavigateInput } from "./browser-host";
 import { decideCapability, decideCdp, decideMode, decideNavigation } from "./browser-policy";
 
 type BrowserCommand = "navigate" | "action" | "snapshot" | "screenshot" | "click" | "fill" | "evaluate" | "console" | "cdp" | "preview";
-type BrowserContextInput = Partial<Omit<BrowserRequestContext, "requestId" | "browserId">> & { browserId?: string };
+type BrowserContextInput = Partial<Omit<BrowserRequestContext, "requestId" | "browserId">> & { browserId?: string; createTab?: boolean };
 export type BrowserRecord = { browserId: BrowserRequestContext["browserId"]; ownerSessionId?: string; chromeSessionId?: string; state: "starting" | "ready" | "loading" | "unavailable" | "blocked" | "closed"; location?: string; createdAt: number; updatedAt: number; guestGeneration: number };
 
 const MUTATIONS = new Set<BrowserCommand>(["navigate", "action", "click", "fill", "evaluate", "cdp", "preview"]);

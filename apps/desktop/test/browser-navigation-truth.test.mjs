@@ -9,7 +9,7 @@ const intent = await readFile(new URL("../../../packages/agent-runtime/src/brows
 
 test("Browser inspection and navigation contracts are distinct", () => {
   assert.match(typed, /Inspect the current core Browser tab only/);
-  assert.match(typed, /Supplying url is required/);
+  assert.match(typed, /about:blank/);
   assert.match(typed, /Always navigate/);
   assert.match(broker, /latestSnapshot = undefined/);
   assert.match(broker, /location:/);
