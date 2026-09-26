@@ -85,6 +85,8 @@ export class BrowserPane {
   private watcher: FSWatcher | null = null;
   private watchedDir: string | null = null;
   private reloadTimer: NodeJS.Timeout | null = null;
+  private attached = false;
+  private generation = 0;
 
   constructor(onState: (state: BrowserState) => void) {
     this.onState = onState;
@@ -94,7 +96,10 @@ export class BrowserPane {
     if (this.window === window) return;
     this.detach();
     this.window = window;
+    if (this.window && this.visible && this.view) this.attach();
   }
+
+  surfaceStatus() { return { attachment: this.attached ? "attached" as const : "detached" as const, visibility: this.visible ? "visible" as const : "hidden" as const, generation: this.generation }; }
 
   getState(): BrowserState | null {
     const wc = this.view?.webContents;
@@ -220,7 +225,9 @@ export class BrowserPane {
     if (this.view) {
       this.view.webContents.close();
       this.view = null;
+      this.generation += 1;
     }
+    this.attached = false;
   }
 
   private attach(): void {
@@ -235,6 +242,7 @@ export class BrowserPane {
       this.window.contentView.addChildView(this.view);
     }
     this.view.setBounds(this.bounds);
+    this.attached = true;
   }
 
   private detach(): void {
@@ -243,6 +251,7 @@ export class BrowserPane {
     if (children.includes(this.view)) {
       this.window.contentView.removeChildView(this.view);
     }
+    this.attached = false;
   }
 
   /** Watch the previewed file's directory so page + asset edits re-render. */
@@ -332,6 +341,8 @@ export class BrowserPane {
     wc.on("did-navigate-in-page", push);
     wc.on("page-title-updated", push);
     wc.on("did-fail-load", push);
+    wc.on("render-process-gone", push);
+    wc.on("destroyed", () => { this.attached = false; this.generation += 1; push(); });
     this.view = view;
     return view;
   }

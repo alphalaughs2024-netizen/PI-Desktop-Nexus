@@ -294,6 +294,7 @@ export const IPC = {
     browserState: "pi-desktop/browser/event/state",
     browserViewState: "pi-desktop/browser/event/viewState",
     browserPreview: "pi-desktop/browser/event/preview",
+    browserActivationRequested: "pi-desktop/browser/event/activationRequested",
     windowMaximized: "pi-desktop/window/event/maximized",
     windowFullScreen: "pi-desktop/window/event/fullscreen",
     windowWorkPanelResize: "pi-desktop/window/event/workPanelResize",
