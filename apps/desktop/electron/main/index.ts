@@ -6500,7 +6500,8 @@ function registerIpc() {
     }
     if (input.visible && input.sessionId && visibleBrowserSessionId && input.sessionId !== visibleBrowserSessionId) return { ok: true as const };
     if (input.visible && input.sessionId) visibleBrowserSessionId = input.sessionId;
-    browserHost.setCoreSurface({ sessionId: input.sessionId, visible: input.visible, bounds });
+    const content = mainWindow && !mainWindow.isDestroyed() ? mainWindow.getContentBounds() : { x: 0, y: 0, width: 0, height: 0 };
+    browserHost.setCoreSurface({ sessionId: input.sessionId, visible: input.visible, measurement: input.measurement, bounds }, content, screen.getDisplayMatching(content).scaleFactor);
     return { ok: true };
   });
 

@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { api } from "../../lib/api";
 import { createGuestGeometryCoordinator } from "../../lib/browser-geometry-coordinator";
+import { createBrowserSurfaceMeasurement } from "../../lib/browser-surface-measurement";
 
 export function BrowserGuestSurface({ sessionId, blocked = false, transitioning = false }: { sessionId?: string; blocked?: boolean; transitioning?: boolean }) {
   // BrowserGuestSurface owns requestAnimationFrame coalescing and publishes visible: false zero-bounds on unmount.
@@ -12,7 +13,7 @@ export function BrowserGuestSurface({ sessionId, blocked = false, transitioning 
     const surface = surfaceRef.current;
     if (!surface) return;
     let mounted = true;
-    const coordinator = createGuestGeometryCoordinator({ sessionId, publish: (rect) => api.browserCoreSurfaceSet({ sessionId, visible: rect.visible, bounds: { x: rect.x, y: rect.y, width: rect.width, height: rect.height } }) });
+    const coordinator = createGuestGeometryCoordinator({ sessionId, publish: (rect) => { const measurement = createBrowserSurfaceMeasurement(surface.getBoundingClientRect(), sessionId, rect.visible); return api.browserCoreSurfaceSet({ sessionId, visible: rect.visible, ...(measurement ? { measurement } : {}), bounds: { x: rect.x, y: rect.y, width: rect.width, height: rect.height } }); } });
     const report = () => { if (blocked || transitioning) { coordinator.hide(); return; } const rect = surface.getBoundingClientRect(); coordinator.schedule({ x: rect.x, y: rect.y, width: rect.width, height: rect.height, visible: true }); };
     const observer = new ResizeObserver(report);
     observer.observe(surface);

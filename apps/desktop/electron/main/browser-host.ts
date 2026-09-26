@@ -2,6 +2,7 @@ import type { BrowserState } from "@pi-desktop/shared";
 import type { SnapshotResult } from "./browser-cdp";
 import type { BrowserPane } from "./browser-view";
 import { BrowserCdp } from "./browser-cdp";
+import { convertBrowserSurfaceMeasurement, type BrowserSurfaceMeasurement } from "./browser-surface-geometry";
 import { writeFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 
@@ -91,9 +92,11 @@ export class BrowserHost {
     this.applyGuest();
   }
 
-  setCoreSurface(surface: { visible: boolean; bounds: BrowserRect; sessionId?: string } | null): void {
+  setCoreSurface(surface: { visible: boolean; bounds: BrowserRect; measurement?: BrowserSurfaceMeasurement; sessionId?: string } | null, contentBounds?: BrowserRect, scaleFactor = 1): void {
     if (surface?.sessionId) this.setChromeSession(surface.sessionId);
-    this.chrome = surface ? { visible: surface.visible, bounds: surface.bounds } : null;
+    const converted = surface?.measurement && contentBounds ? convertBrowserSurfaceMeasurement(surface.measurement, contentBounds, scaleFactor) : surface?.bounds;
+    if (converted && "ok" in converted && !converted.ok) { this.chrome = null; this.applyGuest(); return; }
+    this.chrome = surface && converted ? { visible: surface.visible, bounds: converted as BrowserRect } : null;
     this.hole = surface ? { x: 0, y: 0, width: surface.bounds.width, height: surface.bounds.height } : null;
     this.holePluginId = surface ? "core" : null;
     this.applyGuest();
@@ -258,6 +261,7 @@ export class BrowserHost {
   diagnostics(): { chromeSessionId?: string; hasGuest: boolean; visible: boolean } {
     return { chromeSessionId: this.chromeSessionId ?? undefined, hasGuest: Boolean(this.pane.getWebContents()), visible: Boolean(this.chrome?.visible) };
   }
+  probeSurface() { return this.pane.probeSurface(); }
 
   private guestBounds(): BrowserRect | null {
     if (!this.chrome?.visible || !this.hole) return null;

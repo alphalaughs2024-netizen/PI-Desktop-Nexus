@@ -88,6 +88,8 @@ export class BrowserPane {
   private attached = false;
   private generation = 0;
   private painted: "unknown" | "painted" | "blank" = "unknown";
+  private captured: "unknown" | "nonempty" | "empty" = "unknown";
+  private childOrder: "topmost" | "not-topmost" | "unknown" = "unknown";
 
   constructor(onState: (state: BrowserState) => void) {
     this.onState = onState;
@@ -100,7 +102,8 @@ export class BrowserPane {
     if (this.window && this.visible && this.view) this.attach();
   }
 
-  surfaceStatus() { return { attachment: this.attached ? "attached" as const : "detached" as const, visibility: this.visible ? "visible" as const : "hidden" as const, paint: this.painted, generation: this.generation }; }
+  surfaceStatus() { return { attachment: this.attached ? "attached" as const : "detached" as const, visibility: this.visible ? "visible" as const : "hidden" as const, paint: this.painted, capture: this.captured, childOrder: this.childOrder, generation: this.generation }; }
+  async probeSurface() { const wc = this.view?.webContents; if (!wc || wc.isDestroyed() || !this.attached) return { status: "unavailable" as const, width: 0, height: 0, byteLength: 0 }; try { const image = await wc.capturePage(); const size = image.getSize(); const byteLength = image.toPNG().byteLength; this.captured = size.width > 0 && size.height > 0 && byteLength > 0 ? "nonempty" : "empty"; return { status: this.captured, width: size.width, height: size.height, byteLength }; } catch { return { status: "unavailable" as const, width: 0, height: 0, byteLength: 0 }; } }
 
   getState(): BrowserState | null {
     const wc = this.view?.webContents;
@@ -230,6 +233,8 @@ export class BrowserPane {
     }
     this.attached = false;
     this.painted = "unknown";
+    this.captured = "unknown";
+    this.childOrder = "unknown";
   }
 
   private attach(): void {
@@ -245,6 +250,7 @@ export class BrowserPane {
     }
     this.view.setBounds(this.bounds);
     this.attached = true;
+    this.childOrder = this.window.contentView.children.at(-1) === this.view ? "topmost" : "not-topmost";
   }
 
   private detach(): void {
@@ -254,6 +260,7 @@ export class BrowserPane {
       this.window.contentView.removeChildView(this.view);
     }
     this.attached = false;
+    this.childOrder = "unknown";
   }
 
   /** Watch the previewed file's directory so page + asset edits re-render. */
