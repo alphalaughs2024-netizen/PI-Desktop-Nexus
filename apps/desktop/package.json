@@ -15,7 +15,7 @@
     "prepare:native": "electron-builder install-app-deps",
     "predev": "pnpm run prepare:native && pnpm run build:deps && cargo build --manifest-path ../../Cargo.toml -p host-core",
     "dev": "node ../../scripts/dev-electron.mjs",
-    "build": "electron-vite build",
+    "build": "node ../../scripts/clean-desktop-output.mjs && electron-vite build",
     "preview": "electron-vite preview",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "node --test test/*.test.mjs",
