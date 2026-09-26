@@ -5425,10 +5425,11 @@ async function startSidecar(): Promise<void> {
   for (const descriptor of browserTypedTools) {
     s.setLocalTool(descriptor.name, async ({ args, sessionId, mode }) => {
       markBrowserSource(sessionId, "agent");
-      const result = await descriptor.execute(args, { sessionId, mode: mode === "plan" ? "plan" : "agent" });
+      const normalizedArgs = args;
+      const result = await descriptor.execute(normalizedArgs, { sessionId, mode: mode === "plan" ? "plan" : "agent" });
       if (["browser_open", "browser_navigate", "browser_list_tabs", "browser_snapshot", "browser_wait", "browser_screenshot"].includes(descriptor.name)) {
         const requestId = `activation-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-        const location = typeof (args as { url?: unknown })?.url === "string" ? String((args as { url: string }).url) : undefined;
+        const location = typeof (normalizedArgs as { url?: unknown })?.url === "string" ? String((normalizedArgs as { url: string }).url) : undefined;
         sendToRenderer(IPC.event.browserActivationRequested, { requestId, sessionId, location, source: "agent", focus: "panel", background: false });
       }
       return result && typeof result === "object" && "ok" in (result as Record<string, unknown>)

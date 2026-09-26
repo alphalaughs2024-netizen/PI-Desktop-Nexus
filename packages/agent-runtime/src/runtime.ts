@@ -138,6 +138,7 @@ import { clampThinkingLevel } from "./thinking-level.js";
 import { visionFromModelConfig } from "./model-capabilities.js";
 import type { ProjectInstructions } from "./project-instructions.js";
 import { projectInstructionsPrompt } from "./project-instructions-prompt.js";
+import { browserNavigationIntent } from "./browser-intent.js";
 import { composePromptSections } from "./prompt-composition.js";
 import {
   instructionCatalogPrompt,
@@ -2454,9 +2455,9 @@ export class DesktopAgentRuntime {
       switch (toolName) {
         case "BrowserPreview":
           return "Open a workspace HTML file in PI-Desktop's built-in browser panel. `path` is workspace-relative (e.g. \"demo/index.html\"). The preview live-reloads on later edits to the file or its sibling assets, so call once per page.";
-        case "browser_list_tabs": return "List the built-in Browser tab and readiness state.";
-        case "browser_open": return "Open or reuse the built-in Browser tab. Browser is core and available without ToolSearch.";
-        case "browser_navigate": return "Navigate the built-in Browser. Use browser_snapshot after navigation.";
+        case "browser_list_tabs": return "Inspect the built-in Browser tab and readiness state only. It never navigates to a requested site.";
+        case "browser_open": return "Open or reuse the built-in Browser. For a user request to open a site, supply its explicit URL; do not substitute browser_list_tabs.";
+        case "browser_navigate": return "Navigate the built-in Browser to an explicit URL. After navigation, call browser_snapshot and verify the final URL before reporting success.";
         case "browser_snapshot": return "Return a bounded Browser accessibility snapshot. Refs are scoped to browserId and snapshotId.";
         case "browser_screenshot": return "Capture a bounded Browser screenshot with CSS-pixel metadata.";
         case "browser_click": return "Agent-only: click a ref from the latest browser_snapshot; stale refs require a fresh snapshot.";
@@ -4488,6 +4489,11 @@ export class DesktopAgentRuntime {
     }
     if (/\b(?:preview|browser preview|open.*html|view.*html)\b/.test(text)) {
       requested.add("BrowserPreview");
+    }
+    if (browserNavigationIntent(input)) {
+      requested.add("browser_open");
+      requested.add("browser_snapshot");
+      requested.add("browser_wait");
     }
     if (/\b(?:validate|check)\b.*\bplugin\b|\bplugin\b.*\b(?:validate|check)\b/.test(text)) {
       requested.add("PluginCheck");
