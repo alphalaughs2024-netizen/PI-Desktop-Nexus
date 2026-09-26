@@ -1,4 +1,5 @@
 import { browserGuestRectKey, normalizeBrowserGuestRect, type BrowserGuestRect } from "./browser-guest-rect";
+import { createBrowserSurfaceMeasurement } from "./browser-surface-measurement";
 
 export type GuestGeometryState = {
   rect: BrowserGuestRect | null;
@@ -23,7 +24,7 @@ export function createGuestGeometryCoordinator({
   cancel = (frame) => cancelAnimationFrame(frame),
 }: {
   sessionId?: string;
-  publish: (rect: BrowserGuestRect) => Promise<unknown> | unknown;
+  publish: (rect: BrowserGuestRect, measurement?: unknown) => Promise<unknown> | unknown;
   raf?: (callback: FrameRequestCallback) => number;
   cancel?: (frame: number) => void;
 }): GuestGeometryCoordinator {
