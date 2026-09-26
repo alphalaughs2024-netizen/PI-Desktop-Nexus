@@ -36,6 +36,7 @@
   flex-direction: column;
   background: inherit;
 }
+:root { --browser-new-tab-surface: color-mix(in oklab, var(--ds-bg-primary) 94%, transparent); }
 :root { --browser-panel-surface: color-mix(in oklab, var(--ds-bg-secondary) 92%, transparent); --browser-tab-active: color-mix(in oklab, var(--ds-bg-primary) 88%, transparent); --browser-tab-inactive: color-mix(in oklab, var(--ds-bg-secondary) 76%, transparent); --browser-tab-hover: var(--ds-bg-hover); --browser-toolbar-surface: var(--ds-bg-secondary); --browser-address-surface: color-mix(in oklab, var(--ds-bg-primary) 84%, transparent); --browser-border: var(--ds-border-subtle); --browser-focus: var(--ds-focus); --browser-ready: var(--ds-success); --browser-loading: var(--ds-focus); --browser-error: var(--ds-error); --browser-text: var(--ds-text-primary); --browser-text-muted: var(--ds-text-muted); }
 
 .work-panel-frame.is-maximized {
@@ -52,12 +53,12 @@
 
 .work-panel-frame-header {
   display: flex;
-  min-height: var(--ds-toolbar-height);
+  min-height: var(--shell-titlebar-height, var(--ds-toolbar-height));
   flex: 0 0 auto;
   align-items: center;
   gap: 8px;
   padding: 0 12px;
-  border-bottom: 1px solid var(--ds-border-subtle);
+  border-bottom: 1px solid var(--browser-border, var(--ds-border-subtle));
   color: var(--ds-text-primary);
 }
 
@@ -68,8 +69,8 @@
 .work-panel-frame-button:focus-visible { outline: 2px solid var(--ds-focus); outline-offset: -2px; }
 .work-panel-frame-content { display: flex; min-width: 0; min-height: 0; flex: 1; flex-direction: column; }
 
-.browser-core-view { display: flex; min-width: 0; min-height: 0; flex: 1; flex-direction: column; position: relative; overflow: hidden; background: var(--ds-bg-primary); }
-.browser-tab-strip { display: flex; min-height: 34px; flex: 0 0 34px; align-items: stretch; gap: 3px; overflow-x: auto; padding: 4px 8px 0; border-bottom: 1px solid var(--browser-border, var(--ds-border-subtle)); background: var(--browser-panel-surface, var(--ds-bg-secondary)); scrollbar-width: thin; }
+.browser-core-view { display: flex; min-width: 0; min-height: 0; flex: 1; flex-direction: column; position: relative; overflow: hidden; background: var(--browser-new-tab-surface, var(--ds-bg-primary)); }
+.browser-tab-strip { display: flex; min-height: 32px; flex: 0 0 32px; align-items: stretch; gap: 2px; overflow-x: auto; padding: 3px 8px 0; border-bottom: 1px solid var(--browser-border, var(--ds-border-subtle)); background: var(--browser-panel-surface, var(--ds-bg-secondary)); scrollbar-width: thin; }
 .browser-tab { display: inline-flex; min-width: 112px; max-width: 190px; flex: 0 1 170px; align-items: center; gap: 6px; padding: 0 7px; border: 1px solid transparent; border-bottom: 0; border-radius: 8px 8px 0 0; color: var(--browser-text-muted, var(--ds-text-muted)); cursor: pointer; font-size: var(--text-xs); }
 .browser-tab.is-active { border-color: var(--browser-border, var(--ds-border-subtle)); background: var(--browser-tab-active, var(--ds-bg-primary)); color: var(--browser-text, var(--ds-text-primary)); }
 .browser-tab-icon { display: inline-flex; align-items: center; color: var(--browser-text-muted, var(--ds-text-muted)); }
@@ -105,7 +106,7 @@
 .browser-error-notice { min-height: 0; flex: 0 0 auto; padding: 6px 10px; color: var(--ds-error); background: color-mix(in oklab, var(--ds-error) 10%, transparent); font-size: var(--text-sm); }
 .browser-error-notice[aria-hidden="true"] { display: none; }
 .browser-guest-surface { min-width: 0; min-height: 0; flex: 1; overflow: hidden; }
-.browser-empty-state { position: absolute; inset: 78px 0 0; display: flex; align-items: center; justify-content: center; gap: 5px; flex-direction: column; color: var(--ds-text-muted); text-align: center; }
+.browser-empty-state { position: absolute; inset: 96px 0 0; display: flex; align-items: center; justify-content: center; gap: 7px; flex-direction: column; color: var(--browser-text-muted, var(--ds-text-muted)); text-align: center; background: var(--browser-new-tab-surface, var(--ds-bg-primary)); }
 .browser-empty-state strong { color: var(--ds-text-primary); font-size: var(--text-base-plus); }
 .browser-empty-state span { font-size: var(--text-sm); }
 .browser-empty-actions { display: flex; gap: 6px; margin-top: 6px; }
