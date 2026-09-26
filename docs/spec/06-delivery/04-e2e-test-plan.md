@@ -11102,6 +11102,18 @@ The surface-unavailable fixture uses “Surface unavailable” with Retry and
 Diagnostics actions, while source labels remain limited to Opened by you,
 Opened by agent, Workspace preview, and Background session.
 
+### Browser UI Phase C interaction gate
+
+Phase C extends the Browser-only gate with a dedicated header options menu,
+separate from toolbar overflow. The menu must expose safe diagnostics,
+recover/reopen, copy-address, and external-open actions with Arrow/Home/End
+navigation, Escape dismissal, and trigger focus restoration. The visible tab
+strip must pass roving Arrow/Home/End focus, Enter/Space activation,
+Ctrl/Cmd+Tab cycling, Ctrl/Cmd+T creation, Ctrl/Cmd+W close, and neighboring-tab
+focus restoration. Docked and maximized captures must retain fixed Back,
+Forward, Reload/Stop, address, and toolbar-overflow slots; secondary actions
+must not appear as presentation-dependent toolbar slots.
+
 The deterministic fixture server provides ready, delayed, navigation, and
 failure pages on loopback only. Any failure-state seeding is guarded by the
 `NEXUS_PHASE10_TEST` environment variable and is unavailable in normal builds.

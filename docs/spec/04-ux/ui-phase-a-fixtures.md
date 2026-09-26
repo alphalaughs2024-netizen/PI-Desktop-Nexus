@@ -23,4 +23,6 @@ Phase A establishes the fixture names, required state, and theme matrix. Phase
 B keeps this fixture manifest and adds the Browser card hierarchy contract:
 one meaningful header, a separate safe source row, compact tabs and toolbar,
 one readiness strip, and renderer-owned New Tab/error surfaces. Later phases
-add screenshot baselines and interaction coverage.
+add screenshot baselines and interaction coverage. Phase C extends the Browser
+fixtures with header-menu keyboard use, roving tab focus, Ctrl/Cmd+Tab cycling,
+focus restoration after close/menu dismissal, and stable toolbar slot checks.

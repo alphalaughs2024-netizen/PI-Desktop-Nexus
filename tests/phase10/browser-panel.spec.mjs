@@ -66,4 +66,27 @@ test.describe("Phase 10 Browser Work Panel", () => {
       await expect(window.locator('[data-work-panel-presentation="maximized"]')).toHaveScreenshot("phase10-browser-maximized.png");
     } finally { await app.close(); await rm(profile, { recursive: true, force: true }); }
   });
+
+  test("keeps Browser header menu and tab keyboard interactions accessible", async () => {
+    const { app, window, profile } = await launchApp();
+    try {
+      await window.keyboard.press("Control+J");
+      await window.getByRole("button", { name: /Browser/i }).click();
+      const headerMenu = window.getByRole("button", { name: "Browser options" });
+      await headerMenu.click();
+      await expect(window.getByRole("menu", { name: "Browser options" })).toBeVisible();
+      await window.keyboard.press("ArrowDown");
+      await window.keyboard.press("Escape");
+      await expect(headerMenu).toBeFocused();
+
+      const tabs = window.getByRole("tab");
+      await expect(tabs).toHaveCount(1);
+      await window.getByRole("button", { name: "New Browser tab" }).click();
+      await expect(tabs).toHaveCount(2);
+      await window.keyboard.press("Control+Shift+Tab");
+      await expect(tabs.nth(0)).toHaveAttribute("aria-selected", "true");
+      await tabs.nth(0).press("ArrowRight");
+      await expect(tabs.nth(1)).toBeFocused();
+    } finally { await app.close(); await rm(profile, { recursive: true, force: true }); }
+  });
 });
