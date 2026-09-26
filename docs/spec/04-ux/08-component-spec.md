@@ -56,6 +56,10 @@ drawer. Docked uses a restrained bottom overlay; maximized uses a restrained
 right overlay. The drawer is non-modal, preserves the guest, restores focus,
 and renders only BrowserDiagnosticsDisplay safe fields.
 
+Phase 7 makes BrowserGuestSurface the normalized, generation-guarded measurement
+owner. Resize/transition callbacks are coalesced, duplicate rectangles ignored,
+and diagnostics/readiness overlays remain out of the guest measurement region.
+
 > Layout and IA reference: [01-ui-ia.md](01-ui-ia.md)  
 > Design tokens and foundations: [07-ui-design-system.md](07-ui-design-system.md)  
 > Interaction behavior: [09-interaction-patterns.md](09-interaction-patterns.md)

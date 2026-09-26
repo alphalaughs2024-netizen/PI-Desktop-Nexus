@@ -86,7 +86,17 @@
   page/title data, credentials, raw errors, screenshots, CDP, and prompts.
 - Docked and maximized diagnostics overlays preserve the guest and use one
   non-modal component; Escape/Close restore focus and reduced motion remains
-  accessible.
+accessible.
+
+### Browser Work Panel Phase 7 smoothness matrix
+
+- Guest rectangles normalize/coalesce through ResizeObserver/requestAnimationFrame;
+  stale generations, duplicate rectangles, zero-size transient frames, and late
+  unmount callbacks are ignored safely.
+- Dock/maximize and diagnostics overlays publish only final stable bounds; no
+  guest/page animation or recreation occurs.
+- Reduced-motion, narrow docked layout, focus continuity, scenic/light tokens,
+  and diagnostics overlays remain usable without layout jitter.
 
 ### Browser built-in Phase 7 compatibility matrix
 

@@ -123,6 +123,11 @@ projection/drawer. Background Browser activity cannot overwrite the visible
 session; diagnostics expose only bounded state, stable codes, and safe actions.
 Copy output is deterministic and excludes all Browser/page/host internals.
 
+Phase 7 hardens the renderer measurement and motion contract. BrowserGuestSurface
+normalizes/coalesces rectangles with generation guards, while dock/maximize,
+diagnostics, readiness, narrow-layout, and reduced-motion transitions remain
+renderer-only and never animate or recreate the Main-owned guest.
+
 ## Consequences
 
 Browser is the first resource to implement the shell contract. Files, Terminal,

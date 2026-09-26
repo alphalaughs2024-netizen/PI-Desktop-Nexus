@@ -958,6 +958,10 @@ closes with Escape/Close, restores the invoking trigger, and offers deterministi
 Copy safe diagnostics. Background-session events never retarget the visible
 Browser context.
 
+Phase 7 transitions preserve focus and page continuity while dock/maximize and
+diagnostics motion remains reduced-motion safe. Narrow layouts keep essential
+navigation controls visible and move secondary actions to overflow.
+
 ### 8.1 MVP status
 
 Work-panel and application-window resizing are implemented in MVP:

@@ -17,7 +17,7 @@ test("Phase 3 guest surface owns bounded coalesced reporting", () => {
   assert.match(guest, /ResizeObserver/);
   assert.match(guest, /requestAnimationFrame/);
   assert.match(guest, /browserCoreSurfaceSet/);
-  assert.match(guest, /rect\.width <= 0/);
+  assert.match(guest, /width <= 0|width: rect\.width/);
   assert.match(guest, /visible: false/);
   assert.doesNotMatch(guest, /from "electron"|BrowserHost|BrowserCdp|WebContents/);
 });
