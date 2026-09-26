@@ -11089,6 +11089,19 @@ motion, command-palette Browser discovery, and operation completion feedback.
 Browser chrome, state labels, focus rings, diagnostics, and frame geometry are
 never masked. Unexpected screenshot diffs block Phase 10 completion.
 
+### Browser UI Phase B composition gate
+
+The Browser-only composition pass preserves the Phase 10 fixture names and
+adds these source-level assertions before visual capture: the Work Panel frame
+title is quiet, `BrowserCoreTab` renders exactly one meaningful Browser header
+and one safe source row, visible tabs remain between the source row and the
+single toolbar, and readiness/operation/error regions remain singular. The
+New Tab surface is opaque and address-focused; the native guest is not mounted
+over New Tab or surface-unavailable/policy/debugger/closed recovery surfaces.
+The surface-unavailable fixture uses “Surface unavailable” with Retry and
+Diagnostics actions, while source labels remain limited to Opened by you,
+Opened by agent, Workspace preview, and Background session.
+
 The deterministic fixture server provides ready, delayed, navigation, and
 failure pages on loopback only. Any failure-state seeding is guarded by the
 `NEXUS_PHASE10_TEST` environment variable and is unavailable in normal builds.

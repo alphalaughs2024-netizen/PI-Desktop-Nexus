@@ -12,5 +12,5 @@ test("Browser visual overhaul defines semantic shell/new-tab surfaces", () => {
   assert.match(css, /browser-core-view/);
   assert.match(css, /browser-empty-state/);
   assert.match(core, /browser-core-view--\$\{state\}/);
-  assert.match(core, /surface is unavailable/);
+  assert.match(core, /surface (?:is unavailable|could not be displayed)/);
 });

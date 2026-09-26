@@ -19,5 +19,8 @@ credentials.
 | `browser-narrow` | narrow tab overflow and two-row toolbar | all four scenic themes |
 | `browser-reduced-motion` | immediate state changes and visible focus | all four scenic themes |
 
-Phase A establishes the fixture names, required state, and theme matrix. Later
-phases add screenshot baselines and interaction coverage.
+Phase A establishes the fixture names, required state, and theme matrix. Phase
+B keeps this fixture manifest and adds the Browser card hierarchy contract:
+one meaningful header, a separate safe source row, compact tabs and toolbar,
+one readiness strip, and renderer-owned New Tab/error surfaces. Later phases
+add screenshot baselines and interaction coverage.

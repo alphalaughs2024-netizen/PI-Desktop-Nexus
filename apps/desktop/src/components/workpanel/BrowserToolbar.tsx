@@ -31,6 +31,7 @@ export function BrowserToolbar({ presentation, browserState, panelState, busy, d
         <button type="button" disabled={!canReload && !canStop} aria-label={canStop ? "Stop loading" : "Reload page"} title={canStop ? "Stop loading" : "Reload page"} onClick={() => void run(canStop ? "stop" : "reload", () => onAction(canStop ? "stop" : "reload"))}>{canStop ? <IconSquare size={13} /> : <IconRefresh size={14} />}</button>
       </div>
       <form className="browser-toolbar-address" onSubmit={(event) => { event.preventDefault(); submit(); }}>
+        <span className="browser-address-site" aria-hidden="true">{draft && draft !== "about:blank" ? "◉" : "⌂"}</span>
         <input ref={inputRef} type="url" aria-label="Browser address" value={draft} spellCheck={false} autoCorrect="off" autoCapitalize="off" placeholder="Enter a URL…" onChange={(event) => setDraft(event.target.value)} onKeyDown={(event) => { if (event.key === "Escape") { event.preventDefault(); setDraft(committedLocation ?? browserState?.url ?? ""); inputRef.current?.blur(); } }} disabled={disabled || panelState === "starting" || panelState === "unavailable" || panelState === "policy-blocked" || Boolean(pending)} />
       </form>
       {presentation === "maximized" && <button type="button" disabled={!ready || Boolean(pending)} aria-label="Capture screenshot" title="Capture screenshot" onClick={() => void run("screenshot", onScreenshot)}><IconCamera size={14} /></button>}
