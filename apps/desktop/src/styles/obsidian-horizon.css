@@ -1,4 +1,5 @@
 :root[data-theme="dark"][data-scenic-theme="obsidian-horizon"] {
+  --browser-panel-surface: rgba(5, 12, 24, .84); --browser-tab-active: rgba(20, 37, 60, .88); --browser-tab-inactive: rgba(4, 10, 20, .66); --browser-tab-hover: rgba(93, 135, 190, .26); --browser-toolbar-surface: rgba(5, 12, 24, .92); --browser-address-surface: rgba(3, 8, 16, .82); --browser-border: rgba(190, 211, 238, .24); --browser-focus: #a9d0ff; --browser-ready: #a4e05c; --browser-loading: #8cb9ef; --browser-error: #ff8c9e; --browser-text: #eef5ff; --browser-text-muted: #aebdd1;
   --obsidian-atmosphere: rgba(3, 8, 16, 0.18);
   --obsidian-shell-glass: rgba(7, 14, 25, 0.58);
   --obsidian-navigation-glass: rgba(3, 8, 15, 0.82);

@@ -36,6 +36,7 @@
   flex-direction: column;
   background: inherit;
 }
+:root { --browser-panel-surface: color-mix(in oklab, var(--ds-bg-secondary) 92%, transparent); --browser-tab-active: color-mix(in oklab, var(--ds-bg-primary) 88%, transparent); --browser-tab-inactive: color-mix(in oklab, var(--ds-bg-secondary) 76%, transparent); --browser-tab-hover: var(--ds-bg-hover); --browser-toolbar-surface: var(--ds-bg-secondary); --browser-address-surface: color-mix(in oklab, var(--ds-bg-primary) 84%, transparent); --browser-border: var(--ds-border-subtle); --browser-focus: var(--ds-focus); --browser-ready: var(--ds-success); --browser-loading: var(--ds-focus); --browser-error: var(--ds-error); --browser-text: var(--ds-text-primary); --browser-text-muted: var(--ds-text-muted); }
 
 .work-panel-frame.is-maximized {
   position: fixed;
@@ -68,6 +69,15 @@
 .work-panel-frame-content { display: flex; min-width: 0; min-height: 0; flex: 1; flex-direction: column; }
 
 .browser-core-view { display: flex; min-width: 0; min-height: 0; flex: 1; flex-direction: column; position: relative; overflow: hidden; background: var(--ds-bg-primary); }
+.browser-tab-strip { display: flex; min-height: 34px; flex: 0 0 34px; align-items: stretch; gap: 3px; overflow-x: auto; padding: 4px 8px 0; border-bottom: 1px solid var(--browser-border, var(--ds-border-subtle)); background: var(--browser-panel-surface, var(--ds-bg-secondary)); scrollbar-width: thin; }
+.browser-tab { display: inline-flex; min-width: 112px; max-width: 190px; flex: 0 1 170px; align-items: center; gap: 6px; padding: 0 7px; border: 1px solid transparent; border-bottom: 0; border-radius: 8px 8px 0 0; color: var(--browser-text-muted, var(--ds-text-muted)); cursor: pointer; font-size: var(--text-xs); }
+.browser-tab.is-active { border-color: var(--browser-border, var(--ds-border-subtle)); background: var(--browser-tab-active, var(--ds-bg-primary)); color: var(--browser-text, var(--ds-text-primary)); }
+.browser-tab-icon { display: inline-flex; align-items: center; color: var(--browser-text-muted, var(--ds-text-muted)); }
+.browser-tab-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.browser-tab-close, .browser-tab-new { display: inline-flex; width: 22px; height: 22px; flex: 0 0 22px; align-items: center; justify-content: center; border: 0; border-radius: 5px; background: transparent; color: inherit; }
+.browser-tab-close { margin-left: auto; opacity: .65; }
+.browser-tab-close:hover, .browser-tab-new:hover { background: var(--browser-tab-hover, var(--ds-bg-hover)); opacity: 1; }
+.browser-tab-new { margin-left: 2px; align-self: center; }
 .browser-toolbar { display: flex; min-height: 34px; flex: 0 0 34px; align-items: center; gap: 4px; padding: 0 8px; border-bottom: 1px solid var(--ds-border-subtle); background: var(--ds-bg-secondary); transition: background-color 160ms var(--motion-ease-out), border-color 160ms var(--motion-ease-out); }
 .browser-toolbar--maximized { min-height: 40px; flex-basis: 40px; padding-inline: 16px; }
 .browser-toolbar button { display: inline-flex; width: 28px; height: 28px; flex: 0 0 28px; align-items: center; justify-content: center; border: 0; border-radius: var(--radius-sm); background: transparent; color: var(--ds-text-muted); }

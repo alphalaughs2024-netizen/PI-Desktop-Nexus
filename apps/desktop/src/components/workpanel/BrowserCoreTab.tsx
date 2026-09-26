@@ -9,6 +9,7 @@ import { BrowserOperationStatus } from "./BrowserOperationStatus";
 import { BrowserErrorNotice } from "./BrowserErrorNotice";
 import { BrowserEmptyState } from "./BrowserEmptyState";
 import { BrowserDiagnosticsDrawer } from "./BrowserDiagnosticsDrawer";
+import { BrowserTabStrip } from "./BrowserTabStrip";
 
 export type BrowserCoreTabProps = { sessionId?: string; location?: string; blocked?: boolean; presentation: WorkPanelPresentation; transitioning?: boolean };
 
@@ -39,6 +40,8 @@ function safeBrowserError(error: unknown): string {
 
 export function BrowserCoreTab({ sessionId, location, blocked = false, presentation, transitioning = false }: BrowserCoreTabProps) {
   const { t } = useTranslation();
+  const [browserTabs, setBrowserTabs] = useState(() => [{ id: "browser-core-1", sessionId: sessionId ?? "", title: "New tab", url: location ?? "", loading: false, canGoBack: false, canGoForward: false, browserId: "browser-core-1", guestGeneration: 0, createdAt: Date.now(), lastActivatedAt: Date.now() }]);
+  const [activeBrowserId, setActiveBrowserId] = useState("browser-core-1");
   const [viewState, setViewState] = useState<import("@pi-desktop/shared").BrowserViewState>({ readiness: "starting", navigation: null, source: "unknown", recoverable: false });
   const [operation, setOperation] = useState("");
   const [error, setError] = useState("");
@@ -50,12 +53,17 @@ export function BrowserCoreTab({ sessionId, location, blocked = false, presentat
   const operationLabel = operation || (state === "starting" ? "Starting Browser…" : state === "loading" ? "Loading page…" : "");
   const errorMessage = error || (state === "unavailable" ? "The browser guest could not start." : state === "policy-blocked" ? "The current capability policy does not allow this action." : "");
   const runAction = async (action: import("@pi-desktop/shared").BrowserAction) => { setOperation(action === "back" ? "Going back…" : action === "forward" ? "Going forward…" : action === "reload" ? "Reloading…" : "Stopping…"); setError(""); try { await api.browserAction(action, sessionId); } catch (caught) { setError(safeBrowserError(caught)); } finally { setOperation(""); } };
-  const runNavigate = async (url: string) => { setOperation("Navigating…"); setError(""); try { await api.browserNavigate(url, sessionId); } catch (caught) { setError(safeBrowserError(caught)); } finally { setOperation(""); } };
+  const runNavigate = async (url: string) => { const value = url.trim(); if (!value) return; setBrowserTabs((tabs) => tabs.map((tab) => tab.browserId === activeBrowserId ? { ...tab, url: value, title: value.replace(/^https?:\/\//, "").split("/")[0] || "New tab", loading: true } : tab)); setOperation("Navigating…"); setError(""); try { await api.browserNavigate(value, sessionId); } catch (caught) { setError(safeBrowserError(caught)); } finally { setBrowserTabs((tabs) => tabs.map((tab) => tab.browserId === activeBrowserId ? { ...tab, loading: false } : tab)); setOperation(""); } };
   const runScreenshot = async () => { setOperation("Capturing screenshot…"); setError(""); try { await api.browserScreenshot({ format: "png" }, sessionId); } catch (caught) { setError(safeBrowserError(caught)); } finally { setOperation(""); } };
   const runExternal = async () => { setOperation("Opening external browser…"); setError(""); try { await api.browserOpenExternal(viewState.safeLocation); } catch (caught) { setError(safeBrowserError(caught)); } finally { setOperation(""); } };
   const copyLocation = async () => { if (viewState.safeLocation) { await navigator.clipboard?.writeText(viewState.safeLocation); setOperation(t("panel.browser.copied")); } };
   const recover = async () => { setOperation("Retrying Browser…"); setError(""); try { const result = await api.browserRecover(); if (!(result as { ok?: boolean }).ok) setError(browserErrorCopy.BROWSER_POLICY_BLOCKED); } catch (caught) { setError(safeBrowserError(caught)); } finally { setOperation(""); } };
+  const visibleTabs = browserTabs.map((tab) => tab.browserId === activeBrowserId ? { ...tab, title: viewState.safeTitle || browserState?.title || tab.title, url: viewState.safeLocation || location || browserState?.url || tab.url, loading: tab.loading || state === "loading", canGoBack: Boolean(browserState?.canGoBack), canGoForward: Boolean(browserState?.canGoForward), guestGeneration: viewState.surface?.guestGeneration ?? tab.guestGeneration, surface: viewState.surface } : tab);
+  const newBrowserTab = () => { const id = `browser-core-${Date.now()}`; setBrowserTabs((tabs) => [...tabs, { id, sessionId: sessionId ?? "", title: "New tab", url: "", loading: false, canGoBack: false, canGoForward: false, browserId: id, guestGeneration: 0, createdAt: Date.now(), lastActivatedAt: Date.now() }]); setActiveBrowserId(id); };
+  const closeBrowserTab = (id: string) => { setBrowserTabs((tabs) => { if (tabs.length <= 1) return tabs; const index = tabs.findIndex((tab) => tab.browserId === id); const next = tabs.filter((tab) => tab.browserId !== id); if (id === activeBrowserId) setActiveBrowserId(next[Math.min(index, next.length - 1)]?.browserId ?? next[0].browserId); return next; }); };
+  const activateBrowserTab = (id: string) => { const tab = browserTabs.find((candidate) => candidate.browserId === id); setActiveBrowserId(id); if (tab?.url && id !== activeBrowserId) void runNavigate(tab.url); };
   return <div className="browser-core-view" data-browser-presentation={presentation} data-browser-readiness={state} data-browser-location={location ?? ""}>
+    <BrowserTabStrip tabs={visibleTabs} activeId={activeBrowserId} onActivate={activateBrowserTab} onClose={closeBrowserTab} onNew={newBrowserTab} />
     <BrowserToolbar presentation={presentation} browserState={browserState} panelState={state} busy={Boolean(operation)} disabled={blocked || transitioning} sessionId={sessionId} committedLocation={viewState.safeLocation ?? location ?? browserState?.url} onNavigate={runNavigate} onAction={runAction} onScreenshot={runScreenshot} onOpenExternal={runExternal} onCopyLocation={copyLocation} onOpenDiagnostics={() => { diagnosticsTriggerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null; setDiagnosticsOpen(true); }} />
     <BrowserReadinessStrip state={state} source={viewState.source} safeLocation={viewState.safeLocation} safeTitle={viewState.safeTitle} presentation={presentation} />
     <BrowserOperationStatus operation={operationLabel} />
