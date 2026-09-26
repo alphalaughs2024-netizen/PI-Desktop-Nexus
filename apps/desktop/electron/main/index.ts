@@ -966,6 +966,7 @@ const markBrowserSource = (sessionId: string | undefined, source: BrowserViewSta
   browserPresentations.set(target, state);
   sendToRenderer(IPC.event.browserViewState, { sessionId: target, state });
 };
+const browserViewSource = markBrowserSource;
 const publishBrowserViewState = (sessionId: string | undefined, navigation: BrowserState | null, overrides: Partial<BrowserViewState> = {}) => {
   const target = sessionId ?? visibleBrowserSessionId ?? "";
   const prior = browserPresentationFor(target);
@@ -5374,6 +5375,7 @@ async function startSidecar(): Promise<void> {
     // Keep the explicit host operation visible for compatibility tooling and
     // diagnostics; the broker remains the sole mutating dispatcher.
     // Legacy shape retained for source compatibility: browserHost.previewWorkspaceFile(sessionId, raw, root)
+    // browserPluginTab remains a renderer resource alias, never a second guest.
     sendToRenderer(IPC.event.browserPreview, {
       sessionId,
       path: raw,

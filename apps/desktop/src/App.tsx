@@ -43,7 +43,7 @@ import { api } from "./lib/api";
 import { installRendererApi } from "./capture/renderer-api";
 import { commitWorkPanelPresentation } from "./lib/work-panel-presentation";
 import { rendererPlatform } from "./lib/renderer-platform";
-import { CORE_BROWSER_TAB } from "./lib/work-panel-tabs";
+import { browserPluginTab } from "./lib/work-panel-tabs";
 import {
   clampSidebarWidth,
   loadSidebarWidth,
@@ -646,10 +646,7 @@ function AppShell() {
     const offBrowserPreview = api.onBrowserPreview((event) => {
       useAppStore
         .getState()
-        .openWorkPanelTabForSession(event.sessionId, {
-          ...CORE_BROWSER_TAB,
-          location: event.path ?? event.url,
-        });
+        .openWorkPanelTabForSession(event.sessionId, browserPluginTab(event.path ?? event.url));
     });
     const offHostStatus = api.onHostStatus((status) => {
       if (status.archMismatch) setArchMismatch(status.archMismatch);
