@@ -26,6 +26,10 @@ import {
   IconSliders,
 } from "./icons";
 
+function commandLabel(command: CommandItem, t: (key: string) => string): string {
+  return command.id === "builtin.browser.open" ? t("panel.browser.commandTitle") : command.title;
+}
+
 /** Navigable pages surfaced by the global search alongside sessions. */
 const PAGE_ENTRIES = [
   { page: "pulls", labelKey: "pulls.title", icon: IconPullRequest },
@@ -515,7 +519,7 @@ export function SearchDialog({
                   >
                     <IconSliders size={15} className="search-item-icon" />
                     <span className="search-item-title">
-                      {highlightMatch(command.title, query)}
+                      {highlightMatch(commandLabel(command, t), query)}
                     </span>
                     {command.source === "plugin" && (
                       <span className="search-item-badge">

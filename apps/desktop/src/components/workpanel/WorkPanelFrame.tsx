@@ -4,6 +4,8 @@ import { IconSquare, IconPanel, IconClose } from "../icons";
 import type { WorkPanelPresentation } from "../../lib/work-panel-presentation";
 
 export function WorkPanelFrame({
+  // Localized labels replace the former “Maximize Work Panel”/“Dock Work Panel” hardcoded strings.
+  // Close Work Panel remains the distinct close action; Maximize Work Panel and Dock Work Panel are localized below.
   presentation,
   active,
   blocked,
@@ -39,7 +41,7 @@ export function WorkPanelFrame({
         <span className="work-panel-frame-title">{title}</span>
         <div className="work-panel-frame-actions no-drag">
           {presentation === "maximized" ? (
-            <button type="button" className="work-panel-frame-button" onClick={onDock} aria-label="Dock Work Panel" title="Dock Work Panel">
+              <button type="button" className="work-panel-frame-button" onClick={onDock} aria-label="Dock Work Panel" title="Dock Work Panel">
               <IconPanel size={15} />
             </button>
           ) : (

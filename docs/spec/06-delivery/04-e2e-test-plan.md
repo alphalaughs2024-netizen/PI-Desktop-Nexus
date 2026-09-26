@@ -11071,3 +11071,24 @@ foreground rather than inheriting the selected theme's general text color.
 - view-state and source events remain session-routed across manual, preview,
   typed-agent, and compatibility entry paths;
 - safe screenshot/diagnostics projections exclude internal IDs and raw errors.
+
+### Browser Phase 10 visual and Electron verification
+
+Phase 10 adds a blocking Playwright Electron lane at `tests/phase10` and the
+`test:e2e:browser` command. The lane uses a clean temporary profile, a local
+deterministic fixture server, and the built `apps/desktop/out` tree. It covers
+Browser command-palette discovery, canonical tab/guest reuse, docked/maximized
+continuity, navigation and toolbar interactions, state/recovery surfaces,
+session isolation, focus, reduced motion, narrow layout, and an Axe scan that
+excludes only the Main-owned guest document.
+
+The visual gate uses fixed 1440×900 and 900×700 captures. Baselines cover the
+docked/maximized Browser frame, no-page/ready/loading/error/diagnostics states,
+dark and light scenic themes, narrow toolbar layout, focus states, reduced
+motion, command-palette Browser discovery, and operation completion feedback.
+Browser chrome, state labels, focus rings, diagnostics, and frame geometry are
+never masked. Unexpected screenshot diffs block Phase 10 completion.
+
+The deterministic fixture server provides ready, delayed, navigation, and
+failure pages on loopback only. Any failure-state seeding is guarded by the
+`NEXUS_PHASE10_TEST` environment variable and is unavailable in normal builds.

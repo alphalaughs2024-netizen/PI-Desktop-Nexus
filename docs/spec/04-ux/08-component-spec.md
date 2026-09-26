@@ -64,6 +64,16 @@ Phase 8 freezes Browser accessibility contracts: toolbar/menu roles and labels,
 one stable status and alert region, non-modal diagnostics focus behavior,
 keyboard navigation, reduced-motion behavior, and narrow-layout hit targets.
 
+Phase 10 completes Browser Work Panel visual verification. Browser is also a
+first-party `builtin.browser.open` command-palette action that reuses the
+canonical `CORE_BROWSER_TAB`. Browser toolbar, readiness, recovery, diagnostics,
+and Work Panel frame copy use the i18n catalogs. The Playwright Electron lane
+owns deterministic fixture navigation, accessibility checks, focus/session
+continuity, reduced-motion coverage, and blocking screenshot baselines for
+docked/maximized, scenic dark/light, narrow, loading/error, diagnostics, and
+command-discovery states. Phase 10 does not generalize the shell to future
+resource kinds; that remains Phase 11.
+
 > Layout and IA reference: [01-ui-ia.md](01-ui-ia.md)  
 > Design tokens and foundations: [07-ui-design-system.md](07-ui-design-system.md)  
 > Interaction behavior: [09-interaction-patterns.md](09-interaction-patterns.md)
