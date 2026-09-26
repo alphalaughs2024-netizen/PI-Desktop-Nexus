@@ -970,7 +970,9 @@ const publishBrowserViewState = (sessionId: string | undefined, navigation: Brow
   const prior = browserPresentationFor(target);
   const readiness: BrowserViewState["readiness"] = !browserCapabilityEnabled ? "blocked" : overrides.readiness ?? (navigation?.isLoading ? "loading" : navigation?.url ? "ready" : "uninitialized");
   const paneSurface = browserPane.surfaceStatus();
-  const state: BrowserSessionPresentation = { readiness, navigation, source: overrides.source ?? prior.source, surface: { attachment: paneSurface.attachment, visibility: paneSurface.visibility, navigation: navigation?.isLoading ? "loading" : navigation?.url ? "verified" : "unverified", guestGeneration: paneSurface.generation, updatedAt: Date.now() }, ...(safeBrowserLocation(navigation?.url) ? { safeLocation: safeBrowserLocation(navigation?.url) } : {}), ...(navigation?.title ? { safeTitle: navigation.title.replace(/\s+/g, " ").trim().slice(0, 256) } : {}), recoverable: overrides.recoverable ?? readiness === "unavailable", ...(overrides.lastErrorCode ? { lastErrorCode: overrides.lastErrorCode } : {}), ...(overrides.safeSuggestedAction ? { safeSuggestedAction: overrides.safeSuggestedAction } : {}), updatedAt: Date.now() };
+  const surfaceReadiness = paneSurface.attachment === "attached" && paneSurface.visibility === "visible" && paneSurface.paint === "painted";
+  const effectiveReadiness = readiness === "ready" && !surfaceReadiness ? "unavailable" : readiness;
+  const state: BrowserSessionPresentation = { readiness: effectiveReadiness, navigation, source: overrides.source ?? prior.source, surface: { attachment: paneSurface.attachment, visibility: paneSurface.visibility, navigation: navigation?.isLoading ? "loading" : navigation?.url ? "verified" : "unverified", paint: paneSurface.paint, guestGeneration: paneSurface.generation, updatedAt: Date.now() }, ...(safeBrowserLocation(navigation?.url) ? { safeLocation: safeBrowserLocation(navigation?.url) } : {}), ...(navigation?.title ? { safeTitle: navigation.title.replace(/\s+/g, " ").trim().slice(0, 256) } : {}), recoverable: overrides.recoverable ?? effectiveReadiness === "unavailable", ...(overrides.lastErrorCode ? { lastErrorCode: overrides.lastErrorCode } : {}), ...(overrides.safeSuggestedAction ? { safeSuggestedAction: overrides.safeSuggestedAction } : {}), updatedAt: Date.now() };
   browserPresentations.set(target, state);
   if (target) sendToRenderer(IPC.event.browserViewState, { sessionId: target, state });
 };
@@ -5424,7 +5426,7 @@ async function startSidecar(): Promise<void> {
     s.setLocalTool(descriptor.name, async ({ args, sessionId, mode }) => {
       markBrowserSource(sessionId, "agent");
       const result = await descriptor.execute(args, { sessionId, mode: mode === "plan" ? "plan" : "agent" });
-      if (["browser_open", "browser_navigate"].includes(descriptor.name)) {
+      if (["browser_open", "browser_navigate", "browser_list_tabs", "browser_snapshot", "browser_wait", "browser_screenshot"].includes(descriptor.name)) {
         const requestId = `activation-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
         const location = typeof (args as { url?: unknown })?.url === "string" ? String((args as { url: string }).url) : undefined;
         sendToRenderer(IPC.event.browserActivationRequested, { requestId, sessionId, location, source: "agent", focus: "panel", background: false });
