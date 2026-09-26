@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { WorkPanelPresentation } from "../../lib/work-panel-presentation";
 import { api } from "../../lib/api";
 import { BrowserToolbar } from "./BrowserToolbar";
@@ -36,6 +37,7 @@ function safeBrowserError(error: unknown): string {
 }
 
 export function BrowserCoreTab({ sessionId, location, blocked = false, presentation, transitioning = false }: BrowserCoreTabProps) {
+  const { t } = useTranslation();
   const [viewState, setViewState] = useState<import("@pi-desktop/shared").BrowserViewState>({ readiness: "starting", navigation: null, source: "unknown", recoverable: false });
   const [operation, setOperation] = useState("");
   const [error, setError] = useState("");
@@ -50,7 +52,7 @@ export function BrowserCoreTab({ sessionId, location, blocked = false, presentat
   const runNavigate = async (url: string) => { setOperation("Navigating…"); setError(""); try { await api.browserNavigate(url, sessionId); } catch (caught) { setError(safeBrowserError(caught)); } finally { setOperation(""); } };
   const runScreenshot = async () => { setOperation("Capturing screenshot…"); setError(""); try { await api.browserScreenshot({ format: "png" }, sessionId); } catch (caught) { setError(safeBrowserError(caught)); } finally { setOperation(""); } };
   const runExternal = async () => { setOperation("Opening external browser…"); setError(""); try { await api.browserOpenExternal(viewState.safeLocation); } catch (caught) { setError(safeBrowserError(caught)); } finally { setOperation(""); } };
-  const copyLocation = async () => { if (viewState.safeLocation) await navigator.clipboard?.writeText(viewState.safeLocation); };
+  const copyLocation = async () => { if (viewState.safeLocation) { await navigator.clipboard?.writeText(viewState.safeLocation); setOperation(t("panel.browser.copied")); } };
   const recover = async () => { setOperation("Retrying Browser…"); setError(""); try { const result = await api.browserRecover(); if (!(result as { ok?: boolean }).ok) setError(browserErrorCopy.BROWSER_POLICY_BLOCKED); } catch (caught) { setError(safeBrowserError(caught)); } finally { setOperation(""); } };
   return <div className="browser-core-view" data-browser-presentation={presentation} data-browser-readiness={state} data-browser-location={location ?? ""}>
     <BrowserToolbar presentation={presentation} browserState={browserState} panelState={state} busy={Boolean(operation)} disabled={blocked || transitioning} sessionId={sessionId} committedLocation={viewState.safeLocation ?? location ?? browserState?.url} onNavigate={runNavigate} onAction={runAction} onScreenshot={runScreenshot} onOpenExternal={runExternal} onCopyLocation={copyLocation} onOpenDiagnostics={() => { diagnosticsTriggerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null; setDiagnosticsOpen(true); }} />

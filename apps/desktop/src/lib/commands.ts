@@ -2,6 +2,7 @@ import i18n from "i18next";
 import { api } from "./api";
 import { useAppStore } from "../stores/app-store";
 import { trustedExtensionCommandName, type Mode } from "@pi-desktop/shared";
+import { CORE_BROWSER_TAB } from "./work-panel-tabs";
 
 /**
  * First-party command execution shared by the command palette and the
@@ -42,6 +43,19 @@ export async function runPaletteCommand(commandId: string): Promise<void> {
         await api.setSettings(next);
         useAppStore.setState({ settings: next });
       }
+      break;
+    }
+    case "builtin.browser.open": {
+      const current = useAppStore.getState();
+      if (!current.activeSessionId) {
+        const projectPath = current.activeProjectPath ?? current.workspace?.path;
+        if (!projectPath) throw new Error(i18n.t("panel.browser.projectRequired"));
+        await current.newSession({ projectPath });
+      }
+      const state = useAppStore.getState();
+      const existing = state.workPanelTabs.some((tab) => tab.id === CORE_BROWSER_TAB.id);
+      if (existing) state.activateWorkPanelTab(CORE_BROWSER_TAB.id);
+      else state.openWorkPanelTab(CORE_BROWSER_TAB);
       break;
     }
     default: {

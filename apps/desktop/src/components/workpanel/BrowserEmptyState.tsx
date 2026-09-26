@@ -1,3 +1,5 @@
+// Browser unavailable, Retry Browser, Open Browser diagnostics, and Reopen Browser remain the stable semantic actions.
+// Browser unavailable is distinct from Browser action blocked and Browser connection unavailable.
 export function BrowserEmptyState({ state, onRetry, onOpenDiagnostics, onReopen }: { state: "no-page" | "starting" | "unavailable" | "policy-blocked" | "debugger-unavailable" | "closed"; onRetry?: () => void; onOpenDiagnostics?: () => void; onReopen?: () => void }) {
   const content = state === "unavailable" ? ["Browser unavailable", "The browser guest could not start."] : state === "policy-blocked" ? ["Browser action blocked", "The current capability policy does not allow this action."] : state === "debugger-unavailable" ? ["Browser connection unavailable", "The Browser cannot inspect this page right now."] : state === "closed" ? ["Browser closed", "Reopen the Browser surface to continue."] : ["Browser ready", "Open a URL or preview a workspace HTML file."];
   if (state === "starting") return null;

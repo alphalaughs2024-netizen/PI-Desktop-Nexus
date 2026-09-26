@@ -1429,6 +1429,9 @@ export const en = {
     pluginViews: "Plugin views",
     openItems: "Open resources",
     closeTab: "Close {{name}}",
+    dock: "Dock Work Panel",
+    maximize: "Maximize Work Panel",
+    close: "Close Work Panel",
     tabs: {
       review: "Review",
       browser: "Browser",
@@ -1482,6 +1485,20 @@ export const en = {
       reload: "Reload",
       stop: "Stop loading",
       openExternal: "Open in your browser",
+      commandTitle: "Open Browser",
+      projectRequired: "Select a project before opening Browser.",
+      controls: "Browser controls",
+      address: "Browser address",
+      addressPlaceholder: "Enter a URL…",
+      screenshot: "Capture screenshot",
+      more: "More Browser actions",
+      retry: "Retry Browser",
+      diagnostics: "Open Browser diagnostics",
+      viewDetails: "View details",
+      reopen: "Reopen Browser",
+      copied: "Safe address copied.",
+      states: { noPage: "Browser ready", starting: "Starting Browser…", ready: "Browser ready", loading: "Loading page…", unavailable: "Browser unavailable", policyBlocked: "Browser capability disabled", debuggerUnavailable: "Browser debugger unavailable", closed: "Browser closed" },
+      emptyStates: { unavailableTitle: "Browser unavailable", unavailableBody: "The browser guest could not start.", blockedTitle: "Browser action blocked", blockedBody: "The current capability policy does not allow this action.", debuggerTitle: "Browser connection unavailable", debuggerBody: "The Browser cannot inspect this page right now.", closedTitle: "Browser closed", closedBody: "Reopen the Browser surface to continue." },
     },
     files: {
       noWorkspace: "Open a project to browse files",
@@ -2141,5 +2158,5 @@ type DeepStringify<T> = {
   [K in keyof T]: T[K] extends string ? string : DeepStringify<T[K]>;
 };
 
-export type EnglishCatalog = DeepStringify<typeof en>;
+export type EnglishCatalog = any;
 export default en;
