@@ -8153,6 +8153,11 @@ function registerIpc() {
     return { ok: true };
   });
 
+  handle(IPC.invoke.browserScreenshot, async (input: { fullPage?: boolean; maxWidth?: number; maxHeight?: number; maxBytes?: number; format?: "jpeg" | "png"; quality?: number } = {}) => {
+    if (!isBrowserCapabilityEnabled()) throw Object.assign(new Error("Browser is disabled by the core capability setting"), { errorCode: "BROWSER_POLICY_BLOCKED" });
+    return browserBroker.screenshot(input);
+  });
+
   handle(IPC.invoke.browserGetState, async () => {
     return browserHost.getState();
   });

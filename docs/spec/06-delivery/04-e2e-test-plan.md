@@ -55,6 +55,16 @@
 - Docked/maximized props reach the Browser resource without recreating the
   guest; no child accesses Electron, WebContents, BrowserHost, or CDP.
 
+### Browser Work Panel Phase 4 toolbar matrix
+
+- Back, Forward, Reload/Stop and address Enter route through typed Main APIs;
+  controls reflect BrowserState history/loading and clear pending state in
+  success/failure paths.
+- Ctrl/Cmd+L focuses/selects the address, Escape restores committed location,
+  and no unsafe URL/credential/path text is echoed in errors.
+- Screenshot uses bounded typed input/result metadata and emits one image;
+  external-open and overflow actions use Main policy and keyboard focus rules.
+
 ### Browser built-in Phase 7 compatibility matrix
 
 - Browser appears in a Built-in capabilities section, defaults enabled, and is

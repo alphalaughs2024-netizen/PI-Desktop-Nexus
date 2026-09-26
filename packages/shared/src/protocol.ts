@@ -260,6 +260,7 @@ export const IPC = {
     browserSetBounds: "pi-desktop/browser/setBounds",
     browserSetVisible: "pi-desktop/browser/setVisible",
     browserOpenExternal: "pi-desktop/browser/openExternal",
+    browserScreenshot: "pi-desktop/browser/screenshot",
     browserGetState: "pi-desktop/browser/getState",
     fsList: "pi-desktop/fs/list",
     fsRead: "pi-desktop/fs/read",

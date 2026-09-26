@@ -32,6 +32,8 @@ import type {
   AppVersionInfo,
   BrowserAction,
   BrowserState,
+  BrowserScreenshotOptions,
+  BrowserScreenshotResult,
   CommandItem,
   ComposerCommand,
   ComposerPasteFile,
@@ -954,6 +956,8 @@ export const api = {
     invoke(IPC.invoke.browserSetVisible, { visible }),
   browserOpenExternal: (url?: string) =>
     invoke(IPC.invoke.browserOpenExternal, url ? { url } : {}),
+  browserScreenshot: (options: BrowserScreenshotOptions = {}) =>
+    invoke<BrowserScreenshotResult>(IPC.invoke.browserScreenshot, options),
   browserGetState: () =>
     invoke<BrowserState | null>(IPC.invoke.browserGetState),
   fsList: (path?: string) =>

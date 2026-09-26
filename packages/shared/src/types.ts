@@ -2294,6 +2294,9 @@ export type BrowserState = {
   canGoForward: boolean;
 };
 
+export type BrowserScreenshotOptions = { fullPage?: boolean; maxWidth?: number; maxHeight?: number; maxBytes?: number; format?: "jpeg" | "png"; quality?: number };
+export type BrowserScreenshotResult = { mimeType: "image/jpeg" | "image/png"; data: string; width: number; height: number; viewportWidth: number; viewportHeight: number; deviceScaleFactor?: number; coordinateSpace: "css-pixels"; byteLength: number; truncated?: boolean };
+
 export type FsEntry = {
   name: string;
   kind: "dir" | "file";

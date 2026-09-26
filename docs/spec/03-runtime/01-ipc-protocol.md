@@ -1421,6 +1421,11 @@ not resize BrowserWindow bounds, create a second guest, or expose WebContents.
 Any future presentation IPC must validate the requested presentation and route
 only shell state; Browser operations continue through BrowserBroker.
 
+Phase 4 adds the typed `browser/screenshot` invoke contract. It carries only
+bounded screenshot options/results; Main validates hard limits and routes through
+BrowserBroker/BrowserHost. Renderer code never receives WebContents, CDP, or
+unbounded image metadata.
+
 Work panel channels are Electron-main implementations. User-driven workspace
 operations resolve the visible root from `workspace.get` and fail closed
 without one. Agent-driven BrowserPreview routing resolves the originating

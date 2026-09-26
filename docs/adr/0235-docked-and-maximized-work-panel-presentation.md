@@ -107,6 +107,12 @@ readiness, guest-surface, operation-status, error, empty-state, and diagnostics
 boundaries. Guest measurement remains the only child allowed to publish core
 surface bounds; all children remain renderer-only.
 
+Phase 4 adds the first functional Browser toolbar controls through typed
+navigation/action/external APIs and a bounded screenshot contract. Toolbar
+state, address drafts, focus, menus, and operation feedback remain renderer
+responsibilities; Main retains URL policy, session binding, screenshot caps,
+and BrowserHost/Broker routing.
+
 ## Consequences
 
 Browser is the first resource to implement the shell contract. Files, Terminal,

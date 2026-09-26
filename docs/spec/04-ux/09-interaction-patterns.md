@@ -942,6 +942,12 @@ error alert region. Readiness is separate from shell transition state; toolbar,
 guest bounds, empty copy, and diagnostics placeholders are separate resource
 responsibilities.
 
+Phase 4 toolbar interactions use the existing Work Panel keyboard conventions:
+Ctrl/Cmd+L focuses the Browser address, Enter submits navigation, Escape restores
+the committed address, and the overflow menu returns focus to its trigger.
+Back/Forward/Reload/Stop, screenshot, and external-open retain stable labels and
+share the single operation-status/alert pair.
+
 ### 8.1 MVP status
 
 Work-panel and application-window resizing are implemented in MVP:

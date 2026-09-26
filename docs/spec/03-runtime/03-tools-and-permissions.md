@@ -21,6 +21,11 @@ URL/path containment, CDP allowlisting, payload budgets, lifecycle invalidation,
 diagnostics/recovery, and privacy-safe telemetry are shared by core tools,
 BrowserPreview, and `pi.browser.*` before dispatch.
 
+Phase 4 Browser toolbar actions are renderer affordances only. Navigation,
+history, reload/stop, screenshot, and external-open continue through the typed
+Main/Broker boundary and inherit the same mode, capability, URL, workspace, and
+payload policies as agent/compatibility calls.
+
 | Topic | Decision |
 |---|---|
 | Default mode | Agent |

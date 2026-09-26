@@ -41,6 +41,11 @@ point. Only BrowserGuestSurface measures the guest region and calls the typed
 core-surface API; later navigation chrome can be added without changing that
 bounds contract.
 
+Phase 4 makes BrowserToolbar functional: Back, Forward, Reload/Stop, safe
+address entry, bounded screenshot, safe external-open, and overflow actions all
+use typed APIs. The renderer owns draft/focus/menu state; Main/Broker retain
+policy and host authority.
+
 > Layout and IA reference: [01-ui-ia.md](01-ui-ia.md)  
 > Design tokens and foundations: [07-ui-design-system.md](07-ui-design-system.md)  
 > Interaction behavior: [09-interaction-patterns.md](09-interaction-patterns.md)
