@@ -12,11 +12,16 @@ import {
   shell,
   Tray,
 } from "electron";
+import * as path from "node:path";
 import { dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { execFileSync } from "node:child_process";
 import { homedir } from "node:os";
+import * as fs from "node:fs";
 import {
   existsSync,
+  appendFileSync,
+  readFileSync,
+  unlinkSync,
   mkdirSync,
   statSync,
   writeFileSync,
@@ -101,6 +106,7 @@ import {
   type Risk,
   type ShortcutPlatform,
   type ThinkingLevel,
+  type ScheduledTaskRun,
   type HostStatusEvent,
   type SummonShortcutStatus,
   type UiMessage,
@@ -1034,8 +1040,8 @@ plugins.setServices({
     openExternal: () => browserHost.openExternal(),
     snapshot: () => browserBroker.snapshot(),
     screenshot: (input, sessionId) => browserBroker.screenshot(input, sessionId),
-    click: (uid) => browserBroker.click(uid),
-    fill: (uid, text) => browserBroker.fill(uid, text),
+    click: async (uid) => { const result = await browserBroker.click(uid); if (!result.ok) throw new Error("Browser click failed"); },
+    fill: async (uid, text) => { const result = await browserBroker.fill(uid, text); if (!result.ok) throw new Error("Browser fill failed"); },
     evaluate: (expression) => browserBroker.evaluate(expression),
     console: (limit) => browserBroker.console(limit),
     cdp: (method, params) => browserBroker.cdp(method, params),
@@ -1174,6 +1180,7 @@ type RuntimeSession = {
   providerId?: string;
   modelId?: string;
   thinkingLevel?: ThinkingLevel;
+  projectPath?: string | null;
 };
 
 function bindingForModel(
@@ -5391,7 +5398,7 @@ async function startSidecar(): Promise<void> {
       markBrowserSource(sessionId, "agent");
       const result = await descriptor.execute(args, { sessionId, mode: mode === "plan" ? "plan" : "agent" });
       return result && typeof result === "object" && "ok" in (result as Record<string, unknown>)
-        ? result as { ok: boolean; content?: unknown; isError?: boolean; errorCode?: string }
+        ? { ...(result as { ok: boolean; content?: unknown; isError?: boolean; errorCode?: string }), content: (result as { content?: unknown }).content ?? "" }
         : { ok: true, content: result };
     });
   }
@@ -6404,7 +6411,7 @@ function registerIpc() {
     id: "browser",
     label: "Browser",
     enabled: browserCapabilityEnabled,
-    readiness: browserHost.getState()?.state,
+    readiness: browserPresentationFor(visibleBrowserSessionId).readiness,
     disablementSupported: true,
     compatibilityAdapter: "available",
   }]));
@@ -7037,7 +7044,7 @@ function registerIpc() {
     if (!host) throw new Error("host unavailable");
     return host.call("contextVault.list", { projectPath: input.projectPath, query: input.query ?? "" });
   });
-  handle(IPC.invoke.sessionTimelineGet, async (input: { sessionId: string; filter?: string }) => {
+  handle(IPC.invoke.sessionTimelineGet, async (input: { sessionId: string; filter?: string; limit?: number }) => {
     const timelinePath = path.join(dataDir, "lifecycle-events.jsonl");
     if (!fs.existsSync(timelinePath)) return { records: [] };
     const filter = input.filter;
@@ -7993,7 +8000,7 @@ function registerIpc() {
     const parentPath = typeof input.parentPath === "string" ? input.parentPath : "";
     const path = await cloneGitRepository({ url, parentPath, ...(typeof input.name === "string" ? { name: input.name } : {}) });
     if (!host) throw new Error("host unavailable");
-    const res = await host.call("workspace.set", { path });
+    const res = await host.call<{ workspace: { path: string; name: string } | null }>("workspace.set", { path });
     setCurrentWorkspacePath(path);
     return { workspace: await withGitBranch(res.workspace), canceled: false };
   });

@@ -62,7 +62,7 @@ export class BrowserBroker {
     return chained;
   }
 
-  navigate(input: BrowserNavigateInput, sessionId?: string, context?: BrowserContextInput) { return this.run("navigate", async () => { if (input.url) { const policy = decideNavigation(input.url, undefined); if (!policy.allowed) throw Object.assign(new Error(policy.message), { code: policy.code }); } return this.host.navigate(input, sessionId); }, { ...context, sessionId }); }
+  navigate(input: BrowserNavigateInput, sessionId?: string, context?: BrowserContextInput) { return this.run("navigate", async () => { if (input.url) { const policy = decideNavigation(input.url, null); if (!policy.allowed) throw Object.assign(new Error(policy.message), { code: policy.code }); } return this.host.navigate(input, sessionId); }, { ...context, sessionId }); }
   action(action: "back" | "forward" | "reload" | "stop", context?: BrowserContextInput) { return this.run("action", async () => { this.host.action(action); return undefined; }, context); }
   async snapshot(context?: BrowserContextInput) {
     const result = await this.run("snapshot", () => this.host.snapshot(), context);

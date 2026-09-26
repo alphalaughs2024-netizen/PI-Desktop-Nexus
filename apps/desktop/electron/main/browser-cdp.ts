@@ -69,7 +69,7 @@ export type SnapshotResult = {
   truncation?: { nodes?: boolean; depth?: boolean; text?: boolean; bytes?: boolean };
 };
 
-function boundedText(value: unknown, max = BROWSER_SNAPSHOT_LIMITS.maxTextLength): string {
+function boundedText(value: unknown, max: number = BROWSER_SNAPSHOT_LIMITS.maxTextLength): string {
   return String(value ?? "").replace(/\s+/g, " ").trim().slice(0, max);
 }
 

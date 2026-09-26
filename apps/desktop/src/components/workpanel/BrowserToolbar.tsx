@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { BrowserAction, BrowserState } from "@pi-desktop/shared";
 import type { WorkPanelPresentation } from "../../lib/work-panel-presentation";
 import { api } from "../../lib/api";
-import { IconChevronLeft, IconChevronRight, IconRefresh, IconSquare, IconCamera, IconMoreHorizontal, IconExternal } from "../icons";
+import { IconChevronLeft, IconChevronRight, IconRefresh, IconSquare, IconCamera, IconMore, IconExternal } from "../icons";
 
 export function BrowserToolbar({ presentation, browserState, panelState, busy, disabled = false, sessionId, committedLocation, onNavigate, onAction, onScreenshot, onOpenExternal, onCopyLocation, onOpenDiagnostics }: { presentation: WorkPanelPresentation; browserState: BrowserState | null; panelState: string; busy: boolean; disabled?: boolean; sessionId?: string; committedLocation?: string; onNavigate: (url: string) => Promise<void>; onAction: (action: BrowserAction) => Promise<void>; onScreenshot: () => Promise<void>; onOpenExternal: () => Promise<void>; onCopyLocation: () => Promise<void>; onOpenDiagnostics?: () => void }) {
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -35,7 +35,7 @@ export function BrowserToolbar({ presentation, browserState, panelState, busy, d
       {presentation === "maximized" && <button type="button" disabled={!ready || Boolean(pending)} aria-label="Capture screenshot" title="Capture screenshot" onClick={() => void run("screenshot", onScreenshot)}><IconCamera size={14} /></button>}
       {presentation === "maximized" && <button type="button" disabled={!browserState?.url || Boolean(pending)} aria-label="Open in default browser" title="Open in default browser" onClick={() => void run("external", onOpenExternal)}><IconExternal size={14} /></button>}
       <div className="browser-toolbar-overflow">
-        <button ref={menuTriggerRef} type="button" aria-haspopup="menu" aria-expanded={menuOpen} aria-label="More Browser actions" title="More Browser actions" onClick={() => setMenuOpen((open) => !open)}><IconMoreHorizontal size={15} /></button>
+        <button ref={menuTriggerRef} type="button" aria-haspopup="menu" aria-expanded={menuOpen} aria-label="More Browser actions" title="More Browser actions" onClick={() => setMenuOpen((open) => !open)}><IconMore size={15} /></button>
         {menuOpen && <div ref={menuRef} className="browser-toolbar-menu" role="menu"><button type="button" role="menuitem" disabled={!browserState?.url} onClick={() => { setMenuOpen(false); void onOpenExternal(); }}>Open in default browser</button><button type="button" role="menuitem" disabled={!browserState?.url} onClick={() => { setMenuOpen(false); void onCopyLocation(); }}>Copy safe address</button>{presentation !== "maximized" && <button type="button" role="menuitem" disabled={!ready || Boolean(pending)} onClick={() => { setMenuOpen(false); void run("screenshot", onScreenshot); }}>Capture screenshot</button>}<button type="button" role="menuitem" onClick={() => { setMenuOpen(false); onOpenDiagnostics?.(); }}>Diagnostics</button></div>}
       </div>
     </div>
