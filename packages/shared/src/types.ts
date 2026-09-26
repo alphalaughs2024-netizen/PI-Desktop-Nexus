@@ -2273,6 +2273,8 @@ export type BrowserToolName = "browser_list_tabs" | "browser_open" | "browser_na
 export type BrowserReadiness = "uninitialized" | "starting" | "ready" | "loading" | "unavailable" | "blocked" | "closed";
 export type BrowserSource = "user" | "agent" | "workspace-preview" | "unknown";
 export type BrowserViewState = { readiness: BrowserReadiness; navigation: BrowserState | null; source: BrowserSource; safeLocation?: string; safeTitle?: string; recoverable: boolean; lastErrorCode?: BrowserErrorCode; safeSuggestedAction?: string };
+export type BrowserViewStateEvent = { sessionId: string; state: BrowserViewState };
+export type BrowserDiagnosticsDisplay = { capability: "enabled" | "disabled"; readiness: BrowserReadiness; session: "current" | "background"; guestGeneration?: number; pendingRequests: number; queue: "idle" | "busy"; compatibility: "available" | "blocked" | "unavailable"; lastErrorCode?: BrowserErrorCode; suggestedAction?: string; updatedAt?: number };
 export type BrowserDiagnostics = {
   capabilityEnabled: boolean;
   readiness: BrowserReadiness;

@@ -30,6 +30,10 @@ Phase 5 lifecycle and source feedback is Main-owned BrowserViewState. Renderer
 state surfaces consume only safe values; recovery remains policy-bound and never
 replays mutations or privileged Browser commands.
 
+Phase 6 diagnostics/source UI remains a projection of immutable Main request and
+session context. It cannot widen Browser permissions or expose raw broker, host,
+CDP, page, or plugin payloads.
+
 | Topic | Decision |
 |---|---|
 | Default mode | Agent |

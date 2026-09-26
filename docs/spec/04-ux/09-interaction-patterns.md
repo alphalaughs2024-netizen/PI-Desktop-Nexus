@@ -953,6 +953,11 @@ no-page states. Retry is offered only for recoverable guest failures; Reopen is
 closed-only; Diagnostics opens a safe minimal entry surface. These actions do
 not replay a previous Browser request or steal focus from a background session.
 
+Phase 6 diagnostics opens from overflow/error surfaces, focuses its heading,
+closes with Escape/Close, restores the invoking trigger, and offers deterministic
+Copy safe diagnostics. Background-session events never retarget the visible
+Browser context.
+
 ### 8.1 MVP status
 
 Work-panel and application-window resizing are implemented in MVP:

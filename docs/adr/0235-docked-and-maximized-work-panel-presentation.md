@@ -118,6 +118,11 @@ from navigation BrowserState. It drives distinct no-page, loading, unavailable,
 blocked, and closed surfaces with source labels and explicit recovery. Retry
 never replays the preceding Browser operation.
 
+Phase 6 makes Browser view state session-routed and adds a safe diagnostics
+projection/drawer. Background Browser activity cannot overwrite the visible
+session; diagnostics expose only bounded state, stable codes, and safe actions.
+Copy output is deterministic and excludes all Browser/page/host internals.
+
 ## Consequences
 
 Browser is the first resource to implement the shell contract. Files, Terminal,

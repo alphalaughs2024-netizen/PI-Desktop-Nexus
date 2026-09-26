@@ -1432,6 +1432,11 @@ recoverability, stable error code, and suggested-action fields. It intentionally
 does not carry raw URLs, credentials, paths, WebContents/CDP IDs, page data, or
 provider errors.
 
+Phase 6 routes BrowserViewState events with a sessionId envelope and adds the
+session-aware `browserDiagnostics` projection. Renderer contracts contain only
+safe lifecycle/source/count/code fields; Browser IDs and host/page internals
+remain Main-only.
+
 Work panel channels are Electron-main implementations. User-driven workspace
 operations resolve the visible root from `workspace.get` and fail closed
 without one. Agent-driven BrowserPreview routing resolves the originating

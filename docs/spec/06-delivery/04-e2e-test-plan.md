@@ -78,6 +78,16 @@
 - Retry is recoverable-only, Reopen is closed-only, diagnostics remains safe and
   minimal, and recovery never replays navigation or mutation operations.
 
+### Browser Work Panel Phase 6 context and diagnostics matrix
+
+- BrowserViewState events are session-routed; session B Preview/agent activity
+  cannot overwrite session A source, safe location, readiness, or diagnostics.
+- Diagnostics projection and Copy safe diagnostics exclude IDs, paths, URLs,
+  page/title data, credentials, raw errors, screenshots, CDP, and prompts.
+- Docked and maximized diagnostics overlays preserve the guest and use one
+  non-modal component; Escape/Close restore focus and reduced motion remains
+  accessible.
+
 ### Browser built-in Phase 7 compatibility matrix
 
 - Browser appears in a Built-in capabilities section, defaults enabled, and is

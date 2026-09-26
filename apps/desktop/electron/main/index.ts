@@ -947,21 +947,26 @@ const pluginScopes = new Map<string, ActivationScope>();
  */
 const sessionProjects = new Map<string, string | null>();
 let browserCapabilityEnabled = true;
-let browserViewSource: BrowserViewState["source"] = "unknown";
-let browserViewState: BrowserViewState = { readiness: "uninitialized", navigation: null, source: "unknown", recoverable: true };
+type BrowserSessionPresentation = BrowserViewState & { updatedAt: number };
+const browserPresentations = new Map<string, BrowserSessionPresentation>();
+let visibleBrowserSessionId: string | undefined;
 const isBrowserCapabilityEnabled = () => browserCapabilityEnabled;
 const safeBrowserLocation = (raw: string | undefined): string | undefined => {
   if (!raw) return undefined;
   try { const url = new URL(raw); return url.protocol === "http:" || url.protocol === "https:" ? `${url.protocol}//${url.host}${url.pathname}` : undefined; } catch { return undefined; }
 };
-const publishBrowserViewState = (navigation: BrowserState | null, overrides: Partial<BrowserViewState> = {}) => {
+const browserPresentationFor = (sessionId?: string): BrowserSessionPresentation => browserPresentations.get(sessionId ?? visibleBrowserSessionId ?? "") ?? { readiness: "uninitialized", navigation: null, source: "unknown", recoverable: false, updatedAt: Date.now() };
+const publishBrowserViewState = (sessionId: string | undefined, navigation: BrowserState | null, overrides: Partial<BrowserViewState> = {}) => {
+  const target = sessionId ?? visibleBrowserSessionId ?? "";
+  const prior = browserPresentationFor(target);
   const readiness: BrowserViewState["readiness"] = !browserCapabilityEnabled ? "blocked" : overrides.readiness ?? (navigation?.isLoading ? "loading" : navigation?.url ? "ready" : "uninitialized");
-  browserViewState = { readiness, navigation, source: overrides.source ?? browserViewSource, ...(safeBrowserLocation(navigation?.url) ? { safeLocation: safeBrowserLocation(navigation?.url) } : {}), ...(navigation?.title ? { safeTitle: navigation.title.replace(/\s+/g, " ").trim().slice(0, 256) } : {}), recoverable: overrides.recoverable ?? readiness === "unavailable", ...(overrides.lastErrorCode ? { lastErrorCode: overrides.lastErrorCode } : {}), ...(overrides.safeSuggestedAction ? { safeSuggestedAction: overrides.safeSuggestedAction } : {}) };
-  sendToRenderer(IPC.event.browserViewState, browserViewState);
+  const state: BrowserSessionPresentation = { readiness, navigation, source: overrides.source ?? prior.source, ...(safeBrowserLocation(navigation?.url) ? { safeLocation: safeBrowserLocation(navigation?.url) } : {}), ...(navigation?.title ? { safeTitle: navigation.title.replace(/\s+/g, " ").trim().slice(0, 256) } : {}), recoverable: overrides.recoverable ?? readiness === "unavailable", ...(overrides.lastErrorCode ? { lastErrorCode: overrides.lastErrorCode } : {}), ...(overrides.safeSuggestedAction ? { safeSuggestedAction: overrides.safeSuggestedAction } : {}), updatedAt: Date.now() };
+  browserPresentations.set(target, state);
+  if (target === visibleBrowserSessionId) sendToRenderer(IPC.event.browserViewState, { sessionId: target, state });
 };
 const emitBrowserState = (state: BrowserState) => {
   sendToRenderer(IPC.event.browserState, state);
-  publishBrowserViewState(state);
+  publishBrowserViewState(visibleBrowserSessionId, state);
   pluginPanels.broadcast("browser:state", state);
   pluginViews.broadcast("browser:state", state);
 };
@@ -5347,7 +5352,6 @@ async function startSidecar(): Promise<void> {
         content: `BrowserPreview: "${raw}" does not resolve to an existing file inside the workspace.`,
       };
     }
-    browserViewSource = "workspace-preview";
     const preview = await browserHost.previewWorkspaceFile(sessionId, raw, root);
     if (!preview.ok) {
       return {
@@ -5360,7 +5364,7 @@ async function startSidecar(): Promise<void> {
       sessionId,
       path: raw,
     });
-    publishBrowserViewState(browserHost.getState(), { source: "workspace-preview" });
+    publishBrowserViewState(sessionId, browserHost.getState(), { source: "workspace-preview" });
     return {
       ok: true,
       content: `Previewing ${raw} in the built-in Browser. Live reload is active — subsequent edits to the file or sibling assets re-render automatically.`,
@@ -6405,19 +6409,30 @@ function registerIpc() {
     return { id: "browser", enabled: browserCapabilityEnabled };
   });
   handle(IPC.invoke.browserRecover, async () => {
-    if (!browserCapabilityEnabled) { publishBrowserViewState(browserHost.getState(), { readiness: "blocked", recoverable: false, lastErrorCode: "BROWSER_POLICY_BLOCKED", safeSuggestedAction: "Re-enable Browser in Settings." }); return { ok: false, code: "BROWSER_POLICY_BLOCKED" }; }
-    publishBrowserViewState(browserHost.getState(), { readiness: "starting", recoverable: true });
+    if (!browserCapabilityEnabled) { publishBrowserViewState(visibleBrowserSessionId, browserHost.getState(), { readiness: "blocked", recoverable: false, lastErrorCode: "BROWSER_POLICY_BLOCKED", safeSuggestedAction: "Re-enable Browser in Settings." }); return { ok: false, code: "BROWSER_POLICY_BLOCKED" }; }
+    publishBrowserViewState(visibleBrowserSessionId, browserHost.getState(), { readiness: "starting", recoverable: true });
     browserHost.recover();
-    publishBrowserViewState(browserHost.getState());
+    publishBrowserViewState(visibleBrowserSessionId, browserHost.getState());
     return { ok: true, state: browserHost.getState() };
   });
-  handle(IPC.invoke.browserDiagnostics, async () => ({
-    ...browserBroker.diagnostics(),
-    capability: browserCapabilityEnabled ? "enabled" : "disabled",
-    readiness: browserHost.getState()?.isLoading ? "loading" : (browserHost.getState() ? "ready" : "uninitialized"),
-    compatibilityAdapter: "available",
-  }));
+  handle(IPC.invoke.browserDiagnostics, async (input: { sessionId?: string } = {}) => {
+    const state = browserPresentationFor(input.sessionId);
+    const internal = browserBroker.diagnostics() as { guestGeneration?: number; pendingRequestCount?: number; activeQueueCount?: number; compatibilityAdapter?: "available" | "blocked" | "unavailable" };
+    return {
+      capability: browserCapabilityEnabled ? "enabled" : "disabled",
+      readiness: state.readiness,
+      session: input.sessionId && input.sessionId !== visibleBrowserSessionId ? "background" : "current",
+      ...(internal.guestGeneration === undefined ? {} : { guestGeneration: internal.guestGeneration }),
+      pendingRequests: Math.max(0, internal.pendingRequestCount ?? 0),
+      queue: (internal.activeQueueCount ?? 0) > 0 ? "busy" : "idle",
+      compatibility: internal.compatibilityAdapter ?? "available",
+      ...(state.lastErrorCode ? { lastErrorCode: state.lastErrorCode } : {}),
+      ...(state.safeSuggestedAction ? { suggestedAction: state.safeSuggestedAction } : {}),
+      updatedAt: state.updatedAt,
+    };
+  });
   handle(IPC.invoke.browserCoreSurfaceSet, async (input: { sessionId?: string; visible?: boolean; bounds?: BrowserRect }) => {
+    if (input?.sessionId && input.visible === true) visibleBrowserSessionId = input.sessionId;
     const bounds = input?.bounds ?? { x: 0, y: 0, width: 0, height: 0 };
     browserHost.setCoreSurface({ sessionId: input?.sessionId, visible: input?.visible === true, bounds });
     return { ok: true };
@@ -8120,12 +8135,11 @@ function registerIpc() {
     IPC.invoke.browserNavigate,
     async (input: { url?: string; sessionId?: string } = {}) => {
       if (!isBrowserCapabilityEnabled()) throw Object.assign(new Error("Browser is disabled by the core capability setting"), { errorCode: "BROWSER_POLICY_BLOCKED" });
-      browserViewSource = "user";
       const state = await browserHost.navigate(
         { url: String(input.url ?? "") },
         input.sessionId,
       );
-      publishBrowserViewState(state);
+      publishBrowserViewState(input.sessionId, state, { source: "user" });
       return state;
     },
   );
@@ -8141,7 +8155,7 @@ function registerIpc() {
     ) {
       browserHost.action(action);
     }
-    publishBrowserViewState(browserHost.getState());
+    publishBrowserViewState(visibleBrowserSessionId, browserHost.getState());
     return { ok: true };
   });
 
@@ -8182,7 +8196,7 @@ function registerIpc() {
   handle(IPC.invoke.browserGetState, async () => {
     return browserHost.getState();
   });
-  handle(IPC.invoke.browserGetViewState, async () => browserViewState);
+  handle(IPC.invoke.browserGetViewState, async (input: { sessionId?: string } = {}) => browserPresentationFor(input.sessionId));
 
   const requireWorkspaceRoot = async () => {
     if (!host) throw new Error("host unavailable");

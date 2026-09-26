@@ -102,6 +102,14 @@
 .browser-diagnostics-drawer { position: absolute; inset: 0; z-index: 2; display: none; align-items: center; justify-content: center; gap: 8px; flex-direction: column; padding: 20px; background: color-mix(in oklab, var(--ds-bg-primary) 88%, transparent); }
 .browser-diagnostics-drawer[aria-hidden="true"] { display: none; }
 .browser-diagnostics-drawer:not([aria-hidden="true"]) { display: flex; }
+.browser-diagnostics-drawer--docked { align-items: stretch; justify-content: flex-end; padding: 12px; }
+.browser-diagnostics-drawer--maximized { align-items: stretch; justify-content: flex-end; padding: 20px; }
+.browser-diagnostics-drawer--maximized > * { max-width: 360px; align-self: flex-end; }
+.browser-diagnostics-list { width: min(100%, 420px); margin: 0; }
+.browser-diagnostics-row { display: flex; justify-content: space-between; gap: 16px; padding: 4px 0; border-bottom: 1px solid var(--ds-border-subtle); font-size: var(--text-sm); }
+.browser-diagnostics-row dt { color: var(--ds-text-muted); }
+.browser-diagnostics-row dd { margin: 0; color: var(--ds-text-primary); text-align: right; }
+.browser-diagnostics-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
 @media (prefers-reduced-motion: reduce) { .browser-readiness-strip--starting .browser-readiness-dot, .browser-readiness-strip--loading .browser-readiness-dot { animation: none; } }
 @keyframes work-panel-maximized-in { from { opacity: 0; transform: scale(.985); } to { opacity: 1; transform: scale(1); } }
 @media (prefers-reduced-motion: reduce) { .work-panel-frame.is-maximized { animation: none; } }

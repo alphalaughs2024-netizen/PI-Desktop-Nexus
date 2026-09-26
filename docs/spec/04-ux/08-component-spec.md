@@ -51,6 +51,11 @@ navigation history state. BrowserCoreTab maps it into explicit state surfaces;
 the stable operation status and error alert remain separate, and recovery uses
 the existing typed core path without replaying actions.
 
+Phase 6 adds the session-safe Browser context strip and an in-frame diagnostics
+drawer. Docked uses a restrained bottom overlay; maximized uses a restrained
+right overlay. The drawer is non-modal, preserves the guest, restores focus,
+and renders only BrowserDiagnosticsDisplay safe fields.
+
 > Layout and IA reference: [01-ui-ia.md](01-ui-ia.md)  
 > Design tokens and foundations: [07-ui-design-system.md](07-ui-design-system.md)  
 > Interaction behavior: [09-interaction-patterns.md](09-interaction-patterns.md)

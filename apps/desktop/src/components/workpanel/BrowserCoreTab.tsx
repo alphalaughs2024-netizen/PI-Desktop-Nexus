@@ -26,7 +26,7 @@ export function BrowserCoreTab({ sessionId, location, blocked = false, presentat
   const [operation, setOperation] = useState("");
   const [error, setError] = useState("");
   const [diagnosticsOpen, setDiagnosticsOpen] = useState(false);
-  useEffect(() => { void api.browserGetViewState().then(setViewState).catch(() => undefined); return api.onBrowserViewState(setViewState); }, []);
+  useEffect(() => { void api.browserGetViewState(sessionId).then(setViewState).catch(() => undefined); return api.onBrowserViewState((event) => { if (event.sessionId === sessionId) setViewState(event.state); }); }, [sessionId]);
   const state = mapBrowserState(viewState);
   const browserState = viewState.navigation;
   const operationLabel = operation || (state === "starting" ? "Starting Browser…" : state === "loading" ? "Loading page…" : "");
@@ -44,6 +44,6 @@ export function BrowserCoreTab({ sessionId, location, blocked = false, presentat
     <BrowserErrorNotice message={errorMessage} />
     <BrowserGuestSurface sessionId={sessionId} blocked={blocked} transitioning={transitioning} />
     {(state === "no-page" || state === "unavailable" || state === "policy-blocked" || state === "debugger-unavailable" || state === "closed") && <BrowserEmptyState state={state} onRetry={viewState.recoverable ? recover : undefined} onOpenDiagnostics={() => setDiagnosticsOpen(true)} onReopen={recover} />}
-    <BrowserDiagnosticsDrawer open={diagnosticsOpen} panelState={state} onClose={() => setDiagnosticsOpen(false)} onRetry={viewState.recoverable ? recover : undefined} suggestedAction={viewState.safeSuggestedAction} />
+    <BrowserDiagnosticsDrawer open={diagnosticsOpen} panelState={state} presentation={presentation} sessionId={sessionId} onClose={() => setDiagnosticsOpen(false)} onRetry={viewState.recoverable ? recover : undefined} suggestedAction={viewState.safeSuggestedAction} onOperation={setOperation} onError={setError} />
   </div>;
 }
