@@ -60,6 +60,10 @@ Phase 7 makes BrowserGuestSurface the normalized, generation-guarded measurement
 owner. Resize/transition callbacks are coalesced, duplicate rectangles ignored,
 and diagnostics/readiness overlays remain out of the guest measurement region.
 
+Phase 8 freezes Browser accessibility contracts: toolbar/menu roles and labels,
+one stable status and alert region, non-modal diagnostics focus behavior,
+keyboard navigation, reduced-motion behavior, and narrow-layout hit targets.
+
 > Layout and IA reference: [01-ui-ia.md](01-ui-ia.md)  
 > Design tokens and foundations: [07-ui-design-system.md](07-ui-design-system.md)  
 > Interaction behavior: [09-interaction-patterns.md](09-interaction-patterns.md)

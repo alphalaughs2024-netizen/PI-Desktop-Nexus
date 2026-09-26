@@ -98,6 +98,17 @@ accessible.
 - Reduced-motion, narrow docked layout, focus continuity, scenic/light tokens,
   and diagnostics overlays remain usable without layout jitter.
 
+### Browser Work Panel Phase 8 accessibility matrix
+
+- Toolbar, overflow, empty/error actions, diagnostics, and WorkPanel shell
+  controls expose stable accessible names/roles and one status/alert pair.
+- Ctrl/Cmd+L, Enter, Escape, Arrow/Home/End menu navigation, dock/maximize,
+  diagnostics focus/restore, and close focus are keyboard deterministic.
+- Narrow docked layout preserves essential controls and hit targets; reduced
+  motion removes decoration while retaining final geometry, focus, and status.
+- Scenic dark/light state surfaces preserve readable text, focus rings, and
+  non-color-only readiness/error communication.
+
 ### Browser built-in Phase 7 compatibility matrix
 
 - Browser appears in a Built-in capabilities section, defaults enabled, and is

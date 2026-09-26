@@ -128,6 +128,11 @@ normalizes/coalesces rectangles with generation guards, while dock/maximize,
 diagnostics, readiness, narrow-layout, and reduced-motion transitions remain
 renderer-only and never animate or recreate the Main-owned guest.
 
+Phase 8 completes Browser accessibility and interaction polish: stable toolbar,
+menu, diagnostics, status, and alert semantics; deterministic keyboard/focus
+ownership; reduced-motion-safe transitions; and narrow-layout/semantic-token
+coverage. No Browser backend or security boundary changes are permitted.
+
 ## Consequences
 
 Browser is the first resource to implement the shell contract. Files, Terminal,

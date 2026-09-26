@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { WorkPanelPresentation } from "../../lib/work-panel-presentation";
 import { api } from "../../lib/api";
 import { BrowserToolbar } from "./BrowserToolbar";
@@ -26,6 +26,7 @@ export function BrowserCoreTab({ sessionId, location, blocked = false, presentat
   const [operation, setOperation] = useState("");
   const [error, setError] = useState("");
   const [diagnosticsOpen, setDiagnosticsOpen] = useState(false);
+  const diagnosticsTriggerRef = useRef<HTMLElement | null>(null);
   useEffect(() => { void api.browserGetViewState(sessionId).then(setViewState).catch(() => undefined); return api.onBrowserViewState((event) => { if (event.sessionId === sessionId) setViewState(event.state); }); }, [sessionId]);
   const state = mapBrowserState(viewState);
   const browserState = viewState.navigation;
@@ -43,7 +44,7 @@ export function BrowserCoreTab({ sessionId, location, blocked = false, presentat
     <BrowserOperationStatus operation={operationLabel} />
     <BrowserErrorNotice message={errorMessage} />
     <BrowserGuestSurface sessionId={sessionId} blocked={blocked} transitioning={transitioning} />
-    {(state === "no-page" || state === "unavailable" || state === "policy-blocked" || state === "debugger-unavailable" || state === "closed") && <BrowserEmptyState state={state} onRetry={viewState.recoverable ? recover : undefined} onOpenDiagnostics={() => setDiagnosticsOpen(true)} onReopen={recover} />}
-    <BrowserDiagnosticsDrawer open={diagnosticsOpen} panelState={state} presentation={presentation} sessionId={sessionId} onClose={() => setDiagnosticsOpen(false)} onRetry={viewState.recoverable ? recover : undefined} suggestedAction={viewState.safeSuggestedAction} onOperation={setOperation} onError={setError} />
+    {(state === "no-page" || state === "unavailable" || state === "policy-blocked" || state === "debugger-unavailable" || state === "closed") && <BrowserEmptyState state={state} onRetry={viewState.recoverable ? recover : undefined} onOpenDiagnostics={() => { diagnosticsTriggerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null; setDiagnosticsOpen(true); }} onReopen={recover} />}
+    <BrowserDiagnosticsDrawer open={diagnosticsOpen} panelState={state} presentation={presentation} sessionId={sessionId} onClose={() => { setDiagnosticsOpen(false); diagnosticsTriggerRef.current?.focus(); }} onRetry={viewState.recoverable ? recover : undefined} suggestedAction={viewState.safeSuggestedAction} onOperation={setOperation} onError={setError} />
   </div>;
 }

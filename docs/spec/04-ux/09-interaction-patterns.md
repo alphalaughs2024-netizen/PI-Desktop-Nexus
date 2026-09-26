@@ -962,6 +962,11 @@ Phase 7 transitions preserve focus and page continuity while dock/maximize and
 diagnostics motion remains reduced-motion safe. Narrow layouts keep essential
 navigation controls visible and move secondary actions to overflow.
 
+Phase 8 applies the existing Work Panel menu keyboard pattern to Browser
+overflow, restores focus after diagnostics/close/dock, and keeps Ctrl/Cmd+L,
+Enter, Escape, and reduced-motion behavior deterministic without stealing focus
+from conversation or background sessions.
+
 ### 8.1 MVP status
 
 Work-panel and application-window resizing are implemented in MVP:
