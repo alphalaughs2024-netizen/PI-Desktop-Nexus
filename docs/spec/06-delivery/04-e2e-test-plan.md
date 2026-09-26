@@ -44,6 +44,17 @@
 - Session A/B switches, background previews, close/reopen, and late geometry
   callbacks cannot retarget the visible Browser guest.
 
+### Browser Work Panel Phase 3 component matrix
+
+- BrowserCoreTab renders separate toolbar, readiness, guest, operation status,
+  error, empty, and diagnostics boundaries.
+- Exactly one stable Browser status region and one stable alert region exist;
+  readiness and shell transition state remain distinct.
+- Guest bounds are measured only by BrowserGuestSurface, coalesced through
+  requestAnimationFrame, and cleaned up with one zero-bounds hide.
+- Docked/maximized props reach the Browser resource without recreating the
+  guest; no child accesses Electron, WebContents, BrowserHost, or CDP.
+
 ### Browser built-in Phase 7 compatibility matrix
 
 - Browser appears in a Built-in capabilities section, defaults enabled, and is

@@ -937,6 +937,11 @@ same resource into a bounded in-window frame; Dock returns it to the right-side
 column. Cmd/Ctrl+J remains visibility-only, and no native window or guest is
 created by presentation changes.
 
+Phase 3 reserves one stable Browser operation-status live region and one stable
+error alert region. Readiness is separate from shell transition state; toolbar,
+guest bounds, empty copy, and diagnostics placeholders are separate resource
+responsibilities.
+
 ### 8.1 MVP status
 
 Work-panel and application-window resizing are implemented in MVP:

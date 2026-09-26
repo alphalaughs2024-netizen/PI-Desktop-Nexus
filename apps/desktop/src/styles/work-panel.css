@@ -66,6 +66,21 @@
 .work-panel-frame-button:hover { background: var(--ds-bg-hover); color: var(--ds-text-primary); }
 .work-panel-frame-button:focus-visible { outline: 2px solid var(--ds-focus); outline-offset: -2px; }
 .work-panel-frame-content { display: flex; min-width: 0; min-height: 0; flex: 1; flex-direction: column; }
+
+.browser-core-view { display: flex; min-width: 0; min-height: 0; flex: 1; flex-direction: column; position: relative; overflow: hidden; background: var(--ds-bg-primary); }
+.browser-toolbar { display: flex; min-height: 34px; flex: 0 0 34px; align-items: center; padding: 0 10px; border-bottom: 1px solid var(--ds-border-subtle); background: var(--ds-bg-secondary); }
+.browser-toolbar--maximized { min-height: 40px; flex-basis: 40px; padding-inline: 16px; }
+.browser-toolbar-placeholder { flex: 1; min-width: 0; height: 1px; }
+.browser-readiness-strip { display: flex; min-height: 24px; flex: 0 0 24px; align-items: center; gap: 6px; padding: 0 10px; color: var(--ds-text-muted); font-size: var(--text-xs); }
+.browser-readiness-dot { width: 6px; height: 6px; flex: 0 0 auto; border-radius: var(--radius-full); background: var(--ds-text-muted); }
+.browser-operation-status { min-height: 20px; flex: 0 0 20px; margin: 0; padding: 2px 10px; color: var(--ds-text-muted); font-size: var(--text-xs); }
+.browser-error-notice { min-height: 0; flex: 0 0 auto; padding: 6px 10px; color: var(--ds-error); background: color-mix(in oklab, var(--ds-error) 10%, transparent); font-size: var(--text-sm); }
+.browser-error-notice[aria-hidden="true"] { display: none; }
+.browser-guest-surface { min-width: 0; min-height: 0; flex: 1; overflow: hidden; }
+.browser-empty-state { position: absolute; inset: 78px 0 0; display: flex; align-items: center; justify-content: center; gap: 5px; flex-direction: column; color: var(--ds-text-muted); pointer-events: none; text-align: center; }
+.browser-empty-state strong { color: var(--ds-text-primary); font-size: var(--text-base-plus); }
+.browser-empty-state span { font-size: var(--text-sm); }
+.browser-diagnostics-drawer { position: absolute; inset: 0; z-index: 2; }
 @keyframes work-panel-maximized-in { from { opacity: 0; transform: scale(.985); } to { opacity: 1; transform: scale(1); } }
 @media (prefers-reduced-motion: reduce) { .work-panel-frame.is-maximized { animation: none; } }
 

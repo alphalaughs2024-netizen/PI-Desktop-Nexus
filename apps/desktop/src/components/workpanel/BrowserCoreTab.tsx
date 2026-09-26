@@ -1,32 +1,39 @@
-import { useEffect, useRef, useState } from "react";
-import { useTranslation } from "react-i18next";
-import { api } from "../../lib/api";
+import { useEffect, useState } from "react";
 import type { WorkPanelPresentation } from "../../lib/work-panel-presentation";
+import { api } from "../../lib/api";
+import { BrowserToolbar } from "./BrowserToolbar";
+import { BrowserReadinessStrip, type BrowserPanelState } from "./BrowserReadinessStrip";
+import { BrowserGuestSurface } from "./BrowserGuestSurface";
+import { BrowserOperationStatus } from "./BrowserOperationStatus";
+import { BrowserErrorNotice } from "./BrowserErrorNotice";
+import { BrowserEmptyState } from "./BrowserEmptyState";
+import { BrowserDiagnosticsDrawer } from "./BrowserDiagnosticsDrawer";
 
-export function BrowserCoreTab({ sessionId, location, blocked = false, presentation = "docked", transitioning = false }: { sessionId?: string; location?: string; blocked?: boolean; presentation?: WorkPanelPresentation; transitioning?: boolean }) {
-  const { t } = useTranslation();
-  const surfaceRef = useRef<HTMLDivElement | null>(null);
-  const [state, setState] = useState<string>("starting");
-  useEffect(() => api.onBrowserState((next) => setState(next?.state ?? "starting")), []);
-  useEffect(() => {
-    const surface = surfaceRef.current;
-    if (!surface) return;
-    let frame = 0;
-    let last = "";
-    const report = () => {
-      if (transitioning) return;
-      cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(() => {
-        const rect = surface.getBoundingClientRect();
-        if (rect.width <= 0 || rect.height <= 0) return;
-        const key = `${rect.x}:${rect.y}:${rect.width}:${rect.height}:${blocked}`;
-        if (key === last) return;
-        last = key;
-        void api.browserCoreSurfaceSet({ sessionId, visible: !blocked, bounds: { x: rect.x, y: rect.y, width: rect.width, height: rect.height } });
-      });
-    };
-    const observer = new ResizeObserver(report); observer.observe(surface); report();
-    return () => { cancelAnimationFrame(frame); observer.disconnect(); void api.browserCoreSurfaceSet({ sessionId, visible: false, bounds: { x: 0, y: 0, width: 0, height: 0 } }); };
-  }, [blocked, presentation, sessionId, transitioning]);
-  return <div className="work-browser-view browser-core-view" data-browser-presentation={presentation} data-browser-readiness={state} data-browser-location={location ?? ""}><div ref={surfaceRef} className="work-browser-view-surface" aria-label={t("panel.tabs.browser")} /><div className="browser-core-status" role="status">{state === "ready" ? "Browser ready" : state === "loading" ? "Loading page…" : state === "unavailable" ? "Browser unavailable" : state === "blocked" ? "Browser capability disabled" : "Starting browser…"}</div></div>;
+export type BrowserCoreTabProps = { sessionId?: string; location?: string; blocked?: boolean; presentation: WorkPanelPresentation; transitioning?: boolean };
+
+function mapBrowserState(raw: string | undefined, location?: string): BrowserPanelState {
+  if (raw === "ready" && !location) return "no-page";
+  if (raw === "blocked") return "policy-blocked";
+  if (raw === "closed") return "closed";
+  if (raw === "unavailable") return "unavailable";
+  if (raw === "loading") return "loading";
+  if (raw === "ready") return "ready";
+  return "starting";
+}
+
+export function BrowserCoreTab({ sessionId, location, blocked = false, presentation, transitioning = false }: BrowserCoreTabProps) {
+  const [rawState, setRawState] = useState<string>("starting");
+  useEffect(() => api.onBrowserState((next) => setRawState(next?.state ?? "starting")), []);
+  const state = mapBrowserState(rawState, location);
+  const operation = state === "starting" ? "Starting Browser…" : state === "loading" ? "Loading page…" : "";
+  const error = state === "unavailable" ? "The browser guest could not start." : state === "policy-blocked" ? "The current capability policy does not allow this action." : "";
+  return <div className="browser-core-view" data-browser-presentation={presentation} data-browser-readiness={state} data-browser-location={location ?? ""}>
+    <BrowserToolbar presentation={presentation} disabled={blocked || transitioning} />
+    <BrowserReadinessStrip state={state} />
+    <BrowserOperationStatus operation={operation} />
+    <BrowserErrorNotice message={error} />
+    <BrowserGuestSurface sessionId={sessionId} blocked={blocked} transitioning={transitioning} />
+    <BrowserEmptyState visible={state === "no-page"} />
+    <BrowserDiagnosticsDrawer open={false} />
+  </div>;
 }

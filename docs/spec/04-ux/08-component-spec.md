@@ -35,6 +35,12 @@ default in-flow column; maximized is a bounded in-window frame using the same
 resource subtree and Browser guest. Shell controls own maximize, dock, and close;
 Browser content receives presentation as layout-only state.
 
+Phase 3 decomposes BrowserCoreTab into toolbar, readiness strip, guest surface,
+stable operation status, safe error notice, empty state, and diagnostics mount
+point. Only BrowserGuestSurface measures the guest region and calls the typed
+core-surface API; later navigation chrome can be added without changing that
+bounds contract.
+
 > Layout and IA reference: [01-ui-ia.md](01-ui-ia.md)  
 > Design tokens and foundations: [07-ui-design-system.md](07-ui-design-system.md)  
 > Interaction behavior: [09-interaction-patterns.md](09-interaction-patterns.md)

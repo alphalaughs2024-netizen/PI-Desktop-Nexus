@@ -102,6 +102,11 @@ in-window frame with reduced-motion-safe transitions. The guest surface reports
 coalesced content bounds and remains Main-owned. Browser toolbar and navigation
 chrome remain deferred to later phases.
 
+Phase 3 decomposes Browser resource rendering into explicit toolbar,
+readiness, guest-surface, operation-status, error, empty-state, and diagnostics
+boundaries. Guest measurement remains the only child allowed to publish core
+surface bounds; all children remain renderer-only.
+
 ## Consequences
 
 Browser is the first resource to implement the shell contract. Files, Terminal,
