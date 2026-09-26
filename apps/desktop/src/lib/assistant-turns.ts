@@ -336,7 +336,7 @@ export function assistantTurnUsage(
   );
   if (usages.length === 0) return undefined;
 
-  const sum = (field: keyof MessageUsage) =>
+  const sum = (field: "inputTokens" | "outputTokens" | "cacheReadTokens" | "cacheWriteTokens" | "reasoningTokens" | "totalTokens") =>
     usages.reduce((total, usage) => total + (usage[field] ?? 0), 0);
   const optionalSum = (
     field: "cacheReadTokens" | "cacheWriteTokens" | "reasoningTokens",

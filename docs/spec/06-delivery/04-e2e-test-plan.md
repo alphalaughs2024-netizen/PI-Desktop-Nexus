@@ -4611,6 +4611,25 @@ membership when dropped on Ungrouped.
 - **Specs linked**: `04-ux/07-ui-design-system.md` §8, `04-ux/02-i18n-english-first.md`, decisions-log D146 / D304 / D348
 - **Acceptance**: A (app startup), Quality
 - **Milestone**: M5
+
+#### E2E-076a: Renderer build and load failure is recoverable
+- **Status**: Source and boot-probe covered; full visual timing remains with E2E-076.
+- **Priority**: P1
+- **Covers**: A (app startup), Quality / clean-build reliability
+- **Preconditions**: Desktop workspace dependencies are built; the desktop output directory is disposable.
+- **Steps**:
+  1. Run the desktop production build and confirm the command removes stale `apps/desktop/out` before bundling.
+  2. Confirm a successful build contains Main, preload, and renderer output, including the renderer index and referenced assets.
+  3. Launch the packaged boot probe with a throwaway data directory.
+  4. For load-failure coverage, start the main process with an intentionally unavailable renderer URL or terminate the renderer process during startup.
+- **Expected**:
+  - A failed build exits non-zero and does not leave a misleading partial output tree that can be mistaken for a complete build.
+  - A successful clean build reaches the normal splash and main shell; the boot probe completes its preload and IPC round-trip.
+  - A main-frame load failure or renderer crash is logged as a bounded diagnostic and replaces the blank surface with a localized retry/rebuild recovery page.
+  - Browser security flags, preload isolation, BrowserBroker ownership, and Browser guest identity remain unchanged.
+- **Specs linked**: `03-runtime/01-ipc-protocol.md`, `04-ux/01-ui-ia.md`
+- **Acceptance**: A (app startup), Quality
+- **Milestone**: M5
 #### E2E-099: Brand logo follows the active theme
 - **Status**: Draft
 - **Priority**: P3

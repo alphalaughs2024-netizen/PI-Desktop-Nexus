@@ -116,8 +116,7 @@ export function WorkPanel({
   const pluginViews = useAppStore((s) => s.pluginViews);
   const width = useAppStore((s) => s.workPanelWidth);
   const presentation = useAppStore((s) => s.workPanelPresentation);
-  const maximizeWorkPanel = useAppStore((s) => s.maximizeWorkPanel);
-  const dockWorkPanel = useAppStore((s) => s.dockWorkPanel);
+  const setWorkPanelPresentation = useAppStore((s) => s.setWorkPanelPresentation);
   const activateTab = useAppStore((s) => s.activateWorkPanelTab);
   const closeTab = useAppStore((s) => s.closeWorkPanelTab);
   const openWorkPanelTab = useAppStore((s) => s.openWorkPanelTab);

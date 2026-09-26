@@ -4,7 +4,7 @@ import { randomUUID } from "node:crypto";
 import { join } from "node:path";
 import { existsSync } from "node:fs";
 import type { HostProcess, ProcessExitHandler, StderrHandler } from "./host-process";
-import { DEFAULT_RPC_TIMEOUT_MS, rpcTimeoutMs } from "@pi-desktop/shared";
+import { DEFAULT_RPC_TIMEOUT_MS, normalizeMode, rpcTimeoutMs } from "@pi-desktop/shared";
 
 // stderr lines kept per sidecar so an unexpected exit can be reported with the
 // process's last words instead of a bare "agent sidecar exited".
@@ -497,6 +497,7 @@ export class AgentSidecar {
           // therefore permits only the read-only BrowserPreview bridge; every
           // other main-local tool fails closed even if a stale runtime asks for
           // it directly.
+          const mode = normalizeMode(params.mode, "agent");
           const result =
             params.mode === "plan" && toolName !== "BrowserPreview"
               ? {
@@ -509,7 +510,7 @@ export class AgentSidecar {
                   sessionId: String(params.sessionId ?? ""),
                   toolCallId: String(params.toolCallId ?? ""),
                   args: params.args,
-                  mode: params.mode,
+                  mode,
                 });
           this.writeToChild(
             JSON.stringify({ jsonrpc: "2.0", id: msg.id, result }) + "\n",

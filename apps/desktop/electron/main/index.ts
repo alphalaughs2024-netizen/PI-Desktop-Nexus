@@ -12,15 +12,12 @@ import {
   shell,
   Tray,
 } from "electron";
+import * as path from "node:path";
 import { dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { execFileSync } from "node:child_process";
 import { homedir } from "node:os";
-import {
-  existsSync,
-  mkdirSync,
-  statSync,
-  writeFileSync,
-} from "node:fs";
+import * as fs from "node:fs";
+import { existsSync, mkdirSync, statSync, writeFileSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
 import { listInstalledFonts } from "./system-fonts";
 import {
@@ -101,6 +98,7 @@ import {
   type Risk,
   type ShortcutPlatform,
   type ThinkingLevel,
+  type ScheduledTaskRun,
   type HostStatusEvent,
   type SummonShortcutStatus,
   type UiMessage,
@@ -1034,8 +1032,8 @@ plugins.setServices({
     openExternal: () => browserHost.openExternal(),
     snapshot: () => browserBroker.snapshot(),
     screenshot: (input, sessionId) => browserBroker.screenshot(input, sessionId),
-    click: (uid) => browserBroker.click(uid),
-    fill: (uid, text) => browserBroker.fill(uid, text),
+    click: async (uid) => { const result = await browserBroker.click(uid); if (!result.ok) throw new Error("Browser click failed"); },
+    fill: async (uid, text) => { const result = await browserBroker.fill(uid, text); if (!result.ok) throw new Error("Browser fill failed"); },
     evaluate: (expression) => browserBroker.evaluate(expression),
     console: (limit) => browserBroker.console(limit),
     cdp: (method, params) => browserBroker.cdp(method, params),
@@ -1174,6 +1172,7 @@ type RuntimeSession = {
   providerId?: string;
   modelId?: string;
   thinkingLevel?: ThinkingLevel;
+  projectPath?: string | null;
 };
 
 function bindingForModel(
@@ -3185,6 +3184,28 @@ async function createWindow() {
     mainWindow === window &&
     !window.isDestroyed() &&
     !window.webContents.isDestroyed();
+  let rendererFailureFallbackShown = false;
+  const showRendererFailureFallback = async (reason: "load" | "crash") => {
+    if (!isLiveWindow() || rendererFailureFallbackShown) return;
+    rendererFailureFallbackShown = true;
+    const chinese = app.getLocale().toLowerCase().startsWith("zh");
+    const title = chinese ? "PI Desktop Nexus 无法加载" : "PI Desktop Nexus could not load";
+    const body = chinese
+      ? "应用界面没有成功启动。请重试；如果问题持续存在，请重新构建桌面应用。"
+      : "The application interface did not start successfully. Retry, or rebuild the desktop app if the problem continues.";
+    const retry = chinese ? "重试" : "Retry";
+    logger.app("diagnostics", "error", "renderer load failed", {
+      code: reason === "crash" ? "RENDERER_PROCESS_GONE" : "RENDERER_LOAD_FAILED",
+      data: { reason, surface: process.env.ELECTRON_RENDERER_URL ? "dev-server" : "packaged" },
+    });
+    const html = `<!doctype html><meta charset="utf-8"><title>${title}</title><style>body{margin:0;padding:32px;background:#181818;color:#f5f5f5;font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}main{max-width:560px;margin:12vh auto;padding:28px;border:1px solid #3d3d46;border-radius:14px;background:#22232b}h1{font-size:20px;margin:0 0 12px}p{color:#b8bac6;margin:0 0 20px}button{border:0;border-radius:8px;padding:9px 16px;background:#8ab4ff;color:#10131a;font:inherit;font-weight:600;cursor:pointer}</style><main><h1>${title}</h1><p>${body}</p><button onclick="location.reload()">${retry}</button></main>`;
+    try {
+      await window.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`);
+    } catch {
+      // The main process remains alive; the logger contains the actionable
+      // diagnostic even if Chromium cannot display the recovery document.
+    }
+  };
 
   // Keep the macOS traffic-light minimize tray-resident. Windows/Linux
   // minimize actions use Electron's native transition so the OS keeps the
@@ -3428,8 +3449,15 @@ async function createWindow() {
     notificationViewingSessionId = null;
     if (mainWindow === window) resetMenuRendererReady(window);
   });
-  window.webContents.on("render-process-gone", () => {
+  window.webContents.on("did-fail-load", (_event, errorCode, _errorDescription, _validatedURL, isMainFrame) => {
+    if (!isMainFrame || errorCode === -3) return;
+    void showRendererFailureFallback("load");
+  });
+  window.webContents.on("render-process-gone", (_event, details) => {
     notificationViewingSessionId = null;
+    if (details.reason !== "killed" && details.reason !== "clean-exit") {
+      void showRendererFailureFallback("crash");
+    }
   });
 
   // Devtools shortcut, gated on developer mode. Frameless windows get no
@@ -3480,7 +3508,12 @@ async function createWindow() {
     sendFullScreen();
     scheduleWorkPanelReservation();
   });
-  window.webContents.on("did-finish-load", sendFullScreen);
+  window.webContents.on("did-finish-load", () => {
+    logger.app("diagnostics", "info", "renderer loaded", {
+      data: { surface: rendererFailureFallbackShown ? "recovery" : process.env.ELECTRON_RENDERER_URL ? "dev-server" : "packaged" },
+    });
+    sendFullScreen();
+  });
 
   const sendMaximized = () => {
     if (window.isDestroyed() || window.webContents.isDestroyed()) return;
@@ -5391,7 +5424,7 @@ async function startSidecar(): Promise<void> {
       markBrowserSource(sessionId, "agent");
       const result = await descriptor.execute(args, { sessionId, mode: mode === "plan" ? "plan" : "agent" });
       return result && typeof result === "object" && "ok" in (result as Record<string, unknown>)
-        ? result as { ok: boolean; content?: unknown; isError?: boolean; errorCode?: string }
+        ? { ...(result as { ok: boolean; content?: unknown; isError?: boolean; errorCode?: string }), content: (result as { content?: unknown }).content ?? "" }
         : { ok: true, content: result };
     });
   }
@@ -6404,7 +6437,7 @@ function registerIpc() {
     id: "browser",
     label: "Browser",
     enabled: browserCapabilityEnabled,
-    readiness: browserHost.getState()?.state,
+    readiness: browserPresentationFor(visibleBrowserSessionId).readiness,
     disablementSupported: true,
     compatibilityAdapter: "available",
   }]));
@@ -7037,7 +7070,7 @@ function registerIpc() {
     if (!host) throw new Error("host unavailable");
     return host.call("contextVault.list", { projectPath: input.projectPath, query: input.query ?? "" });
   });
-  handle(IPC.invoke.sessionTimelineGet, async (input: { sessionId: string; filter?: string }) => {
+  handle(IPC.invoke.sessionTimelineGet, async (input: { sessionId: string; filter?: string; limit?: number }) => {
     const timelinePath = path.join(dataDir, "lifecycle-events.jsonl");
     if (!fs.existsSync(timelinePath)) return { records: [] };
     const filter = input.filter;
@@ -7993,7 +8026,7 @@ function registerIpc() {
     const parentPath = typeof input.parentPath === "string" ? input.parentPath : "";
     const path = await cloneGitRepository({ url, parentPath, ...(typeof input.name === "string" ? { name: input.name } : {}) });
     if (!host) throw new Error("host unavailable");
-    const res = await host.call("workspace.set", { path });
+    const res = await host.call<{ workspace: { path: string; name: string } | null }>("workspace.set", { path });
     setCurrentWorkspacePath(path);
     return { workspace: await withGitBranch(res.workspace), canceled: false };
   });

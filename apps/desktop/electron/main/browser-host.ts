@@ -1,4 +1,5 @@
 import type { BrowserState } from "@pi-desktop/shared";
+import type { SnapshotResult } from "./browser-cdp";
 import type { BrowserPane } from "./browser-view";
 import { BrowserCdp } from "./browser-cdp";
 import { writeFileSync, mkdirSync } from "node:fs";
@@ -170,7 +171,7 @@ export class BrowserHost {
     this.pane.openExternal();
   }
 
-  async snapshot(): Promise<{ tree: string; url: string; title: string }> {
+  async snapshot(): Promise<SnapshotResult> {
     const wc = this.requireWebContents();
     return this.cdp.snapshot(wc);
   }
