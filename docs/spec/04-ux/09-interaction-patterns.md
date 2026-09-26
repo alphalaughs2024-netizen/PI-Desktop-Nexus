@@ -918,6 +918,16 @@ Running turns and pending approvals continue to gate the controls.
 
 ## 8. Drag / drop
 
+### Work Panel dock/maximize contract
+
+The Work Panel keeps its existing docked in-flow behavior by default. A
+resource may enter the transient maximized presentation as a bounded frame
+inside the existing Nexus client area. Maximizing does not resize the native
+window, create a second BrowserWindow/WebContentsView, or replace the active
+resource. Dock, maximize, and close are separate accessible actions. Background
+sessions cannot focus or change the visible shell presentation. Browser guest
+bounds are measured from the content region and coalesced during transitions.
+
 ### 8.1 MVP status
 
 Work-panel and application-window resizing are implemented in MVP:

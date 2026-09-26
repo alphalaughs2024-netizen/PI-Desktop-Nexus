@@ -4,6 +4,21 @@ The sidebar footer exposes a visible **Scheduled** destination as a clock icon
 immediately before Notifications. The icon uses a tooltip and accessible label
 for discoverability without adding a persistent text label to the compact footer.
 
+### Work Panel presentation contract (ADR 0235)
+
+The visible Work Panel shell has transient renderer presentation
+`"docked" | "maximized"`. Docked remains the default in-flow right column.
+Maximized is a bounded in-window floating Nexus workspace layered above the
+client area; it does not resize the native window, create a BrowserWindow, or
+create a second native guest. The active resource identity, session context,
+and retained resource state survive presentation changes. Background sessions
+cannot focus, maximize, dock, or retarget the visible shell.
+
+The shell owns presentation, frame geometry, transition state, dock/maximize/
+close controls, shell focus, and backdrop. Resource content owns its toolbar,
+resource readiness, and content-region bounds. The underlying conversation
+remains mounted and recognizable around the maximized frame.
+
 ## Project workbench
 
 Expanding a project in the Projects destination reveals a compact project

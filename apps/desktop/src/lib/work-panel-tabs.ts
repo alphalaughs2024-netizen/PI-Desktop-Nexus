@@ -6,11 +6,28 @@ export type WorkPanelTabKind =
   | "file"
   | "plugin";
 
+/**
+ * Renderer-only presentation of the currently visible Work Panel shell.
+ * It never changes a resource identity, guest, or Browser security boundary.
+ */
+export type WorkPanelPresentation = "docked" | "maximized";
+
+/**
+ * Shared layout contract for current and future core Work Panel resources.
+ * Browser-specific content adapts density from this value but does not own it.
+ */
+export type WorkPanelResourceProps = {
+  presentation: WorkPanelPresentation;
+  sessionId?: string;
+  active: boolean;
+  blocked: boolean;
+};
+
 export type WorkPanelTab = {
   id: string;
   kind: WorkPanelTabKind;
   resource?: string;
-  /** Guest URL or workspace path for the Browser plugin view (D333). */
+  /** Guest URL or workspace path for the core Browser resource. */
   location?: string;
   /** Stored attachment mimeType for extension-less `attachments/<sha256>` images. */
   mimeType?: string;

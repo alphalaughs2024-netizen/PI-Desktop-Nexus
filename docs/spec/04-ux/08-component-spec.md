@@ -12,6 +12,19 @@ panel may show readiness, generation, queue counts, stable error codes, and safe
 suggested actions, but never URLs, paths, page text, credentials, WebContents
 IDs, CDP target IDs, or raw errors.
 
+### Work Panel presentation (ADR 0235)
+
+The shell exposes transient `docked` and `maximized` presentations. Docked
+is the default fixed-width in-flow right column. Maximized is a bounded
+renderer-owned frame inside the existing client window; the conversation remains
+mounted and visually recognizable underneath. It does not resize the native
+window, create a BrowserWindow, or create a second WebContentsView.
+
+The shell owns presentation, frame geometry, dock/maximize/close controls,
+transition state, shell focus, resource switching, and frame surfaces. Browser
+owns its toolbar, readiness/source state, diagnostics, and content-region guest
+bounds. The same resource/session/Browser identity survives dock/maximize.
+
 > Layout and IA reference: [01-ui-ia.md](01-ui-ia.md)  
 > Design tokens and foundations: [07-ui-design-system.md](07-ui-design-system.md)  
 > Interaction behavior: [09-interaction-patterns.md](09-interaction-patterns.md)

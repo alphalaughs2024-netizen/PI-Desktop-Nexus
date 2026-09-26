@@ -2,6 +2,24 @@
 
 ## Browser built-in Phase 0 contract matrix
 
+### Work Panel Phase 0 presentation contract matrix
+
+- Docked is the default; Browser opens from the native Nexus launcher even when
+  `pluginViews` is empty and reuses `CORE_BROWSER_TAB`.
+- Maximized is an in-window bounded frame. Verify no native window resize,
+  BrowserWindow creation, second WebContentsView, second BrowserId, or resource
+  recreation occurs.
+- Dock/maximize preserve Browser page, scroll/session context, readiness, guest
+  generation, and pending-operation ownership.
+- Close is distinct from dock; reopen restores the canonical resource where
+  existing lifecycle rules permit it.
+- Background sessions cannot focus, maximize, dock, or retarget the visible
+  shell. Session switching restores the selected retained context.
+- Shell owns presentation/geometry/focus; Browser owns toolbar/readiness/content
+  bounds. Content-region bounds exclude shell and Browser toolbar chrome.
+- Required shell controls and stable Browser status/alert semantics are
+  keyboard and screen-reader test targets.
+
 ### Browser built-in Phase 7 compatibility matrix
 
 - Browser appears in a Built-in capabilities section, defaults enabled, and is

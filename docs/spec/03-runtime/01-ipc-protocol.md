@@ -1413,6 +1413,14 @@ Command sources:
 
 ## 13a. Work Panel APIs
 
+### Presentation contract (Phase 0 / ADR 0235)
+
+The renderer may later expose typed Work Panel presentation operations using
+`"docked" | "maximized"`. This is transient renderer layout state. It must
+not resize BrowserWindow bounds, create a second guest, or expose WebContents.
+Any future presentation IPC must validate the requested presentation and route
+only shell state; Browser operations continue through BrowserBroker.
+
 Work panel channels are Electron-main implementations. User-driven workspace
 operations resolve the visible root from `workspace.get` and fail closed
 without one. Agent-driven BrowserPreview routing resolves the originating
