@@ -1,0 +1,23 @@
+# UI Phase A baseline fixture manifest
+
+These fixtures are stable targets for UI Phases B–G. They are renderer-only
+fixtures and must not require live navigation, Main-process mutation, or real
+credentials.
+
+| Fixture | Required state | Themes |
+| --- | --- | --- |
+| `shell-browser-docked` | full Sidebar / conversation / docked Browser | all four scenic themes |
+| `browser-new-tab` | about:blank, address focused, New Tab surface | all four scenic themes |
+| `browser-one-tab` | one active tab, compact status, toolbar | all four scenic themes |
+| `browser-multiple-tabs` | active/inactive/loading tabs, New Tab control | all four scenic themes |
+| `browser-loading` | loading status, stable toolbar geometry | all four scenic themes |
+| `browser-ready` | safe title/source/status row | all four scenic themes |
+| `browser-surface-unavailable` | compact recovery notice and actions | all four scenic themes |
+| `browser-diagnostics` | hidden/open diagnostics drawer | all four scenic themes |
+| `shell-sidebar-collapsed` | collapsed Sidebar and focus states | all four scenic themes |
+| `shell-composer-focused` | focused/unfocused composer and operation card | all four scenic themes |
+| `browser-narrow` | narrow tab overflow and two-row toolbar | all four scenic themes |
+| `browser-reduced-motion` | immediate state changes and visible focus | all four scenic themes |
+
+Phase A establishes the fixture names, required state, and theme matrix. Later
+phases add screenshot baselines and interaction coverage.
