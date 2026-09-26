@@ -50,6 +50,8 @@ export function BrowserCoreTab({ sessionId, location, blocked = false, presentat
   const diagnosticsTriggerRef = useRef<HTMLElement | null>(null);
   useEffect(() => { void api.browserGetViewState(sessionId).then(setViewState).catch(() => undefined); return api.onBrowserViewState((event) => { if (event.sessionId === sessionId) setViewState(event.state); }); }, [sessionId]);
   const state = mapBrowserState(viewState);
+  const hasCommittedPage = Boolean(viewState.safeLocation || viewState.navigation?.url || location);
+  const isNewTab = !hasCommittedPage || viewState.safeLocation === "about:blank" || viewState.navigation?.url === "about:blank";
   const browserState = viewState.navigation;
   const operationLabel = operation || (state === "starting" ? "Starting Browser…" : state === "loading" ? "Loading page…" : "");
   const errorMessage = error || (state === "unavailable" ? "The browser surface is unavailable. Retry or open Diagnostics." : state === "policy-blocked" ? "The current capability policy does not allow this action." : "");
@@ -63,14 +65,15 @@ export function BrowserCoreTab({ sessionId, location, blocked = false, presentat
   const newBrowserTab = () => { const id = `browser-core-${Date.now()}`; setBrowserTabs((tabs) => [...tabs, { id, sessionId: sessionId ?? "", title: "New tab", url: "about:blank", loading: false, canGoBack: false, canGoForward: false, browserId: id, guestGeneration: 0, createdAt: Date.now(), lastActivatedAt: Date.now() }]); setActiveBrowserId(id); void api.browserNavigate("about:blank", sessionId); };
   const closeBrowserTab = (id: string) => { setBrowserTabs((tabs) => { if (tabs.length <= 1) return tabs; const index = tabs.findIndex((tab) => tab.browserId === id); const next = tabs.filter((tab) => tab.browserId !== id); if (id === activeBrowserId) setActiveBrowserId(next[Math.min(index, next.length - 1)]?.browserId ?? next[0].browserId); return next; }); };
   const activateBrowserTab = (id: string) => { const tab = browserTabs.find((candidate) => candidate.browserId === id); setActiveBrowserId(id); if (tab?.url && id !== activeBrowserId) void runNavigate(tab.url); };
-  return <div className={`browser-core-view browser-core-view--${state}`} data-browser-presentation={presentation} data-browser-readiness={state} data-browser-location={location ?? ""}>
+  useEffect(() => { if (isNewTab) window.setTimeout(() => document.querySelector<HTMLInputElement>(".browser-toolbar-address input")?.focus(), 0); }, [isNewTab]);
+  return <div className={`browser-core-view browser-core-view--${state}${isNewTab ? " browser-core-view--new-tab" : ""}`} data-browser-presentation={presentation} data-browser-readiness={state} data-browser-location={location ?? ""}>
     <BrowserTabStrip tabs={visibleTabs} activeId={activeBrowserId} onActivate={activateBrowserTab} onClose={closeBrowserTab} onNew={newBrowserTab} />
     <BrowserToolbar presentation={presentation} browserState={browserState} panelState={state} busy={Boolean(operation)} disabled={blocked || transitioning} sessionId={sessionId} committedLocation={viewState.safeLocation ?? location ?? browserState?.url} onNavigate={runNavigate} onAction={runAction} onScreenshot={runScreenshot} onOpenExternal={runExternal} onCopyLocation={copyLocation} onOpenDiagnostics={() => { diagnosticsTriggerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null; setDiagnosticsOpen(true); }} />
     <BrowserReadinessStrip state={state} source={viewState.source} safeLocation={viewState.safeLocation} safeTitle={viewState.safeTitle} presentation={presentation} />
     <BrowserOperationStatus operation={operationLabel} />
     <BrowserErrorNotice message={errorMessage} />
-    <BrowserGuestSurface sessionId={sessionId} blocked={blocked} transitioning={transitioning} />
-    {(state === "no-page" || state === "unavailable" || state === "policy-blocked" || state === "debugger-unavailable" || state === "closed") && <BrowserEmptyState state={state} onRetry={viewState.recoverable ? recover : undefined} onOpenDiagnostics={() => { diagnosticsTriggerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null; setDiagnosticsOpen(true); }} onReopen={recover} />}
+    {!isNewTab && <BrowserGuestSurface sessionId={sessionId} blocked={blocked} transitioning={transitioning} />}
+    {isNewTab ? <div className="browser-new-tab-state"><div className="browser-new-tab-icon" aria-hidden>◉</div><strong>New tab</strong><span>Enter a URL to browse</span><button type="button" onClick={() => document.querySelector<HTMLInputElement>(".browser-toolbar-address input")?.focus()}>Focus address bar</button></div> : (state === "unavailable" || state === "policy-blocked" || state === "debugger-unavailable" || state === "closed") && <BrowserEmptyState state={state} onRetry={viewState.recoverable ? recover : undefined} onOpenDiagnostics={() => { diagnosticsTriggerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null; setDiagnosticsOpen(true); }} onReopen={recover} />}
     <BrowserDiagnosticsDrawer open={diagnosticsOpen} panelState={state} presentation={presentation} sessionId={sessionId} onClose={() => { setDiagnosticsOpen(false); diagnosticsTriggerRef.current?.focus(); }} onRetry={viewState.recoverable ? recover : undefined} suggestedAction={viewState.safeSuggestedAction} onOperation={setOperation} onError={setError} />
   </div>;
 }
