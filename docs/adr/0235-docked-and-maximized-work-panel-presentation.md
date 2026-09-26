@@ -113,6 +113,11 @@ state, address drafts, focus, menus, and operation feedback remain renderer
 responsibilities; Main retains URL policy, session binding, screenshot caps,
 and BrowserHost/Broker routing.
 
+Phase 5 introduces an additive, privacy-safe BrowserViewState event separate
+from navigation BrowserState. It drives distinct no-page, loading, unavailable,
+blocked, and closed surfaces with source labels and explicit recovery. Retry
+never replays the preceding Browser operation.
+
 ## Consequences
 
 Browser is the first resource to implement the shell contract. Files, Terminal,

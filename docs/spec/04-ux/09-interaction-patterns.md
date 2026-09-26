@@ -948,6 +948,11 @@ the committed address, and the overflow menu returns focus to its trigger.
 Back/Forward/Reload/Stop, screenshot, and external-open retain stable labels and
 share the single operation-status/alert pair.
 
+Phase 5 state surfaces distinguish unavailable, blocked, closed, loading, and
+no-page states. Retry is offered only for recoverable guest failures; Reopen is
+closed-only; Diagnostics opens a safe minimal entry surface. These actions do
+not replay a previous Browser request or steal focus from a background session.
+
 ### 8.1 MVP status
 
 Work-panel and application-window resizing are implemented in MVP:

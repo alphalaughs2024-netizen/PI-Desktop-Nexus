@@ -26,6 +26,10 @@ history, reload/stop, screenshot, and external-open continue through the typed
 Main/Broker boundary and inherit the same mode, capability, URL, workspace, and
 payload policies as agent/compatibility calls.
 
+Phase 5 lifecycle and source feedback is Main-owned BrowserViewState. Renderer
+state surfaces consume only safe values; recovery remains policy-bound and never
+replays mutations or privileged Browser commands.
+
 | Topic | Decision |
 |---|---|
 | Default mode | Agent |

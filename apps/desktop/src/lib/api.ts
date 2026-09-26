@@ -32,6 +32,7 @@ import type {
   AppVersionInfo,
   BrowserAction,
   BrowserState,
+  BrowserViewState,
   BrowserScreenshotOptions,
   BrowserScreenshotResult,
   CommandItem,
@@ -960,6 +961,7 @@ export const api = {
     invoke<BrowserScreenshotResult>(IPC.invoke.browserScreenshot, options),
   browserGetState: () =>
     invoke<BrowserState | null>(IPC.invoke.browserGetState),
+  browserGetViewState: () => invoke<BrowserViewState>(IPC.invoke.browserGetViewState),
   fsList: (path?: string) =>
     invoke<{ entries: FsEntry[] }>(IPC.invoke.fsList, { path: path ?? "" }),
   fsRead: (path: string, mimeType?: string) =>
@@ -1053,6 +1055,10 @@ export const api = {
     return window.piDesktop.on(IPC.event.browserState, (payload) =>
       listener(payload as BrowserState),
     );
+  },
+  onBrowserViewState: (listener: (state: BrowserViewState) => void) => {
+    if (!window.piDesktop?.on) return () => undefined;
+    return window.piDesktop.on(IPC.event.browserViewState, (payload) => listener(payload as BrowserViewState));
   },
   onBrowserPreview: (
     listener: (event: { sessionId: string; path?: string; url?: string }) => void,

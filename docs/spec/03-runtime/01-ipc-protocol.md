@@ -1426,6 +1426,12 @@ bounded screenshot options/results; Main validates hard limits and routes throug
 BrowserBroker/BrowserHost. Renderer code never receives WebContents, CDP, or
 unbounded image metadata.
 
+Phase 5 adds `browser/getViewState` and `browser/event/viewState`. The additive
+BrowserViewState carries safe lifecycle, source, sanitized location/title,
+recoverability, stable error code, and suggested-action fields. It intentionally
+does not carry raw URLs, credentials, paths, WebContents/CDP IDs, page data, or
+provider errors.
+
 Work panel channels are Electron-main implementations. User-driven workspace
 operations resolve the visible root from `workspace.get` and fail closed
 without one. Agent-driven BrowserPreview routing resolves the originating

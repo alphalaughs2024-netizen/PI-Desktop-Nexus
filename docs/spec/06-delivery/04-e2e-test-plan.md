@@ -65,6 +65,19 @@
 - Screenshot uses bounded typed input/result metadata and emits one image;
   external-open and overflow actions use Main policy and keyboard focus rules.
 
+### Browser Work Panel Phase 5 state and recovery matrix
+
+- BrowserViewState is privacy-safe and distinct from BrowserState navigation.
+  Verify no page secrets, query/fragment, absolute path, internal ID, raw error,
+  or CDP data reaches the renderer.
+- No-page, starting, loading, ready, unavailable, blocked, debugger-unavailable,
+  and closed have distinct markup/copy while preserving usable guest content for
+  non-fatal operation failures.
+- User, agent, and workspace-preview sources use safe labels and background
+  source events cannot focus or retarget the visible panel.
+- Retry is recoverable-only, Reopen is closed-only, diagnostics remains safe and
+  minimal, and recovery never replays navigation or mutation operations.
+
 ### Browser built-in Phase 7 compatibility matrix
 
 - Browser appears in a Built-in capabilities section, defaults enabled, and is

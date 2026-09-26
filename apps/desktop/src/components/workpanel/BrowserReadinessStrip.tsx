@@ -11,6 +11,7 @@ const labels: Record<BrowserPanelState, string> = {
   closed: "Browser closed",
 };
 
-export function BrowserReadinessStrip({ state }: { state: BrowserPanelState }) {
-  return <div className="browser-readiness-strip" data-browser-state={state}><span className="browser-readiness-dot" aria-hidden="true" /><span>{labels[state]}</span></div>;
+export function BrowserReadinessStrip({ state, source = "unknown", safeLocation, safeTitle, presentation }: { state: BrowserPanelState; source?: "user" | "agent" | "workspace-preview" | "unknown"; safeLocation?: string; safeTitle?: string; presentation: "docked" | "maximized" }) {
+  const sourceLabel = source === "user" ? "Opened by you" : source === "agent" ? "Opened by agent" : source === "workspace-preview" ? "Previewing workspace file" : "";
+  return <div className={`browser-readiness-strip browser-readiness-strip--${state}`} data-browser-state={state}><span className="browser-readiness-dot" aria-hidden="true" /><span>{labels[state]}</span>{sourceLabel && <span className="browser-readiness-source">· {sourceLabel}{presentation === "maximized" && safeLocation ? ` · ${safeLocation}` : safeTitle ? ` · ${safeTitle}` : ""}</span>}</div>;
 }

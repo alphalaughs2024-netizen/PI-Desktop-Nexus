@@ -46,6 +46,11 @@ address entry, bounded screenshot, safe external-open, and overflow actions all
 use typed APIs. The renderer owns draft/focus/menu state; Main/Broker retain
 policy and host authority.
 
+Phase 5 BrowserViewState owns lifecycle/source presentation independently of
+navigation history state. BrowserCoreTab maps it into explicit state surfaces;
+the stable operation status and error alert remain separate, and recovery uses
+the existing typed core path without replaying actions.
+
 > Layout and IA reference: [01-ui-ia.md](01-ui-ia.md)  
 > Design tokens and foundations: [07-ui-design-system.md](07-ui-design-system.md)  
 > Interaction behavior: [09-interaction-patterns.md](09-interaction-patterns.md)

@@ -66,6 +66,7 @@ import {
   type ComposerPasteFile,
   type PluginViewMeta,
   type BrowserState,
+  type BrowserViewState,
   normalizeMode,
   type AgentEventEnvelope,
   type AgentPromptRequest,
@@ -946,9 +947,21 @@ const pluginScopes = new Map<string, ActivationScope>();
  */
 const sessionProjects = new Map<string, string | null>();
 let browserCapabilityEnabled = true;
+let browserViewSource: BrowserViewState["source"] = "unknown";
+let browserViewState: BrowserViewState = { readiness: "uninitialized", navigation: null, source: "unknown", recoverable: true };
 const isBrowserCapabilityEnabled = () => browserCapabilityEnabled;
+const safeBrowserLocation = (raw: string | undefined): string | undefined => {
+  if (!raw) return undefined;
+  try { const url = new URL(raw); return url.protocol === "http:" || url.protocol === "https:" ? `${url.protocol}//${url.host}${url.pathname}` : undefined; } catch { return undefined; }
+};
+const publishBrowserViewState = (navigation: BrowserState | null, overrides: Partial<BrowserViewState> = {}) => {
+  const readiness: BrowserViewState["readiness"] = !browserCapabilityEnabled ? "blocked" : overrides.readiness ?? (navigation?.isLoading ? "loading" : navigation?.url ? "ready" : "uninitialized");
+  browserViewState = { readiness, navigation, source: overrides.source ?? browserViewSource, ...(safeBrowserLocation(navigation?.url) ? { safeLocation: safeBrowserLocation(navigation?.url) } : {}), ...(navigation?.title ? { safeTitle: navigation.title.replace(/\s+/g, " ").trim().slice(0, 256) } : {}), recoverable: overrides.recoverable ?? readiness === "unavailable", ...(overrides.lastErrorCode ? { lastErrorCode: overrides.lastErrorCode } : {}), ...(overrides.safeSuggestedAction ? { safeSuggestedAction: overrides.safeSuggestedAction } : {}) };
+  sendToRenderer(IPC.event.browserViewState, browserViewState);
+};
 const emitBrowserState = (state: BrowserState) => {
   sendToRenderer(IPC.event.browserState, state);
+  publishBrowserViewState(state);
   pluginPanels.broadcast("browser:state", state);
   pluginViews.broadcast("browser:state", state);
 };
@@ -5334,6 +5347,7 @@ async function startSidecar(): Promise<void> {
         content: `BrowserPreview: "${raw}" does not resolve to an existing file inside the workspace.`,
       };
     }
+    browserViewSource = "workspace-preview";
     const preview = await browserHost.previewWorkspaceFile(sessionId, raw, root);
     if (!preview.ok) {
       return {
@@ -5346,6 +5360,7 @@ async function startSidecar(): Promise<void> {
       sessionId,
       path: raw,
     });
+    publishBrowserViewState(browserHost.getState(), { source: "workspace-preview" });
     return {
       ok: true,
       content: `Previewing ${raw} in the built-in Browser. Live reload is active — subsequent edits to the file or sibling assets re-render automatically.`,
@@ -6390,8 +6405,10 @@ function registerIpc() {
     return { id: "browser", enabled: browserCapabilityEnabled };
   });
   handle(IPC.invoke.browserRecover, async () => {
-    if (!browserCapabilityEnabled) return { ok: false, code: "BROWSER_POLICY_BLOCKED" };
+    if (!browserCapabilityEnabled) { publishBrowserViewState(browserHost.getState(), { readiness: "blocked", recoverable: false, lastErrorCode: "BROWSER_POLICY_BLOCKED", safeSuggestedAction: "Re-enable Browser in Settings." }); return { ok: false, code: "BROWSER_POLICY_BLOCKED" }; }
+    publishBrowserViewState(browserHost.getState(), { readiness: "starting", recoverable: true });
     browserHost.recover();
+    publishBrowserViewState(browserHost.getState());
     return { ok: true, state: browserHost.getState() };
   });
   handle(IPC.invoke.browserDiagnostics, async () => ({
@@ -8103,10 +8120,13 @@ function registerIpc() {
     IPC.invoke.browserNavigate,
     async (input: { url?: string; sessionId?: string } = {}) => {
       if (!isBrowserCapabilityEnabled()) throw Object.assign(new Error("Browser is disabled by the core capability setting"), { errorCode: "BROWSER_POLICY_BLOCKED" });
-      return browserHost.navigate(
+      browserViewSource = "user";
+      const state = await browserHost.navigate(
         { url: String(input.url ?? "") },
         input.sessionId,
       );
+      publishBrowserViewState(state);
+      return state;
     },
   );
 
@@ -8121,6 +8141,7 @@ function registerIpc() {
     ) {
       browserHost.action(action);
     }
+    publishBrowserViewState(browserHost.getState());
     return { ok: true };
   });
 
@@ -8161,6 +8182,7 @@ function registerIpc() {
   handle(IPC.invoke.browserGetState, async () => {
     return browserHost.getState();
   });
+  handle(IPC.invoke.browserGetViewState, async () => browserViewState);
 
   const requireWorkspaceRoot = async () => {
     if (!host) throw new Error("host unavailable");

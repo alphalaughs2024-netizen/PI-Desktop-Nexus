@@ -2271,6 +2271,8 @@ export type BrowserResult<T = unknown> = { requestId: BrowserRequestId; ok: bool
 export type BrowserWaitCondition = { kind: "url"; match: "equals" | "contains"; value: string } | { kind: "text"; value: string } | { kind: "page_load" };
 export type BrowserToolName = "browser_list_tabs" | "browser_open" | "browser_navigate" | "browser_snapshot" | "browser_screenshot" | "browser_click" | "browser_fill" | "browser_type" | "browser_keypress" | "browser_wait" | "browser_console" | "browser_evaluate" | "browser_cdp";
 export type BrowserReadiness = "uninitialized" | "starting" | "ready" | "loading" | "unavailable" | "blocked" | "closed";
+export type BrowserSource = "user" | "agent" | "workspace-preview" | "unknown";
+export type BrowserViewState = { readiness: BrowserReadiness; navigation: BrowserState | null; source: BrowserSource; safeLocation?: string; safeTitle?: string; recoverable: boolean; lastErrorCode?: BrowserErrorCode; safeSuggestedAction?: string };
 export type BrowserDiagnostics = {
   capabilityEnabled: boolean;
   readiness: BrowserReadiness;
