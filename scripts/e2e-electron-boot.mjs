@@ -13,6 +13,8 @@ import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
+const APP_NAME = "PI Desktop Nexus";
+
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, "..");
 const appDir = join(root, "apps/desktop");
@@ -91,7 +93,7 @@ child.on("exit", () => {
     process.platform === "darwin" ? probe?.menuCount >= 6 : probe?.menuCount === 0;
   if (
     probe?.ok &&
-    probe.appName === "PI-Desktop" &&
+    probe.appName === APP_NAME &&
     probe.platform === process.platform &&
     (process.platform === "darwin" || probe.maximized === true) &&
     menuContractOk
