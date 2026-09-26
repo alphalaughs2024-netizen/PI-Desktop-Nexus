@@ -5430,7 +5430,7 @@ async function startSidecar(): Promise<void> {
       if (["browser_open", "browser_navigate", "browser_list_tabs", "browser_snapshot", "browser_wait", "browser_screenshot"].includes(descriptor.name)) {
         const requestId = `activation-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
         const location = typeof (normalizedArgs as { url?: unknown })?.url === "string" ? String((normalizedArgs as { url: string }).url) : undefined;
-        sendToRenderer(IPC.event.browserActivationRequested, { requestId, sessionId, location, source: "agent", focus: "panel", background: false });
+        sendToRenderer(IPC.event.browserActivationRequested, { requestId, sessionId, location, source: "agent", focus: "panel", background: false, createTab: Boolean((normalizedArgs as { newTab?: unknown })?.newTab) });
       }
       return result && typeof result === "object" && "ok" in (result as Record<string, unknown>)
         ? { ...(result as { ok: boolean; content?: unknown; isError?: boolean; errorCode?: string; result?: unknown; code?: string; retryable?: boolean; possiblyApplied?: boolean }), content: (result as { content?: unknown }).content ?? JSON.stringify((result as { result?: unknown }).result ?? result), details: result }

@@ -326,7 +326,7 @@ export class BrowserPane {
       callback(false);
     });
     wc.on("will-navigate", (event, url) => {
-      if (isAllowedHttpUrl(url)) return;
+      if (url === "about:blank" || isAllowedHttpUrl(url)) return;
       // Relative links inside a previewed page may point at sibling files;
       // anything escaping the workspace root stays blocked.
       if (/^file:/i.test(url) && this.isAllowedFileUrl(url)) return;

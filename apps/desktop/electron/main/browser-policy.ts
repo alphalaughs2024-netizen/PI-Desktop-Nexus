@@ -22,6 +22,7 @@ export function decideMode(mode: "plan" | "agent", command: string): BrowserPoli
 export function normalizeBrowserUrl(raw: unknown): string | null {
   if (typeof raw !== "string" || !raw.trim()) return null;
   const value = raw.trim();
+  if (value.toLowerCase() === "about:blank") return "about:blank";
   if (isAllowedHttpUrl(value)) return new URL(value).toString();
   return null;
 }
