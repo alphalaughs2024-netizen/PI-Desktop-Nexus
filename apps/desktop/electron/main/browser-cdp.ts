@@ -257,7 +257,7 @@ export class BrowserCdp {
   async screenshot(
     wc: WebContents,
     input: { fullPage?: boolean } = {},
-  ): Promise<{ mimeType: string; data: string }> {
+  ): Promise<{ mimeType: "image/jpeg"; data: string; width: number; height: number; viewportWidth: number; viewportHeight: number; coordinateSpace: "css-pixels"; byteLength: number }> {
     await this.attach(wc);
     let clip: { x: number; y: number; width: number; height: number; scale: number } | undefined;
     const metrics = (await wc.debugger.sendCommand("Page.getLayoutMetrics")) as {

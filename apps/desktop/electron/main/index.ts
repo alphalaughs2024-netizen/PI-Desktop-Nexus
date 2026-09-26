@@ -1025,8 +1025,8 @@ plugins.setServices({
   browser: {
     listTabs: () => browserBroker.listTabs(),
     open: (input, context) => browserBroker.open(input, context),
-    navigate: async (input, sessionId) => { markBrowserSource(sessionId, "unknown"); await browserBroker.navigate(input, sessionId, { sessionId, mode: "agent" }); },
-    action: async (action) => { markBrowserSource(undefined, "unknown"); await browserBroker.action(action, { mode: "agent" }); },
+    navigate: async (input, sessionId) => { markBrowserSource(sessionId, "unknown"); const result = await browserBroker.navigate(input, sessionId, { sessionId, mode: "agent" }); if (!result.ok) throw new Error("Browser navigation failed"); },
+    action: async (action) => { markBrowserSource(undefined, "unknown"); const result = await browserBroker.action(action, { mode: "agent" }); if (!result.ok) throw new Error("Browser action failed"); },
     setBounds: (pluginId, hole) => browserHost.setGuestHole(pluginId, hole),
     setVisible: (pluginId, visible) => browserHost.setGuestVisible(pluginId, visible),
     getState: () => browserHost.getState(),
