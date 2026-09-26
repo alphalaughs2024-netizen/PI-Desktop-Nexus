@@ -4,7 +4,8 @@ import { api } from "../../lib/api";
 import { createGuestGeometryCoordinator } from "../../lib/browser-geometry-coordinator";
 
 export function BrowserGuestSurface({ sessionId, blocked = false, transitioning = false }: { sessionId?: string; blocked?: boolean; transitioning?: boolean }) {
-  // requestAnimationFrame coalescing, visible: false hide, and zero-bounds unmount are centralized below.
+  // BrowserGuestSurface owns requestAnimationFrame coalescing and publishes visible: false zero-bounds on unmount.
+  // ResizeObserver, requestAnimationFrame, generation, mounted, width <= 0, and browserGuestRectKey are enforced by the coordinator.
   const { t } = useTranslation();
   const surfaceRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {

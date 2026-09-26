@@ -72,6 +72,7 @@ import type { PluginAppearance } from "../shared/plugin-panel-chrome";
 import type { McpControlController, McpControlInvokeInput } from "./mcp-control";
 
 export type RegisteredCommand = {
+  // Browser is a built-in core tool and is not plugin-registered.
   id: string;
   title: string;
   category?: string;
