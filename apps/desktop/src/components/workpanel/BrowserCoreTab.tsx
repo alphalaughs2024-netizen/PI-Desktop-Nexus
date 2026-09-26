@@ -17,7 +17,8 @@ function mapBrowserState(view: import("@pi-desktop/shared").BrowserViewState): B
   if (view.readiness === "closed") return "closed";
   if (view.readiness === "unavailable") return view.lastErrorCode === "BROWSER_UNSUPPORTED" ? "debugger-unavailable" : "unavailable";
   if (view.readiness === "loading") return "loading";
-  if (view.readiness === "ready" && !view.safeLocation) return "no-page";
+  if (view.readiness === "ready" && !view.safeLocation && !view.navigation?.url) return "no-page";
+  if (view.readiness === "ready" && view.surface?.paint === "blank") return "unavailable";
   if (view.readiness === "ready") return "ready";
   return view.readiness === "uninitialized" ? "no-page" : "starting";
 }

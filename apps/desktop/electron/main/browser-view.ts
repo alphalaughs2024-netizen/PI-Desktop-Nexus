@@ -87,6 +87,7 @@ export class BrowserPane {
   private reloadTimer: NodeJS.Timeout | null = null;
   private attached = false;
   private generation = 0;
+  private painted: "unknown" | "painted" | "blank" = "unknown";
 
   constructor(onState: (state: BrowserState) => void) {
     this.onState = onState;
@@ -99,7 +100,7 @@ export class BrowserPane {
     if (this.window && this.visible && this.view) this.attach();
   }
 
-  surfaceStatus() { return { attachment: this.attached ? "attached" as const : "detached" as const, visibility: this.visible ? "visible" as const : "hidden" as const, generation: this.generation }; }
+  surfaceStatus() { return { attachment: this.attached ? "attached" as const : "detached" as const, visibility: this.visible ? "visible" as const : "hidden" as const, paint: this.painted, generation: this.generation }; }
 
   getState(): BrowserState | null {
     const wc = this.view?.webContents;
@@ -228,6 +229,7 @@ export class BrowserPane {
       this.generation += 1;
     }
     this.attached = false;
+    this.painted = "unknown";
   }
 
   private attach(): void {
@@ -341,8 +343,10 @@ export class BrowserPane {
     wc.on("did-navigate-in-page", push);
     wc.on("page-title-updated", push);
     wc.on("did-fail-load", push);
+    wc.on("paint", () => { this.painted = "painted"; push(); });
+    wc.on("did-finish-load", () => { this.painted = "unknown"; push(); });
     wc.on("render-process-gone", push);
-    wc.on("destroyed", () => { this.attached = false; this.generation += 1; push(); });
+    wc.on("destroyed", () => { this.attached = false; this.painted = "blank"; this.generation += 1; push(); });
     this.view = view;
     return view;
   }
