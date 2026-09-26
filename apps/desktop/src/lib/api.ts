@@ -1071,6 +1071,10 @@ export const api = {
       listener(payload as { sessionId: string; path?: string; url?: string }),
     );
   },
+  onBrowserActivationRequested: (listener: (event: import("@pi-desktop/shared").BrowserActivationRequest) => void) => {
+    if (!window.piDesktop?.on) return () => undefined;
+    return window.piDesktop.on(IPC.event.browserActivationRequested, (payload) => listener(payload as import("@pi-desktop/shared").BrowserActivationRequest));
+  },
   onAgentEvent: (listener: (event: AgentEventEnvelope) => void) => {
     if (!window.piDesktop?.on) return () => undefined;
     return window.piDesktop.on(IPC.event.agentMessage, (payload) =>
