@@ -41,6 +41,7 @@ export type WorkPanelTabsState = {
 export type WorkPanelContext = WorkPanelTabsState & {
   open: boolean;
   fileRequest: { path: string; seq: number; mimeType?: string } | null;
+  browserTabs?: import("./browser-tabs").BrowserTabsContext;
 };
 
 export type ReviewArtifactEvent = {
@@ -50,7 +51,7 @@ export type ReviewArtifactEvent = {
 };
 
 export function emptyWorkPanelContext(): WorkPanelContext {
-  return { open: false, tabs: [], activeTabId: null, fileRequest: null };
+  return { open: false, tabs: [], activeTabId: null, fileRequest: null, browserTabs: undefined };
 }
 
 export function switchWorkPanelContextState(
