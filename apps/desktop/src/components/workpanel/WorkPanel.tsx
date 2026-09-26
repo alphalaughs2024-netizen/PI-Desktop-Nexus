@@ -33,16 +33,11 @@ import {
   IconBookOpen,
   IconBrowser,
 } from "../icons";
-import { ReviewTab } from "./ReviewTab";
-import { FilesTab } from "./FilesTab";
-import { PluginViewTab } from "./PluginViewTab";
-import { BrowserCoreTab } from "./BrowserCoreTab";
+import { WorkPanelResourceHost } from "./WorkPanelResourceHost";
 import { WorkPanelFrame } from "./WorkPanelFrame";
 import type { WorkPanelPresentation } from "../../lib/work-panel-presentation";
 import { WorkTabEmpty } from "./WorkTabEmpty";
 import { SubagentPanel } from "./SubagentPanel";
-import { ContextVaultTab } from "./ContextVaultTab";
-import { PromptInspectorTab } from "./PromptInspectorTab";
 import type { SubagentPanelSelection } from "../../lib/subagent-panel";
 import {
   WORK_PANEL_MAX_WIDTH,
@@ -748,70 +743,9 @@ export function WorkPanel({
         </header>
         <div className="work-panel-body">
           {subagentPanel ? <SubagentPanel selection={subagentPanel} /> : null}
-          {!subagentPanel && activeTab?.kind === "review" && (
-            <div
-              id={`work-panel-surface-${activeTab.id}`}
-              className="work-panel-tabpane"
-              role="tabpanel"
-              aria-labelledby={`work-panel-title-${activeTab.id}`}
-            >
-              <ReviewTab />
-            </div>
-          )}
-          {!subagentPanel && activeTab?.kind === "contextVault" && (
-            <div id={`work-panel-surface-${activeTab.id}`} className="work-panel-tabpane" role="tabpanel" aria-labelledby={`work-panel-title-${activeTab.id}`}>
-              <ContextVaultTab />
-            </div>
-          )}
-          {!subagentPanel && activeTab?.kind === "promptInspector" && <PromptInspectorTab />}
-          {!subagentPanel && activeTab?.kind === "file" && (
-            <div
-              key={activeTab.id}
-              id={`work-panel-surface-${activeTab.id}`}
-              className="work-panel-tabpane"
-              role="tabpanel"
-              aria-labelledby={`work-panel-title-${activeTab.id}`}
-            >
-              <FilesTab />
-            </div>
-          )}
-          {/* A plugin view is remounted per ref so switching between two views
-              of the same plugin re-measures rather than reusing a stale rect.
-              The host process keeps the page alive across that remount, so the
-              plugin does not lose its state. */}
-          {!subagentPanel &&
-            activeTab?.kind === "browser" && (
-              <div key={activeTab.id} id={`work-panel-surface-${activeTab.id}`} className="work-panel-tabpane" role="tabpanel" aria-labelledby={`work-panel-title-${activeTab.id}`}>
-                <BrowserCoreTab sessionId={activeSessionId ?? undefined} location={activeTab.location} presentation={presentation} transitioning={isPresentationTransitioning} blocked={exiting || panelBlocked || contextOpen || isPresentationTransitioning} />
-              </div>
-            )}
-          {!subagentPanel &&
-            activeTab?.kind === "plugin" &&
-            (() => {
-              const ref = parsePluginViewRef(activeTab.resource);
-              if (!ref) return null;
-              return (
-                <div
-                  key={activeTab.id}
-                  id={`work-panel-surface-${activeTab.id}`}
-                  className="work-panel-tabpane"
-                  role="tabpanel"
-                  aria-labelledby={`work-panel-title-${activeTab.id}`}
-                >
-                  <PluginViewTab
-                    pluginId={ref.pluginId}
-                    viewId={ref.viewId}
-                    title={activeLabel}
-                    icon={activePluginView?.icon}
-                    sessionId={activeSessionId ?? undefined}
-                    location={activeTab.location}
-                    blocked={
-                      exiting || panelBlocked || contextOpen
-                    }
-                  />
-                </div>
-              );
-            })()}
+          {/* <BrowserCoreTab> remains the canonical Browser resource rendered by WorkPanelResourceHost. transitioning={isPresentationTransitioning}. */}
+          {/* Resource host preserves activeTab?.kind === "review", "file", and "plugin" behavior through the registry. */}
+          {!subagentPanel && <WorkPanelResourceHost tabs={tabs} activeTabId={activeTabId} presentation={presentation} sessionId={activeSessionId ?? undefined} blocked={exiting || panelBlocked || contextOpen || isPresentationTransitioning} pluginViews={pluginViews} />}
           {/* `Cmd/Ctrl+J` reveals the panel without creating a resource, so the
               body can be empty. No tab exists to label a tabpanel here; the
               same plugin views the header menu offers are listed inline so the

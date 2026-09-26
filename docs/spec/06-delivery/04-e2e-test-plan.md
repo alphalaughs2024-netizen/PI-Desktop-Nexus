@@ -11092,3 +11092,15 @@ never masked. Unexpected screenshot diffs block Phase 10 completion.
 The deterministic fixture server provides ready, delayed, navigation, and
 failure pages on loopback only. Any failure-state seeding is guarded by the
 `NEXUS_PHASE10_TEST` environment variable and is unavailable in normal builds.
+
+### Browser Phase 11 reusable resource and smoothness verification
+
+Phase 11 extends the Electron lane with resource continuity and performance
+coverage. Browser, Files, Review, Context Vault, Prompt Inspector, and plugin
+views must switch through one shared registry while inactive resources remain
+mounted and inert. Browser-specific assertions additionally verify one guest
+geometry publish per frame, duplicate suppression, generation invalidation,
+hidden/zero-bounds behavior, no guest recreation during dock/maximize or
+resource switching, and no background focus theft. Strict screenshots cover
+every resource in docked/maximized, dark/light, narrow, focus, and
+reduced-motion states.

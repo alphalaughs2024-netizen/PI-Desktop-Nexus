@@ -74,6 +74,14 @@ docked/maximized, scenic dark/light, narrow, loading/error, diagnostics, and
 command-discovery states. Phase 10 does not generalize the shell to future
 resource kinds; that remains Phase 11.
 
+Phase 11 makes the Work Panel resource-agnostic. A single registry resolves
+Browser, Files, Review, Context Vault, Prompt Inspector, and plugin resources
+into the shared frame. Open resources remain mounted and inactive resources are
+hidden/inert until explicit close disposal. Browser remains the reference
+resource: its guest geometry is coordinated through one RAF/generation-safe
+publisher, transitions suppress churn, and page/session/readiness state remains
+continuous through presentation and resource switches.
+
 > Layout and IA reference: [01-ui-ia.md](01-ui-ia.md)  
 > Design tokens and foundations: [07-ui-design-system.md](07-ui-design-system.md)  
 > Interaction behavior: [09-interaction-patterns.md](09-interaction-patterns.md)
