@@ -11044,3 +11044,11 @@ foreground rather than inheriting the selected theme's general text color.
   indicators remain functional, and no visible reorder handles appear.
 - **Status**: Source-contract covered by `project-collections.test.mjs`;
   rendered narrow-sidebar validation remains manual/E2E validation.
+
+### Browser Phase 9 API/Main wiring
+
+- toolbar navigation/actions/screenshot dispatch through Main and BrowserBroker;
+- invalid or background core-surface bounds cannot retarget the visible guest;
+- view-state and source events remain session-routed across manual, preview,
+  typed-agent, and compatibility entry paths;
+- safe screenshot/diagnostics projections exclude internal IDs and raw errors.

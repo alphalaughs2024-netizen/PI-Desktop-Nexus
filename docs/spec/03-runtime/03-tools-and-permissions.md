@@ -708,3 +708,11 @@ canonical-equivalent call is terminated before dispatch, with a visible,
 retriable `TOOL_REPEAT_LIMIT_EXCEEDED` error. This generic bound excludes
 `Edit` and patch-style `Bash`, whose three-failure recovery contract remains
 authoritative.
+
+### Browser API/Main wiring (Phase 9)
+
+Manual Browser controls, BrowserPreview, typed Browser tools, and compatibility
+callers converge on BrowserBroker and the singleton Main-owned guest. Source
+labels are assigned in Main from immutable session context; renderer code cannot
+call BrowserHost, BrowserCdp, Electron, or generic IPC. Screenshot and
+diagnostics results are bounded safe projections.

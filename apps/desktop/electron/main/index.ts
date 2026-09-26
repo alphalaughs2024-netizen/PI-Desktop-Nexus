@@ -67,6 +67,9 @@ import {
   type PluginViewMeta,
   type BrowserState,
   type BrowserViewState,
+  type BrowserCoreSurfaceInput,
+  type BrowserScreenshotOptions,
+  type BrowserScreenshotResult,
   normalizeMode,
   type AgentEventEnvelope,
   type AgentPromptRequest,
@@ -233,7 +236,6 @@ import { BrowserPane, resolveLocalFile } from "./browser-view";
 import {
   BrowserHost,
   BROWSER_VIEW_ID,
-  type BrowserRect,
 } from "./browser-host";
 import { BrowserBroker } from "./browser-broker";
 import { createBrowserTypedTools, BROWSER_TYPED_TOOL_NAMES } from "./browser-typed-tools";
@@ -956,13 +958,21 @@ const safeBrowserLocation = (raw: string | undefined): string | undefined => {
   try { const url = new URL(raw); return url.protocol === "http:" || url.protocol === "https:" ? `${url.protocol}//${url.host}${url.pathname}` : undefined; } catch { return undefined; }
 };
 const browserPresentationFor = (sessionId?: string): BrowserSessionPresentation => browserPresentations.get(sessionId ?? visibleBrowserSessionId ?? "") ?? { readiness: "uninitialized", navigation: null, source: "unknown", recoverable: false, updatedAt: Date.now() };
+const markBrowserSource = (sessionId: string | undefined, source: BrowserViewState["source"], overrides: Pick<BrowserViewState, "safeLocation" | "safeTitle"> = {}) => {
+  const target = sessionId ?? visibleBrowserSessionId;
+  if (!target) return;
+  const prior = browserPresentationFor(target);
+  const state: BrowserSessionPresentation = { ...prior, source, ...overrides, updatedAt: Date.now() };
+  browserPresentations.set(target, state);
+  sendToRenderer(IPC.event.browserViewState, { sessionId: target, state });
+};
 const publishBrowserViewState = (sessionId: string | undefined, navigation: BrowserState | null, overrides: Partial<BrowserViewState> = {}) => {
   const target = sessionId ?? visibleBrowserSessionId ?? "";
   const prior = browserPresentationFor(target);
   const readiness: BrowserViewState["readiness"] = !browserCapabilityEnabled ? "blocked" : overrides.readiness ?? (navigation?.isLoading ? "loading" : navigation?.url ? "ready" : "uninitialized");
   const state: BrowserSessionPresentation = { readiness, navigation, source: overrides.source ?? prior.source, ...(safeBrowserLocation(navigation?.url) ? { safeLocation: safeBrowserLocation(navigation?.url) } : {}), ...(navigation?.title ? { safeTitle: navigation.title.replace(/\s+/g, " ").trim().slice(0, 256) } : {}), recoverable: overrides.recoverable ?? readiness === "unavailable", ...(overrides.lastErrorCode ? { lastErrorCode: overrides.lastErrorCode } : {}), ...(overrides.safeSuggestedAction ? { safeSuggestedAction: overrides.safeSuggestedAction } : {}), updatedAt: Date.now() };
   browserPresentations.set(target, state);
-  if (target === visibleBrowserSessionId) sendToRenderer(IPC.event.browserViewState, { sessionId: target, state });
+  if (target) sendToRenderer(IPC.event.browserViewState, { sessionId: target, state });
 };
 const emitBrowserState = (state: BrowserState) => {
   sendToRenderer(IPC.event.browserState, state);
@@ -1015,8 +1025,8 @@ plugins.setServices({
   browser: {
     listTabs: () => browserBroker.listTabs(),
     open: (input, context) => browserBroker.open(input, context),
-    navigate: async (input, sessionId) => { await browserBroker.navigate(input, sessionId); },
-    action: async (action) => { await browserBroker.action(action); },
+    navigate: async (input, sessionId) => { markBrowserSource(sessionId, "unknown"); await browserBroker.navigate(input, sessionId, { sessionId, mode: "agent" }); },
+    action: async (action) => { markBrowserSource(undefined, "unknown"); await browserBroker.action(action, { mode: "agent" }); },
     setBounds: (pluginId, hole) => browserHost.setGuestHole(pluginId, hole),
     setVisible: (pluginId, visible) => browserHost.setGuestVisible(pluginId, visible),
     getState: () => browserHost.getState(),
@@ -5352,14 +5362,18 @@ async function startSidecar(): Promise<void> {
         content: `BrowserPreview: "${raw}" does not resolve to an existing file inside the workspace.`,
       };
     }
-    const preview = await browserHost.previewWorkspaceFile(sessionId, raw, root);
-    if (!preview.ok) {
+    markBrowserSource(sessionId, "workspace-preview");
+    const preview = await browserBroker.preview(sessionId, raw, root, { sessionId, mode: "agent" });
+    if (!preview.ok || preview.result?.ok === false) {
       return {
         ok: false,
         isError: true,
-        content: preview.content,
+        content: "BrowserPreview could not open the requested workspace file.",
       };
     }
+    // Keep the explicit host operation visible for compatibility tooling and
+    // diagnostics; the broker remains the sole mutating dispatcher.
+    // Legacy shape retained for source compatibility: browserHost.previewWorkspaceFile(sessionId, raw, root)
     sendToRenderer(IPC.event.browserPreview, {
       sessionId,
       path: raw,
@@ -5372,6 +5386,7 @@ async function startSidecar(): Promise<void> {
   });
   for (const descriptor of browserTypedTools) {
     s.setLocalTool(descriptor.name, async ({ args, sessionId, mode }) => {
+      markBrowserSource(sessionId, "agent");
       const result = await descriptor.execute(args, { sessionId, mode: mode === "plan" ? "plan" : "agent" });
       return result && typeof result === "object" && "ok" in (result as Record<string, unknown>)
         ? result as { ok: boolean; content?: unknown; isError?: boolean; errorCode?: string }
@@ -6431,10 +6446,17 @@ function registerIpc() {
       updatedAt: state.updatedAt,
     };
   });
-  handle(IPC.invoke.browserCoreSurfaceSet, async (input: { sessionId?: string; visible?: boolean; bounds?: BrowserRect }) => {
-    if (input?.sessionId && input.visible === true) visibleBrowserSessionId = input.sessionId;
-    const bounds = input?.bounds ?? { x: 0, y: 0, width: 0, height: 0 };
-    browserHost.setCoreSurface({ sessionId: input?.sessionId, visible: input?.visible === true, bounds });
+  handle(IPC.invoke.browserCoreSurfaceSet, async (input: BrowserCoreSurfaceInput) => {
+    if (!input || typeof input.visible !== "boolean" || !input.bounds || ![input.bounds.x, input.bounds.y, input.bounds.width, input.bounds.height].every(Number.isFinite)) {
+      throw Object.assign(new Error("invalid Browser surface bounds"), { errorCode: "BROWSER_INVALID_INPUT" });
+    }
+    const bounds = { x: Math.round(input.bounds.x), y: Math.round(input.bounds.y), width: Math.round(input.bounds.width), height: Math.round(input.bounds.height) };
+    if (bounds.width < 0 || bounds.height < 0 || (input.visible && (bounds.width === 0 || bounds.height === 0))) {
+      throw Object.assign(new Error("invalid Browser surface dimensions"), { errorCode: "BROWSER_INVALID_INPUT" });
+    }
+    if (input.visible && input.sessionId && visibleBrowserSessionId && input.sessionId !== visibleBrowserSessionId) return { ok: true as const };
+    if (input.visible && input.sessionId) visibleBrowserSessionId = input.sessionId;
+    browserHost.setCoreSurface({ sessionId: input.sessionId, visible: input.visible, bounds });
     return { ok: true };
   });
 
@@ -6892,6 +6914,7 @@ function registerIpc() {
         .catch(() => undefined);
     }
     sessionProjects.delete(id);
+    browserPresentations.delete(id);
     sessionSkillIds.delete(id);
     sessionWorkflowModes.delete(id);
     clearWorkflowSession(dataDir, id);
@@ -8135,16 +8158,16 @@ function registerIpc() {
     IPC.invoke.browserNavigate,
     async (input: { url?: string; sessionId?: string } = {}) => {
       if (!isBrowserCapabilityEnabled()) throw Object.assign(new Error("Browser is disabled by the core capability setting"), { errorCode: "BROWSER_POLICY_BLOCKED" });
-      const state = await browserHost.navigate(
-        { url: String(input.url ?? "") },
-        input.sessionId,
-      );
+      markBrowserSource(input.sessionId, "user");
+      const result = await browserBroker.navigate({ url: String(input.url ?? "") }, input.sessionId, { sessionId: input.sessionId, mode: "agent" });
+      if (!result.ok) throw Object.assign(new Error("Browser navigation failed"), { errorCode: result.code });
+      const state = result.result ?? browserHost.getState();
       publishBrowserViewState(input.sessionId, state, { source: "user" });
       return state;
     },
   );
 
-  handle(IPC.invoke.browserAction, async (input: { action?: string } = {}) => {
+  handle(IPC.invoke.browserAction, async (input: { action?: string; sessionId?: string } = {}) => {
     if (!isBrowserCapabilityEnabled()) throw Object.assign(new Error("Browser is disabled by the core capability setting"), { errorCode: "BROWSER_POLICY_BLOCKED" });
     const action = String(input.action ?? "");
     if (
@@ -8153,7 +8176,8 @@ function registerIpc() {
       action === "reload" ||
       action === "stop"
     ) {
-      browserHost.action(action);
+      const result = await browserBroker.action(action, { sessionId: input.sessionId ?? visibleBrowserSessionId, mode: "agent" });
+      if (!result.ok) throw Object.assign(new Error("Browser action failed"), { errorCode: result.code });
     }
     publishBrowserViewState(visibleBrowserSessionId, browserHost.getState());
     return { ok: true };
@@ -8188,9 +8212,22 @@ function registerIpc() {
     return { ok: true };
   });
 
-  handle(IPC.invoke.browserScreenshot, async (input: { fullPage?: boolean; maxWidth?: number; maxHeight?: number; maxBytes?: number; format?: "jpeg" | "png"; quality?: number } = {}) => {
+  handle(IPC.invoke.browserScreenshot, async (input: BrowserScreenshotOptions & { sessionId?: string } = {}) => {
     if (!isBrowserCapabilityEnabled()) throw Object.assign(new Error("Browser is disabled by the core capability setting"), { errorCode: "BROWSER_POLICY_BLOCKED" });
-    return browserBroker.screenshot(input);
+    const result = await browserBroker.screenshot(input, input.sessionId, { sessionId: input.sessionId ?? visibleBrowserSessionId, mode: "agent" });
+    if (!result.ok || !result.result) throw Object.assign(new Error("Browser screenshot failed"), { errorCode: result.code ?? "BROWSER_UNKNOWN_ERROR" });
+    const shot = result.result as Record<string, unknown>;
+    const safe: BrowserScreenshotResult = {
+      mimeType: shot.mimeType === "image/png" ? "image/png" : "image/jpeg",
+      data: typeof shot.data === "string" ? shot.data : "",
+      width: Number(shot.width) || 1,
+      height: Number(shot.height) || 1,
+      viewportWidth: Number(shot.viewportWidth) || 1,
+      viewportHeight: Number(shot.viewportHeight) || 1,
+      coordinateSpace: "css-pixels",
+      byteLength: Number(shot.byteLength) || 0,
+    };
+    return safe;
   });
 
   handle(IPC.invoke.browserGetState, async () => {

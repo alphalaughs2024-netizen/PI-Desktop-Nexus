@@ -133,6 +133,13 @@ menu, diagnostics, status, and alert semantics; deterministic keyboard/focus
 ownership; reduced-motion-safe transitions; and narrow-layout/semantic-token
 coverage. No Browser backend or security boundary changes are permitted.
 
+Phase 9 completes the Browser API/Main wiring. Toolbar actions, recovery,
+screenshots, and core surface geometry use typed shared contracts and route
+through the Main-owned BrowserBroker. View-state remains session-routed, source
+attribution is marked in Main, and compatibility, preview, typed, and manual
+entry paths share the singleton guest without exposing host or CDP objects to
+the renderer.
+
 ## Consequences
 
 Browser is the first resource to implement the shell contract. Files, Terminal,

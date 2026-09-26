@@ -1915,6 +1915,16 @@ startup failure is logged and does not prevent the desktop from launching.
 
 ## 14. Error Codes — Initial registry (extensible)
 
+### Browser Phase 9 boundary
+
+Browser renderer calls use the typed `browserCoreSurfaceSet`, `browserNavigate`,
+`browserAction`, `browserScreenshot`, `browserRecover`, `browserDiagnostics`,
+and session-aware `browserGetViewState` contracts. Main validates surface bounds,
+routes mutating operations through BrowserBroker, and publishes
+`BrowserViewStateEvent` as `{ sessionId, state }`. Session IDs are routing-only;
+renderer diagnostics contain no Browser, WebContents, CDP, URL, path, or raw
+exception data.
+
 | code | Meaning |
 |---|---|
 | `AGENT_BUSY` | The current session already has a running turn |

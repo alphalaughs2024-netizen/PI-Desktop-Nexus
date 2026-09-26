@@ -37,6 +37,7 @@ import type {
   BrowserDiagnosticsDisplay,
   BrowserScreenshotOptions,
   BrowserScreenshotResult,
+  BrowserCoreSurfaceInput,
   CommandItem,
   ComposerCommand,
   ComposerPasteFile,
@@ -882,7 +883,7 @@ export const api = {
     }),
   listCoreCapabilities: () => invoke(IPC.invoke.coreCapabilityList),
   setCoreCapabilityEnabled: (id: "browser", enabled: boolean) => invoke(IPC.invoke.coreCapabilitySetEnabled, { id, enabled }),
-  browserCoreSurfaceSet: (input: { sessionId?: string; visible: boolean; bounds: { x: number; y: number; width: number; height: number } }) => invoke(IPC.invoke.browserCoreSurfaceSet, input),
+  browserCoreSurfaceSet: (input: BrowserCoreSurfaceInput) => invoke<{ ok: true }>(IPC.invoke.browserCoreSurfaceSet, input),
   browserRecover: () => invoke(IPC.invoke.browserRecover),
   browserDiagnostics: (sessionId?: string) => invoke<BrowserDiagnosticsDisplay>(IPC.invoke.browserDiagnostics, { sessionId }),
   marketRefresh: (force = true) =>
@@ -947,8 +948,8 @@ export const api = {
   }) => invoke<ReviewRollbackResult>(IPC.invoke.workspaceReviewRollback, input),
   browserNavigate: (url: string, sessionId?: string) =>
     invoke<BrowserState>(IPC.invoke.browserNavigate, { url, sessionId }),
-  browserAction: (action: BrowserAction) =>
-    invoke(IPC.invoke.browserAction, { action }),
+  browserAction: (action: BrowserAction, sessionId?: string) =>
+    invoke<{ ok: true }>(IPC.invoke.browserAction, { action, sessionId }),
   browserSetBounds: (bounds: {
     x: number;
     y: number;
@@ -959,8 +960,8 @@ export const api = {
     invoke(IPC.invoke.browserSetVisible, { visible }),
   browserOpenExternal: (url?: string) =>
     invoke(IPC.invoke.browserOpenExternal, url ? { url } : {}),
-  browserScreenshot: (options: BrowserScreenshotOptions = {}) =>
-    invoke<BrowserScreenshotResult>(IPC.invoke.browserScreenshot, options),
+  browserScreenshot: (options: BrowserScreenshotOptions = {}, sessionId?: string) =>
+    invoke<BrowserScreenshotResult>(IPC.invoke.browserScreenshot, { ...options, sessionId }),
   browserGetState: () =>
     invoke<BrowserState | null>(IPC.invoke.browserGetState),
   browserGetViewState: (sessionId?: string) => invoke<BrowserViewState>(IPC.invoke.browserGetViewState, { sessionId }),

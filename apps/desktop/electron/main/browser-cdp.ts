@@ -260,16 +260,23 @@ export class BrowserCdp {
   ): Promise<{ mimeType: string; data: string }> {
     await this.attach(wc);
     let clip: { x: number; y: number; width: number; height: number; scale: number } | undefined;
+    const metrics = (await wc.debugger.sendCommand("Page.getLayoutMetrics")) as {
+      cssVisualViewport?: { clientWidth?: number; clientHeight?: number };
+      contentSize?: { width?: number; height?: number };
+      cssContentSize?: { width?: number; height?: number };
+    };
+    const viewportWidth = Math.max(1, Number(metrics.cssVisualViewport?.clientWidth ?? metrics.cssContentSize?.width ?? metrics.contentSize?.width) || 1);
+    const viewportHeight = Math.max(1, Number(metrics.cssVisualViewport?.clientHeight ?? metrics.cssContentSize?.height ?? metrics.contentSize?.height) || 1);
+    let outputWidth = viewportWidth;
+    let outputHeight = viewportHeight;
     if (input.fullPage) {
-      const metrics = (await wc.debugger.sendCommand("Page.getLayoutMetrics")) as {
-        contentSize?: { width?: number; height?: number };
-        cssContentSize?: { width?: number; height?: number };
-      };
       const size = metrics.cssContentSize ?? metrics.contentSize ?? { width: 0, height: 0 };
       const width = Math.max(1, Number(size.width) || 1);
       const height = Math.max(1, Number(size.height) || 1);
       const scale = width > SCREENSHOT_MAX_WIDTH ? SCREENSHOT_MAX_WIDTH / width : 1;
       clip = { x: 0, y: 0, width, height, scale };
+      outputWidth = Math.max(1, Math.round(width * scale));
+      outputHeight = Math.max(1, Math.round(height * scale));
     }
     const result = (await wc.debugger.sendCommand("Page.captureScreenshot", {
       format: "jpeg",
@@ -281,7 +288,7 @@ export class BrowserCdp {
     }
     const byteLength = Buffer.byteLength(result.data, "base64");
     if (byteLength > BROWSER_SNAPSHOT_LIMITS.maxScreenshotBytes) throw new Error("screenshot exceeds browser payload limit");
-    return { mimeType: "image/jpeg", data: result.data };
+    return { mimeType: "image/jpeg", data: result.data, width: outputWidth, height: outputHeight, viewportWidth, viewportHeight, coordinateSpace: "css-pixels" as const, byteLength };
   }
 
   async click(wc: WebContents, uid: string): Promise<void> {

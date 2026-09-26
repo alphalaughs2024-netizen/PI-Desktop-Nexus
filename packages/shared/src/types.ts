@@ -2300,6 +2300,9 @@ export type BrowserState = {
 
 export type BrowserScreenshotOptions = { fullPage?: boolean; maxWidth?: number; maxHeight?: number; maxBytes?: number; format?: "jpeg" | "png"; quality?: number };
 export type BrowserScreenshotResult = { mimeType: "image/jpeg" | "image/png"; data: string; width: number; height: number; viewportWidth: number; viewportHeight: number; deviceScaleFactor?: number; coordinateSpace: "css-pixels"; byteLength: number; truncated?: boolean };
+export type BrowserRect = { x: number; y: number; width: number; height: number };
+export type BrowserCoreSurfaceInput = { sessionId?: string; visible: boolean; bounds: BrowserRect };
+export type BrowserOperationResult = { ok: true } | { ok: false; code: BrowserErrorCode; retryable?: boolean; possiblyApplied?: boolean };
 
 export type FsEntry = {
   name: string;

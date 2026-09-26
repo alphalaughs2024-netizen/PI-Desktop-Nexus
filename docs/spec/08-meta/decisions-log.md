@@ -4498,3 +4498,4 @@ D193, and D194.
   and E2E-246.
 
 | D179 | Consecutive identical tool-call guard | **AgentRuntime keeps a per-prompt canonical tool-call streak and rejects the fourth exact repeat before host dispatch with retriable `TOOL_REPEAT_LIMIT_EXCEEDED`; changed arguments, intervening calls, and new prompts reset it. `Edit` and patch-style `Bash` remain under the specialized mutation guard.** | Small models can burn a turn repeating unchanged calls; a bounded runtime guard is safer and more consistent than an optional plugin. |
+| D-Phase9 | Browser API/Main wiring | **Typed Browser renderer contracts are authoritative: Main validates and routes toolbar, recovery, screenshot, and surface operations through BrowserBroker; session-routed view state and safe diagnostics remain Main-owned.** | Prevents renderer fallbacks and compatibility paths from bypassing policy or exposing Browser internals. |
