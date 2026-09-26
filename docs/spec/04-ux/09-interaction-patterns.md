@@ -1342,3 +1342,10 @@ This does not prevent state changes — it makes them instant.
 21. The work panel opens and collapses inside the fixed client area; the inner
     divider changes the renderer-owned panel target within 244px–720px, and
     divider cancellation restores the prior panel width (ADR 0151)
+
+### Browser Phase 9 wiring behavior
+
+Address navigation, history actions, screenshot, external open, recovery, and
+diagnostics retain the existing visual interaction while dispatching through
+Main/Broker policy. Background session state may update its retained record but
+cannot make the singleton guest visible, focus it, or retarget the active panel.

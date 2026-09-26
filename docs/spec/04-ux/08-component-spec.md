@@ -3220,3 +3220,11 @@ Sidebar footer                                        Popover (360px max)
     but cannot be selected. Its list and editor scroll independently, and
     widths below 720px hide the rail and stack the list above the editor rather
     than allowing horizontal overflow.
+
+### Browser Phase 9 typed boundary
+
+`BrowserCoreTab` owns only draft input, focus, operation state, and safe
+renderer presentation. All navigation, actions, recovery, screenshots,
+diagnostics, and guest-surface updates use the typed preload API; it never owns
+BrowserHost, BrowserBroker, WebContents, CDP, or raw IPC. Browser toolbar
+overflow includes Diagnostics and uses Main-provided safe locations only.
