@@ -166,6 +166,7 @@ html {
   background: var(--ds-bg-primary);
   color: var(--ds-text-primary);
 }
+:root { --shell-titlebar-height: 48px; --shell-content-gutter: 24px; --shell-panel-gap: 12px; --shell-surface-radius: 14px; --shell-surface-border: var(--ds-border-subtle); --shell-surface-shadow: var(--shadow-lg); --shell-control-height: 32px; --shell-focus-ring: 2px solid var(--ds-focus); }
 
 .app-shell > :not(.app-scenic-backdrop) {
   z-index: 1;
