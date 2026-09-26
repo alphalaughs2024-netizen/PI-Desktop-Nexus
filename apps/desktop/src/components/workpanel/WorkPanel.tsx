@@ -37,6 +37,8 @@ import { ReviewTab } from "./ReviewTab";
 import { FilesTab } from "./FilesTab";
 import { PluginViewTab } from "./PluginViewTab";
 import { BrowserCoreTab } from "./BrowserCoreTab";
+import { WorkPanelFrame } from "./WorkPanelFrame";
+import type { WorkPanelPresentation } from "../../lib/work-panel-presentation";
 import { WorkTabEmpty } from "./WorkTabEmpty";
 import { SubagentPanel } from "./SubagentPanel";
 import { ContextVaultTab } from "./ContextVaultTab";
@@ -113,6 +115,9 @@ export function WorkPanel({
   const showToast = useAppStore((s) => s.showToast);
   const pluginViews = useAppStore((s) => s.pluginViews);
   const width = useAppStore((s) => s.workPanelWidth);
+  const presentation = useAppStore((s) => s.workPanelPresentation);
+  const maximizeWorkPanel = useAppStore((s) => s.maximizeWorkPanel);
+  const dockWorkPanel = useAppStore((s) => s.dockWorkPanel);
   const activateTab = useAppStore((s) => s.activateWorkPanelTab);
   const closeTab = useAppStore((s) => s.closeWorkPanelTab);
   const openWorkPanelTab = useAppStore((s) => s.openWorkPanelTab);
@@ -130,9 +135,26 @@ export function WorkPanel({
   const [contextOpen, setContextOpen] = useState(false);
   const [nativeSurfaceReadyForExit, setNativeSurfaceReadyForExit] =
     useState(false);
+  const [presentationTransition, setPresentationTransition] = useState<"idle" | "maximizing" | "docking">("idle");
+  const transitionTimer = useRef<number | null>(null);
 
   const renderPanelWidth = clampWorkPanelWidth(panelDragWidth ?? width);
   const isResizing = panelDragWidth !== null;
+  const isMaximized = presentation === "maximized";
+  const isPresentationTransitioning = presentationTransition !== "idle";
+
+  useEffect(() => () => { if (transitionTimer.current !== null) window.clearTimeout(transitionTimer.current); }, []);
+  const transitionPresentation = useCallback((next: WorkPanelPresentation) => {
+    if (next === presentation || isPresentationTransitioning) return;
+    setContextOpen(false);
+    setPresentationTransition(next === "maximized" ? "maximizing" : "docking");
+    if (transitionTimer.current !== null) window.clearTimeout(transitionTimer.current);
+    transitionTimer.current = window.setTimeout(() => {
+      setWorkPanelPresentation(next);
+      setPresentationTransition("idle");
+      transitionTimer.current = null;
+    }, 200);
+  }, [isPresentationTransitioning, presentation, setWorkPanelPresentation]);
 
   useEffect(() => {
     if (isResizing) {
@@ -487,6 +509,17 @@ export function WorkPanel({
         onLostPointerCapture={onPanelResizeCancel}
         onKeyDown={onPanelResizeKeyDown}
       />
+      <WorkPanelFrame
+        presentation={presentation}
+        active={Boolean(activeTab)}
+        blocked={Boolean(panelBlocked || contextOpen)}
+        exiting={exiting}
+        sessionId={activeSessionId ?? undefined}
+        title={activeLabel}
+        onMaximize={() => transitionPresentation("maximized")}
+        onDock={() => transitionPresentation("docked")}
+        onClose={() => activeTab ? closeTab(activeTab.id) : useAppStore.getState().collapseWorkPanel()}
+      >
       <div className="work-panel-main">
         <header className="work-panel-header" data-work-panel-section="current">
           <div className="work-panel-context no-drag" ref={contextRef}>
@@ -750,7 +783,7 @@ export function WorkPanel({
           {!subagentPanel &&
             activeTab?.kind === "browser" && (
               <div key={activeTab.id} id={`work-panel-surface-${activeTab.id}`} className="work-panel-tabpane" role="tabpanel" aria-labelledby={`work-panel-title-${activeTab.id}`}>
-                <BrowserCoreTab sessionId={activeSessionId ?? undefined} location={activeTab.location} blocked={exiting || panelBlocked || contextOpen} />
+                <BrowserCoreTab sessionId={activeSessionId ?? undefined} location={activeTab.location} presentation={presentation} transitioning={isPresentationTransitioning} blocked={exiting || panelBlocked || contextOpen || isPresentationTransitioning} />
               </div>
             )}
           {!subagentPanel &&
@@ -837,6 +870,7 @@ export function WorkPanel({
           )}
         </div>
       </div>
+      </WorkPanelFrame>
     </aside>
   );
 }

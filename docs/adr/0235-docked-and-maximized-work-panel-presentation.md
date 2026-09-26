@@ -93,6 +93,15 @@ Electron, accesses WebContents, constructs CDP calls, or bypasses BrowserBroker.
 Main owns policy, URL/path validation, request/session binding, BrowserHost,
 BrowserPane, BrowserCdp, and the guest. Diagnostics remain privacy-safe.
 
+## Phase 2 implementation status
+
+The renderer now owns transient presentation state and a reusable WorkPanelFrame.
+Browser remains the first resource rendered through it. Docked mode retains the
+existing in-flow width and session/tab behavior; maximized mode is a bounded
+in-window frame with reduced-motion-safe transitions. The guest surface reports
+coalesced content bounds and remains Main-owned. Browser toolbar and navigation
+chrome remain deferred to later phases.
+
 ## Consequences
 
 Browser is the first resource to implement the shell contract. Files, Terminal,

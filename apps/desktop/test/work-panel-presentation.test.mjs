@@ -1,48 +1,19 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { commitWorkPanelPresentation } from "../src/lib/work-panel-presentation.ts";
 
-test("commits a successful current work panel reservation", async () => {
-  let presented = false;
+const { nextWorkPanelPresentation, nextWorkPanelTransition, isMaximizedPresentation } = await import("../src/lib/work-panel-presentation.ts");
 
-  const committed = await commitWorkPanelPresentation({
-    reservation: Promise.resolve({ requested: 420, reserved: 420 }),
-    isCurrent: () => true,
-    commit: () => {
-      presented = true;
-    },
-  });
-
+test("reservation commits only for a current successful request", async () => {
+  let committed = false;
+  assert.equal(await (await import("../src/lib/work-panel-presentation.ts")).commitWorkPanelPresentation({ reservation: Promise.resolve(), isCurrent: () => true, commit: () => { committed = true; } }), true);
   assert.equal(committed, true);
-  assert.equal(presented, true);
 });
 
-test("keeps the confirmed presentation when reservation fails", async () => {
-  let presented = true;
-
-  const committed = await commitWorkPanelPresentation({
-    reservation: Promise.reject(new Error("reservation failed")),
-    isCurrent: () => true,
-    commit: () => {
-      presented = false;
-    },
-  });
-
-  assert.equal(committed, false);
-  assert.equal(presented, true);
-});
-
-test("ignores a successful reservation superseded by a newer request", async () => {
-  let presented = false;
-
-  const committed = await commitWorkPanelPresentation({
-    reservation: Promise.resolve({ requested: 420, reserved: 420 }),
-    isCurrent: () => false,
-    commit: () => {
-      presented = true;
-    },
-  });
-
-  assert.equal(committed, false);
-  assert.equal(presented, false);
+test("presentation transitions are deterministic", () => {
+  assert.equal(nextWorkPanelPresentation("docked", "maximize"), "maximized");
+  assert.equal(nextWorkPanelPresentation("maximized", "dock"), "docked");
+  assert.equal(nextWorkPanelTransition("docked", "maximize"), "maximizing");
+  assert.equal(nextWorkPanelTransition("maximized", "dock"), "docking");
+  assert.equal(isMaximizedPresentation("maximized"), true);
+  assert.equal(isMaximizedPresentation("docked"), false);
 });

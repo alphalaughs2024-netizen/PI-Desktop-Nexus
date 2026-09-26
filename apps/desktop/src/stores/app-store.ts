@@ -120,6 +120,7 @@ import {
   type WorkPanelContext,
   type WorkPanelTab,
 } from "../lib/work-panel-tabs";
+import type { WorkPanelPresentation } from "../lib/work-panel-presentation";
 import {
   clearSessionPermissions,
   enqueuePermission,
@@ -1052,6 +1053,7 @@ export type AppState = {
   /** Renderer-only subagent details selected from the transcript. */
   subagentPanel: SubagentPanelSelection | null;
   workPanelOpen: boolean;
+  workPanelPresentation: WorkPanelPresentation;
   workPanelTabs: WorkPanelTab[];
   activeWorkPanelTabId: string | null;
   /** Runtime-only work panel state owned by each conversation. */
@@ -1072,6 +1074,9 @@ export type AppState = {
   activateWorkPanelTab: (tabId: string) => void;
   closeWorkPanelTab: (tabId: string) => void;
   collapseWorkPanel: () => void;
+  setWorkPanelPresentation: (presentation: WorkPanelPresentation) => void;
+  maximizeWorkPanel: () => void;
+  dockWorkPanel: () => void;
   /** Hide the visible panel while retaining its session-owned context. */
   resetWorkPanelContext: () => void;
   setWorkPanelWidth: (width: number) => void;
@@ -1119,6 +1124,7 @@ function switchWorkPanelSession(
   AppState,
   | "workPanelContexts"
   | "workPanelOpen"
+  | "workPanelPresentation"
   | "workPanelTabs"
   | "activeWorkPanelTabId"
   | "workPanelFileRequest"
@@ -1132,6 +1138,7 @@ function switchWorkPanelSession(
   return {
     workPanelContexts: switched.contexts,
     workPanelOpen: switched.visible.open,
+    workPanelPresentation: switched.visible.open ? state.workPanelPresentation : "docked",
     workPanelTabs: switched.visible.tabs,
     activeWorkPanelTabId: switched.visible.activeTabId,
     workPanelFileRequest: switched.visible.fileRequest,
@@ -1359,6 +1366,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   projectCollectionMemberships: initialSidebarPreferences.projectCollectionMemberships,
   subagentPanel: null,
   workPanelOpen: false,
+  workPanelPresentation: "docked",
   workPanelTabs: [],
   activeWorkPanelTabId: null,
   workPanelContexts: {},
@@ -4736,6 +4744,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         workPanelTabs: next.tabs,
         activeWorkPanelTabId: next.activeTabId,
         workPanelOpen: closePanel ? false : state.workPanelOpen,
+        workPanelPresentation: closePanel ? "docked" : state.workPanelPresentation,
         workPanelFileRequest: fileRequest,
         workPanelContexts: {
           ...state.workPanelContexts,
@@ -4750,12 +4759,16 @@ export const useAppStore = create<AppState>((set, get) => ({
     if (!sessionId || !state.workPanelOpen) return;
     set({
       workPanelOpen: false,
+      workPanelPresentation: "docked",
       workPanelContexts: {
         ...state.workPanelContexts,
         [sessionId]: { ...currentWorkPanelContext(state), open: false },
       },
     });
   },
+  setWorkPanelPresentation: (presentation) => set({ workPanelPresentation: presentation }),
+  maximizeWorkPanel: () => set((state) => state.workPanelOpen ? { workPanelPresentation: "maximized" } : state),
+  dockWorkPanel: () => set({ workPanelPresentation: "docked" }),
   resetWorkPanelContext: () => {
     set((state) => switchWorkPanelSession(state));
   },

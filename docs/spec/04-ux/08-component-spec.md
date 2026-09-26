@@ -30,6 +30,11 @@ and Prompt context in the native Work Panel menu and empty body, independent of
 plugin views. Selecting it opens or reuses the canonical `browser` tab in the
 active session. Rich Browser chrome and maximized presentation are later phases.
 
+Phase 2 implements the shared renderer Work Panel frame. Docked remains the
+default in-flow column; maximized is a bounded in-window frame using the same
+resource subtree and Browser guest. Shell controls own maximize, dock, and close;
+Browser content receives presentation as layout-only state.
+
 > Layout and IA reference: [01-ui-ia.md](01-ui-ia.md)  
 > Design tokens and foundations: [07-ui-design-system.md](07-ui-design-system.md)  
 > Interaction behavior: [09-interaction-patterns.md](09-interaction-patterns.md)

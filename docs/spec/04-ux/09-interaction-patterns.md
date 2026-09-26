@@ -932,6 +932,11 @@ Phase 1 adds Browser to the existing native Work Panel menu and empty-state
 action group. It uses the existing menuitemradio keyboard pattern and active
 session launcher behavior; it does not add a new shortcut or maximize action.
 
+Phase 2 adds shell-level Maximize/Dock/Close controls. Maximize expands the
+same resource into a bounded in-window frame; Dock returns it to the right-side
+column. Cmd/Ctrl+J remains visibility-only, and no native window or guest is
+created by presentation changes.
+
 ### 8.1 MVP status
 
 Work-panel and application-window resizing are implemented in MVP:

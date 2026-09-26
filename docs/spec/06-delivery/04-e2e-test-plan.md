@@ -32,6 +32,18 @@
 - BrowserPreview/URL routing and manual Browser opening converge on the same
   canonical tab and do not cross session contexts.
 
+### Browser Work Panel Phase 2 presentation matrix
+
+- Browser opens docked through the Phase 1 launcher; Maximize expands the same
+  resource into a bounded in-window frame and Dock returns it to the right-side
+  column.
+- BrowserId, tab identity, guest, page/session state, and BrowserCoreTab remain
+  continuous; no second BrowserWindow/WebContentsView/tab is created.
+- Shell controls are keyboard accessible, focus is deterministic, reduced motion
+  removes decorative movement, and Cmd/Ctrl+J remains visibility-only.
+- Session A/B switches, background previews, close/reopen, and late geometry
+  callbacks cannot retarget the visible Browser guest.
+
 ### Browser built-in Phase 7 compatibility matrix
 
 - Browser appears in a Built-in capabilities section, defaults enabled, and is
