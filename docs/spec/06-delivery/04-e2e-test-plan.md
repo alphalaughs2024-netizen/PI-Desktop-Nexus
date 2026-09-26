@@ -20,6 +20,18 @@
 - Required shell controls and stable Browser status/alert semantics are
   keyboard and screen-reader test targets.
 
+### Browser Work Panel Phase 1 launcher matrix
+
+- With an empty plugin registry and no ToolSearch activity, Browser appears in
+  the native Nexus Work Panel menu and empty Work Panel body.
+- Activating Browser creates or reuses the active session's canonical
+  `browser`/`core://browser` tab; repeated activation creates no duplicate
+  tab or guest.
+- Browser launcher keyboard navigation, `aria-checked`, focus restoration,
+  and no-project behavior match the existing Work Panel menu contract.
+- BrowserPreview/URL routing and manual Browser opening converge on the same
+  canonical tab and do not cross session contexts.
+
 ### Browser built-in Phase 7 compatibility matrix
 
 - Browser appears in a Built-in capabilities section, defaults enabled, and is

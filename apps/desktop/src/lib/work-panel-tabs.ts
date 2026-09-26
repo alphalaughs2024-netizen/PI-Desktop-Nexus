@@ -118,6 +118,14 @@ export const BROWSER_PLUGIN_TAB = {
 export const CORE_BROWSER_TAB: WorkPanelTab = { id: "browser", kind: "browser", resource: "core://browser" };
 
 export function browserPluginTab(location?: string): WorkPanelTab {
+  // Compatibility name retained for callers migrating from the removed plugin.
+  return {
+    ...CORE_BROWSER_TAB,
+    ...(location ? { location } : {}),
+  };
+}
+
+export function browserWorkPanelTab(location?: string): WorkPanelTab {
   return {
     ...CORE_BROWSER_TAB,
     ...(location ? { location } : {}),
@@ -151,7 +159,7 @@ export function parsePluginViewRef(
 export function isKnownWorkPanelTab(tab: WorkPanelTab): boolean {
   return (
     Boolean(tab) &&
-    (tab.kind === "review" || tab.kind === "contextVault" || tab.kind === "promptInspector" || tab.kind === "file" || tab.kind === "plugin")
+    (tab.kind === "review" || tab.kind === "contextVault" || tab.kind === "promptInspector" || tab.kind === "browser" || tab.kind === "file" || tab.kind === "plugin")
   );
 }
 
@@ -183,7 +191,7 @@ export function sanitizeWorkPanelTabsState(
  * they remain visible in the opened-resource section.
  */
 export function isToolWorkPanelTab(tab: WorkPanelTab): boolean {
-  return tab.kind === "plugin";
+  return tab.kind === "plugin" || tab.kind === "browser";
 }
 
 export function normalizeWorkPanelFilePath(path: string): string {

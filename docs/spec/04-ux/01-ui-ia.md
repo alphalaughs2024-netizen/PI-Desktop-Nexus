@@ -19,6 +19,12 @@ close controls, shell focus, and backdrop. Resource content owns its toolbar,
 resource readiness, and content-region bounds. The underlying conversation
 remains mounted and recognizable around the maximized frame.
 
+Phase 1 makes Browser directly available in the native Nexus Work Panel
+launcher and empty state. This launcher is core-owned and remains available
+when the plugin registry is empty; BrowserPreview and ToolSearch are not
+prerequisites. The current presentation is docked; maximize remains a later
+implementation phase.
+
 ## Project workbench
 
 Expanding a project in the Projects destination reveals a compact project

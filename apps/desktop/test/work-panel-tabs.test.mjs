@@ -4,6 +4,7 @@ import test from "node:test";
 const {
   activateWorkPanelTabState,
   browserPluginTab,
+  browserWorkPanelTab,
   closeWorkPanelTabState,
   emptyWorkPanelContext,
   fileWorkPanelTab,
@@ -95,10 +96,11 @@ test("unknown retained tabs are discarded without losing a known selection", () 
 
 test("only plugin views are launchable tools", () => {
   assert.equal(isToolWorkPanelTab(browserPluginTab()), true);
+  assert.equal(isToolWorkPanelTab(browserWorkPanelTab()), true);
   assert.equal(isToolWorkPanelTab(toolWorkPanelTab("review")), false);
   assert.equal(isToolWorkPanelTab(fileWorkPanelTab("README.md")), false);
   assert.equal(isToolWorkPanelTab(pluginWorkPanelTab("pi.files", "files")), true);
-  assert.equal(isKnownWorkPanelTab({ id: "browser", kind: "browser" }), false);
+  assert.equal(isKnownWorkPanelTab({ id: "browser", kind: "browser", resource: "core://browser" }), true);
 });
 
 test("review artifacts are recognized independently of the visible session", () => {

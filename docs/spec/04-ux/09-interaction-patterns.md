@@ -928,6 +928,10 @@ resource. Dock, maximize, and close are separate accessible actions. Background
 sessions cannot focus or change the visible shell presentation. Browser guest
 bounds are measured from the content region and coalesced during transitions.
 
+Phase 1 adds Browser to the existing native Work Panel menu and empty-state
+action group. It uses the existing menuitemradio keyboard pattern and active
+session launcher behavior; it does not add a new shortcut or maximize action.
+
 ### 8.1 MVP status
 
 Work-panel and application-window resizing are implemented in MVP:

@@ -25,6 +25,11 @@ transition state, shell focus, resource switching, and frame surfaces. Browser
 owns its toolbar, readiness/source state, diagnostics, and content-region guest
 bounds. The same resource/session/Browser identity survives dock/maximize.
 
+Phase 1 launcher behavior is core-owned: Browser appears beside Context Vault
+and Prompt context in the native Work Panel menu and empty body, independent of
+plugin views. Selecting it opens or reuses the canonical `browser` tab in the
+active session. Rich Browser chrome and maximized presentation are later phases.
+
 > Layout and IA reference: [01-ui-ia.md](01-ui-ia.md)  
 > Design tokens and foundations: [07-ui-design-system.md](07-ui-design-system.md)  
 > Interaction behavior: [09-interaction-patterns.md](09-interaction-patterns.md)

@@ -15,6 +15,7 @@ import {
   pluginWorkPanelTab,
   contextVaultWorkPanelTab,
   promptInspectorWorkPanelTab,
+  CORE_BROWSER_TAB,
 } from "../../lib/work-panel-tabs";
 import { pluginViewIcon, pluginViewInitial } from "../../lib/plugin-view-icons";
 import { useAppStore } from "../../stores/app-store";
@@ -30,6 +31,7 @@ import {
   IconPanel,
   IconPlug,
   IconBookOpen,
+  IconBrowser,
 } from "../icons";
 import { ReviewTab } from "./ReviewTab";
 import { FilesTab } from "./FilesTab";
@@ -283,6 +285,13 @@ export function WorkPanel({
     const tab = promptInspectorWorkPanelTab();
     if (tabs.some((candidate) => candidate.id === tab.id)) activateTab(tab.id);
     else openWorkPanelTab(tab);
+    closeContext();
+  }, [activateTab, closeContext, ensureSession, openWorkPanelTab, tabs]);
+  const openBrowser = useCallback(async () => {
+    if (!(await ensureSession())) return;
+    const existing = tabs.find((candidate) => candidate.id === CORE_BROWSER_TAB.id);
+    if (existing) activateTab(existing.id);
+    else openWorkPanelTab(CORE_BROWSER_TAB);
     closeContext();
   }, [activateTab, closeContext, ensureSession, openWorkPanelTab, tabs]);
 
@@ -543,6 +552,9 @@ export function WorkPanel({
                   <button type="button" role="menuitemradio" aria-checked={activeTab?.kind === "promptInspector"} tabIndex={-1} data-work-panel-menu-item="" className="work-panel-menu-item" onClick={() => void openPromptInspector()}>
                     <IconFileText size={15} /><span className="work-panel-menu-label">{t("panel.tabs.promptInspector")}</span>
                   </button>
+                  <button type="button" role="menuitemradio" aria-checked={activeTab?.kind === "browser"} tabIndex={-1} data-work-panel-menu-item="" className="work-panel-menu-item" onClick={() => void openBrowser()}>
+                    <IconBrowser size={15} /><span className="work-panel-menu-label">{t("panel.tabs.browser")}</span>
+                  </button>
                 </div>
                 {pluginViews.length > 0 && (
                   <div
@@ -792,6 +804,10 @@ export function WorkPanel({
                   >
                     <IconBookOpen size={15} />
                     <span>{t("panel.tabs.contextVault")}</span>
+                  </button>
+                  <button type="button" className="work-panel-empty-tool" data-work-panel-browser="" onClick={() => void openBrowser()} aria-label={t("panel.tabs.browser")}>
+                    <IconBrowser size={15} />
+                    <span>{t("panel.tabs.browser")}</span>
                   </button>
                   {pluginViews.map((view) => {
                     const Icon = pluginViewIcon(view.icon);
