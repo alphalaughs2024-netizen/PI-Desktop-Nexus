@@ -90,6 +90,8 @@ export class BrowserPane {
   private painted: "unknown" | "painted" | "blank" = "unknown";
   private captured: "unknown" | "nonempty" | "empty" = "unknown";
   private childOrder: "topmost" | "not-topmost" | "unknown" = "unknown";
+  private surfaceVerification: Promise<void> | null = null;
+  private surfaceEpoch = 0;
 
   constructor(onState: (state: BrowserState) => void) {
     this.onState = onState;
@@ -104,6 +106,13 @@ export class BrowserPane {
 
   surfaceStatus() { return { attachment: this.attached ? "attached" as const : "detached" as const, visibility: this.visible ? "visible" as const : "hidden" as const, paint: this.painted, capture: this.captured, childOrder: this.childOrder, generation: this.generation }; }
   async probeSurface() { const wc = this.view?.webContents; if (!wc || wc.isDestroyed() || !this.attached) return { status: "unavailable" as const, width: 0, height: 0, byteLength: 0 }; try { const image = await wc.capturePage(); const size = image.getSize(); const byteLength = image.toPNG().byteLength; this.captured = size.width > 0 && size.height > 0 && byteLength > 0 ? "nonempty" : "empty"; return { status: this.captured, width: size.width, height: size.height, byteLength }; } catch { return { status: "unavailable" as const, width: 0, height: 0, byteLength: 0 }; } }
+
+  retrySurface(): void {
+    this.surfaceEpoch += 1;
+    this.painted = "unknown";
+    this.captured = "unknown";
+    this.verifySurface();
+  }
 
   getState(): BrowserState | null {
     const wc = this.view?.webContents;
@@ -224,6 +233,7 @@ export class BrowserPane {
   }
 
   dispose(): void {
+    this.surfaceEpoch += 1;
     this.clearLiveReload();
     this.detach();
     if (this.view) {
@@ -251,6 +261,28 @@ export class BrowserPane {
     this.view.setBounds(this.bounds);
     this.attached = true;
     this.childOrder = this.window.contentView.children.at(-1) === this.view ? "topmost" : "not-topmost";
+    this.verifySurface();
+  }
+
+  private verifySurface(): void {
+    const wc = this.view?.webContents;
+    if (!wc || wc.isDestroyed() || !this.attached || wc.isLoading() || this.surfaceVerification || this.painted === "painted") return;
+    const generation = this.generation;
+    const epoch = this.surfaceEpoch;
+    this.surfaceVerification = this.probeSurface().then((result) => {
+      if (generation !== this.generation || epoch !== this.surfaceEpoch || wc.isDestroyed() || !this.attached || wc.isLoading()) return;
+      this.painted = result.status === "nonempty" ? "painted" : "blank";
+      const state = this.getState();
+      if (state) this.onState(state);
+    }).catch(() => {
+      if (generation !== this.generation || epoch !== this.surfaceEpoch || !this.attached) return;
+      this.painted = "blank";
+      const state = this.getState();
+      if (state) this.onState(state);
+    }).finally(() => {
+      this.surfaceVerification = null;
+      if (epoch !== this.surfaceEpoch) this.verifySurface();
+    });
   }
 
   private detach(): void {
@@ -344,14 +376,18 @@ export class BrowserPane {
       const state = this.getState();
       if (state) this.onState(state);
     };
-    wc.on("did-start-loading", push);
-    wc.on("did-stop-loading", push);
+    wc.on("did-start-loading", () => {
+      this.surfaceEpoch += 1;
+      this.painted = "unknown";
+      this.captured = "unknown";
+      push();
+    });
+    wc.on("did-stop-loading", () => { this.verifySurface(); push(); });
     wc.on("did-navigate", push);
     wc.on("did-navigate-in-page", push);
     wc.on("page-title-updated", push);
     wc.on("did-fail-load", push);
-    wc.on("paint", () => { this.painted = "painted"; push(); });
-    wc.on("did-finish-load", () => { this.painted = "unknown"; push(); });
+    wc.on("did-finish-load", () => { this.verifySurface(); push(); });
     wc.on("render-process-gone", push);
     wc.on("destroyed", () => { this.attached = false; this.painted = "blank"; this.generation += 1; push(); });
     this.view = view;

@@ -247,6 +247,7 @@ export class BrowserHost {
 
   recover(): void {
     this.started = false;
+    this.pane.retrySurface();
     this.applyGuest();
   }
 

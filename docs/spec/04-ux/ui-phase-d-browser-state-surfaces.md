@@ -18,6 +18,13 @@ content surface occupies the reserved viewport.
 | `debugger-unavailable` | Debugger unavailable recovery | hidden |
 | `closed` | Browser closed recovery | hidden |
 
+After a navigation completes, the native guest remains mounted in `loading`
+while the host verifies a nonempty page capture. An attached, visible guest
+becomes `ready` only after that verification. A failed or empty capture becomes
+`unavailable`; Retry starts a new verification without replaying navigation.
+Normal `WebContentsView` guests do not use the offscreen `paint` event as a
+readiness signal.
+
 `BrowserCoreTab` is the sole mapper from safe `BrowserViewState` to this
 presentation model. Child surfaces do not derive lifecycle booleans or inspect
 unsafe browser data.

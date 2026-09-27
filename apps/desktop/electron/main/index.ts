@@ -231,6 +231,7 @@ import {
 } from "./host-boot-diagnostics";
 import { collectWorkspaceDiff } from "./git-diff";
 import { BrowserPane, resolveLocalFile } from "./browser-view";
+import { resolveBrowserSurfaceReadiness } from "./browser-surface-readiness";
 import {
   BrowserHost,
   BROWSER_VIEW_ID,
@@ -970,8 +971,7 @@ const publishBrowserViewState = (sessionId: string | undefined, navigation: Brow
   const prior = browserPresentationFor(target);
   const readiness: BrowserViewState["readiness"] = !browserCapabilityEnabled ? "blocked" : overrides.readiness ?? (navigation?.isLoading ? "loading" : navigation?.url ? "ready" : "uninitialized");
   const paneSurface = browserPane.surfaceStatus();
-  const surfaceReadiness = paneSurface.attachment === "attached" && paneSurface.visibility === "visible" && paneSurface.paint === "painted";
-  const effectiveReadiness = readiness === "ready" && !surfaceReadiness ? "unavailable" : readiness;
+  const effectiveReadiness = resolveBrowserSurfaceReadiness(readiness, paneSurface);
   const state: BrowserSessionPresentation = { readiness: effectiveReadiness, navigation, source: overrides.source ?? prior.source, surface: { attachment: paneSurface.attachment, visibility: paneSurface.visibility, navigation: navigation?.isLoading ? "loading" : navigation?.url ? "verified" : "unverified", paint: paneSurface.paint, guestGeneration: paneSurface.generation, updatedAt: Date.now() }, ...(safeBrowserLocation(navigation?.url) ? { safeLocation: safeBrowserLocation(navigation?.url) } : {}), ...(navigation?.title ? { safeTitle: navigation.title.replace(/\s+/g, " ").trim().slice(0, 256) } : {}), recoverable: overrides.recoverable ?? effectiveReadiness === "unavailable", ...(overrides.lastErrorCode ? { lastErrorCode: overrides.lastErrorCode } : {}), ...(overrides.safeSuggestedAction ? { safeSuggestedAction: overrides.safeSuggestedAction } : {}), updatedAt: Date.now() };
   browserPresentations.set(target, state);
   if (target) sendToRenderer(IPC.event.browserViewState, { sessionId: target, state });

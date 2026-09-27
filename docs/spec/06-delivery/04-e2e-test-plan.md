@@ -11116,6 +11116,12 @@ must not appear as presentation-dependent toolbar slots.
 
 ### Browser UI Phase D state-surface gate
 
+For a normally loaded page, keep the native guest visible while its first
+capture is pending, then show Ready with the page content. An empty or failed
+capture shows Surface unavailable with Retry; Retry verifies the existing page
+again without replaying the URL. Repeat after switching away from and back to
+the Browser panel.
+
 Phase D verifies exactly one renderer-owned Browser content surface below fixed
 Browser chrome. `about:blank` and no-page render opaque address-focused New Tab
 content; starting, unavailable, policy-blocked, debugger-unavailable, and
