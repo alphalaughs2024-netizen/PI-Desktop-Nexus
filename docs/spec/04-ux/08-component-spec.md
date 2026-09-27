@@ -1006,10 +1006,11 @@ workflow while rendering entirely inside the plugin's isolated page:
   localStorage `pi.desktop.workPanel`. Opening and collapsing never request a
   positive native reservation and never change native window bounds. The panel
   flexes inside the existing client area. Its displayed width is capped by the
-  viewport after the active sidebar width and a 240px chat floor are reserved;
-  the saved preferred width remains available when the window grows. MainChat
-  can fall below its 360px layout target on small windows, but the shell must
-  not horizontally scroll or clip the sidebar and panel. Background session
+  viewport after the active sidebar width and a 480px chat target are reserved,
+  down to the panel's 244px minimum; the saved preferred width remains available
+  when the window grows. MainChat can fall below its 360px layout target only
+  when the window cannot fit the sidebar, minimum panel, and chat. The shell
+  must not horizontally scroll or clip the sidebar and panel. Background session
   artifacts never update the visible panel or window geometry.
 
 ### 5.5 Accessibility

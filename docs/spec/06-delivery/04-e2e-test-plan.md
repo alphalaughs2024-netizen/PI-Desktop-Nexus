@@ -39,7 +39,9 @@
   window edge, the sidebar starts at the left edge, and neither opening nor
   focusing a control scrolls the shell horizontally. Narrow and widen the
   window; the displayed dock width adapts while the preferred width returns
-  when space is available.
+  when space is available. With the sidebar expanded to 520px at a medium
+  window width, the chat title and composer controls remain readable and do
+  not overlap.
 
 - Browser opens docked through the Phase 1 launcher; Maximize expands the same
   resource into a bounded in-window frame and Dock returns it to the right-side

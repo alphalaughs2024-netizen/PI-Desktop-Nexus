@@ -297,7 +297,7 @@ test("work panel width is renderer-owned inside the fixed window", () => {
   assert.match(globalStyles, /\.main-pane \{[^}]*min-width:\s*0;/s);
   assert.match(globalStyles, /\.work-panel \{[^}]*flex: 0 0 var\(--work-panel-effective-width\)/s);
   assert.match(globalStyles, /--work-panel-effective-width:\s*min\(/);
-  assert.match(globalStyles, /100vw - var\(--shell-active-sidebar-width\) - 240px/);
+  assert.match(globalStyles, /max\(244px, calc\(100vw - var\(--shell-active-sidebar-width\) - 480px\)\)/);
   assert.match(globalStyles, /\.app-shell \{[^}]*overflow:\s*clip;/s);
   assert.match(globalStyles, /\.chat-surface,\s*\.route-page \{[^}]*min-width:\s*0;/s);
   // The Electron seam remains available for old callers but is deliberately

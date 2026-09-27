@@ -8,7 +8,7 @@
 .work-panel {
   --work-panel-effective-width: min(
     var(--work-panel-width),
-    calc(100vw - var(--shell-active-sidebar-width) - 240px)
+    max(244px, calc(100vw - var(--shell-active-sidebar-width) - 480px))
   );
   position: relative;
   display: flex;
