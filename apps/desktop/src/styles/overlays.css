@@ -112,7 +112,7 @@
   overflow: hidden;
   color: var(--text-muted);
   font-size: var(--text-xs);
-  line-height: 1.35;
+  line-height: var(--leading-compact-plus);
   text-overflow: ellipsis;
   white-space: nowrap;
 }

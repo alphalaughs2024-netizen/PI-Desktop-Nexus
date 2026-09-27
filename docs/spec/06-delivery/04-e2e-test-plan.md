@@ -1446,14 +1446,16 @@ membership when dropped on Ungrouped.
 - **Steps**: Drag the third row above the first, then use Up/Down on its handle.
   Open a row's actions menu with keyboard, navigate it with arrow keys, and
   inspect Edit, Open in side chat, and Turn off queueing. Edit a row and verify
-  its content returns to the composer. Queue another message, choose Steer,
-  then turn off queueing and send a new draft while A runs. Switch to B and
+  its content returns to the composer. Turn off queueing and verify all of A's
+  remaining queued rows disappear and do not start. Send a new draft while A
+  runs, then choose Steer on another queued row if one exists. Switch to B and
   send during a run there; return to A and turn queueing back on.
 - **Expected**: Host queue order follows drag and keyboard movement. Steer and
   Remove are icon-only, labeled buttons. The menu closes on Escape and returns
   focus to its trigger; Open in side chat is disabled. Editing removes only the
   chosen queued row. Steering removes a queued row only on acceptance. In A,
-  queueing off sends new messages as steering; rejection preserves the draft.
+  queueing off cancels existing queued rows and sends new messages as
+  steering; rejection preserves the draft.
   B still queues normally, and A can restore queueing even with no rows.
 - **Specs linked**: `04-ux/08-component-spec.md` (§11),
   `04-ux/09-interaction-patterns.md` (§3.4), ADR 0213

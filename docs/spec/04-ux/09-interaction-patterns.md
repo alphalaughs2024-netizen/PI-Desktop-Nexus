@@ -640,8 +640,9 @@ may be retained while exactly one workspace supplies the visible shell context.
   and a menu for Edit and the per-chat queueing preference. Open in side chat
   appears disabled until that workflow is implemented.
 - Turning queueing off for a chat routes new messages sent during its active
-  turn to steering. Rejection keeps the draft. The preference is runtime-only
-  and can be turned back on from the composer.
+  turn to steering and cancels that chat's existing queued rows. Rejection
+  keeps the draft. The preference is runtime-only and can be turned back on
+  from the composer.
 - Send now moves its row to the head and requests the new `agent/stop` channel.
   The current assistant response and completed tool batch finish normally;
   after `agent_end`, the promoted row is dispatched through the normal

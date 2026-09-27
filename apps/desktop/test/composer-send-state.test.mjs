@@ -151,6 +151,8 @@ test("turning off queueing steers only the active chat and keeps rejected drafts
   assert.match(store, /return false;\s*\}\s*get\(\)\.enqueuePrompt\(content, draft, sessionId\)/);
   assert.match(composer, /onQueueingChange=\{setQueueingEnabled\}/);
   assert.match(queuedRow, /role="menuitem" disabled title=\{t\("chat\.sideChatComingLater"\)\}/);
+  assert.match(store, /withoutRecordKey\(state\.queuedPrompts, sessionId\)/);
+  assert.match(store, /api\.removeQueuedPrompt\(item\.id\)/);
 });
 
 

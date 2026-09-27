@@ -2359,8 +2359,9 @@ reasoning-level control.
   is persisted by the Host across restart. Each row has a drag handle for
   pointer reorder and keyboard Up/Down movement, icon-only Steer/Send now and
   Remove buttons, and a menu with Edit, disabled Open in side chat, and a
-  queueing toggle for the current chat. With queueing off, Send during an
-  active turn steers that turn; a rejected steer retains the draft. A composer
+  queueing toggle for the current chat. With queueing off, existing queued rows
+  are canceled and Send during an active turn steers that turn; a rejected
+  steer retains the draft. A composer
   control restores queueing even when no rows remain. The toggle is runtime-only.
 - `turn_end` is not an idle signal. Send and host persistence remain blocked
   through subsequent tool turns and blocking automatic checkpoint generation

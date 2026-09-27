@@ -941,7 +941,7 @@ export type AppState = {
   sendQueuedNow: (promptId: string) => Promise<void>;
   moveQueuedPrompt: (promptId: string, direction: "up" | "down") => Promise<void>;
   moveQueuedPromptTo: (promptId: string, targetId: string) => Promise<void>;
-  setQueueingEnabled: (enabled: boolean) => void;
+  setQueueingEnabled: (enabled: boolean) => Promise<void>;
   steerActiveTurn: (content: string) => Promise<import("@pi-desktop/shared").SteerOutcome>;
   steerPrompt: (content: string, draft?: ComposerDraftSnapshot, promptId?: string, sessionId?: string) => Promise<import("@pi-desktop/shared").SteerOutcome>;
   editQueuedPrompt: (promptId: string) => void;
@@ -2288,15 +2288,32 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
   },
 
-  setQueueingEnabled: (enabled) => {
+  setQueueingEnabled: async (enabled) => {
     const sessionId = get().activeSessionId;
     if (!sessionId) return;
+    const queued = enabled ? [] : (get().queuedPrompts[sessionId] ?? []);
     set((state) => {
       const queueingDisabledSessions = { ...state.queueingDisabledSessions };
       if (enabled) delete queueingDisabledSessions[sessionId];
       else queueingDisabledSessions[sessionId] = true;
-      return { queueingDisabledSessions };
+      return {
+        queueingDisabledSessions,
+        ...(enabled ? {} : { queuedPrompts: withoutRecordKey(state.queuedPrompts, sessionId) }),
+      };
     });
+    if (enabled) return;
+    const removals = queued.map((item) => {
+      if (item.id.startsWith("pending:")) {
+        canceledPendingQueueEntries.add(item.id);
+        return Promise.resolve();
+      }
+      hiddenQueueEntries.add(item.id);
+      queuedDrafts.delete(item.id);
+      return api.removeQueuedPrompt(item.id).catch((error) => {
+        get().showToast(error instanceof Error ? error.message : String(error), { variant: "error" });
+      });
+    });
+    await Promise.all(removals);
   },
 
   steerActiveTurn: async (content) => {

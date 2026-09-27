@@ -646,7 +646,7 @@
 .project-workbench-card {
   min-width: 0;
   border: 1px solid var(--border-subtle);
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   padding: 10px;
   background: var(--surface-raised);
 }
@@ -656,8 +656,8 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  font-size: 12px;
-  font-weight: 600;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
 }
 
 .project-workbench-heading > span:first-child {
@@ -671,7 +671,7 @@
 .project-workbench-stats,
 .project-workbench-note {
   color: var(--text-muted);
-  font-size: 11px;
+  font-size: var(--text-xs);
 }
 
 .project-workbench-recovery {
@@ -703,9 +703,9 @@
   justify-content: space-between;
   gap: 8px;
   padding: 5px 6px;
-  border-radius: 6px;
+  border-radius: var(--radius-2xs);
   color: var(--text-secondary);
-  font-size: 11px;
+  font-size: var(--text-xs);
 }
 
 .project-workbench-file span:first-child,
@@ -720,7 +720,7 @@
 .project-workbench-contract-meta {
   flex: 0 0 auto;
   color: var(--text-muted);
-  font-size: 10px;
+  font-size: var(--text-3xs);
 }
 
 .project-workbench-contract {

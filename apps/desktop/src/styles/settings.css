@@ -2246,7 +2246,7 @@
   color: var(--ds-accent);
   font-size: var(--text-xs-plus);
   font-weight: var(--font-weight-semibold);
-  letter-spacing: .08em;
+  letter-spacing: var(--tracking-wide);
   text-transform: uppercase;
 }
 
@@ -2254,11 +2254,11 @@
   display: block;
   margin: 0 0 8px;
   color: var(--ds-text-primary);
-  font-size: clamp(34px, 6vw, 48px);
+  font-size: var(--text-2xl);
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-weight: 600;
-  letter-spacing: -.045em;
-  line-height: 1.05;
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: var(--tracking-tighter);
+  line-height: var(--leading-heading);
   font-variant-numeric: tabular-nums lining-nums;
   white-space: nowrap;
 }
@@ -2268,7 +2268,7 @@
   margin: 0;
   color: var(--ds-text-muted);
   font-size: var(--text-sm-plus);
-  line-height: 1.45;
+  line-height: var(--leading-body);
 }
 
 .usage-hero-note { color: var(--ds-text-faint) !important; }
@@ -2375,7 +2375,7 @@
   display: grid;
   gap: 5px;
   border: 1px solid var(--ds-border-subtle);
-  border-radius: 8px;
+  border-radius: var(--radius-xs);
   background: var(--ds-bg-secondary);
   padding: 12px;
 }
@@ -2489,7 +2489,7 @@
   display: block;
   width: 10px;
   height: 10px;
-  border-radius: 3px;
+  border-radius: var(--radius-3xs);
   background: var(--ds-bg-hover);
 }
 
@@ -2527,8 +2527,8 @@
   display: block;
   margin: 20px 14px 0;
   color: var(--ds-text-primary);
-  font-size: 30px;
-  letter-spacing: -.04em;
+  font-size: var(--text-2xl);
+  letter-spacing: var(--tracking-tighter);
 }
 
 .usage-latest-meta {
