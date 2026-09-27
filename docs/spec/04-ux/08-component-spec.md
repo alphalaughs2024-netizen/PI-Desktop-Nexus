@@ -26,7 +26,7 @@ owns its toolbar, readiness/source state, diagnostics, and content-region guest
 bounds. The same resource/session/Browser identity survives dock/maximize.
 
 Phase 1 launcher behavior is core-owned: Browser appears beside Context Vault
-and Prompt context in the native Work Panel menu and empty body, independent of
+and Prompt Inspector in the native Work Panel menu and empty body, independent of
 plugin views. Selecting it opens or reuses the canonical `browser` tab in the
 active session. Rich Browser chrome and maximized presentation are later phases.
 
@@ -965,8 +965,10 @@ workflow while rendering entirely inside the plugin's isolated page:
   remains available after `Cmd/Ctrl + J` reveals the panel. Artifact triggers
   still create and activate resources atomically; the shortcut only reveals the
   existing context.
-- Empty-body view list: the available Browser and in-scope plugin-view rows
-  appear only while the body has no tab at all, and disappear as soon as one
+- Empty-body view list: Context Vault, Prompt Inspector, Browser, and available
+  plugin-view rows are centered in the panel. The empty resource host takes no
+  layout space. These rows appear only while the body has no tab at all and
+  disappear as soon as one
   exists. Each row calls the same create-or-select path as its header-menu
   counterpart, so a closed view gets a new singleton tab and an already-open
   one is selected rather than duplicated. `Cmd/Ctrl + J` itself still creates

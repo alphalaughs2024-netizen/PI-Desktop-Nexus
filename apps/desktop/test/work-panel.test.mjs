@@ -478,6 +478,7 @@ test("revealing the panel with no tab shows the empty body and its tool list", a
     new URL("../src/components/workpanel/WorkTabEmpty.tsx", import.meta.url),
     "utf8",
   );
+  const english = await readFile(new URL("../../../packages/i18n/src/locales/en/index.ts", import.meta.url), "utf8");
   // `Cmd/Ctrl+J` reveals the panel without creating a tab, so the body must
   // still say something and offer a way forward.
   assert.match(panelSource, /\{!subagentPanel && !activeTab && \(/);
@@ -485,6 +486,10 @@ test("revealing the panel with no tab shows the empty body and its tool list", a
   assert.match(panelSource, /panel\.empty\.title/);
   assert.match(panelSource, /panel\.empty\.body/);
   assert.match(panelSource, /className="work-panel-empty-tools"/);
+  assert.match(panelSource, /tabs\.length > 0 && <WorkPanelResourceHost/);
+  assert.match(panelSource, /data-work-panel-prompt-context="" onClick=\{\(\) => void openPromptInspector\(\)\}/);
+  assert.match(panelSource, /<span>\{t\("panel\.tabs\.promptInspector"\)\}<\/span>/);
+  assert.match(english, /promptInspector: "Prompt Inspector"/);
   assert.match(panelSource, /pluginViews\.map[\s\S]*work-panel-empty-tool/);
   assert.match(panelSource, /data-work-panel-plugin-view=\{view\.ref\}/);
   assert.match(panelSource, /onClick=\{\(\) => openPluginView\(view\)\}/);

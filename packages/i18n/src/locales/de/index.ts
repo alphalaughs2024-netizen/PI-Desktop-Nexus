@@ -1429,7 +1429,7 @@ export const de = {
       "file": "Dateien",
       "plugin": "Plugin-Ansicht",
       "contextVault": "Kontextspeicher",
-      "promptInspector": "Prompt-Kontext",
+      "promptInspector": "Prompt-Inspektor",
     },
     "pluginView": {
       "failed": "Diese Ansicht konnte nicht geladen werden. Laden Sie das Plugin neu und versuchen Sie es erneut."

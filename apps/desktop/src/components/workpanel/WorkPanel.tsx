@@ -745,7 +745,7 @@ export function WorkPanel({
           {subagentPanel ? <SubagentPanel selection={subagentPanel} /> : null}
           {/* <BrowserCoreTab> remains the canonical Browser resource rendered by WorkPanelResourceHost. transitioning={isPresentationTransitioning}. */}
           {/* Resource host preserves activeTab?.kind === "review", "file", and "plugin" behavior through the registry. */}
-          {!subagentPanel && <WorkPanelResourceHost tabs={tabs} activeTabId={activeTabId} presentation={presentation} sessionId={activeSessionId ?? undefined} blocked={exiting || panelBlocked || contextOpen} transitioning={isPresentationTransitioning} pluginViews={pluginViews} onCloseResource={closeTab} />}
+          {!subagentPanel && tabs.length > 0 && <WorkPanelResourceHost tabs={tabs} activeTabId={activeTabId} presentation={presentation} sessionId={activeSessionId ?? undefined} blocked={exiting || panelBlocked || contextOpen} transitioning={isPresentationTransitioning} pluginViews={pluginViews} onCloseResource={closeTab} />}
           {/* `Cmd/Ctrl+J` reveals the panel without creating a resource, so the
               body can be empty. No tab exists to label a tabpanel here; the
               same plugin views the header menu offers are listed inline so the
@@ -770,6 +770,10 @@ export function WorkPanel({
                   >
                     <IconBookOpen size={15} />
                     <span>{t("panel.tabs.contextVault")}</span>
+                  </button>
+                  <button type="button" className="work-panel-empty-tool" data-work-panel-prompt-context="" onClick={() => void openPromptInspector()} aria-label={t("panel.tabs.promptInspector")}>
+                    <IconFileText size={15} />
+                    <span>{t("panel.tabs.promptInspector")}</span>
                   </button>
                   <button type="button" className="work-panel-empty-tool" data-work-panel-browser="" onClick={() => void openBrowser()} aria-label={t("panel.tabs.browser")}>
                     <IconBrowser size={15} />

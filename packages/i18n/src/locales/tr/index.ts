@@ -1441,7 +1441,7 @@ export const tr = {
       file: "Dosyalar",
       plugin: "Eklenti görünümü",
       contextVault: "Bağlam kasası",
-      promptInspector: "İstem bağlamı",
+      promptInspector: "İstem denetçisi",
     },
     pluginView: {
       failed: "Bu görünüm yüklenemedi. Eklentiyi yeniden yükleyip deneyin.",

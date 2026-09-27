@@ -8000,11 +8000,11 @@ This test plan spec is accepted when:
 - **Steps**:
   1) Press `Cmd/Ctrl + J` and confirm the panel appears with an empty body that
      shows a tiled icon, the title "No resource open", one line of supporting
-     copy, and Browser/in-scope plugin-view rows — not a blank area below the
-     title bar.
+     copy, and Context Vault, Prompt Inspector, Browser, and in-scope plugin-view
+     rows centered in the available body, without a blank upper half.
   2) Tab into the available rows and confirm each takes a visible focus ring
      and that hovering a row shows only a background fill.
-  3) Activate Browser or a plugin view and confirm its singleton tab is created
+  3) Activate Prompt Inspector, Browser, or a plugin view and confirm its singleton tab is created
      and selected; the empty body and its view list disappear.
   4) Open the header context menu, activate the same view again, and confirm it
      selects the existing tab rather than creating a second one.
@@ -8013,7 +8013,7 @@ This test plan spec is accepted when:
   6) Repeat step 1 in Chinese and in both light and dark themes, and at the
      244px panel minimum, confirming the copy wraps rather than clipping.
 - **Expected**: `Cmd/Ctrl + J` reveals the panel without creating a tab, and the
-  no-resource body lists the same Browser/plugin-view entries as the header
+  no-resource body lists the same core and plugin-view entries as the header
   menu; a row creates or selects that singleton view exactly as the menu does.
   The empty body is not exposed as a `tabpanel`; its rows are buttons in a
   `role="group"` labelled Tools. Panel empty states share the app's empty-state
@@ -10932,7 +10932,7 @@ foreground rather than inheriting the selected theme's general text color.
 
 - **Preconditions**: An active session has a recorded prompt composition and
   lifecycle events, including an optional Context Vault event.
-- **Steps**: Open **Prompt context**, inspect the summary and Composition tab,
+- **Steps**: Open **Prompt Inspector**, inspect the summary and Composition tab,
   switch to Timeline, change each lifecycle filter, and trigger a history
   reload while live events are arriving.
 - **Expected**: The summary shows labeled estimated tokens, included/excluded
@@ -10952,7 +10952,7 @@ foreground rather than inheriting the selected theme's general text color.
 
 - **Preconditions**: A session has live and persisted lifecycle records,
   configured provider/model identity, and optional Context Vault metadata.
-- **Steps**: Open **Prompt context** after a completed turn, inspect both tabs,
+- **Steps**: Open **Prompt Inspector** after a completed turn, inspect both tabs,
   switch filters, then repeat while a turn is running and while duplicate live/
   history lifecycle records are present.
 - **Expected**: Duplicate context/terminal rows collapse in the UI; groups use
@@ -10975,7 +10975,7 @@ foreground rather than inheriting the selected theme's general text color.
 
 - **Preconditions**: A session has prompt composition records, lifecycle events,
   optional Context Vault metadata, and a scenic or standard application theme.
-- **Steps**: Open **Prompt context** in Composition and Timeline views. Inspect
+- **Steps**: Open **Prompt Inspector** in Composition and Timeline views. Inspect
   the summary, included/excluded groups, Context Vault state, lifecycle stepper,
   routine-event disclosure, filters, and safe metadata action at desktop and
   narrow Work Panel widths.

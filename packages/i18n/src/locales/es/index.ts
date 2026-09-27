@@ -1422,7 +1422,7 @@ export const es = {
       "file": "Archivos",
       "plugin": "Vista de complemento",
       "contextVault": "Bóveda de contexto",
-      "promptInspector": "Contexto del prompt",
+      "promptInspector": "Inspector de prompts",
     },
     "pluginView": {
       "failed": "Esta vista no se pudo cargar. Vuelva a cargar el complemento e inténtelo de nuevo."
