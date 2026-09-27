@@ -633,17 +633,21 @@ may be retained while exactly one workspace supplies the visible shell context.
 ### 3.4 Queued send
 
 - While a session is running, Send remains enabled alongside Abort. Accepted
-  prompts clear the composer and append to that session's renderer-local FIFO
-  queue; session switching never moves or clears another session's queue.
-- The queue renders above the composer. Each row has an independently
-  keyboard-reachable Remove action and a Send now action.
+  prompts clear the composer and enter that session's Host-owned queue;
+  session switching never moves or clears another session's queue.
+- The queue renders above the composer. Each row has a drag handle (with
+  Up/Down keyboard movement), icon-only Steer/Send now and Remove actions,
+  and a menu for Edit and the per-chat queueing preference. Open in side chat
+  appears disabled until that workflow is implemented.
+- Turning queueing off for a chat routes new messages sent during its active
+  turn to steering. Rejection keeps the draft. The preference is runtime-only
+  and can be turned back on from the composer.
 - Send now moves its row to the head and requests the new `agent/stop` channel.
   The current assistant response and completed tool batch finish normally;
   after `agent_end`, the promoted row is dispatched through the normal
   `agent/prompt` flow before the remaining rows. An idle Send now dispatches
   immediately.
-- Abort remains immediate and never clears the queue. Queued prompts are
-  intentionally lost on application restart because the queue is not durable.
+- Abort remains immediate and never clears the durable Host queue.
 
 ## 3A. Context checkpoint lifecycle
 

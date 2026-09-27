@@ -92,6 +92,28 @@ export function reorderQueuedPrompt(
   return withSessionQueue(queues, sessionId, next);
 }
 
+export function reorderQueuedPromptTo(
+  queues: QueuedPrompts,
+  sessionId: string,
+  promptId: string,
+  targetId: string,
+): QueuedPrompts {
+  const queue = queues[sessionId];
+  if (!queue) return queues;
+  const source = queue.findIndex((item) => item.id === promptId);
+  const target = queue.findIndex((item) => item.id === targetId);
+  if (source < 0 || target < 0 || source === target) return queues;
+  const first = Math.min(source, target);
+  const last = Math.max(source, target);
+  if (queue.slice(first, last + 1).some((item) =>
+    isPendingQueuedPrompt(item) || isPromotedQueuedPrompt(item)
+  )) return queues;
+  const next = [...queue];
+  const [item] = next.splice(source, 1);
+  next.splice(target, 0, item);
+  return withSessionQueue(queues, sessionId, next);
+}
+
 export function queuedPromptForSession(
   queues: QueuedPrompts,
   sessionId: string,

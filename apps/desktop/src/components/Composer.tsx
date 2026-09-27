@@ -68,11 +68,10 @@ import { TooltipButton } from "./ui";
 import { ContextUsageInspector } from "./ContextUsageInspector";
 import { AskToolCard } from "./AskToolCard";
 import { PlanApprovalBar } from "./PlanApprovalBar";
+import { QueuedPromptRow } from "./QueuedPromptRow";
 import {
   IconArrowUp,
-  IconArrowDown,
   IconCornerDownLeft,
-  IconPencil,
   IconUndo2,
   IconPlus,
   IconShield,
@@ -630,6 +629,8 @@ export function Composer({
   const removeQueuedPrompt = useAppStore((s) => s.removeQueuedPrompt);
   const sendQueuedNow = useAppStore((s) => s.sendQueuedNow);
   const moveQueuedPrompt = useAppStore((s) => s.moveQueuedPrompt);
+  const moveQueuedPromptTo = useAppStore((s) => s.moveQueuedPromptTo);
+  const setQueueingEnabled = useAppStore((s) => s.setQueueingEnabled);
   const steerActiveTurn = useAppStore((s) => s.steerActiveTurn);
   const steerPrompt = useAppStore((s) => s.steerPrompt);
   const editQueuedPrompt = useAppStore((s) => s.editQueuedPrompt);
@@ -680,6 +681,10 @@ export function Composer({
       ? s.queuedPrompts[s.activeSessionId] ?? EMPTY_QUEUED_PROMPTS
       : EMPTY_QUEUED_PROMPTS,
   );
+  const queueingEnabled = useAppStore((s) =>
+    s.activeSessionId ? !s.queueingDisabledSessions[s.activeSessionId] : true,
+  );
+  const [draggedQueuedPromptId, setDraggedQueuedPromptId] = useState<string | null>(null);
   const draftKey = draftKeyForSession(activeSessionId);
   const referenceSessionId = activeSessionId ?? "";
   const initialDraft = readComposerDraft(draftKey);
@@ -2136,57 +2141,46 @@ export function Composer({
             aria-label={t("chat.queuedPrompts")}
           >
             {queuedPrompts.map((item, index) => {
-              const promoted = item.priority !== undefined;
-              const pendingAdmission = item.id.startsWith("pending:");
-              const locked = promoted || pendingAdmission;
               const label =
                 item.content.trim() ||
                 item.draft.fileReferences.map((reference) => reference.name).join(", ") ||
                 t("chat.queuedPromptEmpty");
               return (
-                <div
+                <QueuedPromptRow
                   key={item.id}
-                  className="composer-queued-prompt"
-                  role="listitem"
-                  data-testid="queued-prompt"
-                >
-                  <span className="composer-queued-prompt-text" title={label}>
-                    {label}
-                  </span>
-                  <TooltipButton type="button" className="composer-queued-prompt-action" tooltip="Move up" ariaLabel="Move queued prompt up" disabled={locked || index === 0} onClick={() => void moveQueuedPrompt(item.id, "up")}><IconArrowUp size={13} aria-hidden /></TooltipButton>
-                  <TooltipButton type="button" className="composer-queued-prompt-action" tooltip="Move down" ariaLabel="Move queued prompt down" disabled={locked || index === queuedPrompts.length - 1} onClick={() => void moveQueuedPrompt(item.id, "down")}><IconArrowDown size={13} aria-hidden /></TooltipButton>
-                  <TooltipButton
-                    type="button"
-                    className="composer-queued-prompt-action"
-                    tooltip={t("chat.removeQueuedPrompt")}
-                    ariaLabel={t("chat.removeQueuedPrompt")}
-                     disabled={pendingAdmission}
-                    onClick={() => removeQueuedPrompt(item.id)}
-                  >
-                    <IconX size={13} aria-hidden />
-                  </TooltipButton>
-                  <button
-                    type="button"
-                    className={`composer-queued-prompt-send-now${isRunning ? " composer-queued-prompt-steer" : ""}`}
-                    aria-label={isRunning ? "Steer active turn" : t("chat.sendNow")}
-                    title={isRunning ? "Steer active turn" : t("chat.sendNow")}
-                     disabled={approvalPending || pendingAdmission}
-                    onClick={() => {
-                       if (isRunning && !pendingAdmission) {
-                        void steerPrompt(item.content, item.draft, item.id);
-                       } else if (!promoted) {
-                        void sendQueuedNow(item.id);
-                      }
-                    }}
-                  >
-                     {isRunning ? <IconCornerDownLeft size={14} aria-hidden /> : promoted ? t("chat.sendNowPending") : t("chat.sendNow")}
-                  </button>
-                  <TooltipButton type="button" className="composer-queued-prompt-action" tooltip="Edit queued prompt" ariaLabel="Edit queued prompt" disabled={locked} onClick={() => editQueuedPrompt(item.id)}><IconPencil size={13} aria-hidden /></TooltipButton>
-                </div>
+                  item={item}
+                  label={label}
+                  index={index}
+                  count={queuedPrompts.length}
+                  isRunning={isRunning}
+                  approvalPending={approvalPending}
+                  queueingEnabled={queueingEnabled}
+                  draggedId={draggedQueuedPromptId}
+                  onDragChange={setDraggedQueuedPromptId}
+                  onMove={(id, direction) => void moveQueuedPrompt(id, direction)}
+                  onMoveTo={(id, targetId) => void moveQueuedPromptTo(id, targetId)}
+                  onSteer={(queued) => void steerPrompt(queued.content, queued.draft, queued.id)}
+                  onSendNow={(id) => void sendQueuedNow(id)}
+                  onDelete={removeQueuedPrompt}
+                  onEdit={editQueuedPrompt}
+                  onQueueingChange={setQueueingEnabled}
+                />
               );
             })}
           </div>
         ) : null}
+        {!queueingEnabled && (
+          <TooltipButton
+            type="button"
+            className="composer-queueing-mode"
+            tooltip={t("chat.turnOnQueueing")}
+            ariaLabel={t("chat.turnOnQueueing")}
+            onClick={() => setQueueingEnabled(true)}
+          >
+            <IconCornerDownLeft size={13} aria-hidden />
+            {t("chat.steeringModeOn")}
+          </TooltipButton>
+        )}
         {enhancementError ? (
           <div className="composer-enhancement-error" role="alert">
             <span className="composer-enhancement-error-message">

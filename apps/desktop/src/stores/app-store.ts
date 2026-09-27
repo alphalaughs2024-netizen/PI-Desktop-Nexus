@@ -163,6 +163,7 @@ import {
   queuedPromptForSession,
   removeQueuedPrompt,
   reorderQueuedPrompt,
+  reorderQueuedPromptTo,
   type QueuedPromptDirection,
   type QueuedPrompt,
   type QueuedPrompts,
@@ -884,6 +885,8 @@ export type AppState = {
   pendingAsks: AskQueues;
   /** Renderer-owned, in-memory prompt queue, isolated by session. */
   queuedPrompts: QueuedPrompts;
+  /** Runtime-only per-session steering preference; Host still owns queued turns. */
+  queueingDisabledSessions: Record<string, true>;
   /** Planning state is durable per session, including sessions outside view. */
   planningStates: Record<string, PlanningState>;
   /** Live host approval rows keyed by session; only pending rows form the gate. */
@@ -937,8 +940,10 @@ export type AppState = {
   removeQueuedPrompt: (promptId: string) => void;
   sendQueuedNow: (promptId: string) => Promise<void>;
   moveQueuedPrompt: (promptId: string, direction: "up" | "down") => Promise<void>;
+  moveQueuedPromptTo: (promptId: string, targetId: string) => Promise<void>;
+  setQueueingEnabled: (enabled: boolean) => void;
   steerActiveTurn: (content: string) => Promise<import("@pi-desktop/shared").SteerOutcome>;
-  steerPrompt: (content: string, draft?: ComposerDraftSnapshot, promptId?: string) => Promise<import("@pi-desktop/shared").SteerOutcome>;
+  steerPrompt: (content: string, draft?: ComposerDraftSnapshot, promptId?: string, sessionId?: string) => Promise<import("@pi-desktop/shared").SteerOutcome>;
   editQueuedPrompt: (promptId: string) => void;
   refreshQueuedPrompts: (sessionId: string) => Promise<void>;
   applyQueueChanged: (event: AgentQueueChangedEvent) => void;
@@ -1395,6 +1400,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   pendingPermissions: {},
   pendingAsks: {},
   queuedPrompts: {},
+  queueingDisabledSessions: {},
   planningStates: {},
   pendingPlans: {},
   planCheckpoints: {},
@@ -2260,6 +2266,39 @@ export const useAppStore = create<AppState>((set, get) => ({
     catch (error) { await get().refreshQueuedPrompts(sessionId); get().showToast(error instanceof Error ? error.message : String(error), { variant: "error" }); }
   },
 
+  moveQueuedPromptTo: async (promptId, targetId) => {
+    const sessionId = get().activeSessionId;
+    if (!sessionId) return;
+    const queue = get().queuedPrompts[sessionId] ?? [];
+    const source = queue.findIndex((item) => item.id === promptId);
+    const target = queue.findIndex((item) => item.id === targetId);
+    const next = reorderQueuedPromptTo(get().queuedPrompts, sessionId, promptId, targetId);
+    if (next === get().queuedPrompts) return;
+    const direction = source < target ? "down" : "up";
+    set({ queuedPrompts: next });
+    try {
+      for (let step = 0; step < Math.abs(target - source); step += 1) {
+        const result = await api.reorderQueuedPrompt(promptId, direction);
+        if (!result.moved) break;
+      }
+      await get().refreshQueuedPrompts(sessionId);
+    } catch (error) {
+      await get().refreshQueuedPrompts(sessionId);
+      get().showToast(error instanceof Error ? error.message : String(error), { variant: "error" });
+    }
+  },
+
+  setQueueingEnabled: (enabled) => {
+    const sessionId = get().activeSessionId;
+    if (!sessionId) return;
+    set((state) => {
+      const queueingDisabledSessions = { ...state.queueingDisabledSessions };
+      if (enabled) delete queueingDisabledSessions[sessionId];
+      else queueingDisabledSessions[sessionId] = true;
+      return { queueingDisabledSessions };
+    });
+  },
+
   steerActiveTurn: async (content) => {
     const state = get();
     const sessionId = state.activeSessionId;
@@ -2282,9 +2321,9 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
   },
 
-  steerPrompt: async (content, draft, promptId) => {
+  steerPrompt: async (content, draft, promptId, requestedSessionId) => {
     const state = get();
-    const sessionId = state.activeSessionId;
+    const sessionId = requestedSessionId ?? state.activeSessionId;
     const expectedTurnId = sessionId ? state.activeTurnIds[sessionId] : undefined;
     if (!sessionId || !expectedTurnId) return { state: "rejected", reason: "invalid" };
     if (!state.runningSessions[sessionId]) return { state: "rejected", reason: "not_running" };
@@ -2366,6 +2405,14 @@ export const useAppStore = create<AppState>((set, get) => ({
     if (!sessionId) throw new Error(i18n.t("errors.noActiveSession"));
     if (get().pendingPlans[sessionId]?.status === "pending") return false;
     if (get().runningSessions[sessionId]) {
+      if (get().queueingDisabledSessions[sessionId]) {
+        const outcome = await get().steerPrompt(content, draft, undefined, sessionId);
+        if (outcome.state === "accepted" || outcome.state === "queued") return true;
+        if (outcome.state === "rejected" || outcome.state === "unavailable") {
+          get().showToast(i18n.t("chat.steerInsteadOfQueueFailed"), { variant: "error" });
+        }
+        return false;
+      }
       get().enqueuePrompt(content, draft, sessionId);
       return true;
     }
@@ -3307,6 +3354,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       const sessionOutcomes = { ...state.sessionOutcomes };
       delete sessionOutcomes[id];
       const queuedPrompts = withoutRecordKey(state.queuedPrompts, id);
+      const queueingDisabledSessions = withoutRecordKey(state.queueingDisabledSessions, id);
       const workPanelContexts = withoutRecordKey(state.workPanelContexts, id);
       const pendingPermissions = clearSessionPermissions(
         state.pendingPermissions,
@@ -3332,6 +3380,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         agentStatuses,
         sessionOutcomes,
         queuedPrompts,
+        queueingDisabledSessions,
         workPanelContexts,
         activeSessionId:
           state.activeSessionId === id ? undefined : state.activeSessionId,

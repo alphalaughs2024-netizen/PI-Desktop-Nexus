@@ -60,23 +60,32 @@
 .composer-queued-prompts {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 3px;
   width: 100%;
   margin: 0 0 8px;
+  padding: 4px;
+  border: 1px solid var(--ds-border-subtle);
+  border-radius: var(--radius-lg);
+  background: var(--ds-bg-composer);
+  box-shadow: var(--ds-shadow-composer);
 }
 
 .composer-queued-prompt {
+  position: relative;
   display: flex;
   min-width: 0;
   align-items: center;
-  gap: 8px;
-  border-radius: var(--radius-lg);
-  padding: 7px 8px 7px 12px;
-  background: var(--ds-bg-composer);
-  box-shadow: var(--ds-shadow-composer);
+  gap: 4px;
+  border-radius: var(--radius-md);
+  padding: 4px;
   color: var(--ds-text-secondary);
   font-size: var(--text-sm-plus);
 }
+
+.composer-queued-prompt + .composer-queued-prompt { border-top: 1px solid var(--ds-border-subtle); }
+.composer-queued-prompt.is-dragging { opacity: 0.45; }
+.composer-queued-prompt.is-drop-target { background: var(--ds-bg-hover); }
+.composer-queued-prompt.has-open-menu { z-index: 2; }
 
 .composer-queued-prompt-text {
   min-width: 0;
@@ -87,7 +96,7 @@
 }
 
 .composer-queued-prompt-action,
-.composer-queued-prompt-send-now {
+.composer-queued-prompt-handle {
   display: inline-flex;
   flex: 0 0 auto;
   align-items: center;
@@ -100,29 +109,79 @@
 }
 
 .composer-queued-prompt-action {
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
 }
 
-.composer-queued-prompt-send-now {
-  min-height: 24px;
-  padding: 0 8px;
-  color: var(--ds-text-secondary);
-  font-size: var(--text-sm);
-  white-space: nowrap;
+.composer-queued-prompt-handle {
+  width: 22px;
+  height: 28px;
+  cursor: grab;
+  touch-action: none;
 }
+
+.composer-queued-prompt-handle:active { cursor: grabbing; }
+.composer-queued-prompt-handle:disabled { cursor: default; opacity: 0.4; }
 
 .composer-queued-prompt-action:hover,
 .composer-queued-prompt-action:focus-visible,
-.composer-queued-prompt-send-now:hover:not(:disabled),
-.composer-queued-prompt-send-now:focus-visible {
+.composer-queued-prompt-handle:hover:not(:disabled),
+.composer-queued-prompt-handle:focus-visible {
   background: var(--ds-bg-hover);
   color: var(--ds-text-primary);
 }
 
-.composer-queued-prompt-send-now:disabled {
-  cursor: wait;
-  opacity: 0.65;
+.composer-queued-prompt-menu-wrap { position: relative; flex: 0 0 auto; }
+
+.composer-queued-prompt-menu {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 6px);
+  z-index: 20;
+  min-width: 190px;
+  padding: 4px;
+  border: 1px solid var(--ds-border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--ds-bg-composer);
+  box-shadow: var(--ds-shadow-composer);
+}
+
+.composer-queued-prompt-menu button {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  min-height: 32px;
+  padding: 5px 8px;
+  border-radius: var(--radius-sm);
+  color: var(--ds-text-primary);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.composer-queued-prompt-menu button:hover:not(:disabled),
+.composer-queued-prompt-menu button:focus-visible { background: var(--ds-bg-hover); }
+.composer-queued-prompt-menu button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.composer-queueing-mode {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 26px;
+  margin-bottom: 8px;
+  padding: 2px 7px;
+  border-radius: var(--radius-md);
+  color: var(--ds-text-secondary);
+  font-size: var(--text-sm);
+}
+
+.composer-queueing-mode:hover,
+.composer-queueing-mode:focus-visible { background: var(--ds-bg-hover); color: var(--ds-text-primary); }
+
+@container composer-stack (max-width: 390px) {
+  .composer-queued-prompt { gap: 2px; }
+  .composer-queued-prompt-action { width: 26px; }
 }
 
 .composer-shell {

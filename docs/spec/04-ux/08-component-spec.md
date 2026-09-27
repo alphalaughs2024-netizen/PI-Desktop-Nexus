@@ -2339,7 +2339,7 @@ reasoning-level control.
   timer, and clearing or sending a draft never changes the guidance.
 - Escape: when textarea focused, clears input or blurs (not abort)
 - Send while running: clears the current draft and appends one FIFO row to the
-  active session's in-memory queue when the draft has content. The row is sent
+  active session's Host-owned queue when the draft has content. The row is sent
   as a new normal prompt only after the current run reaches `agent_end`; a
   different session's queue is not affected by switching sessions. Running
   with an empty draft changes this same submit slot to Stop, so clearing the
@@ -2356,7 +2356,12 @@ reasoning-level control.
   canonical paths never become textarea text. After a reply begins, Abort keeps
   the partial transcript and restores no draft.
 - Stop never clears queued prompts. Removing a row is explicit, and queue state
-  is renderer-local and intentionally not persisted across restart.
+  is persisted by the Host across restart. Each row has a drag handle for
+  pointer reorder and keyboard Up/Down movement, icon-only Steer/Send now and
+  Remove buttons, and a menu with Edit, disabled Open in side chat, and a
+  queueing toggle for the current chat. With queueing off, Send during an
+  active turn steers that turn; a rejected steer retains the draft. A composer
+  control restores queueing even when no rows remain. The toggle is runtime-only.
 - `turn_end` is not an idle signal. Send and host persistence remain blocked
   through subsequent tool turns and blocking automatic checkpoint generation
   until `agent_end` or `error`; the draft and runtime selectors stay editable
@@ -2469,7 +2474,9 @@ reasoning-level control.
 - Send button: `aria-label="Send message"`
 - Stop button: `aria-label="Stop generating"`
 - Queued prompt list: `aria-label="Queued messages"`; each row has an
-  accessible Remove button and a Send now button.
+  accessible drag handle, Steer/Send now and Remove buttons, and an actions
+  menu. The handle supports ArrowUp/ArrowDown; menu navigation supports arrow
+  keys, Home/End, and Escape returning focus to the trigger.
 - Disabled send: `aria-disabled="true"` with tooltip explanation
 - The combined model × reasoning chip exposes `aria-haspopup="menu"` and
   `aria-expanded`. Its root entries use `role="menuitem"`; model and reasoning

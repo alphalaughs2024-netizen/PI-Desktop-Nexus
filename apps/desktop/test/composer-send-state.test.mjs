@@ -11,6 +11,7 @@ const [store, composer, main, attachments, runtime] = await Promise.all([
   read("../electron/main/prompt-attachments.ts"),
   read("../../../packages/agent-runtime/src/runtime.ts"),
 ]);
+const queuedRow = await read("../src/components/QueuedPromptRow.tsx");
 
 test("composer send/stop button follows draft content and the visible session's run state", () => {
   const composerRight = composer.match(/<div className="composer-right">[\s\S]*?<\/div>\s*<\/div>/)?.[0] ?? "";
@@ -79,9 +80,10 @@ test("running prompts use a removable per-session FIFO queue", () => {
   assert.match(store, /api\.prioritizeQueuedPrompt\(promptId\)/);
   assert.match(store, /event\.type === "agent_end"[\s\S]*refreshQueuedPrompts\(envelope\.sessionId\)/);
   assert.doesNotMatch(store, /drainQueuedPrompts/);
-  assert.match(composer, /data-testid="queued-prompt"/);
-  assert.match(composer, /removeQueuedPrompt\(item\.id\)/);
-  assert.match(composer, /sendQueuedNow\(item\.id\)/);
+  assert.match(composer, /<QueuedPromptRow/);
+  assert.match(queuedRow, /data-testid="queued-prompt"/);
+  assert.match(composer, /onDelete=\{removeQueuedPrompt\}/);
+  assert.match(composer, /onSendNow=\{\(id\) => void sendQueuedNow\(id\)\}/);
   assert.match(composer, /approvalPending/);
 });
 
@@ -118,9 +120,10 @@ test("steering uses the Host atomic consume-for-steering operation", () => {
 });
 
 test("promoted queued prompts remain cancelable while ordering actions stay locked", () => {
-  assert.match(composer, /const promoted = item\.priority !== undefined/);
-  assert.match(composer, /const pendingAdmission = item\.id\.startsWith\("pending:"\)/);
-  assert.match(composer, /disabled=\{pendingAdmission\}/);
+  assert.match(queuedRow, /const promoted = item\.priority !== undefined/);
+  assert.match(queuedRow, /const pending = item\.id\.startsWith\("pending:"\)/);
+  assert.match(queuedRow, /disabled=\{locked\}/);
+  assert.match(queuedRow, /onClick=\{\(\) => onDelete\(item\.id\)\}/);
 });
 
 test("canceling a pending renderer row prevents later Host admission from restoring it", () => {
@@ -139,6 +142,15 @@ test("late Host snapshots cannot reintroduce sent or canceled durable entries", 
 
 test("queued action mode follows the active session run state", () => {
   assert.match(composer, /s\.activeSessionId \? s\.runningSessions\[s\.activeSessionId\]/);
+});
+
+test("turning off queueing steers only the active chat and keeps rejected drafts", () => {
+  assert.match(store, /queueingDisabledSessions: Record<string, true>/);
+  assert.match(store, /queueingDisabledSessions\[sessionId\]/);
+  assert.match(store, /await get\(\)\.steerPrompt\(content, draft, undefined, sessionId\)/);
+  assert.match(store, /return false;\s*\}\s*get\(\)\.enqueuePrompt\(content, draft, sessionId\)/);
+  assert.match(composer, /onQueueingChange=\{setQueueingEnabled\}/);
+  assert.match(queuedRow, /role="menuitem" disabled title=\{t\("chat\.sideChatComingLater"\)\}/);
 });
 
 
