@@ -3,11 +3,12 @@ import type { BrowserTab } from "../../lib/browser-tabs";
 import { IconClose, IconPlus, IconGlobe } from "../icons";
 
 type ContextMenuState = { browserId: string; left: number; top: number };
-export function BrowserTabStrip({ tabs, activeId, onActivate, onClose, onNew, onReload, onDuplicate, onCloseOthers }: { tabs: BrowserTab[]; activeId: string | null; onActivate: (browserId: string) => void; onClose: (browserId: string) => void; onNew: () => void; onReload: (browserId: string) => void; onDuplicate: (browserId: string) => void; onCloseOthers: (browserId: string) => void }) {
+export function BrowserTabStrip({ tabs, activeId, onActivate, onClose, onNew, onReload, onDuplicate, onCloseOthers, onContextMenuOpenChange }: { tabs: BrowserTab[]; activeId: string | null; onActivate: (browserId: string) => void; onClose: (browserId: string) => void; onNew: () => void; onReload: (browserId: string) => void; onDuplicate: (browserId: string) => void; onCloseOthers: (browserId: string) => void; onContextMenuOpenChange?: (open: boolean) => void }) {
   const ref = useRef<HTMLDivElement>(null);
   const contextMenuRef = useRef<HTMLDivElement>(null);
   const contextOriginRef = useRef<string | null>(null);
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
+  useEffect(() => { onContextMenuOpenChange?.(Boolean(contextMenu)); return () => onContextMenuOpenChange?.(false); }, [contextMenu, onContextMenuOpenChange]);
   const focusTab = (browserId: string) => { window.setTimeout(() => ref.current?.querySelector<HTMLElement>(`[data-browser-tab="${browserId}"]`)?.focus(), 0); };
   const closeActiveTab = () => {
     if (!activeId) return;

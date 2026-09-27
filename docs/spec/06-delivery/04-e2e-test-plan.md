@@ -11121,6 +11121,16 @@ capture is pending, then show Ready with the page content. An empty or failed
 capture shows Surface unavailable with Retry; Retry verifies the existing page
 again without replaying the URL. Repeat after switching away from and back to
 the Browser panel.
+At 125% display scaling and with a window offset from the screen origin, the
+visible native page must fill the measured Browser content rectangle without
+clipping into chat or leaving a blank strip. A page with continuing media or
+subresource activity must leave Loading after its main frame is visibly ready.
+After opening Browser in one task, switch to a new task and navigate there.
+The new task's page must become visible; a delayed hide from the first task
+must not remove it.
+Open the Browser overflow menu, tab context menu, and Diagnostics over a loaded
+page. Every menu item and diagnostics row must remain visible and clickable;
+closing each overlay must reveal the same page without a reload.
 
 Phase D verifies exactly one renderer-owned Browser content surface below fixed
 Browser chrome. `about:blank` and no-page render opaque address-focused New Tab

@@ -232,6 +232,7 @@ import {
 import { collectWorkspaceDiff } from "./git-diff";
 import { BrowserPane, resolveLocalFile } from "./browser-view";
 import { resolveBrowserSurfaceReadiness } from "./browser-surface-readiness";
+import { browserSurfaceSessionUpdate } from "./browser-surface-session";
 import {
   BrowserHost,
   BROWSER_VIEW_ID,
@@ -969,7 +970,7 @@ const browserViewSource = markBrowserSource;
 const publishBrowserViewState = (sessionId: string | undefined, navigation: BrowserState | null, overrides: Partial<BrowserViewState> = {}) => {
   const target = sessionId ?? visibleBrowserSessionId ?? "";
   const prior = browserPresentationFor(target);
-  const readiness: BrowserViewState["readiness"] = !browserCapabilityEnabled ? "blocked" : overrides.readiness ?? (navigation?.isLoading ? "loading" : navigation?.url ? "ready" : "uninitialized");
+  const readiness: BrowserViewState["readiness"] = !browserCapabilityEnabled ? "blocked" : overrides.readiness ?? (navigation?.url ? "ready" : navigation?.isLoading ? "loading" : "uninitialized");
   const paneSurface = browserPane.surfaceStatus();
   const effectiveReadiness = resolveBrowserSurfaceReadiness(readiness, paneSurface);
   const state: BrowserSessionPresentation = { readiness: effectiveReadiness, navigation, source: overrides.source ?? prior.source, surface: { attachment: paneSurface.attachment, visibility: paneSurface.visibility, navigation: navigation?.isLoading ? "loading" : navigation?.url ? "verified" : "unverified", paint: paneSurface.paint, guestGeneration: paneSurface.generation, updatedAt: Date.now() }, ...(safeBrowserLocation(navigation?.url) ? { safeLocation: safeBrowserLocation(navigation?.url) } : {}), ...(navigation?.title ? { safeTitle: navigation.title.replace(/\s+/g, " ").trim().slice(0, 256) } : {}), recoverable: overrides.recoverable ?? effectiveReadiness === "unavailable", ...(overrides.lastErrorCode ? { lastErrorCode: overrides.lastErrorCode } : {}), ...(overrides.safeSuggestedAction ? { safeSuggestedAction: overrides.safeSuggestedAction } : {}), updatedAt: Date.now() };
@@ -6498,10 +6499,11 @@ function registerIpc() {
     if (bounds.width < 0 || bounds.height < 0 || (input.visible && (bounds.width === 0 || bounds.height === 0))) {
       throw Object.assign(new Error("invalid Browser surface dimensions"), { errorCode: "BROWSER_INVALID_INPUT" });
     }
-    if (input.visible && input.sessionId && visibleBrowserSessionId && input.sessionId !== visibleBrowserSessionId) return { ok: true as const };
-    if (input.visible && input.sessionId) visibleBrowserSessionId = input.sessionId;
+    const sessionUpdate = browserSurfaceSessionUpdate(visibleBrowserSessionId, input.sessionId, input.visible);
+    if (!sessionUpdate.accept) return { ok: true as const };
+    visibleBrowserSessionId = sessionUpdate.ownerSessionId;
     const content = mainWindow && !mainWindow.isDestroyed() ? mainWindow.getContentBounds() : { x: 0, y: 0, width: 0, height: 0 };
-    browserHost.setCoreSurface({ sessionId: input.sessionId, visible: input.visible, measurement: input.measurement, bounds }, content, screen.getDisplayMatching(content).scaleFactor);
+    browserHost.setCoreSurface({ sessionId: input.sessionId, visible: input.visible, measurement: input.measurement, bounds }, content);
     return { ok: true };
   });
 

@@ -24,6 +24,18 @@ becomes `ready` only after that verification. A failed or empty capture becomes
 `unavailable`; Retry starts a new verification without replaying navigation.
 Normal `WebContentsView` guests do not use the offscreen `paint` event as a
 readiness signal.
+The guest rectangle uses renderer CSS pixels and Electron's local content-view
+coordinates directly; display scale is not applied a second time. The main
+frame finishing may verify a page even while subresources keep Electron's
+loading flag active. A verified guest is ready on that path.
+Surface capture has a bounded wait; a capture that does not settle enters
+`unavailable` so the user can retry.
+The visible Browser surface takes ownership when the active session changes.
+Late hide messages from the previous session cannot detach the new session's
+guest. The shared guest remains bound to the active Browser session.
+The native guest is temporarily detached while Browser menus or Diagnostics
+are open, because a `WebContentsView` composites above renderer controls.
+Closing the overlay reattaches the existing page without navigating again.
 
 `BrowserCoreTab` is the sole mapper from safe `BrowserViewState` to this
 presentation model. Child surfaces do not derive lifecycle booleans or inspect

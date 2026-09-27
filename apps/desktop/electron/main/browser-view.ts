@@ -21,6 +21,7 @@ import { isAllowedHttpUrl, parseAllowedExternalUrl } from "./safe-open-external"
 
 const PARTITION = "persist:work-browser";
 const LIVE_RELOAD_DEBOUNCE_MS = 250;
+const SURFACE_CAPTURE_TIMEOUT_MS = 5_000;
 
 export function normalizeUrl(raw: string): string | null {
   const trimmed = raw.trim();
@@ -264,13 +265,20 @@ export class BrowserPane {
     this.verifySurface();
   }
 
-  private verifySurface(): void {
+  private verifySurface(pageFinished = false): void {
     const wc = this.view?.webContents;
-    if (!wc || wc.isDestroyed() || !this.attached || wc.isLoading() || this.surfaceVerification || this.painted === "painted") return;
+    if (!wc || wc.isDestroyed() || !this.attached || (!pageFinished && wc.isLoading()) || this.surfaceVerification || this.painted === "painted") return;
     const generation = this.generation;
     const epoch = this.surfaceEpoch;
-    this.surfaceVerification = this.probeSurface().then((result) => {
-      if (generation !== this.generation || epoch !== this.surfaceEpoch || wc.isDestroyed() || !this.attached || wc.isLoading()) return;
+    let timeout: NodeJS.Timeout | undefined;
+    const capture = Promise.race([
+      this.probeSurface(),
+      new Promise<Awaited<ReturnType<BrowserPane["probeSurface"]>>>((resolve) => {
+        timeout = setTimeout(() => resolve({ status: "unavailable", width: 0, height: 0, byteLength: 0 }), SURFACE_CAPTURE_TIMEOUT_MS);
+      }),
+    ]);
+    this.surfaceVerification = capture.then((result) => {
+      if (generation !== this.generation || epoch !== this.surfaceEpoch || wc.isDestroyed() || !this.attached) return;
       this.painted = result.status === "nonempty" ? "painted" : "blank";
       const state = this.getState();
       if (state) this.onState(state);
@@ -280,6 +288,7 @@ export class BrowserPane {
       const state = this.getState();
       if (state) this.onState(state);
     }).finally(() => {
+      if (timeout) clearTimeout(timeout);
       this.surfaceVerification = null;
       if (epoch !== this.surfaceEpoch) this.verifySurface();
     });
@@ -387,7 +396,7 @@ export class BrowserPane {
     wc.on("did-navigate-in-page", push);
     wc.on("page-title-updated", push);
     wc.on("did-fail-load", push);
-    wc.on("did-finish-load", () => { this.verifySurface(); push(); });
+    wc.on("did-finish-load", () => { this.verifySurface(true); push(); });
     wc.on("render-process-gone", push);
     wc.on("destroyed", () => { this.attached = false; this.painted = "blank"; this.generation += 1; push(); });
     this.view = view;

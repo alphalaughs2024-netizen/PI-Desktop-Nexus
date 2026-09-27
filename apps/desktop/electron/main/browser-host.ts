@@ -92,9 +92,9 @@ export class BrowserHost {
     this.applyGuest();
   }
 
-  setCoreSurface(surface: { visible: boolean; bounds: BrowserRect; measurement?: BrowserSurfaceMeasurement; sessionId?: string } | null, contentBounds?: BrowserRect, scaleFactor = 1): void {
+  setCoreSurface(surface: { visible: boolean; bounds: BrowserRect; measurement?: BrowserSurfaceMeasurement; sessionId?: string } | null, contentBounds?: BrowserRect): void {
     if (surface?.sessionId) this.setChromeSession(surface.sessionId);
-    const converted = surface?.measurement && contentBounds ? convertBrowserSurfaceMeasurement(surface.measurement, contentBounds, scaleFactor) : surface?.bounds;
+    const converted = surface?.measurement && contentBounds ? convertBrowserSurfaceMeasurement(surface.measurement, contentBounds) : surface?.bounds;
     if (converted && "ok" in converted && !converted.ok) { this.chrome = null; this.applyGuest(); return; }
     this.chrome = surface && converted ? { visible: surface.visible, bounds: converted as BrowserRect } : null;
     this.hole = surface ? { x: 0, y: 0, width: surface.bounds.width, height: surface.bounds.height } : null;

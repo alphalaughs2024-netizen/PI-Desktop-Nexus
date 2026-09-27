@@ -14,8 +14,9 @@ test("all foreground Browser inspection tools request visible panel activation",
 test("normal guests verify a capture instead of waiting for an offscreen paint event", () => {
   assert.match(index, /resolveBrowserSurfaceReadiness/);
   assert.match(pane, /this\.probeSurface\(\)/);
-  assert.match(pane, /did-finish-load.*this\.verifySurface\(\)/);
+  assert.match(pane, /did-finish-load.*this\.verifySurface\(true\)/);
   assert.match(pane, /did-stop-loading.*this\.verifySurface\(\)/);
+  assert.match(pane, /SURFACE_CAPTURE_TIMEOUT_MS/);
   assert.doesNotMatch(pane, /wc\.on\("paint"/);
   const surface = { attachment: "attached", visibility: "visible", paint: "unknown" };
   assert.equal(resolveBrowserSurfaceReadiness("ready", surface), "loading");
@@ -23,4 +24,5 @@ test("normal guests verify a capture instead of waiting for an offscreen paint e
   assert.equal(resolveBrowserSurfaceReadiness("ready", { ...surface, paint: "painted" }), "ready");
   assert.equal(resolveBrowserSurfaceReadiness("ready", { ...surface, paint: "blank" }), "unavailable");
   assert.equal(resolveBrowserSurfaceReadiness("blocked", surface), "blocked");
+  assert.match(index, /navigation\?\.url \? "ready" : navigation\?\.isLoading \? "loading"/);
 });

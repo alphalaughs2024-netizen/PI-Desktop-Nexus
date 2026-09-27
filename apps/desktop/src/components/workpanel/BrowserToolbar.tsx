@@ -4,11 +4,12 @@ import type { WorkPanelPresentation } from "../../lib/work-panel-presentation";
 import { api } from "../../lib/api";
 import { IconChevronLeft, IconChevronRight, IconRefresh, IconSquare, IconMore } from "../icons";
 
-export function BrowserToolbar({ presentation, browserState, panelState, busy, disabled = false, sessionId, committedLocation, onNavigate, onAction, onScreenshot, onOpenExternal, onCopyLocation, onOpenDiagnostics }: { presentation: WorkPanelPresentation; browserState: BrowserState | null; panelState: string; busy: boolean; disabled?: boolean; sessionId?: string; committedLocation?: string; onNavigate: (url: string) => Promise<void>; onAction: (action: BrowserAction) => Promise<void>; onScreenshot: () => Promise<void>; onOpenExternal: () => Promise<void>; onCopyLocation: () => Promise<void>; onOpenDiagnostics?: () => void }) {
+export function BrowserToolbar({ presentation, browserState, panelState, busy, disabled = false, sessionId, committedLocation, onNavigate, onAction, onScreenshot, onOpenExternal, onCopyLocation, onOpenDiagnostics, onMenuOpenChange }: { presentation: WorkPanelPresentation; browserState: BrowserState | null; panelState: string; busy: boolean; disabled?: boolean; sessionId?: string; committedLocation?: string; onNavigate: (url: string) => Promise<void>; onAction: (action: BrowserAction) => Promise<void>; onScreenshot: () => Promise<void>; onOpenExternal: () => Promise<void>; onCopyLocation: () => Promise<void>; onOpenDiagnostics?: () => void; onMenuOpenChange?: (open: boolean) => void }) {
   // Accessible labels: Go back, Go forward, Reload page, Stop loading, Browser address, Capture screenshot, Open in default browser, More Browser actions.
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [draft, setDraft] = useState(committedLocation ?? browserState?.url ?? "");
   const [menuOpen, setMenuOpen] = useState(false);
+  useEffect(() => { onMenuOpenChange?.(menuOpen); return () => onMenuOpenChange?.(false); }, [menuOpen, onMenuOpenChange]);
   const [pending, setPending] = useState<string | null>(null);
   useEffect(() => { if (document.activeElement !== inputRef.current) setDraft(committedLocation ?? browserState?.url ?? ""); }, [browserState?.url, committedLocation]);
   useEffect(() => { const onKey = (event: KeyboardEvent) => { if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "l" && document.activeElement !== inputRef.current) { event.preventDefault(); inputRef.current?.focus(); inputRef.current?.select(); } }; window.addEventListener("keydown", onKey); return () => window.removeEventListener("keydown", onKey); }, []);
