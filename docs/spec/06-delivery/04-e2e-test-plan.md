@@ -11114,6 +11114,18 @@ focus restoration. Docked and maximized captures must retain fixed Back,
 Forward, Reload/Stop, address, and toolbar-overflow slots; secondary actions
 must not appear as presentation-dependent toolbar slots.
 
+### Browser UI Phase D state-surface gate
+
+Phase D verifies exactly one renderer-owned Browser content surface below fixed
+Browser chrome. `about:blank` and no-page render opaque address-focused New Tab
+content; starting, unavailable, policy-blocked, debugger-unavailable, and
+closed render distinct safe recovery surfaces; only ready/loading mount the
+native guest. State changes must not resize toolbar/readiness/status rows or
+change guest geometry. Source contracts cover all recovery copy/actions,
+single readiness/status/alert regions, safe diagnostics, reduced motion, and
+four-theme Browser tokens. The Phase 10 lane verifies New Tab address focus,
+New Tab navigation, and delayed loading where the fixture server supports it.
+
 The deterministic fixture server provides ready, delayed, navigation, and
 failure pages on loopback only. Any failure-state seeding is guarded by the
 `NEXUS_PHASE10_TEST` environment variable and is unavailable in normal builds.

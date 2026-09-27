@@ -1,4 +1,6 @@
-export type BrowserPanelState = "no-page" | "starting" | "ready" | "loading" | "unavailable" | "policy-blocked" | "debugger-unavailable" | "closed";
+import type { BrowserPresentationState } from "./browser-presentation-state";
+
+export type BrowserPanelState = BrowserPresentationState;
 
 // Source vocabulary remains centralized here for contract consumers even though
 // Phase B renders it in BrowserSourceRow, separate from readiness.

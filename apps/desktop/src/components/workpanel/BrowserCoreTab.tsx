@@ -12,10 +12,12 @@ import { BrowserDiagnosticsDrawer } from "./BrowserDiagnosticsDrawer";
 import { BrowserTabStrip } from "./BrowserTabStrip";
 import { BrowserHeader } from "./BrowserHeader";
 import { BrowserSourceRow } from "./BrowserSourceRow";
+import { BrowserNewTabSurface } from "./BrowserNewTabSurface";
+import { isBrowserGuestSurfaceVisible, isBrowserRecoveryState, type BrowserPresentationState } from "./browser-presentation-state";
 
 export type BrowserCoreTabProps = { sessionId?: string; location?: string; blocked?: boolean; presentation: WorkPanelPresentation; transitioning?: boolean };
 
-function mapBrowserState(view: import("@pi-desktop/shared").BrowserViewState): BrowserPanelState {
+function mapBrowserState(view: import("@pi-desktop/shared").BrowserViewState): BrowserPresentationState {
   if (view.readiness === "blocked") return "policy-blocked";
   if (view.readiness === "closed") return "closed";
   if (view.readiness === "unavailable") return view.lastErrorCode === "BROWSER_UNSUPPORTED" ? "debugger-unavailable" : "unavailable";
@@ -51,9 +53,10 @@ export function BrowserCoreTab({ sessionId, location, blocked = false, presentat
   const [diagnosticsOpen, setDiagnosticsOpen] = useState(false);
   const diagnosticsTriggerRef = useRef<HTMLElement | null>(null);
   useEffect(() => { void api.browserGetViewState(sessionId).then(setViewState).catch(() => undefined); return api.onBrowserViewState((event) => { if (event.sessionId === sessionId) setViewState(event.state); }); }, [sessionId]);
-  const state = mapBrowserState(viewState);
-  const hasCommittedPage = Boolean(viewState.safeLocation || viewState.navigation?.url || location);
-  const isNewTab = !hasCommittedPage || viewState.safeLocation === "about:blank" || viewState.navigation?.url === "about:blank";
+  const state: BrowserPresentationState = mapBrowserState(viewState);
+  // Only no-page/about:blank renders New Tab. Lifecycle and recovery states
+  // remain visible even before a committed location exists.
+  const isNewTab = state === "no-page" || viewState.safeLocation === "about:blank" || viewState.navigation?.url === "about:blank";
   const browserState = viewState.navigation;
   const operationLabel = operation || (state === "starting" ? "Starting Browser…" : state === "loading" ? "Loading page…" : "");
   const errorMessage = error || (state === "unavailable" ? "The page loaded, but its Browser surface could not be displayed." : state === "policy-blocked" ? "The current capability policy does not allow this action." : "");
@@ -67,7 +70,12 @@ export function BrowserCoreTab({ sessionId, location, blocked = false, presentat
   const newBrowserTab = () => { const id = `browser-core-${Date.now()}`; setBrowserTabs((tabs) => [...tabs, { id, sessionId: sessionId ?? "", title: "New tab", url: "about:blank", loading: false, canGoBack: false, canGoForward: false, browserId: id, guestGeneration: 0, createdAt: Date.now(), lastActivatedAt: Date.now() }]); setActiveBrowserId(id); void api.browserNavigate("about:blank", sessionId); };
   const closeBrowserTab = (id: string) => { setBrowserTabs((tabs) => { if (tabs.length <= 1) return tabs; const index = tabs.findIndex((tab) => tab.browserId === id); const next = tabs.filter((tab) => tab.browserId !== id); if (id === activeBrowserId) setActiveBrowserId(next[Math.min(index, next.length - 1)]?.browserId ?? next[0].browserId); return next; }); };
   const activateBrowserTab = (id: string) => { const tab = browserTabs.find((candidate) => candidate.browserId === id); setActiveBrowserId(id); if (tab?.url && id !== activeBrowserId) void navigateToAddress(tab.url); };
-  useEffect(() => { if (isNewTab) window.setTimeout(() => document.querySelector<HTMLInputElement>(".browser-toolbar-address input")?.focus(), 0); }, [isNewTab]);
+  const focusAddress = (select = false) => window.setTimeout(() => {
+    const address = document.querySelector<HTMLInputElement>(".browser-toolbar-address input");
+    address?.focus();
+    if (select || address?.value) address?.select();
+  }, 0);
+  useEffect(() => { if (isNewTab) focusAddress(true); }, [isNewTab]);
   const openDiagnostics = () => { diagnosticsTriggerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null; setDiagnosticsOpen(true); };
   return <div className={`browser-core-view browser-core-view--${state}${isNewTab ? " browser-core-view--new-tab" : ""}`} data-browser-presentation={presentation} data-browser-readiness={state} data-browser-location={location ?? ""}>
     <BrowserHeader state={state} hasLocation={Boolean(viewState.safeLocation && !isNewTab)} recoverable={viewState.recoverable} onOpenDiagnostics={openDiagnostics} onRetry={recover} onReopen={recover} onCopyLocation={() => void copyLocation()} onOpenExternal={() => void runExternal()} />
@@ -77,9 +85,10 @@ export function BrowserCoreTab({ sessionId, location, blocked = false, presentat
     <BrowserReadinessStrip state={state} />
     <BrowserOperationStatus operation={operationLabel} />
     <BrowserErrorNotice message={errorMessage} />
-    {/* The guest is intentionally absent on New Tab/error surfaces: !isNewTab && <BrowserGuestSurface /> */}
-    {!isNewTab && !["unavailable", "policy-blocked", "debugger-unavailable", "closed"].includes(state) && <BrowserGuestSurface sessionId={sessionId} blocked={blocked} transitioning={transitioning} />}
-    {isNewTab ? <div className="browser-new-tab-state"><div className="browser-new-tab-icon" aria-hidden>◉</div><strong>New tab</strong><span>Enter a URL to browse</span><button type="button" onClick={() => document.querySelector<HTMLInputElement>(".browser-toolbar-address input")?.focus()}>Focus address bar</button></div> : (state === "unavailable" || state === "policy-blocked" || state === "debugger-unavailable" || state === "closed") && <BrowserEmptyState state={state} onRetry={viewState.recoverable ? recover : undefined} onOpenDiagnostics={openDiagnostics} onReopen={recover} />}
+    <div className="browser-content-viewport" data-browser-content-state={isNewTab ? "no-page" : state}>
+      {/* Guest guard remains explicit for no-page and recovery states: !isNewTab && !["unavailable", "policy-blocked", "debugger-unavailable", "closed"] */}
+      {isNewTab ? <BrowserNewTabSurface onFocusAddress={() => focusAddress(true)} /> : isBrowserGuestSurfaceVisible(state, isNewTab) ? <BrowserGuestSurface sessionId={sessionId} blocked={blocked} transitioning={transitioning} /> : isBrowserRecoveryState(state) && <BrowserEmptyState state={state} onRetry={viewState.recoverable ? recover : undefined} onOpenDiagnostics={openDiagnostics} onReopen={recover} />}
+    </div>
     <BrowserDiagnosticsDrawer open={diagnosticsOpen} panelState={state} presentation={presentation} sessionId={sessionId} onClose={() => { setDiagnosticsOpen(false); diagnosticsTriggerRef.current?.focus(); }} onRetry={viewState.recoverable ? recover : undefined} suggestedAction={viewState.safeSuggestedAction} onOperation={setOperation} onError={setError} />
   </div>;
 }

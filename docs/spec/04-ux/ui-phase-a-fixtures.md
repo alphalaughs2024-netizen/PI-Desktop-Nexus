@@ -26,3 +26,7 @@ one readiness strip, and renderer-owned New Tab/error surfaces. Later phases
 add screenshot baselines and interaction coverage. Phase C extends the Browser
 fixtures with header-menu keyboard use, roving tab focus, Ctrl/Cmd+Tab cycling,
 focus restoration after close/menu dismissal, and stable toolbar slot checks.
+Phase D adds exact-state expectations: opaque address-focused New Tab, compact
+Loading/Ready states, Surface unavailable recovery, Policy blocked, Debugger
+unavailable, Browser closed/Reopen, and reduced-motion state transitions. Every
+Browser state fixture remains required under all four scenic themes.

@@ -56,6 +56,37 @@ test.describe("Phase 10 Browser Work Panel", () => {
     } finally { await app.close(); await rm(profile, { recursive: true, force: true }); }
   });
 
+  test("renders New Tab as an address-focused opaque Browser surface", async () => {
+    const { app, window, profile } = await launchApp();
+    try {
+      await window.keyboard.press("Control+J");
+      await window.getByRole("button", { name: /Browser/i }).click();
+      const address = window.getByRole("textbox", { name: /Browser address/i });
+      await expect(window.getByRole("region", { name: "New tab" })).toBeVisible();
+      await expect(window.getByText("Enter a URL to browse")).toBeVisible();
+      await expect(address).toBeFocused();
+      await address.fill(`${fixture.baseURL}/ready.html`);
+      await address.press("Enter");
+      await expect(window.getByText("Phase 10 Ready Fixture")).toBeVisible();
+    } finally { await app.close(); await rm(profile, { recursive: true, force: true }); }
+  });
+
+  test("keeps Browser chrome stable while the delayed fixture loads", async () => {
+    const { app, window, profile } = await launchApp();
+    try {
+      await window.keyboard.press("Control+J");
+      await window.getByRole("button", { name: /Browser/i }).click();
+      const toolbar = window.locator(".browser-toolbar");
+      const initialHeight = await toolbar.evaluate((element) => element.getBoundingClientRect().height);
+      const address = window.getByRole("textbox", { name: /Browser address/i });
+      await address.fill(`${fixture.baseURL}/delayed.html`);
+      await address.press("Enter");
+      await expect(window.getByText("Loading page…")).toBeVisible();
+      await expect(toolbar).toHaveJSProperty("clientHeight", initialHeight);
+      await expect(window.getByText("Delayed Ready")).toBeVisible();
+    } finally { await app.close(); await rm(profile, { recursive: true, force: true }); }
+  });
+
   test("captures docked and maximized Browser frames", async () => {
     const { app, window, profile } = await launchApp();
     try {

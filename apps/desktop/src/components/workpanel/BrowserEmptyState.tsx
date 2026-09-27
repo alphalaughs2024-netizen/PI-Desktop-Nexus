@@ -1,9 +1,15 @@
-// Browser unavailable, Retry Browser, Open Browser diagnostics, and Reopen Browser remain the stable semantic actions.
-// Browser unavailable is distinct from Browser action blocked and Browser connection unavailable.
-// Legacy copy remains documented here for downstream contract fixtures; the
-// visible Phase B copy is Surface unavailable / Policy blocked.
-export function BrowserEmptyState({ state, onRetry, onOpenDiagnostics, onReopen }: { state: "no-page" | "starting" | "unavailable" | "policy-blocked" | "debugger-unavailable" | "closed"; onRetry?: () => void; onOpenDiagnostics?: () => void; onReopen?: () => void }) {
-  const content = state === "unavailable" ? ["Surface unavailable", "The page loaded, but its Browser surface could not be displayed."] : state === "policy-blocked" ? ["Policy blocked", "The current capability policy does not allow this action."] : state === "debugger-unavailable" ? ["Debugger unavailable", "The Browser cannot inspect this page right now."] : state === "closed" ? ["Browser closed", "Reopen the Browser surface to continue."] : ["New tab", "Enter a URL to browse."];
-  if (state === "starting") return null;
-  return <div className={`browser-empty-state browser-empty-state--${state}`}><strong>{content[0]}</strong><span>{content[1]}</span><div className="browser-empty-actions">{(state === "unavailable" || state === "debugger-unavailable") && onRetry && <button type="button" aria-label="Retry Browser" onClick={onRetry}>Retry</button>}{(state === "unavailable" || state === "policy-blocked" || state === "debugger-unavailable") && onOpenDiagnostics && <button type="button" aria-label="Open Browser diagnostics" onClick={onOpenDiagnostics}>{state === "policy-blocked" ? "View details" : "Diagnostics"}</button>}{state === "closed" && onReopen && <button type="button" aria-label="Reopen Browser" onClick={onReopen}>Reopen</button>}</div></div>;
+import type { BrowserRecoveryState } from "./browser-presentation-state";
+
+const copy: Record<BrowserRecoveryState, readonly [string, string]> = {
+  starting: ["Starting Browser…", "Preparing the Browser surface."],
+  unavailable: ["Surface unavailable", "The page loaded, but its Browser surface could not be displayed."],
+  "policy-blocked": ["Policy blocked", "The current capability policy does not allow this action."],
+  "debugger-unavailable": ["Debugger unavailable", "The Browser cannot inspect this page right now."],
+  closed: ["Browser closed", "Reopen the Browser surface to continue."],
+};
+
+/** Browser-owned recovery surface; the native guest is never layered beneath it. */
+export function BrowserEmptyState({ state, onRetry, onOpenDiagnostics, onReopen }: { state: BrowserRecoveryState; onRetry?: () => void; onOpenDiagnostics?: () => void; onReopen?: () => void }) {
+  const [title, detail] = copy[state];
+  return <section className={`browser-empty-state browser-state-surface browser-empty-state--${state}`} data-browser-surface={state} aria-label={title}><strong>{title}</strong><span>{detail}</span>{state !== "starting" && <div className="browser-empty-actions">{(state === "unavailable" || state === "debugger-unavailable") && onRetry && <button type="button" aria-label="Retry Browser" onClick={onRetry}>Retry</button>}{(state === "unavailable" || state === "policy-blocked" || state === "debugger-unavailable") && onOpenDiagnostics && <button type="button" aria-label="Open Browser diagnostics" onClick={onOpenDiagnostics}>{state === "policy-blocked" ? "View details" : "Diagnostics"}</button>}{state === "closed" && onReopen && <button type="button" aria-label="Reopen Browser" onClick={onReopen}>Reopen</button>}</div>}</section>;
 }
