@@ -34,6 +34,13 @@
 
 ### Browser Work Panel Phase 2 presentation matrix
 
+- With a wide saved panel width and expanded sidebar, open Browser and Context
+  Vault at the minimum and medium window widths. The dock ends at the right
+  window edge, the sidebar starts at the left edge, and neither opening nor
+  focusing a control scrolls the shell horizontally. Narrow and widen the
+  window; the displayed dock width adapts while the preferred width returns
+  when space is available.
+
 - Browser opens docked through the Phase 1 launcher; Maximize expands the same
   resource into a bounded in-window frame and Dock returns it to the right-side
   column.

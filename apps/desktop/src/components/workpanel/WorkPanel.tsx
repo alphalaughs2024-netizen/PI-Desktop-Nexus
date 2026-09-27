@@ -369,7 +369,9 @@ export function WorkPanel({
       event.preventDefault();
       event.stopPropagation();
       event.currentTarget.focus({ preventScroll: true });
-      const startWidth = clampWorkPanelWidth(width);
+      const startWidth = clampWorkPanelWidth(
+        event.currentTarget.parentElement?.getBoundingClientRect().width ?? width,
+      );
       panelResizeState.current = {
         pointerId: event.pointerId,
         startClientX: event.clientX,
@@ -434,10 +436,13 @@ export function WorkPanel({
         finishPanelResize(event.currentTarget, drag.pointerId, true);
         return;
       }
+      const displayedWidth = Math.round(
+        event.currentTarget.parentElement?.getBoundingClientRect().width ?? width,
+      );
       const step = event.shiftKey ? 32 : 16;
       let nextWidth: number | null = null;
-      if (event.key === "ArrowLeft") nextWidth = width + step;
-      else if (event.key === "ArrowRight") nextWidth = width - step;
+      if (event.key === "ArrowLeft") nextWidth = displayedWidth + step;
+      else if (event.key === "ArrowRight") nextWidth = displayedWidth - step;
       else if (event.key === "Home") nextWidth = WORK_PANEL_MIN_WIDTH;
       else if (event.key === "End") nextWidth = WORK_PANEL_MAX_WIDTH;
       if (nextWidth === null) return;
@@ -464,7 +469,6 @@ export function WorkPanel({
       : IconDiff;
   const exitAnimationReady = exiting && nativeSurfaceReadyForExit;
   const panelStyle = {
-    width: renderPanelWidth,
     "--work-panel-width": `${renderPanelWidth}px`,
   } as CSSProperties;
 

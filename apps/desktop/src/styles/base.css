@@ -161,10 +161,17 @@ html {
 .app-shell {
   position: relative;
   display: flex;
+  width: 100%;
   height: 100%;
   min-height: 0;
+  overflow: clip;
+  --shell-active-sidebar-width: var(--ds-sidebar-width);
   background: var(--ds-bg-primary);
   color: var(--ds-text-primary);
+}
+
+.app-shell.sidebar-collapsed {
+  --shell-active-sidebar-width: 64px;
 }
 :root { --shell-sidebar-width: var(--ds-sidebar-width); --shell-sidebar-min-width: 220px; --shell-titlebar-height: 48px; --shell-content-gutter: 24px; --shell-panel-gap: 12px; --shell-control-height: 32px; --shell-control-height-compact: 28px; --shell-surface-radius: 12px; --shell-surface-radius-large: 14px; --shell-surface-border: var(--ds-border-subtle); --shell-surface-shadow: var(--shadow-lg); --shell-focus-ring: 2px solid var(--ds-focus); --shell-overlay-scrim: color-mix(in oklab, var(--ds-bg-primary) 68%, transparent); }
 

@@ -133,7 +133,7 @@ test("work panel uses the fixed-window internal dock", () => {
   assert.match(panelSource, /setWidth\(drag\.currentWidth\)/);
   // The panel remains a fixed-width in-flow shell sibling; its flex allocation
   // is animated with the dock so the main pane does not jump before motion.
-  assert.match(globalStyles, /\.work-panel \{[^}]*flex: 0 0 var\(--work-panel-width\)/s);
+  assert.match(globalStyles, /\.work-panel \{[^}]*flex: 0 0 var\(--work-panel-effective-width\)/s);
   assert.match(panelSource, /"--work-panel-width": `\$\{renderPanelWidth\}px`/);
   assert.doesNotMatch(
     globalStyles.match(/\.work-panel \{[^}]*\}/s)?.[0] ?? "",
@@ -295,7 +295,11 @@ test("work panel width is renderer-owned inside the fixed window", () => {
   assert.doesNotMatch(panelSource, /api\.onWorkPanelResize/);
   assert.doesNotMatch(panelSource, /\.sidebar, \.sidebar-rail/);
   assert.match(globalStyles, /\.main-pane \{[^}]*min-width:\s*0;/s);
-  assert.match(globalStyles, /\.work-panel \{[^}]*flex: 0 0 var\(--work-panel-width\)/s);
+  assert.match(globalStyles, /\.work-panel \{[^}]*flex: 0 0 var\(--work-panel-effective-width\)/s);
+  assert.match(globalStyles, /--work-panel-effective-width:\s*min\(/);
+  assert.match(globalStyles, /100vw - var\(--shell-active-sidebar-width\) - 240px/);
+  assert.match(globalStyles, /\.app-shell \{[^}]*overflow:\s*clip;/s);
+  assert.match(globalStyles, /\.chat-surface,\s*\.route-page \{[^}]*min-width:\s*0;/s);
   // The Electron seam remains available for old callers but is deliberately
   // inert, so no positive target can expand the native window.
   const reservationHandler = mainSource.slice(
