@@ -11,15 +11,22 @@ export function BrowserToolbar({ presentation, browserState, panelState, busy, d
   const [menuOpen, setMenuOpen] = useState(false);
   useEffect(() => { onMenuOpenChange?.(menuOpen); return () => onMenuOpenChange?.(false); }, [menuOpen, onMenuOpenChange]);
   const [pending, setPending] = useState<string | null>(null);
+  const pendingRef = useRef<{ label: string } | null>(null);
   useEffect(() => { if (document.activeElement !== inputRef.current) setDraft(committedLocation ?? browserState?.url ?? ""); }, [browserState?.url, committedLocation]);
   useEffect(() => { const onKey = (event: KeyboardEvent) => { if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "l" && document.activeElement !== inputRef.current) { event.preventDefault(); inputRef.current?.focus(); inputRef.current?.select(); } }; window.addEventListener("keydown", onKey); return () => window.removeEventListener("keydown", onKey); }, []);
-  const run = async (label: string, fn: () => Promise<void>) => { if (busy || pending) return; setPending(label); try { await fn(); } finally { setPending(null); } };
+  const run = async (label: string, fn: () => Promise<void>) => {
+    if (busy || (pendingRef.current && !(label === "stop" && pendingRef.current.label === "navigate"))) return;
+    const operation = { label };
+    pendingRef.current = operation;
+    setPending(label);
+    try { await fn(); } finally { if (pendingRef.current === operation) { pendingRef.current = null; setPending(null); } }
+  };
   const ready = panelState === "ready" || panelState === "loading";
   const canBack = ready && !busy && !pending && Boolean(browserState?.canGoBack);
   const canForward = ready && !busy && !pending && Boolean(browserState?.canGoForward);
   const loading = Boolean(browserState?.isLoading) || panelState === "loading";
   const canReload = ready && !busy && !pending && !loading;
-  const canStop = ready && loading && !busy && !pending;
+  const canStop = ready && loading && !busy && (!pending || pending === "navigate");
   const submit = () => { const value = draft.trim(); if (!value) return; void run("navigate", () => onNavigate(value)); };
   const menuRef = useRef<HTMLDivElement | null>(null);
   const menuTriggerRef = useRef<HTMLButtonElement | null>(null);

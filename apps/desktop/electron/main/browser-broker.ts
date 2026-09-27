@@ -18,7 +18,7 @@ function errorCode(error: unknown): BrowserErrorCode {
 }
 
 export class BrowserBroker {
-  private queue: Promise<unknown> = Promise.resolve();
+  private readonly mutationQueues = new Map<string, Promise<void>>();
   private sequence = 0;
   private readonly browserId = "browser-core-1" as BrowserRequestContext["browserId"];
   private readonly createdAt = Date.now();
@@ -44,7 +44,7 @@ export class BrowserBroker {
   type(uid: string | undefined, text: string, context?: BrowserContextInput) { return this.fill(uid ?? "", text, context); }
   keypress(_uid: string | undefined, _key: string, context?: BrowserContextInput) { return this.run("action", async () => undefined, context); }
 
-  private async run<T>(command: BrowserCommand, work: () => Promise<T>, contextInput?: BrowserContextInput): Promise<BrowserResult<T>> {
+  private async run<T>(command: BrowserCommand, work: () => Promise<T>, contextInput?: BrowserContextInput, serialize = true): Promise<BrowserResult<T>> {
     const context = this.context(contextInput);
     const execute = async (): Promise<BrowserResult<T>> => {
       if (!this.isCapabilityEnabled()) return { requestId: context.requestId, ok: false, code: "BROWSER_POLICY_BLOCKED", retryable: false, message: "Browser is disabled by the core capability setting. Re-enable Browser in Settings and retry." };
@@ -63,13 +63,20 @@ export class BrowserBroker {
         return { requestId: context.requestId, ok: false, code: timeout && MUTATIONS.has(command) ? "BROWSER_POSSIBLY_APPLIED" : timeout ? "BROWSER_TIMEOUT" : code, retryable: !MUTATIONS.has(command), possiblyApplied: timeout && MUTATIONS.has(command), message: timeout && MUTATIONS.has(command) ? "The Browser action may have reached the page. Take a fresh snapshot before retrying." : timeout ? "The Browser command timed out before dispatch completed. Retry is safe." : error instanceof Error ? error.message : "Browser command failed." };
       } finally { if (timer) clearTimeout(timer); }
     };
-    const chained = MUTATIONS.has(command) ? this.queue.then(execute, execute) : execute();
-    if (MUTATIONS.has(command)) this.queue = chained.then(() => undefined, () => undefined);
+    if (!MUTATIONS.has(command) || !serialize) return execute();
+    const key = contextInput?.browserId && (command === "navigate" || command === "action")
+      ? JSON.stringify([context.sessionId, contextInput.browserId])
+      : "shared";
+    const previous = this.mutationQueues.get(key) ?? Promise.resolve();
+    const chained = previous.then(execute, execute);
+    const settled = chained.then(() => undefined, () => undefined);
+    this.mutationQueues.set(key, settled);
+    void settled.then(() => { if (this.mutationQueues.get(key) === settled) this.mutationQueues.delete(key); });
     return chained;
   }
 
   navigate(input: BrowserNavigateInput, sessionId?: string, context?: BrowserContextInput) { return this.run("navigate", async () => { if (input.url) { const policy = decideNavigation(input.url, null); if (!policy.allowed) throw Object.assign(new Error(policy.message), { code: policy.code }); } const state = await this.host.navigate(input, sessionId, context?.browserId); this.latestSnapshot = undefined; this.record = { ...this.record, location: state?.url ?? input.url ?? input.path, state: state?.isLoading ? "loading" : state?.url ? "ready" : "unavailable", ownerSessionId: sessionId ?? this.record.ownerSessionId, updatedAt: Date.now() }; return state; }, { ...context, sessionId }); }
-  action(action: "back" | "forward" | "reload" | "stop", context?: BrowserContextInput) { return this.run("action", async () => { this.host.action(action, context?.sessionId, context?.browserId); return undefined; }, context); }
+  action(action: "back" | "forward" | "reload" | "stop", context?: BrowserContextInput) { return this.run("action", async () => { this.host.action(action, context?.sessionId, context?.browserId); return undefined; }, context, action !== "stop"); }
   async snapshot(context?: BrowserContextInput) {
     const result = await this.run("snapshot", () => this.host.snapshot(), context);
     if (result.ok && result.result?.snapshotId) this.latestSnapshot = { snapshotId: result.result.snapshotId, generation: result.result.documentGeneration ?? 0, browserId: String(context?.browserId ?? this.host.activeBrowserId?.() ?? this.browserId) };

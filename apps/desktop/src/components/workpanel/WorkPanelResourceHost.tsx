@@ -18,6 +18,7 @@ export type WorkPanelResourceProps = {
   blocked: boolean;
   tab: WorkPanelTab;
   resourceId: string;
+  onCloseResource: (resourceId: string) => void;
   transitioning?: boolean;
   onRequestFocus?: (target: "address" | "toolbar" | "diagnostics") => void;
 };
@@ -37,7 +38,7 @@ export type WorkPanelResourceDefinition = {
 const renderer = (Component: ComponentType<any>) => (props: WorkPanelResourceProps) => createElement(Component, props);
 
 export const WORK_PANEL_RESOURCE_REGISTRY: ReadonlyMap<WorkPanelTab["kind"], WorkPanelResourceDefinition> = new Map<WorkPanelTab["kind"], WorkPanelResourceDefinition>([
-  ["browser", { kind: "browser", lifecycle: "native-guest", supportsMaximized: true, render: (props) => <BrowserCoreTab key={props.sessionId} sessionId={props.sessionId} location={props.tab.location} presentation={props.presentation} active={props.active} transitioning={props.transitioning === true} blocked={props.blocked} /> }],
+  ["browser", { kind: "browser", lifecycle: "native-guest", supportsMaximized: true, render: (props) => <BrowserCoreTab key={props.sessionId} sessionId={props.sessionId} location={props.tab.location} presentation={props.presentation} active={props.active} transitioning={props.transitioning === true} blocked={props.blocked} onCloseLast={() => props.onCloseResource(props.resourceId)} /> }],
   ["file", { kind: "file", lifecycle: "renderer", supportsMaximized: true, render: renderer(FilesTab) }],
   ["review", { kind: "review", lifecycle: "renderer", supportsMaximized: true, render: renderer(ReviewTab) }],
   ["contextVault", { kind: "contextVault", lifecycle: "renderer", supportsMaximized: true, render: renderer(ContextVaultTab) }],
@@ -45,13 +46,13 @@ export const WORK_PANEL_RESOURCE_REGISTRY: ReadonlyMap<WorkPanelTab["kind"], Wor
   ["plugin", { kind: "plugin", lifecycle: "native-guest", supportsMaximized: true, render: (props, context) => { const ref = parsePluginViewRef(props.tab.resource); return ref ? <PluginViewTab pluginId={ref.pluginId} viewId={ref.viewId} title={props.tab.resource ?? "Plugin"} sessionId={props.sessionId} location={props.tab.location} blocked={props.blocked || !props.active} /> : null; } }],
 ]);
 
-export function WorkPanelResourceHost({ tabs, activeTabId, presentation, sessionId, blocked, transitioning = false, pluginViews }: { tabs: WorkPanelTab[]; activeTabId: string | null; presentation: WorkPanelPresentation; sessionId?: string; blocked: boolean; transitioning?: boolean; pluginViews: PluginViewMeta[] }) {
+export function WorkPanelResourceHost({ tabs, activeTabId, presentation, sessionId, blocked, transitioning = false, pluginViews, onCloseResource }: { tabs: WorkPanelTab[]; activeTabId: string | null; presentation: WorkPanelPresentation; sessionId?: string; blocked: boolean; transitioning?: boolean; pluginViews: PluginViewMeta[]; onCloseResource: (resourceId: string) => void }) {
   return <div className="work-panel-resource-host">{tabs.map((tab) => {
     const definition = WORK_PANEL_RESOURCE_REGISTRY.get(tab.kind);
     if (!definition) return null;
     const active = tab.id === activeTabId;
     return <div key={tab.id} id={`work-panel-surface-${tab.id}`} className={`work-panel-tabpane${active ? "" : " is-hidden"}`} role="tabpanel" aria-hidden={!active} {...(!active ? { inert: true } : {})} data-work-panel-resource={tab.kind} data-work-panel-active={active}>
-      {definition.render({ presentation, sessionId, active, blocked: blocked && active, transitioning, tab, resourceId: tab.id }, { pluginViews, activeSessionId: sessionId })}
+      {definition.render({ presentation, sessionId, active, blocked: blocked && active, transitioning, tab, resourceId: tab.id, onCloseResource }, { pluginViews, activeSessionId: sessionId })}
     </div>;
   })}</div>;
 }

@@ -30,6 +30,9 @@ and dock/maximize/close controls.
 - Each inner Browser tab retains its own page and navigation history. Selecting
   one attaches its existing native guest without reloading its URL; closing it
   disposes that guest and selects the nearest surviving tab.
+- Closing the last inner Browser tab closes the Browser Work Panel resource;
+  reopening Browser starts with one empty tab. A pending load in another tab
+  does not block address navigation or Stop in the selected tab.
 - The toolbar keeps fixed Back, Forward, Reload/Stop, address, and overflow
   slots. Secondary actions do not alter toolbar geometry between docked and
   maximized presentations.

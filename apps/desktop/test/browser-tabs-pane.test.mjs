@@ -52,3 +52,19 @@ test("same tab ID in another conversation has a separate guest", async () => {
   tabs.activateSession("session-a");
   assert.equal(tabs.getState().url, "https://a.example");
 });
+
+test("closing the final tab disposes its page and reopening starts empty", async () => {
+  const created = [];
+  const tabs = new BrowserTabsPane(() => {}, (onState) => {
+    const pane = fakePane(onState);
+    created.push(pane);
+    return pane;
+  });
+  tabs.activate("session-a", "browser-core-1");
+  await tabs.navigateTabAndWait("session-a", "browser-core-1", "https://old.example", null);
+  tabs.close("session-a", "browser-core-1");
+  assert.equal(created[1].disposed, true);
+  tabs.activate("session-a", "browser-core-1");
+  assert.equal(tabs.getState(), null);
+  assert.notEqual(created[2], created[1]);
+});

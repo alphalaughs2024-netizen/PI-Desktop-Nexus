@@ -61,6 +61,11 @@
   switching must not reload either page. Duplicate creates a separate page,
   and closing one tab disposes only that page. Repeat after switching to another
   conversation and back. Only the selected guest is visible.
+- Start a slow page load in tab A, switch to tab B, and navigate to another
+  site. Tab B starts loading before tab A completes. Stop in tab A interrupts
+  its pending load. Closing tab B and then the last tab A closes the Browser
+  resource and hides the Work Panel when no other resource remains. Reopen
+  Browser and confirm a single empty tab with no prior page or history.
 
 ### Browser Work Panel Phase 4 toolbar matrix
 

@@ -125,6 +125,7 @@ export class BrowserHost {
   closeTab(sessionId: string, browserId: string): void {
     const previous = this.pane.getWebContents();
     this.pane.close(sessionId, browserId);
+    if (!this.pane.listTabs().some((tab) => tab.sessionId === sessionId)) this.locations.delete(sessionId);
     if (previous !== this.pane.getWebContents()) this.cdp.detach(previous ?? undefined);
     this.applyGuest();
   }
@@ -172,7 +173,6 @@ export class BrowserHost {
   ): Promise<BrowserState | null> {
     const target = String(input.path ?? input.url ?? "").trim();
     if (!target) return this.pane.getState();
-    if (!browserId || browserId === "browser-core-1") this.rememberLocation(sessionId ?? this.chromeSessionId ?? undefined, target);
     const background =
       Boolean(sessionId) &&
       Boolean(this.chromeSessionId) &&
@@ -186,6 +186,7 @@ export class BrowserHost {
     if (browserId && !this.pane.hasTab(sessionId ?? "", browserId)) {
       throw Object.assign(new Error("Browser tab is unavailable"), { code: "BROWSER_TAB_NOT_FOUND" });
     }
+    if (!browserId || browserId === "browser-core-1") this.rememberLocation(sessionId ?? this.chromeSessionId ?? undefined, target);
     this.started = true;
     const state = browserId
       ? await this.pane.navigateTabAndWait(sessionId ?? "", browserId, target, root)
