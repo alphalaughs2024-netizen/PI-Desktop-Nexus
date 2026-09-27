@@ -85,8 +85,10 @@ export function BrowserCoreTab({ sessionId, location, blocked = false, presentat
       <BrowserReadinessStrip state={state} />
       <BrowserOperationStatus operation={operationLabel} />
       <BrowserErrorNotice message={errorMessage} />
-      {/* Guest guard remains explicit for no-page and recovery states: !isNewTab && !["unavailable", "policy-blocked", "debugger-unavailable", "closed"] */}
-      {isNewTab ? <BrowserNewTabSurface onFocusAddress={() => focusAddress(true)} /> : isBrowserGuestSurfaceVisible(state, isNewTab) ? <BrowserGuestSurface sessionId={sessionId} blocked={blocked} transitioning={transitioning} /> : isBrowserRecoveryState(state) && <BrowserEmptyState state={state} onRetry={viewState.recoverable ? recover : undefined} onOpenDiagnostics={openDiagnostics} onReopen={recover} />}
+      <div className="browser-page-surface">
+        {/* Guest guard remains explicit for no-page and recovery states: !isNewTab && !["unavailable", "policy-blocked", "debugger-unavailable", "closed"] */}
+        {isNewTab ? <BrowserNewTabSurface onFocusAddress={() => focusAddress(true)} /> : isBrowserGuestSurfaceVisible(state, isNewTab) ? <BrowserGuestSurface sessionId={sessionId} blocked={blocked} transitioning={transitioning} /> : isBrowserRecoveryState(state) && <BrowserEmptyState state={state} onRetry={viewState.recoverable ? recover : undefined} onOpenDiagnostics={openDiagnostics} onReopen={recover} />}
+      </div>
     </div>
     <BrowserDiagnosticsDrawer open={diagnosticsOpen} panelState={state} presentation={presentation} sessionId={sessionId} onClose={() => { setDiagnosticsOpen(false); diagnosticsTriggerRef.current?.focus(); }} onRetry={viewState.recoverable ? recover : undefined} suggestedAction={viewState.safeSuggestedAction} onOperation={setOperation} onError={setError} />
   </div>;

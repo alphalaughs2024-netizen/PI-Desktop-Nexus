@@ -135,9 +135,10 @@
 .browser-operation-status { min-height: 20px; flex: 0 0 20px; margin: 0; padding: 2px 10px; color: var(--browser-text-muted, var(--ds-text-muted)); font-size: var(--text-xs); }
 .browser-error-notice { min-height: 0; flex: 0 0 auto; padding: 6px 10px; color: var(--browser-error, var(--ds-error)); background: color-mix(in oklab, var(--browser-error, var(--ds-error)) 10%, transparent); font-size: var(--text-sm); }
 .browser-error-notice[aria-hidden="true"] { display: none; }
-.browser-content-viewport { position: relative; min-width: 0; min-height: 0; flex: 1; overflow: hidden; background: var(--browser-new-tab-surface, var(--ds-bg-primary)); }
+.browser-content-viewport { position: relative; display: flex; min-width: 0; min-height: 0; flex: 1; flex-direction: column; overflow: hidden; isolation: isolate; background: var(--browser-new-tab-surface, var(--ds-bg-primary)); }
+.browser-page-surface { position: relative; min-width: 0; min-height: 0; flex: 1; overflow: hidden; background: var(--browser-new-tab-surface, var(--ds-bg-primary)); }
 .browser-guest-surface { min-width: 0; min-height: 0; width: 100%; height: 100%; overflow: hidden; }
-.browser-state-surface { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 7px; flex-direction: column; padding: 24px; color: var(--browser-text-muted, var(--ds-text-muted)); text-align: center; }
+.browser-state-surface { position: absolute; inset: 0; z-index: 1; display: flex; align-items: center; justify-content: center; gap: 7px; flex-direction: column; padding: 24px; color: var(--browser-text-muted, var(--ds-text-muted)); text-align: center; }
 .browser-empty-state { background: var(--browser-panel-surface-raised, var(--browser-new-tab-surface)); }
 .browser-empty-state--unavailable, .browser-empty-state--policy-blocked, .browser-empty-state--debugger-unavailable { background: color-mix(in oklab, var(--browser-error, var(--ds-error)) 8%, var(--browser-panel-surface-raised, var(--ds-bg-primary))); }
 .browser-empty-state--starting { background: var(--browser-panel-surface-raised, var(--browser-new-tab-surface)); }
