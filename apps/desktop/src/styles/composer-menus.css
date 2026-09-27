@@ -38,11 +38,17 @@
 
 .composer-model-thinking {
   position: relative;
+  flex: 1 1 0;
+  min-width: 0;
 }
 
 /* Permission-mode chip menu (D115): anchored left above the mode chips. */
 .composer-permission {
   position: relative;
+}
+
+.composer-permission .mode-chip {
+  white-space: nowrap;
 }
 
 .composer-permission-menu {
@@ -107,6 +113,7 @@
 }
 
 .composer-model-thinking-chip {
+  width: 100%;
   max-width: min(300px, calc(100vw - 24px));
   min-width: 0;
   padding: 0 9px !important;

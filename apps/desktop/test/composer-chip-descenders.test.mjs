@@ -74,6 +74,14 @@ test("mode selector reserves the longest localized label width", () => {
   assert.match(styles, /\.composer-mode-chip-label\s*\{[\s\S]*?text-overflow:\s*ellipsis;/);
 });
 
+test("narrow chat keeps permission readable and gives model text the remaining space", () => {
+  assert.match(styles, /\.composer-toolbar\s*\{[^}]*flex-wrap:\s*wrap;/s);
+  assert.match(styles, /\.composer-left\s*\{[^}]*flex:\s*0 0 auto;/s);
+  assert.match(styles, /\.composer-right\s*\{[^}]*min-width:\s*96px;/s);
+  assert.match(styles, /\.composer-permission \.mode-chip\s*\{[^}]*white-space:\s*nowrap;/s);
+  assert.match(styles, /\.composer-model-thinking\s*\{[^}]*min-width:\s*0;/s);
+});
+
 test("mode chip cross-fades on switch and pulses while planning is live", () => {
   assert.match(composerSource, /data-planning=\{planningLive \? "true" : undefined\}/);
   assert.match(composerSource, /className="composer-mode-chip-face"/);

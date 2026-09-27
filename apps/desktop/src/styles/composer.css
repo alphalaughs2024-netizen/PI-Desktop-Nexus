@@ -318,6 +318,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
   gap: 8px;
   padding: 4px 8px 8px;
 }
@@ -328,6 +329,16 @@
   align-items: center;
   gap: 4px;
   min-width: 0;
+}
+
+.composer-left {
+  flex: 0 0 auto;
+}
+
+.composer-right {
+  flex: 1 1 96px;
+  min-width: 96px;
+  justify-content: flex-end;
 }
 
 .composer-right .context-inspector-trigger {

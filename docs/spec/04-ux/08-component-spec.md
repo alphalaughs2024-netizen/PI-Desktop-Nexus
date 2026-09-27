@@ -1012,6 +1012,9 @@ workflow while rendering entirely inside the plugin's isolated page:
   when the window cannot fit the sidebar, minimum panel, and chat. The shell
   must not horizontally scroll or clip the sidebar and panel. Background session
   artifacts never update the visible panel or window geometry.
+  The chat composer keeps its mode and permission controls on one line; its
+  model label truncates first, and the toolbar wraps into two rows if the
+  remaining chat width cannot fit both control groups.
 
 ### 5.5 Accessibility
 

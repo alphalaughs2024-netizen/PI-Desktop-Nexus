@@ -41,7 +41,8 @@
   window; the displayed dock width adapts while the preferred width returns
   when space is available. With the sidebar expanded to 520px at a medium
   window width, the chat title and composer controls remain readable and do
-  not overlap.
+  not overlap. The permission label remains on one line; the model label
+  truncates or the toolbar wraps if needed.
 
 - Browser opens docked through the Phase 1 launcher; Maximize expands the same
   resource into a bounded in-window frame and Dock returns it to the right-side
