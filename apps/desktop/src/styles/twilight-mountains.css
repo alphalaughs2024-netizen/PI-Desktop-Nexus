@@ -138,6 +138,16 @@
   -webkit-backdrop-filter: blur(18px) saturate(1.08);
 }
 
+:root[data-scenic-theme="twilight-mountains"] .browser-core-view--new-tab .browser-page-surface {
+  background:
+    linear-gradient(180deg, rgba(3, 12, 28, 0.22), rgba(3, 12, 28, 0.58)),
+    url("../../resources/themes/twilight-mountains.png") 50% 42% / cover no-repeat;
+}
+
+:root[data-scenic-theme="twilight-mountains"] .browser-core-view--new-tab .browser-new-tab-state {
+  background: linear-gradient(90deg, rgba(3, 12, 28, 0.28), transparent 72%);
+}
+
 :root[data-scenic-theme="twilight-mountains"] :is(.composer-shell, .composer-shell:focus-within, .composer-shell.is-file-drop-active) {
   border: 1px solid var(--twilight-luminous-border);
   background:

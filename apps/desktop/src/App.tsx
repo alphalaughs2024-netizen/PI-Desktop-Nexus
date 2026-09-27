@@ -30,6 +30,7 @@ import {
   type ShortcutPlatform,
 } from "@pi-desktop/shared";
 import { Sidebar } from "./components/Sidebar";
+import { BrandLogo } from "./components/BrandLogo";
 import { ConversationTopbar } from "./components/ConversationTopbar";
 import { WorkPanel } from "./components/workpanel/WorkPanel";
 import { ChatSurface } from "./components/ChatSurface";
@@ -55,6 +56,9 @@ import {
   IconPanel,
   IconNewSession,
   IconSidebar,
+  IconBrowser,
+  IconFolder,
+  IconSettings,
 } from "./components/icons";
 
 const MODIFIER_ONLY_KEYS = new Set([
@@ -154,6 +158,61 @@ function CollapsedTitlebarActions({
         <IconNewSession size={13} />
       </TooltipButton>
     </div>
+  );
+}
+
+function CollapsedSidebarRail({
+  onToggleSidebar,
+  onNewTask,
+  onOpenBrowser,
+  onOpenProjects,
+  onOpenSettings,
+  sidebarToggleShortcut,
+  page,
+}: {
+  onToggleSidebar: () => void;
+  onNewTask: () => void;
+  onOpenBrowser: () => void;
+  onOpenProjects: () => void;
+  onOpenSettings: () => void;
+  sidebarToggleShortcut: string;
+  page: string;
+}) {
+  const { t } = useTranslation();
+  const expandLabel = sidebarToggleShortcut
+    ? `${t("nav.expandSidebar")} (${sidebarToggleShortcut})`
+    : t("nav.expandSidebar");
+  return (
+    <aside className="sidebar-rail no-drag" aria-label={t("nav.expandSidebar")}>
+      <TooltipButton
+        type="button"
+        className="sidebar-rail-brand"
+        tooltip={t("nav.home")}
+        ariaLabel={t("nav.home")}
+        onClick={onToggleSidebar}
+      >
+        <BrandLogo size={20} />
+      </TooltipButton>
+      <div className="sidebar-rail-actions">
+        <TooltipButton type="button" className="sidebar-rail-button" tooltip={expandLabel} ariaLabel={expandLabel} onClick={onToggleSidebar}>
+          <IconSidebar size={16} />
+        </TooltipButton>
+        <TooltipButton type="button" className="sidebar-rail-button" tooltip={t("nav.newTask")} ariaLabel={t("nav.newTask")} onClick={onNewTask}>
+          <IconNewSession size={16} />
+        </TooltipButton>
+        <TooltipButton type="button" className={`sidebar-rail-button ${page === "chat" ? "active" : ""}`} tooltip={t("nav.home")} ariaLabel={t("nav.home")} onClick={() => onOpenProjects()}>
+          <IconFolder size={16} />
+        </TooltipButton>
+        <TooltipButton type="button" className="sidebar-rail-button" tooltip={t("nav.toggleWorkPanel")} ariaLabel={t("nav.toggleWorkPanel")} onClick={onOpenBrowser}>
+          <IconBrowser size={16} />
+        </TooltipButton>
+      </div>
+      <div className="sidebar-rail-footer">
+        <TooltipButton type="button" className={`sidebar-rail-button ${page === "settings" ? "active" : ""}`} tooltip={t("nav.settings")} ariaLabel={t("nav.settings")} onClick={onOpenSettings}>
+          <IconSettings size={16} />
+        </TooltipButton>
+      </div>
+    </aside>
   );
 }
 
@@ -939,7 +998,17 @@ function AppShell() {
               onWidthChange={handleSidebarWidthChange}
               onWidthCommit={handleSidebarWidthCommit}
             />
-          ) : null}
+          ) : (
+            <CollapsedSidebarRail
+              onToggleSidebar={() => setSidebarCollapsed(false)}
+              onNewTask={() => void runMenuCommand("newTask")}
+              onOpenBrowser={togglePresentedWorkPanel}
+              onOpenProjects={() => useAppStore.getState().setPage("chat")}
+              onOpenSettings={() => useAppStore.getState().setPage("settings")}
+              sidebarToggleShortcut={sidebarToggleShortcut}
+              page={page}
+            />
+          )}
 
           <section className="main-pane">
             {page === "chat" ? (

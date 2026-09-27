@@ -495,6 +495,14 @@ centered 32px semantic-ink marker; keyboard focus and active dragging may use
 the accent marker. The handle never paints a full-height hover rail or changes
 the sidebar layout.
 
+When collapsed, the sidebar becomes a 64px icon rail instead of disappearing
+from the shell. The rail keeps the Nexus identity, expand control, New Task,
+workspace, Browser, and Settings actions available while returning the saved
+expanded width when reopened. The Browser surface uses a single layered chrome
+with a raised active tab, a pill-shaped address field, and a compact action
+grid on the scenic New Tab surface; loaded pages do not inherit the scenic
+background.
+
 The profile menu is `280px` wide, opens `8px` above the footer, and uses the
 standard opaque elevated-menu surface, subtle border, and dialog shadow. Its
 first block repeats the local identity with the same glyph and two-line text,

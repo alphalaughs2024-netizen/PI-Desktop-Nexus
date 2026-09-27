@@ -9,10 +9,10 @@ const e2e = await readFile(new URL("../../../docs/spec/06-delivery/04-e2e-test-p
 test("Phase E visual hierarchy matches the reference card language", () => {
   assert.match(css, /browser-header[^}]*min-height: 40px/);
   assert.match(css, /browser-source-row[^}]*min-height: 28px/);
-  assert.match(css, /browser-tab-strip[^}]*min-height: 34px/);
-  assert.match(css, /browser-toolbar[^}]*min-height: 36px/);
+  assert.match(css, /browser-tab-strip[^}]*min-height: 44px/);
+  assert.match(css, /browser-toolbar[^}]*min-height: 50px/);
   assert.match(css, /browser-tab\.is-active[^}]*box-shadow/);
-  assert.match(css, /browser-toolbar-address[^}]*border-radius: 9px/);
+  assert.match(css, /browser-toolbar-address[^}]*border-radius: 20px/);
   assert.match(css, /browser-diagnostics-drawer[^}]*backdrop-filter: blur\(12px\)/);
 });
 

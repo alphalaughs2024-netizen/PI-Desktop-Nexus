@@ -8965,6 +8965,25 @@ This test plan spec is accepted when:
   `sidebar-resize.test.mjs`); rendered desktop drag and relaunch journey
   remains pending
 
+#### E2E-168a: Collapsed sidebar rail and Browser visual hierarchy
+
+- **Preconditions**: PI-Desktop is open with the chat shell and Browser panel
+  available in a dark scenic theme.
+- **Steps**: 1) Collapse the expanded sidebar. 2) Inspect the compact rail and
+  use its expand, New Task, Browser, and Settings actions. 3) Re-expand the
+  sidebar and drag its right edge. 4) Open Browser and inspect the tab strip,
+  address field, active tab, and New Tab action cards. 5) Navigate to a page.
+- **Expected**: Collapse preserves a 64px icon rail and the preferred expanded
+  width. The Browser chrome reads as one layered surface with a raised active
+  tab and rounded address field. The scenic image and action cards appear only
+  on New Tab; a loaded page is rendered above the browser page surface without
+  inheriting the scenic layer.
+- **Specs linked**: `04-ux/07-ui-design-system.md`,
+  `04-ux/08-component-spec.md`
+- **Acceptance**: A (app shell), C (Browser), Quality
+- **Milestone**: M6+
+- **Status**: Source-contract covered; rendered desktop journey remains pending
+
 #### E2E-162: A vendor account and an AI service offer the same model picker
 
 - **Preconditions**: One signed-in vendor (OAuth) account and one API-key AI

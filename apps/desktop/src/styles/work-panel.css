@@ -92,10 +92,10 @@
 .browser-source-external { display: inline-flex; width: 22px; height: 22px; align-items: center; justify-content: center; margin-left: auto; border: 0; border-radius: var(--radius-sm); background: transparent; color: var(--browser-text-muted, var(--ds-text-muted)); }
 .browser-source-external:hover:not(:disabled) { background: var(--browser-tab-hover, var(--ds-bg-hover)); color: var(--browser-text, var(--ds-text-primary)); }
 .browser-source-external:focus-visible { outline: 2px solid var(--browser-focus, var(--ds-focus)); outline-offset: -2px; }
-.browser-tab-strip { display: flex; min-height: 34px; flex: 0 0 34px; align-items: stretch; gap: 3px; overflow-x: auto; padding: 4px 10px 0; border-bottom: 1px solid var(--browser-border, var(--ds-border-subtle)); background: var(--browser-panel-surface, var(--ds-bg-secondary)); scrollbar-width: thin; }
-.browser-tab { display: inline-flex; min-width: 112px; max-width: 190px; flex: 0 1 170px; align-items: center; gap: 6px; padding: 0 7px; border: 1px solid transparent; border-bottom: 0; border-radius: 6px 6px 0 0; color: var(--browser-text-muted, var(--ds-text-muted)); cursor: pointer; font-size: var(--text-xs); }
+.browser-tab-strip { display: flex; min-height: 44px; flex: 0 0 44px; align-items: stretch; gap: 4px; overflow-x: auto; padding: 6px 10px 0; border-bottom: 1px solid var(--browser-border, var(--ds-border-subtle)); background: var(--browser-panel-surface, var(--ds-bg-secondary)); scrollbar-width: thin; }
+.browser-tab { display: inline-flex; min-width: 132px; max-width: 220px; flex: 0 1 190px; align-items: center; gap: 8px; padding: 0 10px; border: 1px solid transparent; border-bottom: 0; border-radius: 9px 9px 0 0; color: var(--browser-text-muted, var(--ds-text-muted)); cursor: pointer; font-size: var(--text-sm); }
 .browser-tab:hover { background: var(--browser-tab-hover, var(--ds-bg-hover)); color: var(--browser-text, var(--ds-text-primary)); }
-.browser-tab.is-active { border-color: var(--browser-border, var(--ds-border-subtle)); border-bottom-color: var(--browser-tab-active, var(--ds-bg-primary)); background: var(--browser-tab-active, var(--ds-bg-primary)); color: var(--browser-text, var(--ds-text-primary)); box-shadow: 0 -1px 0 color-mix(in oklab, var(--browser-focus) 24%, transparent); }
+.browser-tab.is-active { border-color: color-mix(in oklab, var(--browser-focus) 42%, var(--browser-border)); border-bottom-color: var(--browser-tab-active, var(--ds-bg-primary)); background: var(--browser-tab-active, var(--ds-bg-primary)); color: var(--browser-text, var(--ds-text-primary)); box-shadow: 0 -2px 0 var(--browser-focus), 0 4px 12px color-mix(in oklab, var(--browser-focus) 12%, transparent); }
 .browser-tab:focus-visible { outline: 2px solid var(--browser-focus, var(--ds-focus)); outline-offset: -2px; }
 .browser-tab-icon { display: inline-flex; align-items: center; color: var(--browser-text-muted, var(--ds-text-muted)); }
 .browser-tab-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -108,16 +108,17 @@
 .browser-tab-context-menu button { min-height: 30px; padding: 0 9px; border: 0; border-radius: var(--radius-sm); background: transparent; color: var(--browser-text, var(--ds-text-primary)); text-align: left; font: inherit; font-size: var(--text-xs); }
 .browser-tab-context-menu button:hover:not(:disabled), .browser-tab-context-menu button:focus-visible { background: var(--browser-tab-hover, var(--ds-bg-hover)); outline: 2px solid var(--browser-focus, var(--ds-focus)); outline-offset: -2px; }
 .browser-tab-context-menu button:disabled { color: var(--browser-text-muted, var(--ds-text-muted)); opacity: .5; }
-.browser-toolbar { display: flex; min-height: 36px; flex: 0 0 36px; align-items: center; gap: 5px; padding: 0 10px; border-bottom: 1px solid var(--browser-border, var(--ds-border-subtle)); background: var(--browser-toolbar-surface, var(--ds-bg-secondary)); transition: background-color 160ms var(--motion-ease-out), border-color 160ms var(--motion-ease-out); }
+.browser-toolbar { display: flex; min-height: 50px; flex: 0 0 50px; align-items: center; gap: 8px; padding: 0 14px; border-bottom: 1px solid var(--browser-border, var(--ds-border-subtle)); background: var(--browser-toolbar-surface, var(--ds-bg-secondary)); transition: background-color 160ms var(--motion-ease-out), border-color 160ms var(--motion-ease-out); }
 .browser-toolbar--maximized { padding-inline: 16px; }
-.browser-toolbar button { display: inline-flex; width: 28px; height: 28px; flex: 0 0 28px; align-items: center; justify-content: center; border: 0; border-radius: var(--radius-sm); background: transparent; color: var(--browser-text-muted, var(--ds-text-muted)); }
+.browser-toolbar button { display: inline-flex; width: 32px; height: 32px; flex: 0 0 32px; align-items: center; justify-content: center; border: 0; border-radius: 9px; background: transparent; color: var(--browser-text-muted, var(--ds-text-muted)); }
 .browser-toolbar button:hover:not(:disabled) { background: var(--browser-tab-hover, var(--ds-bg-hover)); color: var(--browser-text, var(--ds-text-primary)); }
 .browser-toolbar button:focus-visible, .browser-toolbar input:focus-visible { outline: 2px solid var(--browser-focus, var(--ds-focus)); outline-offset: -2px; }
 .browser-toolbar button:disabled { opacity: .45; cursor: default; }
 .browser-toolbar-actions { display: flex; flex: 0 0 auto; gap: 1px; }
-.browser-toolbar-address { display: flex; min-width: 108px; flex: 1 1 auto; align-items: center; border: 1px solid var(--browser-border, var(--ds-border-subtle)); border-radius: 9px; background: var(--browser-address-surface, var(--ds-bg-primary)); box-shadow: inset 0 1px 0 color-mix(in oklab, var(--browser-text) 8%, transparent); }
+.browser-toolbar-address { display: flex; min-width: 108px; min-height: 40px; flex: 1 1 auto; align-items: center; border: 1px solid var(--browser-border, var(--ds-border-subtle)); border-radius: 20px; background: var(--browser-address-surface, var(--ds-bg-primary)); box-shadow: inset 0 1px 0 color-mix(in oklab, var(--browser-text) 8%, transparent), 0 2px 8px color-mix(in oklab, var(--ds-bg-primary) 25%, transparent); transition: border-color 140ms var(--motion-ease-out), box-shadow 140ms var(--motion-ease-out); }
+.browser-toolbar-address:focus-within { border-color: var(--browser-focus, var(--ds-focus)); box-shadow: 0 0 0 3px color-mix(in oklab, var(--browser-focus) 18%, transparent), inset 0 1px 0 color-mix(in oklab, var(--browser-text) 8%, transparent); }
 .browser-address-site { display: inline-flex; width: 26px; flex: 0 0 26px; align-items: center; justify-content: center; color: var(--browser-focus, var(--ds-focus)); font-size: var(--text-xs); }
-.browser-toolbar-address input { width: 100%; height: 26px; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--browser-text, var(--ds-text-primary)); padding: 0 8px 0 0; font: inherit; font-size: var(--text-sm); text-overflow: ellipsis; }
+.browser-toolbar-address input { width: 100%; height: 32px; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--browser-text, var(--ds-text-primary)); padding: 0 12px 0 0; font: inherit; font-size: var(--text-sm); text-overflow: ellipsis; }
 .browser-toolbar-overflow { position: relative; flex: 0 0 auto; }
 .browser-toolbar-menu { position: absolute; z-index: 5; top: calc(100% + 4px); right: 0; display: grid; min-width: 176px; padding: 4px; border: 1px solid var(--browser-border, var(--ds-border-subtle)); border-radius: var(--radius-md); background: var(--browser-panel-surface-raised, var(--ds-bg-secondary)); box-shadow: var(--shadow-lg); }
 .browser-toolbar-menu button { width: auto; justify-content: flex-start; padding: 0 8px; white-space: nowrap; }
@@ -142,11 +143,19 @@
 .browser-empty-state { background: var(--browser-panel-surface-raised, var(--browser-new-tab-surface)); }
 .browser-empty-state--unavailable, .browser-empty-state--policy-blocked, .browser-empty-state--debugger-unavailable { background: color-mix(in oklab, var(--browser-error, var(--ds-error)) 8%, var(--browser-panel-surface-raised, var(--ds-bg-primary))); }
 .browser-empty-state--starting { background: var(--browser-panel-surface-raised, var(--browser-new-tab-surface)); }
-.browser-new-tab-state { background: var(--browser-new-tab-surface, var(--ds-bg-primary)); }
-.browser-new-tab-state strong { color: var(--browser-text, var(--ds-text-primary)); font-size: 20px; font-weight: 600; }
+.browser-new-tab-state { align-items: flex-start; justify-content: center; padding: 10% clamp(28px, 8vw, 124px); background: var(--browser-new-tab-surface, var(--ds-bg-primary)); text-align: left; }
+.browser-new-tab-content { width: min(100%, 680px); }
+.browser-new-tab-state strong { display: block; color: var(--browser-text, var(--ds-text-primary)); font-size: clamp(24px, 3vw, 36px); font-weight: 600; letter-spacing: -.02em; }
 .browser-new-tab-state span { font-size: var(--text-sm); }
-.browser-new-tab-state button { margin-top: 8px; min-height: 30px; padding: 0 12px; border: 1px solid var(--browser-border, var(--ds-border-subtle)); border-radius: 8px; background: var(--browser-tab-active, var(--ds-bg-secondary)); color: var(--browser-text, var(--ds-text-primary)); }
-.browser-new-tab-icon { color: var(--browser-focus, var(--ds-focus)); font-size: 24px; opacity: .8; }
+.browser-new-tab-icon { margin-bottom: 12px; color: var(--browser-focus, var(--ds-focus)); font-size: 24px; opacity: .9; }
+.browser-new-tab-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 26px; }
+.browser-new-tab-action { display: flex; min-width: 180px; min-height: 72px; flex: 1 1 180px; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid var(--browser-border, var(--ds-border-subtle)); border-radius: 11px; background: color-mix(in oklab, var(--browser-panel-surface-raised, var(--ds-bg-secondary)) 72%, transparent); color: var(--browser-text, var(--ds-text-primary)); text-align: left; box-shadow: inset 0 1px 0 color-mix(in oklab, var(--browser-text) 8%, transparent); transition: border-color 140ms var(--motion-ease-out), background-color 140ms var(--motion-ease-out), transform 140ms var(--motion-ease-out); }
+.browser-new-tab-action:hover { border-color: color-mix(in oklab, var(--browser-focus) 48%, var(--browser-border)); background: var(--browser-tab-hover, var(--ds-bg-hover)); transform: translateY(-1px); }
+.browser-new-tab-action:focus-visible { outline: 2px solid var(--browser-focus, var(--ds-focus)); outline-offset: 2px; }
+.browser-new-tab-action-icon { display: inline-flex; width: 34px; height: 34px; flex: 0 0 34px; align-items: center; justify-content: center; border-radius: 50%; background: color-mix(in oklab, var(--browser-focus) 14%, transparent); color: var(--browser-focus, var(--ds-focus)); }
+.browser-new-tab-action-copy { display: flex; min-width: 0; flex-direction: column; gap: 3px; }
+.browser-new-tab-action-copy b { font-size: var(--text-sm); font-weight: 600; }
+.browser-new-tab-action-copy small { color: var(--browser-text-muted, var(--ds-text-muted)); font-size: var(--text-xs); }
 .browser-empty-state strong { color: var(--browser-text, var(--ds-text-primary)); font-size: var(--text-base-plus); }
 .browser-empty-state span { font-size: var(--text-sm); }
 .browser-empty-actions { display: flex; gap: 6px; margin-top: 6px; }
