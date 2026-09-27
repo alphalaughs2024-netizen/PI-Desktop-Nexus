@@ -40,7 +40,8 @@ not own maximize/dock state.
 ## Identity and lifecycle invariants
 
 - Docked and maximized presentations render the same Work Panel tab/resource.
-- Browser always uses the canonical core Browser tab identity.
+- Browser always uses the canonical core Work Panel resource identity. ADR 0241
+  gives each inner Browser tab a separate retained guest.
 - Presentation changes never create a second BrowserId, WebContentsView,
   BrowserWindow, BrowserHost, BrowserPane, or BrowserCdp connection.
 - Presentation changes do not reset Browser page, scroll, session ownership,
@@ -137,7 +138,7 @@ Phase 9 completes the Browser API/Main wiring. Toolbar actions, recovery,
 screenshots, and core surface geometry use typed shared contracts and route
 through the Main-owned BrowserBroker. View-state remains session-routed, source
 attribution is marked in Main, and compatibility, preview, typed, and manual
-entry paths share the singleton guest without exposing host or CDP objects to
+entry paths share the selected guest without exposing host or CDP objects to
 the renderer.
 
 ## Consequences

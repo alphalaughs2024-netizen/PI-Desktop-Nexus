@@ -7,7 +7,7 @@ const toolbar = await readFile(new URL("../src/components/workpanel/BrowserToolb
 const tabs = await readFile(new URL("../src/components/workpanel/BrowserTabStrip.tsx", import.meta.url), "utf8");
 
 test("Browser overlays detach the native guest while renderer controls are open", () => {
-  assert.match(core, /blocked=\{blocked \|\| diagnosticsOpen \|\| toolbarMenuOpen \|\| tabMenuOpen\}/);
+  assert.match(core, /blocked=\{!active \|\| blocked \|\| diagnosticsOpen \|\| toolbarMenuOpen \|\| tabMenuOpen\}/);
   assert.match(core, /onMenuOpenChange=\{setToolbarMenuOpen\}/);
   assert.match(core, /onContextMenuOpenChange=\{setTabMenuOpen\}/);
   assert.match(toolbar, /onMenuOpenChange\?\.\(menuOpen\)/);

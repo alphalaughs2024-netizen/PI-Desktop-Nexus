@@ -4,6 +4,7 @@ import test from "node:test";
 
 const read = async (path) => readFile(new URL(path, import.meta.url), "utf8");
 const coreTab = await read("../src/components/workpanel/BrowserCoreTab.tsx");
+const guestSurface = await read("../src/components/workpanel/BrowserGuestSurface.tsx");
 const browserCore = await read("../electron/main/browser-core.ts");
 const runtime = await read("../electron/main/plugin-runtime.ts");
 const main = await read("../electron/main/index.ts");
@@ -12,7 +13,8 @@ const tabs = await read("../src/lib/work-panel-tabs.ts");
 
 test("core Browser surface does not depend on the plugin view bridge", () => {
   assert.doesNotMatch(coreTab, /pluginViewSet|pluginBridge|["']pi\.browser["']/);
-  assert.match(coreTab, /browserCoreSurfaceSet/);
+  assert.match(coreTab, /BrowserGuestSurface/);
+  assert.match(guestSurface, /browserCoreSurfaceSet/);
 });
 
 test("all Browser tool names are reserved from plugins", () => {

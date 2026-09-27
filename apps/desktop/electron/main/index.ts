@@ -231,6 +231,7 @@ import {
 } from "./host-boot-diagnostics";
 import { collectWorkspaceDiff } from "./git-diff";
 import { BrowserPane, resolveLocalFile } from "./browser-view";
+import { BrowserTabsPane } from "./browser-tabs-pane";
 import { resolveBrowserSurfaceReadiness } from "./browser-surface-readiness";
 import { browserSurfaceSessionUpdate } from "./browser-surface-session";
 import {
@@ -952,6 +953,7 @@ let browserCapabilityEnabled = true;
 type BrowserSessionPresentation = BrowserViewState & { updatedAt: number };
 const browserPresentations = new Map<string, BrowserSessionPresentation>();
 let visibleBrowserSessionId: string | undefined;
+let visibleBrowserId: string | undefined;
 const isBrowserCapabilityEnabled = () => browserCapabilityEnabled;
 const safeBrowserLocation = (raw: string | undefined): string | undefined => {
   if (!raw) return undefined;
@@ -964,7 +966,7 @@ const markBrowserSource = (sessionId: string | undefined, source: BrowserViewSta
   const prior = browserPresentationFor(target);
   const state: BrowserSessionPresentation = { ...prior, source, ...overrides, updatedAt: Date.now() };
   browserPresentations.set(target, state);
-  sendToRenderer(IPC.event.browserViewState, { sessionId: target, state });
+  sendToRenderer(IPC.event.browserViewState, { sessionId: target, browserId: browserPane.activeBrowserId(), state });
 };
 const browserViewSource = markBrowserSource;
 const publishBrowserViewState = (sessionId: string | undefined, navigation: BrowserState | null, overrides: Partial<BrowserViewState> = {}) => {
@@ -975,7 +977,7 @@ const publishBrowserViewState = (sessionId: string | undefined, navigation: Brow
   const effectiveReadiness = resolveBrowserSurfaceReadiness(readiness, paneSurface);
   const state: BrowserSessionPresentation = { readiness: effectiveReadiness, navigation, source: overrides.source ?? prior.source, surface: { attachment: paneSurface.attachment, visibility: paneSurface.visibility, navigation: navigation?.isLoading ? "loading" : navigation?.url ? "verified" : "unverified", paint: paneSurface.paint, guestGeneration: paneSurface.generation, updatedAt: Date.now() }, ...(safeBrowserLocation(navigation?.url) ? { safeLocation: safeBrowserLocation(navigation?.url) } : {}), ...(navigation?.title ? { safeTitle: navigation.title.replace(/\s+/g, " ").trim().slice(0, 256) } : {}), recoverable: overrides.recoverable ?? effectiveReadiness === "unavailable", ...(overrides.lastErrorCode ? { lastErrorCode: overrides.lastErrorCode } : {}), ...(overrides.safeSuggestedAction ? { safeSuggestedAction: overrides.safeSuggestedAction } : {}), updatedAt: Date.now() };
   browserPresentations.set(target, state);
-  if (target) sendToRenderer(IPC.event.browserViewState, { sessionId: target, state });
+  if (target) sendToRenderer(IPC.event.browserViewState, { sessionId: target, browserId: browserPane.activeBrowserId(), state });
 };
 const emitBrowserState = (state: BrowserState) => {
   sendToRenderer(IPC.event.browserState, state);
@@ -983,7 +985,7 @@ const emitBrowserState = (state: BrowserState) => {
   pluginPanels.broadcast("browser:state", state);
   pluginViews.broadcast("browser:state", state);
 };
-const browserPane = new BrowserPane(emitBrowserState);
+const browserPane = new BrowserTabsPane(emitBrowserState, (onState) => new BrowserPane(onState));
 const pluginViews = new PluginViewHost(({ pluginId, url }) => {
   logger.app("plugin", "warn", "plugin.api", {
     pluginId,
@@ -6499,11 +6501,13 @@ function registerIpc() {
     if (bounds.width < 0 || bounds.height < 0 || (input.visible && (bounds.width === 0 || bounds.height === 0))) {
       throw Object.assign(new Error("invalid Browser surface dimensions"), { errorCode: "BROWSER_INVALID_INPUT" });
     }
+    if (!input.visible && input.browserId && visibleBrowserId && input.browserId !== visibleBrowserId) return { ok: true as const };
     const sessionUpdate = browserSurfaceSessionUpdate(visibleBrowserSessionId, input.sessionId, input.visible);
     if (!sessionUpdate.accept) return { ok: true as const };
     visibleBrowserSessionId = sessionUpdate.ownerSessionId;
+    if (input.visible && input.browserId) visibleBrowserId = input.browserId;
     const content = mainWindow && !mainWindow.isDestroyed() ? mainWindow.getContentBounds() : { x: 0, y: 0, width: 0, height: 0 };
-    browserHost.setCoreSurface({ sessionId: input.sessionId, visible: input.visible, measurement: input.measurement, bounds }, content);
+    browserHost.setCoreSurface({ sessionId: input.sessionId, browserId: input.browserId, visible: input.visible, measurement: input.measurement, bounds }, content);
     return { ok: true };
   });
 
@@ -8201,21 +8205,41 @@ function registerIpc() {
     return { snapshot, history };
   });
 
+  handle(IPC.invoke.browserTabActivate, async (input: { sessionId?: string; browserId?: string } = {}) => {
+    const browserId = input.browserId?.trim();
+    if (!browserId || browserId.length > 128) throw Object.assign(new Error("invalid Browser tab"), { errorCode: "BROWSER_INVALID_INPUT" });
+    visibleBrowserSessionId = input.sessionId;
+    visibleBrowserId = browserId;
+    const state = browserHost.activateTab(input.sessionId ?? "", browserId);
+    publishBrowserViewState(input.sessionId, state);
+    return browserPresentationFor(input.sessionId);
+  });
+
+  handle(IPC.invoke.browserTabClose, async (input: { sessionId?: string; browserId?: string } = {}) => {
+    const browserId = input.browserId?.trim();
+    if (!browserId || browserId.length > 128) throw Object.assign(new Error("invalid Browser tab"), { errorCode: "BROWSER_INVALID_INPUT" });
+    browserHost.closeTab(input.sessionId ?? "", browserId);
+    if (visibleBrowserSessionId === input.sessionId && visibleBrowserId === browserId) visibleBrowserId = undefined;
+    return { ok: true as const };
+  });
+
   handle(
     IPC.invoke.browserNavigate,
-    async (input: { url?: string; sessionId?: string } = {}) => {
+    async (input: { url?: string; sessionId?: string; browserId?: string } = {}) => {
       if (!isBrowserCapabilityEnabled()) throw Object.assign(new Error("Browser is disabled by the core capability setting"), { errorCode: "BROWSER_POLICY_BLOCKED" });
+      if (input.browserId && !browserHost.hasTab(input.sessionId ?? "", input.browserId)) throw Object.assign(new Error("Browser tab is unavailable"), { errorCode: "BROWSER_TAB_NOT_FOUND" });
       markBrowserSource(input.sessionId, "user");
-      const result = await browserBroker.navigate({ url: String(input.url ?? "") }, input.sessionId, { sessionId: input.sessionId, mode: "agent" });
+      const result = await browserBroker.navigate({ url: String(input.url ?? "") }, input.sessionId, { sessionId: input.sessionId, browserId: input.browserId, mode: "agent" });
       if (!result.ok) throw Object.assign(new Error("Browser navigation failed"), { errorCode: result.code });
       const state = result.result ?? browserHost.getState();
-      publishBrowserViewState(input.sessionId, state, { source: "user" });
+      if (!input.browserId || (input.browserId === visibleBrowserId && input.sessionId === visibleBrowserSessionId)) publishBrowserViewState(input.sessionId, state, { source: "user" });
       return state;
     },
   );
 
-  handle(IPC.invoke.browserAction, async (input: { action?: string; sessionId?: string } = {}) => {
+  handle(IPC.invoke.browserAction, async (input: { action?: string; sessionId?: string; browserId?: string } = {}) => {
     if (!isBrowserCapabilityEnabled()) throw Object.assign(new Error("Browser is disabled by the core capability setting"), { errorCode: "BROWSER_POLICY_BLOCKED" });
+    if (input.browserId && !browserHost.hasTab(input.sessionId ?? "", input.browserId)) throw Object.assign(new Error("Browser tab is unavailable"), { errorCode: "BROWSER_TAB_NOT_FOUND" });
     const action = String(input.action ?? "");
     if (
       action === "back" ||

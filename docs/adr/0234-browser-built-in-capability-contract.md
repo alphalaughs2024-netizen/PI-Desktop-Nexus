@@ -44,6 +44,8 @@ Compatibility only: pi.browser.* and legacy tab/reference normalization
 
 Browser is a core Nexus capability. Core owns the Browser Work Panel view,
 Browser agent tools, BrowserPreview, BrowserHost, BrowserPane, and BrowserCdp.
+ADR 0241 refines the guest lifetime: the Work Panel Browser resource remains
+canonical, while each inner Browser tab retains its own Main-owned guest.
 
 The existing `pi.browser.*` surface remains only as a compatibility API for
 third-party plugins. It must not register a duplicate Browser tool or view.

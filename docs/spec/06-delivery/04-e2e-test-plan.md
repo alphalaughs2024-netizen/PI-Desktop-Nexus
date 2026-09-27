@@ -38,7 +38,8 @@
   resource into a bounded in-window frame and Dock returns it to the right-side
   column.
 - BrowserId, tab identity, guest, page/session state, and BrowserCoreTab remain
-  continuous; no second BrowserWindow/WebContentsView/tab is created.
+  continuous; presentation changes create no extra Work Panel resource, while
+  each inner Browser tab retains its own native guest under ADR 0241.
 - Shell controls are keyboard accessible, focus is deterministic, reduced motion
   removes decorative movement, and Cmd/Ctrl+J remains visibility-only.
 - Session A/B switches, background previews, close/reopen, and late geometry
@@ -54,6 +55,12 @@
   requestAnimationFrame, and cleaned up with one zero-bounds hide.
 - Docked/maximized props reach the Browser resource without recreating the
   guest; no child accesses Electron, WebContents, BrowserHost, or CDP.
+- Open two inner Browser tabs with different sites. Change the first page's
+  scroll position, navigate within the second, then alternate tabs. Each tab
+  must retain its own URL, title, content, scroll position, and Back history;
+  switching must not reload either page. Duplicate creates a separate page,
+  and closing one tab disposes only that page. Repeat after switching to another
+  conversation and back. Only the selected guest is visible.
 
 ### Browser Work Panel Phase 4 toolbar matrix
 

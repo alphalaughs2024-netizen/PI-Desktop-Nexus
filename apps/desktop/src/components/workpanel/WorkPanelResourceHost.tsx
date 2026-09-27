@@ -37,7 +37,7 @@ export type WorkPanelResourceDefinition = {
 const renderer = (Component: ComponentType<any>) => (props: WorkPanelResourceProps) => createElement(Component, props);
 
 export const WORK_PANEL_RESOURCE_REGISTRY: ReadonlyMap<WorkPanelTab["kind"], WorkPanelResourceDefinition> = new Map<WorkPanelTab["kind"], WorkPanelResourceDefinition>([
-  ["browser", { kind: "browser", lifecycle: "native-guest", supportsMaximized: true, render: (props) => <BrowserCoreTab sessionId={props.sessionId} location={props.tab.location} presentation={props.presentation} transitioning={props.transitioning === true} blocked={props.blocked} /> }],
+  ["browser", { kind: "browser", lifecycle: "native-guest", supportsMaximized: true, render: (props) => <BrowserCoreTab key={props.sessionId} sessionId={props.sessionId} location={props.tab.location} presentation={props.presentation} active={props.active} transitioning={props.transitioning === true} blocked={props.blocked} /> }],
   ["file", { kind: "file", lifecycle: "renderer", supportsMaximized: true, render: renderer(FilesTab) }],
   ["review", { kind: "review", lifecycle: "renderer", supportsMaximized: true, render: renderer(ReviewTab) }],
   ["contextVault", { kind: "contextVault", lifecycle: "renderer", supportsMaximized: true, render: renderer(ContextVaultTab) }],

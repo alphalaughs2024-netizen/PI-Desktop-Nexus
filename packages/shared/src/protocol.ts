@@ -130,6 +130,8 @@ export const IPC = {
     coreCapabilityList: "pi-desktop/coreCapability/list",
     coreCapabilitySetEnabled: "pi-desktop/coreCapability/setEnabled",
     browserCoreSurfaceSet: "pi-desktop/browser/coreSurface/set",
+    browserTabActivate: "pi-desktop/browser/tab/activate",
+    browserTabClose: "pi-desktop/browser/tab/close",
     browserRecover: "pi-desktop/browser/recover",
     browserDiagnostics: "pi-desktop/browser/diagnostics",
     networkProxyTest: "pi-desktop/network/testProxy",

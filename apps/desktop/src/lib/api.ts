@@ -946,10 +946,14 @@ export const api = {
     sessionId: string;
     snapshotId: string;
   }) => invoke<ReviewRollbackResult>(IPC.invoke.workspaceReviewRollback, input),
-  browserNavigate: (url: string, sessionId?: string) =>
-    invoke<BrowserState>(IPC.invoke.browserNavigate, { url, sessionId }),
-  browserAction: (action: BrowserAction, sessionId?: string) =>
-    invoke<{ ok: true }>(IPC.invoke.browserAction, { action, sessionId }),
+  browserNavigate: (url: string, sessionId?: string, browserId?: string) =>
+    invoke<BrowserState>(IPC.invoke.browserNavigate, { url, sessionId, browserId }),
+  browserAction: (action: BrowserAction, sessionId?: string, browserId?: string) =>
+    invoke<{ ok: true }>(IPC.invoke.browserAction, { action, sessionId, browserId }),
+  browserTabActivate: (sessionId: string | undefined, browserId: string) =>
+    invoke<BrowserViewState>(IPC.invoke.browserTabActivate, { sessionId, browserId }),
+  browserTabClose: (sessionId: string | undefined, browserId: string) =>
+    invoke<{ ok: true }>(IPC.invoke.browserTabClose, { sessionId, browserId }),
   browserSetBounds: (bounds: {
     x: number;
     y: number;

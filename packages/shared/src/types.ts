@@ -2275,7 +2275,7 @@ export type BrowserSource = "user" | "agent" | "workspace-preview" | "unknown";
 export type BrowserActivationRequest = { requestId: string; sessionId: string; location?: string; source: BrowserSource; focus: "panel" | "address" | "toolbar"; background: boolean; createTab?: boolean };
 export type BrowserSurfaceStatus = { attachment: "attached" | "detached"; visibility: "visible" | "hidden"; navigation: "unverified" | "loading" | "verified" | "failed"; paint: "unknown" | "painted" | "blank"; guestGeneration: number; updatedAt: number };
 export type BrowserViewState = { readiness: BrowserReadiness; navigation: BrowserState | null; source: BrowserSource; safeLocation?: string; safeTitle?: string; recoverable: boolean; lastErrorCode?: BrowserErrorCode; safeSuggestedAction?: string; surface?: BrowserSurfaceStatus };
-export type BrowserViewStateEvent = { sessionId: string; state: BrowserViewState };
+export type BrowserViewStateEvent = { sessionId: string; browserId?: string; state: BrowserViewState };
 export type BrowserDiagnosticsDisplay = { capability: "enabled" | "disabled"; readiness: BrowserReadiness; session: "current" | "background"; guestGeneration?: number; pendingRequests: number; queue: "idle" | "busy"; compatibility: "available" | "blocked" | "unavailable"; lastErrorCode?: BrowserErrorCode; suggestedAction?: string; updatedAt?: number };
 export type BrowserDiagnostics = {
   capabilityEnabled: boolean;
@@ -2304,7 +2304,7 @@ export type BrowserScreenshotOptions = { fullPage?: boolean; maxWidth?: number; 
 export type BrowserScreenshotResult = { mimeType: "image/jpeg" | "image/png"; data: string; width: number; height: number; viewportWidth: number; viewportHeight: number; deviceScaleFactor?: number; coordinateSpace: "css-pixels"; byteLength: number; truncated?: boolean };
 export type BrowserRect = { x: number; y: number; width: number; height: number };
 export type BrowserSurfaceMeasurement = { coordinateSpace: "renderer-viewport-css"; rect: BrowserRect; viewport: { width: number; height: number; devicePixelRatio: number }; sessionId?: string; visible: boolean };
-export type BrowserCoreSurfaceInput = { sessionId?: string; visible: boolean; bounds: BrowserRect; measurement?: BrowserSurfaceMeasurement };
+export type BrowserCoreSurfaceInput = { sessionId?: string; browserId?: string; visible: boolean; bounds: BrowserRect; measurement?: BrowserSurfaceMeasurement };
 export type BrowserOperationResult = { ok: true } | { ok: false; code: BrowserErrorCode; retryable?: boolean; possiblyApplied?: boolean };
 
 export type FsEntry = {

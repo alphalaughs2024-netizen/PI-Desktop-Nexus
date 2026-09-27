@@ -8,7 +8,7 @@ const guidance = "Use browser_snapshot before interaction. Refs are scoped to br
 export function createBrowserTypedTools(broker: BrowserBroker) {
   const tool = (name: string, description: string, execute: (args: any, context: any) => Promise<unknown>) => ({ name, description: `${description} ${guidance}`, planSafe: BROWSER_PLAN_SAFE_TOOLS.has(name), execute });
   return [
-    tool("browser_list_tabs", "Inspect the current core Browser tab only. This tool never navigates or opens a requested site.", async (_args, context) => ({ ok: true, tabs: broker.listTabs(), sessionId: context.sessionId })),
+    tool("browser_list_tabs", "List retained core Browser tabs. This tool never navigates or opens a requested site.", async (_args, context) => ({ ok: true, tabs: broker.listTabs(), sessionId: context.sessionId })),
     tool("browser_open", "Open or reuse the core Browser tab. Set newTab=true to create a new tab; omit url for a blank about:blank tab, or supply a URL to navigate it.", (args, context) => broker.open(args?.url ? { url: String(args.url) } : { url: "about:blank" }, { sessionId: context.sessionId, mode: context.mode, createTab: Boolean(args?.newTab) })),
     tool("browser_navigate", "Always navigate the Browser to the supplied validated URL or workspace file; verify final URL with browser_snapshot before reporting success.", (args, context) => broker.navigate({ url: String(args.url ?? "") }, context.sessionId, { sessionId: context.sessionId, mode: context.mode, browserId: args.browserId })),
     tool("browser_snapshot", "Return the bounded accessibility snapshot and generation metadata.", (_args, context) => broker.snapshot({ sessionId: context.sessionId, mode: context.mode, browserId: _args.browserId })),

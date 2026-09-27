@@ -1,6 +1,6 @@
 import type { BrowserState } from "@pi-desktop/shared";
 import type { SnapshotResult } from "./browser-cdp";
-import type { BrowserPane } from "./browser-view";
+import type { BrowserTabsPane } from "./browser-tabs-pane";
 import { BrowserCdp } from "./browser-cdp";
 import { convertBrowserSurfaceMeasurement, type BrowserSurfaceMeasurement } from "./browser-surface-geometry";
 import { writeFileSync, mkdirSync } from "node:fs";
@@ -55,7 +55,7 @@ function asRect(value: unknown): BrowserRect | null {
 }
 
 export type BrowserHostDeps = {
-  pane: BrowserPane;
+  pane: BrowserTabsPane;
   isCapabilityEnabled?: () => boolean;
   getFileRoot: (sessionId?: string) => Promise<string | null>;
   getScratchDir?: (sessionId?: string) => string | null;
@@ -68,11 +68,11 @@ type ChromeSurface = {
 };
 
 /**
- * Public `pi.browser.*` implementation: one host-owned guest WebContentsView,
- * driven by plugin chrome through a clamped hole, plus CDP for the agent.
+ * Public `pi.browser.*` implementation: host-owned tab guests driven by
+ * plugin chrome through a clamped hole, plus CDP for the agent.
  */
 export class BrowserHost {
-  private readonly pane: BrowserPane;
+  private readonly pane: BrowserTabsPane;
   private readonly cdp = new BrowserCdp();
   private readonly deps: BrowserHostDeps;
   private chrome: ChromeSurface | null = null;
@@ -92,8 +92,9 @@ export class BrowserHost {
     this.applyGuest();
   }
 
-  setCoreSurface(surface: { visible: boolean; bounds: BrowserRect; measurement?: BrowserSurfaceMeasurement; sessionId?: string } | null, contentBounds?: BrowserRect): void {
+  setCoreSurface(surface: { visible: boolean; bounds: BrowserRect; measurement?: BrowserSurfaceMeasurement; sessionId?: string; browserId?: string } | null, contentBounds?: BrowserRect): void {
     if (surface?.sessionId) this.setChromeSession(surface.sessionId);
+    if (surface?.visible && surface.browserId) this.activateTab(surface.sessionId ?? "", surface.browserId);
     const converted = surface?.measurement && contentBounds ? convertBrowserSurfaceMeasurement(surface.measurement, contentBounds) : surface?.bounds;
     if (converted && "ok" in converted && !converted.ok) { this.chrome = null; this.applyGuest(); return; }
     this.chrome = surface && converted ? { visible: surface.visible, bounds: converted as BrowserRect } : null;
@@ -102,16 +103,38 @@ export class BrowserHost {
     this.applyGuest();
   }
 
-  setChromeSession(sessionId: string | undefined): void {
+  setChromeSession(sessionId: string | undefined, restoreLocation = true): void {
     const next = sessionId?.trim() || null;
     if (this.chromeSessionId === next) return;
     this.chromeSessionId = next;
-    if (next) void this.rebindSession(next);
+    if (next) {
+      this.pane.activateSession(next);
+      if (restoreLocation && this.pane.activeBrowserId() === "browser-core-1" && !this.pane.getState()) void this.rebindSession(next);
+    }
   }
 
+  activateTab(sessionId: string, browserId: string): BrowserState | null {
+    this.setChromeSession(sessionId);
+    const previous = this.pane.getWebContents();
+    this.pane.activate(sessionId, browserId);
+    if (previous !== this.pane.getWebContents()) this.cdp.detach(previous ?? undefined);
+    this.applyGuest();
+    return this.pane.getState();
+  }
+
+  closeTab(sessionId: string, browserId: string): void {
+    const previous = this.pane.getWebContents();
+    this.pane.close(sessionId, browserId);
+    if (previous !== this.pane.getWebContents()) this.cdp.detach(previous ?? undefined);
+    this.applyGuest();
+  }
+
+  activeBrowserId(): string { return this.pane.activeBrowserId(); }
+  hasTab(sessionId: string, browserId: string): boolean { return this.pane.hasTab(sessionId, browserId); }
+  listTabs() { return this.pane.listTabs(); }
+
   /**
-   * Content-relative hole inside the calling plugin view. Last writer wins
-   * (v1 is a singleton guest).
+   * Content-relative hole inside the calling plugin view. Last writer wins.
    */
   setGuestHole(_pluginId: string, hole: unknown): BrowserRect | null {
     const rect = asRect(hole);
@@ -145,25 +168,36 @@ export class BrowserHost {
   async navigate(
     input: BrowserNavigateInput,
     sessionId?: string,
+    browserId?: string,
   ): Promise<BrowserState | null> {
     const target = String(input.path ?? input.url ?? "").trim();
     if (!target) return this.pane.getState();
-    this.rememberLocation(sessionId ?? this.chromeSessionId ?? undefined, target);
+    if (!browserId || browserId === "browser-core-1") this.rememberLocation(sessionId ?? this.chromeSessionId ?? undefined, target);
     const background =
       Boolean(sessionId) &&
       Boolean(this.chromeSessionId) &&
       sessionId !== this.chromeSessionId;
-    if (background) return this.pane.getState();
+    if (background && !browserId) return this.pane.getState();
+    if (browserId && !this.pane.hasTab(sessionId ?? "", browserId)) {
+      throw Object.assign(new Error("Browser tab is unavailable"), { code: "BROWSER_TAB_NOT_FOUND" });
+    }
+    if (!background && !browserId && sessionId) this.setChromeSession(sessionId, false);
     const root = await this.deps.getFileRoot(sessionId ?? this.chromeSessionId ?? undefined);
+    if (browserId && !this.pane.hasTab(sessionId ?? "", browserId)) {
+      throw Object.assign(new Error("Browser tab is unavailable"), { code: "BROWSER_TAB_NOT_FOUND" });
+    }
     this.started = true;
-    const state = await this.pane.navigateAndWait(target, root);
+    const state = browserId
+      ? await this.pane.navigateTabAndWait(sessionId ?? "", browserId, target, root)
+      : await this.pane.navigateAndWait(target, root);
     this.applyGuest();
-    if (state) this.deps.onState(state);
+    if (state && (!browserId || (this.pane.activeBrowserId() === browserId && this.chromeSessionId === sessionId))) this.deps.onState(state);
     return state;
   }
 
-  action(action: "back" | "forward" | "reload" | "stop"): void {
-    this.pane.action(action);
+  action(action: "back" | "forward" | "reload" | "stop", sessionId?: string, browserId?: string): void {
+    if (browserId) this.pane.actionTab(sessionId ?? "", browserId, action);
+    else this.pane.action(action);
   }
 
   getState(): BrowserState | null {
@@ -238,6 +272,7 @@ export class BrowserHost {
     const background =
       Boolean(this.chromeSessionId) && this.chromeSessionId !== sessionId;
     if (!background) {
+      this.setChromeSession(sessionId, false);
       this.started = true;
       await this.pane.navigateAndWait(path, root);
       this.applyGuest();
@@ -284,9 +319,10 @@ export class BrowserHost {
     const location = this.locations.get(sessionId);
     if (!location) return;
     const root = await this.deps.getFileRoot(sessionId);
+    if (this.chromeSessionId !== sessionId || this.pane.activeBrowserId() !== "browser-core-1" || this.pane.getState()) return;
     this.started = true;
-    await this.pane.navigateAndWait(location, root);
-    this.applyGuest();
+    await this.pane.navigateTabAndWait(sessionId, "browser-core-1", location, root);
+    if (this.chromeSessionId === sessionId) this.applyGuest();
   }
 
   private requireWebContents() {

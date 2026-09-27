@@ -12,6 +12,7 @@ const TIMEOUTS: Record<BrowserCommand, number> = { navigate: 20_000, action: 20_
 function errorCode(error: unknown): BrowserErrorCode {
   const code = typeof error === "object" && error && "code" in error ? String((error as { code?: unknown }).code) : "";
   if (code === "UNAVAILABLE") return "BROWSER_UNAVAILABLE";
+  if (code === "BROWSER_TAB_NOT_FOUND") return "BROWSER_TAB_NOT_FOUND";
   if (code === "PERMISSION_DENIED") return "BROWSER_POLICY_BLOCKED";
   return "BROWSER_UNKNOWN_ERROR";
 }
@@ -29,10 +30,14 @@ export class BrowserBroker {
   constructor(host: BrowserHost, isCapabilityEnabled: () => boolean = () => true) { this.host = host; this.isCapabilityEnabled = isCapabilityEnabled; }
 
   private context(input?: BrowserContextInput): BrowserRequestContext {
-    return { requestId: `browser-${++this.sequence}` as BrowserRequestContext["requestId"], sessionId: input?.sessionId ?? "", turnId: input?.turnId, effectiveAgentId: input?.effectiveAgentId, mode: input?.mode ?? "agent", permissionEpoch: input?.permissionEpoch ?? 0, browserId: (input?.browserId ?? this.browserId) as BrowserContextInput["browserId"] as BrowserRequestContext["browserId"] };
+    return { requestId: `browser-${++this.sequence}` as BrowserRequestContext["requestId"], sessionId: input?.sessionId ?? "", turnId: input?.turnId, effectiveAgentId: input?.effectiveAgentId, mode: input?.mode ?? "agent", permissionEpoch: input?.permissionEpoch ?? 0, browserId: (input?.browserId ?? this.host.activeBrowserId?.() ?? this.browserId) as BrowserContextInput["browserId"] as BrowserRequestContext["browserId"] };
   }
 
-  listTabs(): BrowserRecord[] { return [{ ...this.record }]; }
+  listTabs(): BrowserRecord[] {
+    const tabs = this.host.listTabs?.();
+    if (!tabs) return [{ ...this.record }];
+    return tabs.map((tab) => ({ browserId: tab.browserId as BrowserRequestContext["browserId"], ownerSessionId: tab.sessionId, state: tab.state?.isLoading ? "loading" : tab.state?.url ? "ready" : "starting", location: tab.state?.url, createdAt: this.createdAt, updatedAt: Date.now(), guestGeneration: tab.generation }));
+  }
   diagnostics(): Record<string, unknown> { return { capabilityEnabled: this.isCapabilityEnabled(), readiness: this.record.state, browserId: this.browserId, guestGeneration: this.record.guestGeneration, chromeSessionId: this.record.chromeSessionId, pendingRequestCount: 0, activeQueueCount: 0, compatibilityAdapter: "available", ...(this.lastError ? { lastErrorCode: this.lastError.code, lastErrorReason: this.lastError.reason, safeSuggestedAction: "Retry or inspect the Browser panel." } : {}) }; }
   open(url?: BrowserNavigateInput, context?: BrowserContextInput) { return url ? this.navigate(url, context?.sessionId, context) : Promise.resolve({ requestId: this.context(context).requestId, ok: true as const, result: { ...this.record } }); }
   wait(condition: BrowserWaitCondition, context?: BrowserContextInput) { return this.run("snapshot", async () => { const started = Date.now(); while (Date.now() - started < 10_000) { const snapshot = await this.host.snapshot(); if (condition.kind === "url" && (condition.match === "equals" ? snapshot.url === condition.value : snapshot.url.includes(condition.value))) return snapshot; if (condition.kind === "text" && snapshot.tree.includes(condition.value)) return snapshot; if (condition.kind === "page_load" && !this.record.state.includes("loading")) return snapshot; await new Promise((resolve) => setTimeout(resolve, 200)); } throw Object.assign(new Error("Browser wait timed out"), { code: "TIMEOUT" }); }, context); }
@@ -44,6 +49,7 @@ export class BrowserBroker {
     const execute = async (): Promise<BrowserResult<T>> => {
       if (!this.isCapabilityEnabled()) return { requestId: context.requestId, ok: false, code: "BROWSER_POLICY_BLOCKED", retryable: false, message: "Browser is disabled by the core capability setting. Re-enable Browser in Settings and retry." };
       const policy = decideMode(context.mode, command); if (!policy.allowed) { this.lastError = { code: policy.code, reason: policy.reason, at: Date.now() }; return { requestId: context.requestId, ok: false, code: policy.code, retryable: false, message: policy.message }; }
+      if (contextInput?.browserId && command !== "navigate" && command !== "action" && contextInput.browserId !== this.host.activeBrowserId?.()) return { requestId: context.requestId, ok: false, code: "BROWSER_TAB_NOT_FOUND", retryable: false, message: "Select the requested Browser tab before inspecting it." };
       let timer: ReturnType<typeof setTimeout> | undefined;
       try {
         this.record = { ...this.record, state: command === "navigate" || command === "action" ? "loading" : this.record.state, ownerSessionId: context.sessionId || this.record.ownerSessionId, updatedAt: Date.now() };
@@ -62,11 +68,11 @@ export class BrowserBroker {
     return chained;
   }
 
-  navigate(input: BrowserNavigateInput, sessionId?: string, context?: BrowserContextInput) { return this.run("navigate", async () => { if (input.url) { const policy = decideNavigation(input.url, null); if (!policy.allowed) throw Object.assign(new Error(policy.message), { code: policy.code }); } const state = await this.host.navigate(input, sessionId); this.latestSnapshot = undefined; this.record = { ...this.record, location: state?.url ?? input.url ?? input.path, state: state?.isLoading ? "loading" : state?.url ? "ready" : "unavailable", ownerSessionId: sessionId ?? this.record.ownerSessionId, updatedAt: Date.now() }; return state; }, { ...context, sessionId }); }
-  action(action: "back" | "forward" | "reload" | "stop", context?: BrowserContextInput) { return this.run("action", async () => { this.host.action(action); return undefined; }, context); }
+  navigate(input: BrowserNavigateInput, sessionId?: string, context?: BrowserContextInput) { return this.run("navigate", async () => { if (input.url) { const policy = decideNavigation(input.url, null); if (!policy.allowed) throw Object.assign(new Error(policy.message), { code: policy.code }); } const state = await this.host.navigate(input, sessionId, context?.browserId); this.latestSnapshot = undefined; this.record = { ...this.record, location: state?.url ?? input.url ?? input.path, state: state?.isLoading ? "loading" : state?.url ? "ready" : "unavailable", ownerSessionId: sessionId ?? this.record.ownerSessionId, updatedAt: Date.now() }; return state; }, { ...context, sessionId }); }
+  action(action: "back" | "forward" | "reload" | "stop", context?: BrowserContextInput) { return this.run("action", async () => { this.host.action(action, context?.sessionId, context?.browserId); return undefined; }, context); }
   async snapshot(context?: BrowserContextInput) {
     const result = await this.run("snapshot", () => this.host.snapshot(), context);
-    if (result.ok && result.result?.snapshotId) this.latestSnapshot = { snapshotId: result.result.snapshotId, generation: result.result.documentGeneration ?? 0, browserId: String(this.browserId) };
+    if (result.ok && result.result?.snapshotId) this.latestSnapshot = { snapshotId: result.result.snapshotId, generation: result.result.documentGeneration ?? 0, browserId: String(context?.browserId ?? this.host.activeBrowserId?.() ?? this.browserId) };
     return result;
   }
   screenshot(input: { fullPage?: boolean } = {}, sessionId?: string, context?: BrowserContextInput) { return this.run("screenshot", () => this.host.screenshot(input, sessionId), { ...context, sessionId }); }
@@ -85,7 +91,7 @@ export class BrowserBroker {
     // migration window; typed callers must provide a current snapshot first.
     if (!this.latestSnapshot && !context?.browserId) return this.run(command, work, context);
     if (!this.latestSnapshot) return Promise.resolve({ requestId: this.context(context).requestId, ok: false as const, code: "BROWSER_STALE_REF" as const, retryable: true, message: "The element reference expired. Call browser_snapshot again." });
-    if (this.latestSnapshot.browserId !== String(this.browserId)) return Promise.resolve({ requestId: this.context(context).requestId, ok: false as const, code: "BROWSER_STALE_REF" as const, retryable: true, message: "The element reference expired. Call browser_snapshot again." });
+    if (this.latestSnapshot.browserId !== String(context?.browserId ?? this.host.activeBrowserId?.() ?? this.browserId)) return Promise.resolve({ requestId: this.context(context).requestId, ok: false as const, code: "BROWSER_STALE_REF" as const, retryable: true, message: "The element reference expired. Call browser_snapshot again." });
     return this.run(command, work, context);
   }
 }

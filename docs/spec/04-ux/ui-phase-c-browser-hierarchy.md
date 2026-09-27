@@ -27,6 +27,9 @@ and dock/maximize/close controls.
 - Ctrl/Cmd+T creates a tab, Ctrl/Cmd+W closes the active tab, and
   Ctrl/Cmd+Tab / Ctrl/Cmd+Shift+Tab cycles tabs without creating a second
   Browser resource.
+- Each inner Browser tab retains its own page and navigation history. Selecting
+  one attaches its existing native guest without reloading its URL; closing it
+  disposes that guest and selects the nearest surviving tab.
 - The toolbar keeps fixed Back, Forward, Reload/Stop, address, and overflow
   slots. Secondary actions do not alter toolbar geometry between docked and
   maximized presentations.
