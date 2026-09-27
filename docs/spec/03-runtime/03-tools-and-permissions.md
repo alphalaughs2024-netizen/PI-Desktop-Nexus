@@ -716,3 +716,12 @@ callers converge on BrowserBroker and the singleton Main-owned guest. Source
 labels are assigned in Main from immutable session context; renderer code cannot
 call BrowserHost, BrowserCdp, Electron, or generic IPC. Screenshot and
 diagnostics results are bounded safe projections.
+Typed Browser tool schemas and Main handlers use the same argument names and
+conditions. `browser_type` inserts text, `browser_keypress` dispatches a key,
+and `browser_wait` observes live guest loading, URL, or snapshot text state.
+Snapshot references expire on navigation. A screenshot succeeds only when the
+image is saved under the conversation scratch directory; model-facing results
+contain its path and metadata without base64 data. Inspection and navigation
+tools, including `browser_list_tabs`, reveal the Browser panel in the active
+conversation. Allowed links requesting a new window load in the controlled
+guest so subsequent Browser tools observe their destination.

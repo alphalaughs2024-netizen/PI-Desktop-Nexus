@@ -11163,6 +11163,14 @@ must not appear as presentation-dependent toolbar slots.
 
 ### Browser UI Phase D state-surface gate
 
+For AI Browser control, call `browser_list_tabs` while the panel is closed and
+verify it opens on the active conversation. Navigate one tab, take a snapshot,
+fill and type into a field, dispatch Enter, and wait for the resulting URL and
+page-load state. Click an allowed `target=_blank` link and verify its destination
+appears in the controlled guest and a fresh snapshot. Capture a viewport
+screenshot and verify the tool returns an existing session scratch path and
+bounded metadata without base64 data. A stale snapshot ref must fail clearly.
+
 For a normally loaded page, keep the native guest visible while its first
 capture is pending, then show Ready with the page content. An empty or failed
 capture shows Surface unavailable with Retry; Retry verifies the existing page

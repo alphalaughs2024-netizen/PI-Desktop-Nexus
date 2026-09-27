@@ -169,6 +169,15 @@ export class BrowserCdp {
     }
     this.attachedId = wc.id;
     this.onDebuggerMessage = (_event, method, params) => {
+      if (method === "Page.frameNavigated") {
+        const frame = (params as { frame?: { parentId?: string } } | null)?.frame;
+        if (frame && !frame.parentId) {
+          this.uids.clear();
+          this.documentGeneration += 1;
+          this.lastSnapshotHash = undefined;
+        }
+        return;
+      }
       if (method !== "Runtime.consoleAPICalled" && method !== "Console.messageAdded") {
         return;
       }
@@ -291,6 +300,17 @@ export class BrowserCdp {
     return { mimeType: "image/jpeg", data: result.data, width: outputWidth, height: outputHeight, viewportWidth, viewportHeight, coordinateSpace: "css-pixels" as const, byteLength };
   }
 
+  async viewportScreenshot(wc: WebContents) {
+    const image = await wc.capturePage();
+    const size = image.getSize();
+    if (image.isEmpty() || size.width < 1 || size.height < 1) {
+      return this.screenshot(wc);
+    }
+    const bytes = image.toJPEG(70);
+    if (bytes.byteLength > BROWSER_SNAPSHOT_LIMITS.maxScreenshotBytes) return this.screenshot(wc);
+    return { mimeType: "image/jpeg" as const, data: bytes.toString("base64"), width: size.width, height: size.height, viewportWidth: size.width, viewportHeight: size.height, coordinateSpace: "css-pixels" as const, byteLength: bytes.byteLength };
+  }
+
   async click(wc: WebContents, uid: string): Promise<void> {
     const backendNodeId = this.requireUid(uid);
     await this.attach(wc);
@@ -345,6 +365,40 @@ export class BrowserCdp {
       }`,
       arguments: [{ value: text }],
     });
+  }
+
+  private async focus(wc: WebContents, uid: string): Promise<void> {
+    const backendNodeId = this.requireUid(uid);
+    await this.attach(wc);
+    await wc.debugger.sendCommand("DOM.focus", { backendNodeId });
+  }
+
+  async type(wc: WebContents, uid: string | undefined, text: string, clearFirst = false): Promise<void> {
+    if (typeof uid === "string" && uid.trim()) {
+      await this.focus(wc, uid);
+      if (clearFirst) await this.fill(wc, uid, "");
+    } else if (clearFirst) {
+      throw Object.assign(new Error("clearFirst requires a snapshot ref"), { code: "BROWSER_INVALID_INPUT" });
+    }
+    await this.attach(wc);
+    await wc.debugger.sendCommand("Input.insertText", { text: text.slice(0, MAX_EVALUATE_CHARS) });
+  }
+
+  async keypress(wc: WebContents, uid: string | undefined, key: string, modifiers: string[] = []): Promise<void> {
+    const codes: Record<string, number> = { Enter: 13, Tab: 9, Escape: 27, Backspace: 8, Delete: 46, ArrowLeft: 37, ArrowUp: 38, ArrowRight: 39, ArrowDown: 40, Home: 36, End: 35, PageUp: 33, PageDown: 34, Space: 32 };
+    const normalized = key === " " ? "Space" : key;
+    if (!(normalized in codes) && !/^[a-z0-9]$/i.test(normalized)) throw Object.assign(new Error("unsupported Browser key"), { code: "BROWSER_INVALID_INPUT" });
+    if (uid) await this.focus(wc, uid);
+    else await this.attach(wc);
+    const mask = modifiers.reduce((value, modifier) => {
+      const bit = { Alt: 1, Control: 2, Meta: 4, Shift: 8 }[modifier as "Alt" | "Control" | "Meta" | "Shift"];
+      if (!bit) throw Object.assign(new Error("unsupported Browser key modifier"), { code: "BROWSER_INVALID_INPUT" });
+      return value | bit;
+    }, 0);
+    const virtualCode = codes[normalized] ?? normalized.toUpperCase().charCodeAt(0);
+    const options = { key: normalized === "Space" ? " " : normalized, code: normalized, windowsVirtualKeyCode: virtualCode, modifiers: mask };
+    await wc.debugger.sendCommand("Input.dispatchKeyEvent", { type: "keyDown", ...options });
+    await wc.debugger.sendCommand("Input.dispatchKeyEvent", { type: "keyUp", ...options });
   }
 
   async evaluate(wc: WebContents, expression: string): Promise<unknown> {

@@ -360,7 +360,7 @@ export class BrowserPane {
     const wc = view.webContents;
     wc.setWindowOpenHandler(({ url }) => {
       const allowed = parseAllowedExternalUrl(url);
-      if (allowed) void shell.openExternal(allowed);
+      if (allowed) queueMicrotask(() => { if (!wc.isDestroyed()) void wc.loadURL(allowed).catch(() => undefined); });
       return { action: "deny" };
     });
     wc.session.setPermissionRequestHandler((_wc, _permission, callback) => {

@@ -3,16 +3,19 @@ import type { BrowserHost, BrowserNavigateInput } from "./browser-host";
 import { decideCapability, decideCdp, decideMode, decideNavigation } from "./browser-policy";
 
 type BrowserCommand = "navigate" | "action" | "snapshot" | "screenshot" | "click" | "fill" | "evaluate" | "console" | "cdp" | "preview";
-type BrowserContextInput = Partial<Omit<BrowserRequestContext, "requestId" | "browserId">> & { browserId?: string; createTab?: boolean };
+type BrowserContextInput = Partial<Omit<BrowserRequestContext, "requestId" | "browserId">> & { browserId?: string; snapshotId?: string };
 export type BrowserRecord = { browserId: BrowserRequestContext["browserId"]; ownerSessionId?: string; chromeSessionId?: string; state: "starting" | "ready" | "loading" | "unavailable" | "blocked" | "closed"; location?: string; createdAt: number; updatedAt: number; guestGeneration: number };
 
 const MUTATIONS = new Set<BrowserCommand>(["navigate", "action", "click", "fill", "evaluate", "cdp", "preview"]);
-const TIMEOUTS: Record<BrowserCommand, number> = { navigate: 20_000, action: 20_000, snapshot: 10_000, screenshot: 15_000, click: 10_000, fill: 10_000, evaluate: 10_000, console: 10_000, cdp: 10_000, preview: 20_000 };
+const TIMEOUTS: Record<BrowserCommand, number> = { navigate: 20_000, action: 20_000, snapshot: 10_000, screenshot: 30_000, click: 10_000, fill: 10_000, evaluate: 10_000, console: 10_000, cdp: 10_000, preview: 20_000 };
 
 function errorCode(error: unknown): BrowserErrorCode {
   const code = typeof error === "object" && error && "code" in error ? String((error as { code?: unknown }).code) : "";
   if (code === "UNAVAILABLE") return "BROWSER_UNAVAILABLE";
   if (code === "BROWSER_TAB_NOT_FOUND") return "BROWSER_TAB_NOT_FOUND";
+  if (code === "BROWSER_STALE_REF" || code === "INVALID_ARGUMENT") return "BROWSER_STALE_REF";
+  if (code === "BROWSER_INVALID_INPUT") return "BROWSER_INVALID_INPUT";
+  if (code === "TIMEOUT") return "BROWSER_TIMEOUT";
   if (code === "PERMISSION_DENIED") return "BROWSER_POLICY_BLOCKED";
   return "BROWSER_UNKNOWN_ERROR";
 }
@@ -40,11 +43,21 @@ export class BrowserBroker {
   }
   diagnostics(): Record<string, unknown> { return { capabilityEnabled: this.isCapabilityEnabled(), readiness: this.record.state, browserId: this.browserId, guestGeneration: this.record.guestGeneration, chromeSessionId: this.record.chromeSessionId, pendingRequestCount: 0, activeQueueCount: 0, compatibilityAdapter: "available", ...(this.lastError ? { lastErrorCode: this.lastError.code, lastErrorReason: this.lastError.reason, safeSuggestedAction: "Retry or inspect the Browser panel." } : {}) }; }
   open(url?: BrowserNavigateInput, context?: BrowserContextInput) { return url ? this.navigate(url, context?.sessionId, context) : Promise.resolve({ requestId: this.context(context).requestId, ok: true as const, result: { ...this.record } }); }
-  wait(condition: BrowserWaitCondition, context?: BrowserContextInput) { return this.run("snapshot", async () => { const started = Date.now(); while (Date.now() - started < 10_000) { const snapshot = await this.host.snapshot(); if (condition.kind === "url" && (condition.match === "equals" ? snapshot.url === condition.value : snapshot.url.includes(condition.value))) return snapshot; if (condition.kind === "text" && snapshot.tree.includes(condition.value)) return snapshot; if (condition.kind === "page_load" && !this.record.state.includes("loading")) return snapshot; await new Promise((resolve) => setTimeout(resolve, 200)); } throw Object.assign(new Error("Browser wait timed out"), { code: "TIMEOUT" }); }, context); }
-  type(uid: string | undefined, text: string, context?: BrowserContextInput) { return this.fill(uid ?? "", text, context); }
-  keypress(_uid: string | undefined, _key: string, context?: BrowserContextInput) { return this.run("action", async () => undefined, context); }
+  wait(condition: BrowserWaitCondition, context?: BrowserContextInput, timeoutMs = 10_000) { return this.run("snapshot", async () => {
+    const deadline = Date.now() + Math.min(25_000, Math.max(250, Number(timeoutMs) || 10_000));
+    while (Date.now() < deadline) {
+      const state = this.host.getState();
+      if (condition.kind === "page_load" && state?.url && !state.isLoading) return this.host.snapshot();
+      if (condition.kind === "url" && state?.url && (condition.match === "equals" ? state.url === condition.value : state.url.includes(condition.value))) return this.host.snapshot();
+      if (condition.kind === "text") { const snapshot = await this.host.snapshot(); if (snapshot.tree.includes(condition.value)) return snapshot; }
+      await new Promise((resolve) => setTimeout(resolve, 200));
+    }
+    throw Object.assign(new Error("Browser wait timed out"), { code: "TIMEOUT" });
+  }, context, true, Math.min(25_000, Math.max(250, Number(timeoutMs) || 10_000)) + 1_000); }
+  type(uid: string | undefined, text: string, clearFirst = false, context?: BrowserContextInput) { return this.refAction("fill", uid, () => this.host.type(uid, text, clearFirst), context); }
+  keypress(uid: string | undefined, key: string, modifiers: string[] = [], context?: BrowserContextInput) { return this.refAction("click", uid, () => this.host.keypress(uid, key, modifiers), context); }
 
-  private async run<T>(command: BrowserCommand, work: () => Promise<T>, contextInput?: BrowserContextInput, serialize = true): Promise<BrowserResult<T>> {
+  private async run<T>(command: BrowserCommand, work: () => Promise<T>, contextInput?: BrowserContextInput, serialize = true, timeoutMs = TIMEOUTS[command]): Promise<BrowserResult<T>> {
     const context = this.context(contextInput);
     const execute = async (): Promise<BrowserResult<T>> => {
       if (!this.isCapabilityEnabled()) return { requestId: context.requestId, ok: false, code: "BROWSER_POLICY_BLOCKED", retryable: false, message: "Browser is disabled by the core capability setting. Re-enable Browser in Settings and retry." };
@@ -53,12 +66,12 @@ export class BrowserBroker {
       let timer: ReturnType<typeof setTimeout> | undefined;
       try {
         this.record = { ...this.record, state: command === "navigate" || command === "action" ? "loading" : this.record.state, ownerSessionId: context.sessionId || this.record.ownerSessionId, updatedAt: Date.now() };
-        const result = await Promise.race([work(), new Promise<never>((_, reject) => { timer = setTimeout(() => reject(Object.assign(new Error("Browser command timed out"), { code: "TIMEOUT" })), TIMEOUTS[command]); })]);
+        const result = await Promise.race([work(), new Promise<never>((_, reject) => { timer = setTimeout(() => reject(Object.assign(new Error("Browser command timed out"), { code: "TIMEOUT" })), timeoutMs); })]);
         this.record = { ...this.record, state: "ready", updatedAt: Date.now() };
         return { requestId: context.requestId, ok: true, result };
       } catch (error) {
         const code = errorCode(error); this.lastError = { code, reason: error instanceof Error ? error.name : "unknown", at: Date.now() };
-        const timeout = code === "BROWSER_UNKNOWN_ERROR" && error instanceof Error && error.message === "Browser command timed out";
+        const timeout = code === "BROWSER_TIMEOUT";
         this.record = { ...this.record, state: timeout ? "unavailable" : this.record.state, updatedAt: Date.now() };
         return { requestId: context.requestId, ok: false, code: timeout && MUTATIONS.has(command) ? "BROWSER_POSSIBLY_APPLIED" : timeout ? "BROWSER_TIMEOUT" : code, retryable: !MUTATIONS.has(command), possiblyApplied: timeout && MUTATIONS.has(command), message: timeout && MUTATIONS.has(command) ? "The Browser action may have reached the page. Take a fresh snapshot before retrying." : timeout ? "The Browser command timed out before dispatch completed. Retry is safe." : error instanceof Error ? error.message : "Browser command failed." };
       } finally { if (timer) clearTimeout(timer); }
@@ -92,13 +105,14 @@ export class BrowserBroker {
   guestDisposed(): void { this.record = { ...this.record, state: "unavailable", guestGeneration: this.record.guestGeneration + 1, updatedAt: Date.now() }; }
   invalidate(): void { this.latestSnapshot = undefined; this.guestDisposed(); }
   guestReady(): void { this.record = { ...this.record, state: "ready", guestGeneration: this.record.guestGeneration + 1, updatedAt: Date.now() }; }
-  private refAction<T>(command: "click" | "fill", uid: string, work: () => Promise<T>, context?: BrowserContextInput) {
+  private refAction<T>(command: "click" | "fill", uid: string | undefined, work: () => Promise<T>, context?: BrowserContextInput) {
     if (context?.mode === "plan") return this.run(command, work, context);
     // Compatibility callers may still send legacy uid-only actions during the
     // migration window; typed callers must provide a current snapshot first.
+    if (!uid) return this.run(command, work, context);
     if (!this.latestSnapshot && !context?.browserId) return this.run(command, work, context);
     if (!this.latestSnapshot) return Promise.resolve({ requestId: this.context(context).requestId, ok: false as const, code: "BROWSER_STALE_REF" as const, retryable: true, message: "The element reference expired. Call browser_snapshot again." });
-    if (this.latestSnapshot.browserId !== String(context?.browserId ?? this.host.activeBrowserId?.() ?? this.browserId)) return Promise.resolve({ requestId: this.context(context).requestId, ok: false as const, code: "BROWSER_STALE_REF" as const, retryable: true, message: "The element reference expired. Call browser_snapshot again." });
+    if (this.latestSnapshot.browserId !== String(context?.browserId ?? this.host.activeBrowserId?.() ?? this.browserId) || (context?.snapshotId && context.snapshotId !== this.latestSnapshot.snapshotId)) return Promise.resolve({ requestId: this.context(context).requestId, ok: false as const, code: "BROWSER_STALE_REF" as const, retryable: true, message: "The element reference expired. Call browser_snapshot again." });
     return this.run(command, work, context);
   }
 }

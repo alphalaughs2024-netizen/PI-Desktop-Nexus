@@ -219,16 +219,16 @@ export class BrowserHost {
     sessionId?: string,
   ): Promise<{ mimeType: string; data: string; path?: string }> {
     const wc = this.requireWebContents();
-    const shot = await this.cdp.screenshot(wc, input);
+    const shot = input.fullPage ? await this.cdp.screenshot(wc, input) : await this.cdp.viewportScreenshot(wc);
     const scratch = this.deps.getScratchDir?.(sessionId ?? this.chromeSessionId ?? undefined);
-    if (!scratch) return shot;
+    if (!scratch) throw new Error("Browser screenshot requires a session scratch directory");
     try {
       mkdirSync(scratch, { recursive: true });
       const path = join(scratch, `browser-screenshot-${Date.now()}.jpg`);
       writeFileSync(path, Buffer.from(shot.data, "base64"));
       return { ...shot, path };
     } catch {
-      return shot;
+      throw new Error("Browser screenshot could not be saved");
     }
   }
 
@@ -238,6 +238,14 @@ export class BrowserHost {
 
   async fill(uid: string, text: string): Promise<void> {
     await this.cdp.fill(this.requireWebContents(), uid, text);
+  }
+
+  async type(uid: string | undefined, text: string, clearFirst: boolean): Promise<void> {
+    await this.cdp.type(this.requireWebContents(), uid, text, clearFirst);
+  }
+
+  async keypress(uid: string | undefined, key: string, modifiers: string[]): Promise<void> {
+    await this.cdp.keypress(this.requireWebContents(), uid, key, modifiers);
   }
 
   async evaluate(expression: string): Promise<unknown> {

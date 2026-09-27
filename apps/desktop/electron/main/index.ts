@@ -5430,14 +5430,20 @@ async function startSidecar(): Promise<void> {
       markBrowserSource(sessionId, "agent");
       const normalizedArgs = args;
       const result = await descriptor.execute(normalizedArgs, { sessionId, mode: mode === "plan" ? "plan" : "agent" });
+      if (result && typeof result === "object" && "ok" in result && !(result as { ok: boolean }).ok) {
+        return { ...(result as object), ok: false, isError: true, content: (result as { message?: string }).message ?? "Browser operation failed", details: result };
+      }
       if (["browser_open", "browser_navigate", "browser_list_tabs", "browser_snapshot", "browser_wait", "browser_screenshot"].includes(descriptor.name)) {
         const requestId = `activation-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
         const location = typeof (normalizedArgs as { url?: unknown })?.url === "string" ? String((normalizedArgs as { url: string }).url) : undefined;
-        sendToRenderer(IPC.event.browserActivationRequested, { requestId, sessionId, location, source: "agent", focus: "panel", background: false, createTab: Boolean((normalizedArgs as { newTab?: unknown })?.newTab) });
+        sendToRenderer(IPC.event.browserActivationRequested, { requestId, sessionId, location, source: "agent", focus: "panel", background: false });
       }
-      return result && typeof result === "object" && "ok" in (result as Record<string, unknown>)
-        ? { ...(result as { ok: boolean; content?: unknown; isError?: boolean; errorCode?: string; result?: unknown; code?: string; retryable?: boolean; possiblyApplied?: boolean }), content: (result as { content?: unknown }).content ?? JSON.stringify((result as { result?: unknown }).result ?? result), details: result }
-        : { ok: true, content: result };
+      const safeResult = descriptor.name === "browser_screenshot" && result && typeof result === "object" && "result" in result
+        ? { ...(result as object), result: (({ data: _data, ...metadata }) => metadata)((result as { result: { data?: string } }).result) }
+        : result;
+      return safeResult && typeof safeResult === "object" && "ok" in (safeResult as Record<string, unknown>)
+        ? { ...(safeResult as { ok: boolean; content?: unknown; result?: unknown }), content: JSON.stringify((safeResult as { result?: unknown }).result ?? safeResult), details: safeResult }
+        : { ok: true, content: safeResult };
     });
   }
   // Plugin skills (D174): the model loads a declared skill document by id.
