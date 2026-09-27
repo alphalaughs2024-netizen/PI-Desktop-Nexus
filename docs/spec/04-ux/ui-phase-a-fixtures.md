@@ -37,3 +37,8 @@ Phase E visual fixture IDs are `browser-new-tab`, `browser-one-tab`,
 `browser-multiple-tabs`, `browser-loading`, `browser-surface-unavailable`,
 `browser-diagnostics`, `browser-address-focused`, `browser-tab-focused`,
 `browser-disabled-toolbar`, `browser-narrow`, and `browser-reduced-motion`.
+Phase F adds `browser-tab-context-menu`, `browser-context-menu-keyboard`,
+`browser-new-tab-focus`, `browser-close-tab-focus`,
+`browser-menu-focus-restore`, `browser-diagnostics-focus-restore`,
+`browser-shortcuts`, `browser-narrow-overflow`, and
+`browser-reduced-motion-interactions`.

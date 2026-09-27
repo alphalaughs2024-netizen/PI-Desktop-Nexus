@@ -103,6 +103,10 @@
 .browser-tab:hover .browser-tab-close, .browser-tab:focus-within .browser-tab-close, .browser-tab-close:focus-visible { opacity: 1; }
 .browser-tab-close:hover, .browser-tab-new:hover { background: var(--browser-tab-hover, var(--ds-bg-hover)); opacity: 1; }
 .browser-tab-new { margin-left: 2px; align-self: center; }
+.browser-tab-context-menu { position: fixed; z-index: 12; display: grid; min-width: 208px; max-height: min(300px, calc(100vh - 16px)); gap: 2px; overflow-y: auto; padding: 4px; border: 1px solid var(--browser-border, var(--ds-border-subtle)); border-radius: var(--radius-md); background: var(--browser-panel-surface-raised, var(--ds-bg-secondary)); box-shadow: var(--shadow-lg); }
+.browser-tab-context-menu button { min-height: 30px; padding: 0 9px; border: 0; border-radius: var(--radius-sm); background: transparent; color: var(--browser-text, var(--ds-text-primary)); text-align: left; font: inherit; font-size: var(--text-xs); }
+.browser-tab-context-menu button:hover:not(:disabled), .browser-tab-context-menu button:focus-visible { background: var(--browser-tab-hover, var(--ds-bg-hover)); outline: 2px solid var(--browser-focus, var(--ds-focus)); outline-offset: -2px; }
+.browser-tab-context-menu button:disabled { color: var(--browser-text-muted, var(--ds-text-muted)); opacity: .5; }
 .browser-toolbar { display: flex; min-height: 36px; flex: 0 0 36px; align-items: center; gap: 5px; padding: 0 10px; border-bottom: 1px solid var(--browser-border, var(--ds-border-subtle)); background: var(--browser-toolbar-surface, var(--ds-bg-secondary)); transition: background-color 160ms var(--motion-ease-out), border-color 160ms var(--motion-ease-out); }
 .browser-toolbar--maximized { padding-inline: 16px; }
 .browser-toolbar button { display: inline-flex; width: 28px; height: 28px; flex: 0 0 28px; align-items: center; justify-content: center; border: 0; border-radius: var(--radius-sm); background: transparent; color: var(--browser-text-muted, var(--ds-text-muted)); }
@@ -161,6 +165,7 @@
 .browser-diagnostics-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
 @media (prefers-reduced-motion: reduce) { .browser-readiness-strip--starting .browser-readiness-dot, .browser-readiness-strip--loading .browser-readiness-dot { animation: none; } }
 @media (prefers-reduced-motion: reduce) { .browser-diagnostics-drawer--open { animation: none; } .browser-toolbar, .browser-readiness-strip, .browser-state-surface { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .browser-tab-context-menu { animation: none; } }
 @keyframes work-panel-maximized-in { from { opacity: 0; transform: scale(.985); } to { opacity: 1; transform: scale(1); } }
 @media (prefers-reduced-motion: reduce) { .work-panel-frame.is-maximized { animation: none; } }
 

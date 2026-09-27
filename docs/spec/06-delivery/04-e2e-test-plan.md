@@ -11146,6 +11146,17 @@ chrome are blocking differences. Native guest page pixels are excluded from
 renderer color ownership; only the Main-owned guest document may be omitted
 from Browser chrome accessibility scans.
 
+### Browser UI Phase F interaction gate
+
+Phase F verifies the renderer-owned tab context menu, including right-click,
+Context Menu/Shift+F10, safe New/Reload/Duplicate/Close/Close-other actions,
+keyboard Arrow/Home/End/Enter/Space/Escape behavior, disabled actions, and
+origin-tab focus restoration. It also verifies Ctrl/Cmd+T/W/Tab/Shift+Tab/L,
+Enter, Escape, diagnostics/menu focus restoration, no focus theft during state
+changes, narrow menu clamping/scrolling, stable live regions, and reduced-motion
+interaction states across the four scenic themes. Context actions must not alter
+guest geometry or add Main/backend ownership.
+
 The deterministic fixture server provides ready, delayed, navigation, and
 failure pages on loopback only. Any failure-state seeding is guarded by the
 `NEXUS_PHASE10_TEST` environment variable and is unavailable in normal builds.
