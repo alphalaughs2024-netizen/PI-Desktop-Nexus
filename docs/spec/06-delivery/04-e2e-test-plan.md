@@ -8984,6 +8984,22 @@ This test plan spec is accepted when:
 - **Milestone**: M6+
 - **Status**: Source-contract covered; rendered desktop journey remains pending
 
+#### E2E-168b: Browser control focus and New Tab actions
+
+- **Preconditions**: Open the Browser panel on New Tab.
+- **Steps**: 1) Focus the address field by keyboard and pointer. 2) Hover,
+  press, and keyboard-focus the toolbar buttons and each New Tab action.
+  3) Activate Open URL, Search, and New tab in turn.
+- **Expected**: The address field has one rounded focus ring without a nested
+  rectangular outline. Controls show coherent hover, press, disabled, and
+  keyboard-focus states. Open URL focuses the address field, Search opens a
+  search page, and New tab creates a separate empty tab. New Tab has no
+  redundant readiness row or blank operation-status gap.
+- **Specs linked**: `04-ux/07-ui-design-system.md`
+- **Acceptance**: C (Browser), Quality
+- **Milestone**: M6+
+- **Status**: Source-contract covered; rendered desktop journey remains pending
+
 #### E2E-162: A vendor account and an AI service offer the same model picker
 
 - **Preconditions**: One signed-in vendor (OAuth) account and one API-key AI

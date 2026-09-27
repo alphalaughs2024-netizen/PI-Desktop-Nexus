@@ -502,6 +502,12 @@ expanded width when reopened. The Browser surface uses a single layered chrome
 with a raised active tab, a pill-shaped address field, and a compact action
 grid on the scenic New Tab surface; loaded pages do not inherit the scenic
 background.
+The Browser address field paints one focus treatment on its rounded container;
+the nested input adds no rectangular outline. Browser buttons and New Tab
+actions have distinct hover, pressed, and keyboard-focus states. The New Tab
+actions focus the address field, open a search page, and create a new tab,
+respectively. The no-page readiness label and an empty operation status do not
+reserve a second row under the toolbar.
 
 The profile menu is `280px` wide, opens `8px` above the footer, and uses the
 standard opaque elevated-menu surface, subtle border, and dialog shadow. Its
