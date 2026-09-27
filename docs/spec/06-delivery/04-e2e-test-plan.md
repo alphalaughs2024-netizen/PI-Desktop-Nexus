@@ -11135,6 +11135,17 @@ disabled controls, and focus rings readable. Theme captures cover New Tab,
 ready/loading tabs, recovery/error, diagnostics, address/tab focus, and narrow
 Browser states; guest page pixels remain guest-owned and are never recolored.
 
+The reference comparison set is stored at `C:/Users/aksha/Downloads/visual ref`:
+`alpine light.png`, `twlight mountains.png`, `obsidian black.png`, and
+`emerald after glow.png`. Review captures at approximately 1671×940 and a
+narrow viewport for hierarchy, contrast, opacity, spacing, active/inactive tab
+separation, focus visibility, disabled/error legibility, and stable toolbar /
+content geometry. Unexpected scenic bleed-through, clipped text, invisible
+focus rings, geometry shifts, or diagnostics/error surfaces obscuring Browser
+chrome are blocking differences. Native guest page pixels are excluded from
+renderer color ownership; only the Main-owned guest document may be omitted
+from Browser chrome accessibility scans.
+
 The deterministic fixture server provides ready, delayed, navigation, and
 failure pages on loopback only. Any failure-state seeding is guarded by the
 `NEXUS_PHASE10_TEST` environment variable and is unavailable in normal builds.

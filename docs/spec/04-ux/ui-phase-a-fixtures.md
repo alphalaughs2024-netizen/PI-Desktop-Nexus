@@ -33,3 +33,7 @@ Browser state fixture remains required under all four scenic themes.
 Phase E adds per-theme parity checks for active/inactive/loading tabs, address
 readability, disabled controls, readiness/error/policy colors, diagnostics,
 New Tab/recovery surfaces, focus rings, and narrow layouts.
+Phase E visual fixture IDs are `browser-new-tab`, `browser-one-tab`,
+`browser-multiple-tabs`, `browser-loading`, `browser-surface-unavailable`,
+`browser-diagnostics`, `browser-address-focused`, `browser-tab-focused`,
+`browser-disabled-toolbar`, `browser-narrow`, and `browser-reduced-motion`.

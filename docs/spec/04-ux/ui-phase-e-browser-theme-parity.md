@@ -14,6 +14,19 @@ Each theme defines exactly one value for every Browser token: panel/raised
 surfaces, tab states, toolbar/address surfaces, border/focus, ready/loading/error,
 text/muted text, and New Tab surface.
 
+## Reference matrix
+
+| Reference | Theme selector | Browser visual target |
+| --- | --- | --- |
+| `alpine light.png` | `alpine-light` | Pale ice-blue/white surfaces, dark navy ink, crisp blue focus, stronger light borders |
+| `twlight mountains.png` | `twilight-mountains` | Deep indigo glass, cool-blue focus, green readiness, raised active tab |
+| `obsidian black.png` | `obsidian-horizon` | Near-black blue surfaces, silver-gray borders, restrained blue focus |
+| `emerald after glow.png` | `emerald-afterglow` | Green-black glass, mint focus, green readiness, muted inactive tabs |
+
+Acceptance compares hierarchy, opacity, contrast, spacing, and state treatment
+at approximately 1671×940 plus a narrow Browser viewport; it does not require
+pixel identity with the supplied images.
+
 ## Browser ownership and contrast
 
 Browser selectors use Browser semantic tokens for chrome, menus, diagnostics,
