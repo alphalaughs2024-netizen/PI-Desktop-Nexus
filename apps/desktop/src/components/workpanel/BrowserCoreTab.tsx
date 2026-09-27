@@ -10,8 +10,6 @@ import { BrowserErrorNotice } from "./BrowserErrorNotice";
 import { BrowserEmptyState } from "./BrowserEmptyState";
 import { BrowserDiagnosticsDrawer } from "./BrowserDiagnosticsDrawer";
 import { BrowserTabStrip } from "./BrowserTabStrip";
-import { BrowserHeader } from "./BrowserHeader";
-import { BrowserSourceRow } from "./BrowserSourceRow";
 import { BrowserNewTabSurface } from "./BrowserNewTabSurface";
 import { isBrowserGuestSurfaceVisible, isBrowserRecoveryState, type BrowserPresentationState } from "./browser-presentation-state";
 
@@ -81,8 +79,6 @@ export function BrowserCoreTab({ sessionId, location, blocked = false, presentat
   useEffect(() => { if (isNewTab) focusAddress(true); }, [isNewTab]);
   const openDiagnostics = () => { diagnosticsTriggerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null; setDiagnosticsOpen(true); };
   return <div className={`browser-core-view browser-core-view--${state}${isNewTab ? " browser-core-view--new-tab" : ""}`} data-browser-presentation={presentation} data-browser-readiness={state} data-browser-location={location ?? ""}>
-    <BrowserHeader state={state} hasLocation={Boolean(viewState.safeLocation && !isNewTab)} recoverable={viewState.recoverable} onOpenDiagnostics={openDiagnostics} onRetry={recover} onReopen={recover} onCopyLocation={() => void copyLocation()} onOpenExternal={() => void runExternal()} />
-    <BrowserSourceRow source={viewState.source} onOpenExternal={() => void runExternal()} disabled={!viewState.safeLocation || isNewTab} />
     <BrowserTabStrip tabs={visibleTabs} activeId={activeBrowserId} onActivate={activateBrowserTab} onClose={closeBrowserTab} onNew={newBrowserTab} onReload={reloadBrowserTab} onDuplicate={duplicateBrowserTab} onCloseOthers={closeOtherBrowserTabs} />
     <BrowserToolbar presentation={presentation} browserState={browserState} panelState={state} busy={Boolean(operation)} disabled={blocked || transitioning} sessionId={sessionId} committedLocation={viewState.safeLocation ?? location ?? browserState?.url} onNavigate={navigateToAddress} onAction={performBrowserAction} onScreenshot={runScreenshot} onOpenExternal={runExternal} onCopyLocation={copyLocation} onOpenDiagnostics={() => { diagnosticsTriggerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null; setDiagnosticsOpen(true); }} />
     <div className="browser-content-viewport" data-browser-content-state={isNewTab ? "no-page" : state}>

@@ -10,15 +10,14 @@ const empty = await readFile(new URL("../src/components/workpanel/BrowserEmptySt
 const css = await readFile(new URL("../src/styles/work-panel.css", import.meta.url), "utf8");
 const themes = await Promise.all(["twilight-mountains.css", "alpine-light.css", "obsidian-horizon.css", "emerald-afterglow.css"].map((name) => readFile(new URL(`../src/styles/${name}`, import.meta.url), "utf8")));
 
-test("Phase B composes one Browser card hierarchy", () => {
-  assert.match(core, /<BrowserHeader/);
-  assert.match(core, /<BrowserSourceRow/);
+test("Browser keeps the host Browser row and removes duplicate resource headers", () => {
+  assert.doesNotMatch(core, /<BrowserHeader/);
+  assert.doesNotMatch(core, /<BrowserSourceRow/);
   assert.match(header, /<h1>Browser<\/h1>/);
   assert.match(header, /Browser options/);
   assert.match(source, /Opened by you/);
   assert.match(source, /Open in default browser/);
-  assert.match(css, /\.browser-header/);
-  assert.match(css, /\.browser-source-row/);
+  assert.match(css, /\.work-panel-frame:has\(\.browser-core-view\) \.work-panel-frame-header \{ display: none; \}/);
   assert.match(css, /\.work-panel-frame:has\(\.browser-core-view\) \.work-panel-frame-title[^}]*color: var\(--ds-text-muted/);
 });
 

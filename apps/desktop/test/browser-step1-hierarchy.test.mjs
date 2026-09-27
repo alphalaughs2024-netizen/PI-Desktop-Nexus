@@ -5,7 +5,7 @@ import test from "node:test";
 const core = await readFile(new URL("../src/components/workpanel/BrowserCoreTab.tsx", import.meta.url), "utf8");
 
 test("Step 1 preserves the six Browser composition layers in order", () => {
-  const layers = ["<BrowserHeader", "<BrowserSourceRow", "<BrowserTabStrip", "<BrowserToolbar", "className=\"browser-content-viewport\""];
+  const layers = ["<BrowserTabStrip", "<BrowserToolbar", "className=\"browser-content-viewport\""];
   let previous = -1;
   for (const layer of layers) {
     const index = core.indexOf(layer);

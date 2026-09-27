@@ -63,6 +63,7 @@
 
 .work-panel-frame-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--text-md); font-weight: var(--font-weight-medium); }
 .work-panel-frame:has(.browser-core-view) .work-panel-frame-title { color: var(--ds-text-muted); font-size: var(--text-sm); font-weight: var(--font-weight-normal); }
+.work-panel-frame:has(.browser-core-view) .work-panel-frame-header { display: none; }
 .work-panel-frame-actions { display: flex; flex: 0 0 auto; gap: 2px; margin-left: auto; }
 .work-panel-frame-button { display: inline-flex; width: 28px; height: 28px; align-items: center; justify-content: center; border: 0; border-radius: var(--radius-sm); background: transparent; color: var(--ds-text-muted); }
 .work-panel-frame-button:hover { background: var(--ds-bg-hover); color: var(--ds-text-primary); }

@@ -8,8 +8,8 @@ const tabs = await readFile(new URL("../src/components/workpanel/BrowserTabStrip
 const toolbar = await readFile(new URL("../src/components/workpanel/BrowserToolbar.tsx", import.meta.url), "utf8");
 const css = await readFile(new URL("../src/styles/work-panel.css", import.meta.url), "utf8");
 
-test("Phase C gives the Browser header its own safe keyboard menu", () => {
-  assert.match(core, /<BrowserHeader/);
+test("Browser header menu is not duplicated in the compact resource composition", () => {
+  assert.doesNotMatch(core, /<BrowserHeader/);
   assert.match(header, /role="menu"/);
   for (const action of ["Open Browser diagnostics", "Retry Browser", "Reopen Browser", "Copy safe address", "Open in default browser"]) assert.match(header, new RegExp(action));
   for (const key of ["ArrowDown", "ArrowUp", "Home", "End", "Escape"]) assert.match(header, new RegExp(key));

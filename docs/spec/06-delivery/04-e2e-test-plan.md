@@ -11146,6 +11146,16 @@ chrome are blocking differences. Native guest page pixels are excluded from
 renderer color ownership; only the Main-owned guest document may be omitted
 from Browser chrome accessibility scans.
 
+### Compact Browser header composition gate
+
+When Browser is active, the outer Work Panel frame title row and duplicate
+Browser-specific header/session rows must not consume vertical space. The
+existing Nexus Work Panel switcher row remains the single host-level Browser
+identity, followed by tabs, navigation toolbar, and the Browser viewport.
+Readiness, operation, error, New Tab, recovery, and native guest content remain
+inside that viewport. No Browser behavior, navigation, session, or backend
+ownership changes are permitted.
+
 ### Browser UI Phase F interaction gate
 
 Phase F verifies the renderer-owned tab context menu, including right-click,
