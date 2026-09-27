@@ -1,8 +1,6 @@
 /* First-party scenic treatment. Components continue to consume semantic tokens. */
 :root[data-theme="dark"][data-scenic-theme="twilight-mountains"] {
   --browser-panel-surface: rgba(8, 18, 42, .78); --browser-panel-surface-raised: rgba(25, 47, 88, .86); --browser-tab-active: rgba(25, 47, 88, .86); --browser-tab-inactive: rgba(7, 17, 38, .60); --browser-tab-hover: rgba(70, 112, 180, .32); --browser-toolbar-surface: rgba(8, 18, 42, .88); --browser-address-surface: rgba(4, 12, 29, .72); --browser-border: rgba(137, 178, 238, .28); --browser-focus: #8fbdf5; --browser-ready: #9be23b; --browser-loading: #8fbdf5; --browser-error: #ff8b9a; --browser-text: #f4f8ff; --browser-text-muted: #b6c7e2; --browser-new-tab-surface: rgba(5, 15, 36, .94);
-  --browser-new-tab-surface: rgba(5, 15, 36, .92);
-  --browser-panel-surface: rgba(8, 18, 42, .78); --browser-tab-active: rgba(25, 47, 88, .86); --browser-tab-inactive: rgba(7, 17, 38, .6); --browser-tab-hover: rgba(70, 112, 180, .32); --browser-toolbar-surface: rgba(8, 18, 42, .88); --browser-address-surface: rgba(4, 12, 29, .72); --browser-border: rgba(137, 178, 238, .28); --browser-focus: #8fbdf5; --browser-ready: #9be23b; --browser-loading: #8fbdf5; --browser-error: #ff8b9a; --browser-text: #f4f8ff; --browser-text-muted: #b6c7e2;
   /* Twilight material tiers: large surfaces reveal the scene; dense/safety
      surfaces intentionally stay opaque enough to read independently. */
   --twilight-atmosphere: rgba(4, 18, 48, 0.16);

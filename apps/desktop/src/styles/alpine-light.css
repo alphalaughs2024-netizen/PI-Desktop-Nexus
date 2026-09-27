@@ -1,7 +1,5 @@
 :root[data-theme="light"][data-scenic-theme="alpine-light"] {
   --browser-panel-surface: rgba(236, 245, 255, .80); --browser-panel-surface-raised: rgba(255, 255, 255, .92); --browser-tab-active: rgba(255, 255, 255, .88); --browser-tab-inactive: rgba(220, 234, 251, .64); --browser-tab-hover: rgba(125, 163, 211, .24); --browser-toolbar-surface: rgba(232, 243, 255, .90); --browser-address-surface: rgba(255, 255, 255, .84); --browser-border: rgba(43, 78, 124, .30); --browser-focus: #245d9e; --browser-ready: #3e9f2f; --browser-loading: #245d9e; --browser-error: #b3263e; --browser-text: #12325b; --browser-text-muted: #426384; --browser-new-tab-surface: rgba(247, 251, 255, .96);
-  --browser-new-tab-surface: rgba(247, 251, 255, .94);
-  --browser-panel-surface: rgba(236, 245, 255, .78); --browser-tab-active: rgba(255, 255, 255, .86); --browser-tab-inactive: rgba(220, 234, 251, .62); --browser-tab-hover: rgba(125, 163, 211, .24); --browser-toolbar-surface: rgba(232, 243, 255, .88); --browser-address-surface: rgba(255, 255, 255, .76); --browser-border: rgba(43, 78, 124, .28); --browser-focus: #245d9e; --browser-ready: #3e9f2f; --browser-loading: #245d9e; --browser-error: #b3263e; --browser-text: #12325b; --browser-text-muted: #426384;
   --alpine-atmosphere: rgba(235, 243, 255, 0.18);
   --alpine-shell-glass: rgba(225, 237, 255, 0.48);
   --alpine-navigation-glass: rgba(214, 229, 250, 0.72);

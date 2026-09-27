@@ -11126,6 +11126,15 @@ single readiness/status/alert regions, safe diagnostics, reduced motion, and
 four-theme Browser tokens. The Phase 10 lane verifies New Tab address focus,
 New Tab navigation, and delayed loading where the fixture server supports it.
 
+### Browser UI Phase E theme-parity gate
+
+Phase E validates one authoritative Browser token mapping in Alpine Light,
+Twilight Mountains, Obsidian Horizon, and Emerald Afterglow. Each theme must
+keep Browser text, tabs, address, state indicators, menus, diagnostics,
+disabled controls, and focus rings readable. Theme captures cover New Tab,
+ready/loading tabs, recovery/error, diagnostics, address/tab focus, and narrow
+Browser states; guest page pixels remain guest-owned and are never recolored.
+
 The deterministic fixture server provides ready, delayed, navigation, and
 failure pages on loopback only. Any failure-state seeding is guarded by the
 `NEXUS_PHASE10_TEST` environment variable and is unavailable in normal builds.

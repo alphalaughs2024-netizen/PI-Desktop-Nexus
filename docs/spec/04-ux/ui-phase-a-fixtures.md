@@ -30,3 +30,6 @@ Phase D adds exact-state expectations: opaque address-focused New Tab, compact
 Loading/Ready states, Surface unavailable recovery, Policy blocked, Debugger
 unavailable, Browser closed/Reopen, and reduced-motion state transitions. Every
 Browser state fixture remains required under all four scenic themes.
+Phase E adds per-theme parity checks for active/inactive/loading tabs, address
+readability, disabled controls, readiness/error/policy colors, diagnostics,
+New Tab/recovery surfaces, focus rings, and narrow layouts.
