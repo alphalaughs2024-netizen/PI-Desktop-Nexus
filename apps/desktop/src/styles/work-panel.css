@@ -36,7 +36,7 @@
   flex-direction: column;
   background: inherit;
 }
-:root { --browser-panel-surface: color-mix(in oklab, var(--ds-bg-secondary) 94%, transparent); --browser-panel-surface-raised: color-mix(in oklab, var(--ds-bg-primary) 94%, transparent); --browser-tab-active: color-mix(in oklab, var(--ds-bg-primary) 94%, transparent); --browser-tab-inactive: color-mix(in oklab, var(--ds-bg-secondary) 84%, transparent); --browser-tab-hover: var(--ds-bg-hover); --browser-toolbar-surface: color-mix(in oklab, var(--ds-bg-secondary) 96%, transparent); --browser-address-surface: color-mix(in oklab, var(--ds-bg-primary) 94%, transparent); --browser-border: var(--ds-border-subtle); --browser-focus: var(--ds-focus); --browser-ready: var(--ds-success); --browser-loading: var(--ds-focus); --browser-error: var(--ds-error); --browser-text: var(--ds-text-primary); --browser-text-muted: var(--ds-text-muted); --browser-new-tab-surface: var(--ds-bg-primary); }
+:root { --browser-panel-surface: color-mix(in oklab, var(--ds-bg-secondary) 94%, transparent); --browser-panel-surface-raised: color-mix(in oklab, var(--ds-bg-primary) 94%, transparent); --browser-tab-active: color-mix(in oklab, var(--ds-bg-primary) 94%, transparent); --browser-tab-inactive: color-mix(in oklab, var(--ds-bg-secondary) 84%, transparent); --browser-tab-hover: var(--ds-bg-hover); --browser-toolbar-surface: color-mix(in oklab, var(--ds-bg-secondary) 96%, transparent); --browser-address-surface: color-mix(in oklab, var(--ds-bg-primary) 94%, transparent); --browser-border: var(--ds-border-subtle); --browser-focus: var(--ds-focus); --browser-ready: var(--ds-success); --browser-loading: var(--ds-focus); --browser-error: var(--ds-error); --browser-text: var(--ds-text-primary); --browser-text-muted: var(--ds-text-muted); --browser-new-tab-surface: var(--ds-bg-secondary); }
 
 .work-panel-frame.is-maximized {
   position: fixed;
@@ -571,8 +571,17 @@
   flex-direction: column;
 }
 
+.work-panel-resource-host {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+}
+
 .work-panel-tabpane {
   display: flex;
+  min-width: 0;
   min-height: 0;
   flex: 1;
   flex-direction: column;

@@ -70,8 +70,9 @@ export function createGuestGeometryCoordinator({
   const dispose = () => {
     if (disposed) return;
     hide();
-    disposed = true;
     if (state.pendingFrame !== null) cancel(state.pendingFrame);
+    flush();
+    disposed = true;
   };
   return { get state() { return state; }, schedule, invalidate, hide, dispose };
 }

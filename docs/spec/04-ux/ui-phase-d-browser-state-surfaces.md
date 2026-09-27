@@ -56,6 +56,12 @@ unsafe browser data.
 
 The content viewport is reserved below fixed Browser chrome. Changing content
 surface cannot change toolbar, readiness, operation-status, or guest geometry.
+The work-panel resource host and active tab pane fill the available panel body
+height so New Tab, the measured native guest rectangle, menus, and Diagnostics
+remain inside a full-height Browser surface in docked and maximized layouts.
+The empty Browser viewport uses the panel background rather than a darker
+separate band. Unmounting a guest synchronously publishes hidden geometry so a
+native view cannot remain above another panel or menu.
 There is one primary readiness row, one stable polite `role="status"`, and one
 stable assertive `role="alert"`. Browser semantic tokens supply all surface,
 text, border, focus, ready, loading, and error colors; reduced-motion removes

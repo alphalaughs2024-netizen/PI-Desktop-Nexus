@@ -14,3 +14,7 @@ test("Phase 11 centralizes Browser guest geometry scheduling", () => {
   assert.match(guest, /createGuestGeometryCoordinator/);
   assert.doesNotMatch(guest, /browserGuestRectKey\(/);
 });
+
+test("disposing a guest flushes hidden geometry before it stops publishing", () => {
+  assert.match(source, /const dispose = \(\) => \{[^}]*hide\(\);[^}]*cancel\(state\.pendingFrame\);[^}]*flush\(\);[^}]*disposed = true;/);
+});

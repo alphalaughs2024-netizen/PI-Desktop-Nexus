@@ -11131,6 +11131,13 @@ must not remove it.
 Open the Browser overflow menu, tab context menu, and Diagnostics over a loaded
 page. Every menu item and diagnostics row must remain visible and clickable;
 closing each overlay must reveal the same page without a reload.
+Repeat the overflow-menu and Diagnostics checks on New Tab before any native
+guest exists. In docked and maximized layouts, the Browser content region must
+fill the remaining panel height, the menu must open below its trigger without
+clipping, and a loaded page must occupy that region rather than remain blank.
+The empty Browser viewport must match the panel background without a darker
+horizontal band. Switching away from Browser must remove its native guest
+before the next resource is shown.
 
 Phase D verifies exactly one renderer-owned Browser content surface below fixed
 Browser chrome. `about:blank` and no-page render opaque address-focused New Tab
