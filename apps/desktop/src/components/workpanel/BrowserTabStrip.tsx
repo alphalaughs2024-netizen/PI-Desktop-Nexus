@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { BrowserTab } from "../../lib/browser-tabs";
 import { IconClose, IconPlus, IconGlobe } from "../icons";
 
