@@ -85,10 +85,10 @@ export function BrowserCoreTab({ sessionId, location, blocked = false, presentat
     <BrowserSourceRow source={viewState.source} onOpenExternal={() => void runExternal()} disabled={!viewState.safeLocation || isNewTab} />
     <BrowserTabStrip tabs={visibleTabs} activeId={activeBrowserId} onActivate={activateBrowserTab} onClose={closeBrowserTab} onNew={newBrowserTab} onReload={reloadBrowserTab} onDuplicate={duplicateBrowserTab} onCloseOthers={closeOtherBrowserTabs} />
     <BrowserToolbar presentation={presentation} browserState={browserState} panelState={state} busy={Boolean(operation)} disabled={blocked || transitioning} sessionId={sessionId} committedLocation={viewState.safeLocation ?? location ?? browserState?.url} onNavigate={navigateToAddress} onAction={performBrowserAction} onScreenshot={runScreenshot} onOpenExternal={runExternal} onCopyLocation={copyLocation} onOpenDiagnostics={() => { diagnosticsTriggerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null; setDiagnosticsOpen(true); }} />
-    <BrowserReadinessStrip state={state} />
-    <BrowserOperationStatus operation={operationLabel} />
-    <BrowserErrorNotice message={errorMessage} />
     <div className="browser-content-viewport" data-browser-content-state={isNewTab ? "no-page" : state}>
+      <BrowserReadinessStrip state={state} />
+      <BrowserOperationStatus operation={operationLabel} />
+      <BrowserErrorNotice message={errorMessage} />
       {/* Guest guard remains explicit for no-page and recovery states: !isNewTab && !["unavailable", "policy-blocked", "debugger-unavailable", "closed"] */}
       {isNewTab ? <BrowserNewTabSurface onFocusAddress={() => focusAddress(true)} /> : isBrowserGuestSurfaceVisible(state, isNewTab) ? <BrowserGuestSurface sessionId={sessionId} blocked={blocked} transitioning={transitioning} /> : isBrowserRecoveryState(state) && <BrowserEmptyState state={state} onRetry={viewState.recoverable ? recover : undefined} onOpenDiagnostics={openDiagnostics} onReopen={recover} />}
     </div>
