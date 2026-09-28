@@ -52,6 +52,9 @@ Settings is a **full-window page** that replaces the app sidebar + main chrome (
 - Main content pane on primary surface with large section title + elevated
   rounded cards of rows. Its content uses the full width available after the
   fixed rail and pane gutters, and resizes continuously with the window.
+- Settings switches use a visibly filled off track and a distinct solid on
+  track in base and scenic themes. Scenic input styling must not override either
+  switch state; both states remain identifiable over translucent settings rows.
 
 ## 2. Section contents
 

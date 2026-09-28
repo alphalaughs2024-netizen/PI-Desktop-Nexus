@@ -2051,6 +2051,17 @@ membership when dropped on Ungrouped.
 - **Milestone**: M5
 - **Status**: Documented; native Windows validation pending
 
+#### E2E-091c: Settings switches remain visible across themes
+
+- **Steps**: 1) Open Settings > Models and inspect Voice replies and every
+  provider enablement switch. 2) Toggle one switch off and on. 3) Repeat in
+  Dark, Light, Twilight Mountains, Obsidian Horizon, Emerald Afterglow, and
+  Alpine Light; also inspect switches under AI, Skills, MCP, and Subagents.
+- **Expected**: Every off track remains clearly visible against its settings
+  row, and every on track uses a distinct solid fill. The knob position and
+  track color agree in both states, including after switching themes.
+- **Status**: Rendered scenario Draft
+
 #### E2E-091b: Twilight Mountains remains an optional readable scenic theme
 
 - **Preconditions**: App running on Windows or Linux with a project and a

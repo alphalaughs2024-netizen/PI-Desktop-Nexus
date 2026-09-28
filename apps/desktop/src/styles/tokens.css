@@ -93,8 +93,8 @@
     slot still reads as a control; on inverts to the solid accent, so the knob
     flips polarity with the track instead of only sliding.
   */
-  --ds-switch-track-off: color-mix(in oklab, var(--gray-0) 10%, transparent);
-  --ds-switch-track-off-hover: color-mix(in oklab, var(--gray-0) 18%, transparent);
+  --ds-switch-track-off: color-mix(in oklab, var(--gray-0) 30%, transparent);
+  --ds-switch-track-off-hover: color-mix(in oklab, var(--gray-0) 42%, transparent);
   --ds-switch-ring-off: color-mix(in oklab, var(--gray-0) 22%, transparent);
   --ds-switch-knob-off: var(--gray-300);
   --ds-switch-knob-on: var(--gray-900);
@@ -166,8 +166,8 @@
   --ds-accent-hover: #303030;
   --ds-accent-soft: #5d5d5d;
   /* Off knob stays white on the pale track; on knob keeps white on near-black. */
-  --ds-switch-track-off: color-mix(in oklab, #1a1c1f 10%, transparent);
-  --ds-switch-track-off-hover: color-mix(in oklab, #1a1c1f 18%, transparent);
+  --ds-switch-track-off: color-mix(in oklab, #1a1c1f 24%, transparent);
+  --ds-switch-track-off-hover: color-mix(in oklab, #1a1c1f 34%, transparent);
   --ds-switch-ring-off: color-mix(in oklab, #1a1c1f 20%, transparent);
   --ds-switch-knob-off: #ffffff;
   --ds-switch-knob-on: #ffffff;

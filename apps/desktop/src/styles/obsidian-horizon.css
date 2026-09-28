@@ -95,7 +95,7 @@
   .settings-panel.model-provider-panel:has(> .model-provider-list),
   .settings-panel.agent-capability-panel
 ) { background: transparent; border: 0; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; overflow: visible; }
-:root[data-scenic-theme="obsidian-horizon"] .settings-shell-full :is(.settings-search, .settings-theme-trigger, .settings-language-trigger, .settings-segment, .field-input, .field-select, .field-textarea, .settings-toggle) {
+:root[data-scenic-theme="obsidian-horizon"] .settings-shell-full :is(.settings-search, .settings-theme-trigger, .settings-language-trigger, .settings-segment, .field-input, .field-select, .field-textarea) {
   background: var(--obsidian-control-surface); color: var(--ds-text-primary); border-color: var(--obsidian-border);
 }
 :root[data-scenic-theme="obsidian-horizon"] .settings-shell-full :is(.settings-theme-menu, .settings-language-menu, .settings-font-menu, .settings-search-results) { background: var(--obsidian-safety-surface); color: var(--ds-text-primary); border-color: var(--obsidian-border); }

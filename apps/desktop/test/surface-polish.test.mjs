@@ -148,3 +148,13 @@ test("switch on-track outranks the per-theme off-track", () => {
     assert.equal(defs.length, 2, `${token} should be defined in both themes`);
   }
 });
+
+test("scenic settings inputs do not override switch state colors", () => {
+  for (const theme of ["alpine-light", "emerald-afterglow", "obsidian-horizon"]) {
+    const inputRule = styles.match(new RegExp(`:root\\[data-scenic-theme="${theme}"\\] \\.settings-shell-full :is\\(\\.settings-search,[^)]*\\)`))?.[0] ?? "";
+    assert.ok(inputRule, `${theme} should style settings inputs`);
+    assert.doesNotMatch(inputRule, /\.settings-toggle/);
+  }
+  assert.match(styles, /--ds-switch-track-off: color-mix\(in oklab, var\(--gray-0\) 30%, transparent\)/);
+  assert.match(styles, /--ds-switch-track-off: color-mix\(in oklab, #1a1c1f 24%, transparent\)/);
+});

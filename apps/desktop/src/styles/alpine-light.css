@@ -145,7 +145,7 @@
 :root[data-scenic-theme="alpine-light"] .settings-shell-full :is(.settings-row, .shortcut-row, .agent-capability-row, .agent-capability-empty):hover {
   background: rgba(255, 255, 255, 0.68);
 }
-:root[data-scenic-theme="alpine-light"] .settings-shell-full :is(.settings-search, .settings-theme-trigger, .settings-language-trigger, .settings-segment, .field-input, .field-select, .field-textarea, .settings-toggle) {
+:root[data-scenic-theme="alpine-light"] .settings-shell-full :is(.settings-search, .settings-theme-trigger, .settings-language-trigger, .settings-segment, .field-input, .field-select, .field-textarea) {
   background: rgba(255,255,255,.68);
   color: var(--ds-text-primary);
   border-color: rgba(103, 132, 173, .24);
