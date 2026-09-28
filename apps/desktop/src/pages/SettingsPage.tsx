@@ -57,7 +57,6 @@ import { LanguageRow } from "../components/settings/LanguageRow";
 import { ThemeRow } from "../components/settings/ThemeRow";
 import { ScenicThemesSection } from "../components/settings/ScenicThemesSection";
 import { NetworkProxySection } from "../components/settings/NetworkProxySection";
-import { SpeechSettingsSection } from "../components/settings/SpeechSettingsSection";
 import { ReleaseNotesDialog } from "../components/ReleaseNotesDialog";
 import { ProjectsPage } from "./ProjectsPage";
 import { WorkspacesPage } from "./WorkspacesPage";
@@ -1527,7 +1526,6 @@ export function SettingsPage() {
                   saveSettings={saveSettings}
                 />
               </SettingsCard>
-              <SpeechSettingsSection settings={settings} saveSettings={saveSettings} />
             </div>
           )}
 

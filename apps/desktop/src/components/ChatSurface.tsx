@@ -1,6 +1,7 @@
 import { memo, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Composer } from "./Composer";
+import { VoiceModeProvider } from "./VoiceConversation";
 import { HomeMascotLogo } from "./HomeMascotLogo";
 import { IconX } from "./icons";
 import { TooltipButton } from "./ui";
@@ -124,6 +125,7 @@ export const ChatSurface = memo(function ChatSurface() {
   const showEmptyState =
     !hasTranscript && (!visibleSessionId || visibleSessionId === activeSessionId);
   return (
+    <VoiceModeProvider>
     <div
       className={`chat-surface route-surface${sessionSwitching ? " session-switching" : ""}`}
       aria-busy={sessionSwitching}
@@ -248,5 +250,6 @@ export const ChatSurface = memo(function ChatSurface() {
         </div>
       ) : null}
     </div>
+    </VoiceModeProvider>
   );
 });

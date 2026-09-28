@@ -206,6 +206,8 @@ export const ko = {
     speech: "음성",
     dictate: "받아쓰기",
     voiceMode: "음성 모드",
+    voiceYou: "나",
+    voiceNexus: "Nexus",
     listening: "듣는 중…",
     transcribing: "변환 중…",
     noSpeech: "음성이 감지되지 않았습니다",

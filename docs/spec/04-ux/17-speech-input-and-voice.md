@@ -1,19 +1,21 @@
 # Speech input and voice conversation
 
-- One microphone control sits beside existing composer actions. Its menu opens
-  Dictate or Voice mode without adding permanent toolbar labels.
+- Two compact icon controls sit beside existing composer actions: microphone
+  for Dictate and audio lines for Voice mode. Each has an accessible label and
+  tooltip; no extra toolbar labels are shown.
 - Dictate records up to 60 seconds. Done transcribes and inserts plain,
   editable text at the current draft selection. It does not submit. Cancel
   discards audio. A failed or empty result leaves the draft unchanged.
-- Voice mode opens a focused dialog. Done transcribes the spoken turn and sends
-  it through the current session's normal prompt and queue rules. The dialog
-  shows recording, transcription, waiting, and speaking states. The user can
-  stop spoken output, speak again, or end the mode. Listening resumes after
-  playback ends. Existing agent permission
+- Voice mode opens a compact floating conversation dock above the composer.
+  It does not dim, blur, or block the chat or workspace. Done transcribes the
+  spoken turn and sends it through the current session's normal prompt and
+  queue rules. The dock shows recording, transcription, waiting, and speaking
+  states. The user can stop spoken output, speak again, or end the mode.
+  Listening resumes after playback ends. Existing agent permission
   policies continue to apply.
 - A session switch or unmount ends capture and playback. Late speech results
   cannot appear in a different chat.
-- Settings > AI > Speech selects local or hosted transcription. Local is the
+- Settings > Models > Speech selects local or hosted transcription. Local is the
   default and requires no key. Hosted has endpoint, model, and environment
   variable name fields. Reply voice selects an installed system voice.
 - Local model files live in application data. Audio is held only during the

@@ -9,11 +9,13 @@
   does not appear in the destination chat.
 - Start Voice mode in a chat with a configured model, speak one turn, and press
   Done. Confirm one user message is sent through the normal prompt path, the
-  dialog waits for the assistant, and a completed reply is spoken with the
-  selected system voice. Stop speech and end the mode; audio capture and
-  playback must cease. Check toolbar wrapping at narrow widths.
+  floating dock waits for the assistant, and a completed reply is spoken with
+  the selected system voice. Confirm the workspace stays sharp and clickable,
+  listening resumes after playback, and a second spoken prompt can be sent in
+  the same mode. Stop speech and end the mode; audio capture and playback must
+  cease. Check both composer icons and dock placement at narrow widths.
 - Configure a loopback hosted transcription fixture with its key in an
-  environment variable, then repeat Dictate. Confirm the multipart request
+  environment variable from Settings > Models > Speech, then repeat Dictate. Confirm the multipart request
   includes the selected model and authorized key but the key value never
   appears in renderer settings. Reject a non-loopback HTTP endpoint. Revert
   to Local and confirm no hosted request is made.

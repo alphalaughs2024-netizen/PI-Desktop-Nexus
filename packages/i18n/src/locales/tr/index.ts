@@ -206,6 +206,8 @@ export const tr = {
     speech: "Ses",
     dictate: "Dikte et",
     voiceMode: "Ses modu",
+    voiceYou: "Sen",
+    voiceNexus: "Nexus",
     listening: "Dinleniyor…",
     transcribing: "Yazıya dönüştürülüyor…",
     noSpeech: "Konuşma algılanmadı",

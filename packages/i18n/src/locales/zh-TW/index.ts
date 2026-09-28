@@ -199,6 +199,8 @@ export const zhTW = {
     speech: "語音",
     dictate: "語音輸入",
     voiceMode: "語音模式",
+    voiceYou: "你",
+    voiceNexus: "Nexus",
     listening: "正在聆聽…",
     transcribing: "正在轉寫…",
     noSpeech: "未偵測到語音",

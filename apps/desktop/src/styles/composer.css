@@ -462,8 +462,7 @@
   color: var(--ds-text-secondary);
 }
 
-.composer-speech-control { position: relative; flex: 0 0 auto; }
-.composer-speech-menu,
+.composer-speech-control { position: relative; display: flex; align-items: center; gap: 2px; flex: 0 0 auto; }
 .composer-dictation-status {
   position: absolute;
   right: 0;
@@ -474,19 +473,6 @@
   background: var(--ds-bg-composer);
   box-shadow: var(--ds-shadow-composer);
 }
-.composer-speech-menu { width: 180px; padding: 4px; }
-.composer-speech-menu button {
-  display: block;
-  width: 100%;
-  padding: 9px 10px;
-  border-radius: var(--radius-2xs);
-  color: var(--ds-text-primary);
-  text-align: left;
-  font-size: var(--text-sm-plus);
-}
-.composer-speech-menu button:hover:not(:disabled),
-.composer-speech-menu button:focus-visible { background: var(--ds-bg-hover); }
-.composer-speech-menu button:disabled { opacity: .45; }
 .composer-dictation-status {
   display: flex;
   min-width: 220px;
@@ -506,38 +492,44 @@
 
 .speech-overlay {
   position: fixed;
-  inset: 0;
+  right: 22px;
+  bottom: 86px;
+  left: auto;
   z-index: 10000;
-  display: grid;
-  place-items: center;
-  padding: 20px;
-  background: color-mix(in oklab, #090d13 65%, transparent);
-  backdrop-filter: blur(12px);
+  pointer-events: none;
 }
 .speech-dialog {
+  pointer-events: auto;
   position: relative;
-  width: min(100%, 420px);
-  min-height: 330px;
+  width: min(360px, calc(100vw - 32px));
+  min-height: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 44px 24px 24px;
-  border: 1px solid var(--ds-border-subtle);
-  border-radius: var(--radius-xs);
-  background: var(--ds-bg-composer);
-  box-shadow: var(--ds-shadow-composer);
+  padding: 18px 18px 14px;
+  border: 1px solid color-mix(in oklab, var(--ds-text-primary) 12%, var(--ds-border-subtle));
+  border-radius: var(--radius-lg);
+  background: color-mix(in oklab, var(--ds-bg-composer) 94%, transparent);
+  box-shadow: 0 18px 50px color-mix(in oklab, #000 36%, transparent), var(--ds-shadow-composer);
+  backdrop-filter: blur(18px) saturate(1.15);
   color: var(--ds-text-primary);
 }
-.speech-close { position: absolute; top: 12px; right: 12px; display: grid; width: 30px; height: 30px; place-items: center; border-radius: 5px; color: var(--ds-text-secondary); }
+.speech-close { position: absolute; top: 10px; right: 10px; display: grid; width: 28px; height: 28px; place-items: center; border-radius: var(--radius-2xs); color: var(--ds-text-secondary); }
 .speech-close:hover, .speech-close:focus-visible { background: var(--ds-bg-hover); color: var(--ds-text-primary); }
-.speech-orbit { display: grid; width: 84px; height: 84px; place-items: center; border: 1px solid var(--ds-border-subtle); border-radius: 50%; background: var(--ds-bg-active); color: var(--ds-text-primary); transition: background .25s, box-shadow .25s; }
+.speech-orbit { display: grid; width: 52px; height: 52px; place-items: center; border: 1px solid var(--ds-border-subtle); border-radius: 50%; background: var(--ds-bg-active); color: var(--ds-text-primary); transition: background .25s, box-shadow .25s; }
 .speech-orbit.recording { background: color-mix(in oklab, #ef665f 20%, var(--ds-bg-composer)); box-shadow: 0 0 0 8px color-mix(in oklab, #ef665f 10%, transparent); }
 .speech-orbit.speaking { background: color-mix(in oklab, #4ebba0 20%, var(--ds-bg-composer)); box-shadow: 0 0 0 8px color-mix(in oklab, #4ebba0 10%, transparent); }
-.speech-dialog h2 { margin: 22px 0 2px; font-size: var(--text-lg); font-weight: 600; }
+.speech-heading { display: flex; align-items: center; gap: 7px; margin-top: 10px; }
+.speech-dialog h2 { margin: 0; font-size: var(--text-md); font-weight: 650; }
+.speech-live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--ds-text-muted); }
+.speech-live-dot.recording { background: #ef665f; box-shadow: 0 0 0 4px color-mix(in oklab, #ef665f 14%, transparent); }
+.speech-live-dot.speaking { background: #4ebba0; box-shadow: 0 0 0 4px color-mix(in oklab, #4ebba0 14%, transparent); }
 .speech-state { margin: 0; color: var(--ds-text-secondary); font-size: var(--text-sm-plus); }
 .speech-transcript { max-width: 100%; max-height: 76px; overflow: auto; margin: 18px 0 0; color: var(--ds-text-secondary); text-align: center; font-size: var(--text-sm-plus); overflow-wrap: anywhere; }
-.speech-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: auto; padding-top: 24px; }
-.speech-primary, .speech-secondary { display: inline-flex; min-height: 34px; align-items: center; justify-content: center; gap: 7px; border-radius: 6px; padding: 0 13px; font-size: var(--text-sm-plus); }
+.speech-transcript span { display: block; margin-bottom: 3px; color: var(--ds-text-muted); font-size: var(--text-xs); }
+.speech-reply { margin-top: 10px; }
+.speech-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 14px; }
+.speech-primary, .speech-secondary { display: inline-flex; min-height: 32px; align-items: center; justify-content: center; gap: 7px; border-radius: var(--radius-2xs); padding: 0 12px; font-size: var(--text-sm-plus); }
 .speech-primary { background: var(--ds-text-primary); color: var(--ds-bg-composer); }
 .speech-primary:hover { opacity: .85; }
 .speech-secondary { background: var(--ds-bg-active); color: var(--ds-text-primary); }

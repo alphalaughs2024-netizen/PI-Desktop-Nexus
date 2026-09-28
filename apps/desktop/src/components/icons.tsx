@@ -1,6 +1,7 @@
 import type { CSSProperties, SVGProps } from "react";
 import {
   Activity,
+  AudioLines,
   BarChart3,
   AppWindow,
   Archive,
@@ -205,6 +206,7 @@ export const IconVideo = icon(Video);
 export const IconReview = icon(RefreshCw);
 export const IconKeyboard = icon(Keyboard);
 export const IconMic = icon(Mic);
+export const IconVoice = icon(AudioLines);
 export const IconPlug = icon(Plug);
 export const IconSlash = icon(Slash);
 export const IconUser = icon(UserRound);

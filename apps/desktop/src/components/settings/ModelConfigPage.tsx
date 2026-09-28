@@ -36,6 +36,7 @@ import {
 } from "./default-model";
 import { ProviderSetupDialog } from "./ProviderSetupDialog";
 import { VendorAccountsSection } from "./VendorAccountsSection";
+import { SpeechSettingsSection } from "./SpeechSettingsSection";
 
 const DELETE_CONFIRM_MS = 3000;
 
@@ -65,6 +66,13 @@ export function ModelConfigPage() {
   const settings = useAppStore((s) => s.settings);
   const refreshProviders = useAppStore((s) => s.refreshProviders);
   const showToast = useAppStore((s) => s.showToast);
+  const saveSettings = async (patch: Partial<NonNullable<typeof settings>>) => {
+    if (!settings) return;
+    const nextSettings = { ...settings, ...patch };
+    await api.setSettings(nextSettings);
+    useAppStore.setState({ settings: nextSettings });
+    await refreshProviders();
+  };
 
   // null = closed, "" = add flow, provider id = edit flow.
   const [setupFor, setSetupFor] = useState<string | null>(null);
@@ -382,6 +390,8 @@ export function ModelConfigPage() {
           </div>
         </div>
       </section>
+
+      {settings ? <SpeechSettingsSection settings={settings} saveSettings={saveSettings} /> : null}
 
       <section className="settings-card-block">
         <div className="model-config-section-head">
