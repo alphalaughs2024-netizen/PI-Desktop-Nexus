@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { api } from "../lib/api";
 import { startSpeechRecording, type SpeechRecording } from "../lib/speech-capture";
 import { useAppStore } from "../stores/app-store";
-import { IconMic, IconStop, IconX } from "./icons";
+import { IconChevronDown, IconMic, IconStop, IconX } from "./icons";
 
 type VoiceState = "idle" | "recording" | "transcribing" | "waiting" | "speaking";
 type VoiceMode = { active: boolean; start: () => void; stop: () => void };
@@ -22,6 +22,8 @@ export function VoiceModeProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<VoiceState>("idle");
   const [transcript, setTranscript] = useState("");
   const [replyText, setReplyText] = useState("");
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [recordingSeconds, setRecordingSeconds] = useState(0);
   const recording = useRef<SpeechRecording | null>(null);
   const cycle = useRef(0);
   const sourceSession = useRef<string | undefined>(undefined);
@@ -36,6 +38,7 @@ export function VoiceModeProvider({ children }: { children: ReactNode }) {
   const voiceUri = useAppStore((s) => s.settings?.speech?.voiceUri);
   const voiceRepliesEnabled = useAppStore((s) => s.settings?.speech?.voiceRepliesEnabled !== false);
   const showToast = useAppStore((s) => s.showToast);
+  const transcriptToggleLabel = detailsOpen ? t("chat.hideVoiceTranscript") : t("chat.showVoiceTranscript");
 
   const stop = () => {
     cycle.current += 1;
@@ -47,6 +50,8 @@ export function VoiceModeProvider({ children }: { children: ReactNode }) {
     setState("idle");
     setTranscript("");
     setReplyText("");
+    setDetailsOpen(false);
+    setRecordingSeconds(0);
   };
 
   useEffect(() => () => {
@@ -82,6 +87,14 @@ export function VoiceModeProvider({ children }: { children: ReactNode }) {
     void start();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active, state, voiceRepliesEnabled]);
+
+  useEffect(() => {
+    if (state !== "recording") return;
+    const startedAt = Date.now();
+    setRecordingSeconds(0);
+    const timer = window.setInterval(() => setRecordingSeconds(Math.floor((Date.now() - startedAt) / 1000)), 500);
+    return () => window.clearInterval(timer);
+  }, [state]);
 
   const start = async () => {
     recording.current?.cancel();
@@ -168,23 +181,33 @@ export function VoiceModeProvider({ children }: { children: ReactNode }) {
     <VoiceModeContext.Provider value={{ active, start: () => void start(), stop }}>
       {children}
       {active && createPortal(
-        <div className="speech-overlay" role="presentation">
-          <section className="speech-dialog" role="region" aria-label={t("chat.voiceMode")}>
-            <button type="button" className="speech-close" aria-label={t("chat.endVoiceMode")} title={t("chat.endVoiceMode")} onClick={stop}><IconX size={18} /></button>
-            <div className={`speech-orbit ${state}`} aria-hidden="true"><IconMic size={22} /></div>
-            <div className="speech-heading"><h2>{t("chat.voiceMode")}</h2><span className={`speech-live-dot ${state}`} /></div>
-            <p className="speech-state" role="status">{t(state === "recording" ? "chat.listening" : state === "transcribing" ? "chat.transcribing" : state === "waiting" ? "chat.waitingReply" : state === "speaking" ? "chat.speaking" : "chat.readyToSpeak")}</p>
-            {transcript && <p className="speech-transcript"><span>{t("chat.voiceYou")}</span>{transcript}</p>}
-            {replyText && <p className="speech-transcript speech-reply"><span>{t("chat.voiceNexus")}</span>{replyText}</p>}
-            <div className="speech-actions">
-              {state === "recording" && <button type="button" className="speech-primary" onClick={() => void finish()}><IconStop size={14} />{t("chat.done")}</button>}
-              {state === "idle" && <button type="button" className="speech-primary" onClick={() => void start()}><IconMic size={15} />{t("chat.speakAgain")}</button>}
-              {state === "speaking" && <button type="button" className="speech-secondary" onClick={() => { cycle.current += 1; window.speechSynthesis.cancel(); setState("idle"); }}>{t("chat.stopSpeaking")}</button>}
-              <button type="button" className="speech-secondary" onClick={stop}>{t("chat.endVoiceMode")}</button>
+        <div className="speech-overlay">
+          <section className={`speech-dialog is-${state}`} role="region" aria-label={t("chat.voiceMode")}>
+            <div className="speech-main-row">
+              <div className={`speech-orbit ${state}`} aria-hidden="true"><IconMic size={20} /></div>
+              <div className="speech-identity">
+                <div className="speech-heading"><h2>{t("chat.voiceMode")}</h2><span className={`speech-live-dot ${state}`} /></div>
+                <p className="speech-state" role="status">{t(state === "recording" ? "chat.listening" : state === "transcribing" ? "chat.transcribing" : state === "waiting" ? "chat.waitingReply" : state === "speaking" ? "chat.speaking" : "chat.readyToSpeak")}</p>
+              </div>
+              <div className={`speech-waveform ${state}`} aria-hidden="true">
+                {Array.from({ length: 43 }, (_, index) => <i key={index} style={{ animationDelay: `${(index % 11) * -0.12}s`, height: `${4 + (index * 7 % 13)}px` }} />)}
+              </div>
+              <span className="speech-timer" aria-hidden="true">{String(Math.floor(recordingSeconds / 60)).padStart(2, "0")}:{String(recordingSeconds % 60).padStart(2, "0")}</span>
+              <div className="speech-actions">
+                {state === "recording" && <button type="button" className="speech-primary" aria-label={t("chat.done")} title={t("chat.done")} onClick={() => void finish()}><IconStop size={15} /></button>}
+                {state === "idle" && <button type="button" className="speech-primary" aria-label={t("chat.speakAgain")} title={t("chat.speakAgain")} onClick={() => void start()}><IconMic size={17} /></button>}
+                {state === "speaking" && <button type="button" className="speech-primary" aria-label={t("chat.stopSpeaking")} title={t("chat.stopSpeaking")} onClick={() => { cycle.current += 1; window.speechSynthesis.cancel(); setState("idle"); }}><IconStop size={15} /></button>}
+                <button type="button" className="speech-close" aria-label={t("chat.endVoiceMode")} title={t("chat.endVoiceMode")} onClick={stop}><IconX size={17} /></button>
+              </div>
             </div>
+            {detailsOpen && (transcript || replyText) && <div className="speech-details">
+              {transcript && <p className="speech-transcript"><span>{t("chat.voiceYou")}</span>{transcript}</p>}
+              {replyText && <p className="speech-transcript speech-reply"><span>{t("chat.voiceNexus")}</span>{replyText}</p>}
+            </div>}
           </section>
+          <button type="button" className="speech-expand" aria-label={transcriptToggleLabel} title={transcriptToggleLabel} aria-expanded={detailsOpen} disabled={!transcript && !replyText} onClick={() => setDetailsOpen((open) => !open)}><IconChevronDown size={18} /></button>
         </div>,
-        document.body,
+        document.querySelector(".chat-surface") ?? document.body,
       )}
     </VoiceModeContext.Provider>
   );

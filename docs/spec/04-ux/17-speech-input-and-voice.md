@@ -6,7 +6,13 @@
 - Dictate records up to 60 seconds. Done transcribes and inserts plain,
   editable text at the current draft selection. It does not submit. Cancel
   discards audio. A failed or empty result leaves the draft unchanged.
-- Voice mode opens a compact floating conversation dock above the composer.
+- Voice mode opens a composer-aligned conversation bar above the composer in
+  both home and active chats. It presents a microphone state, status, animated
+  waveform, recording timer, and compact controls for finishing a turn,
+  stopping spoken output, speaking again, and ending the mode. A disclosure
+  reveals the latest transcript and reply without expanding the bar by default.
+  The bar follows composer height changes and remains usable in narrow panes;
+  reduced-motion preference stops waveform animation.
   It does not dim, blur, or block the chat or workspace. Done transcribes the
   spoken turn and sends it through the current session's normal prompt and
   queue rules. The dock shows recording, transcription, waiting, and speaking

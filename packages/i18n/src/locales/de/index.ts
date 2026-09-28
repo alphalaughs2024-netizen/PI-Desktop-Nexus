@@ -204,6 +204,8 @@ export const de = {
     "speech": "Sprache",
     "dictate": "Diktieren",
     "voiceMode": "Sprachmodus",
+    "showVoiceTranscript": "Sprachtranskript anzeigen",
+    "hideVoiceTranscript": "Sprachtranskript ausblenden",
     "voiceYou": "Du",
     "voiceNexus": "Nexus",
     "listening": "Höre zu…",

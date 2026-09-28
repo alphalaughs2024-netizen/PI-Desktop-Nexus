@@ -200,6 +200,8 @@ export const en = {
     speech: "Speech",
     dictate: "Dictate",
     voiceMode: "Voice mode",
+    showVoiceTranscript: "Show voice transcript",
+    hideVoiceTranscript: "Hide voice transcript",
     voiceYou: "You",
     voiceNexus: "Nexus",
     listening: "Listening…",

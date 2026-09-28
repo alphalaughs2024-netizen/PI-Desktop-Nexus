@@ -13,7 +13,11 @@
   the selected system voice. Confirm the workspace stays sharp and clickable,
   listening resumes after playback, and a second spoken prompt can be sent in
   the same mode. Stop speech and end the mode; audio capture and playback must
-  cease. Check both composer icons and dock placement at narrow widths.
+  cease. Check both composer icons and confirm the bar stays aligned above the
+  composer in home and active chats, with the sidebar and work panel both open
+  and closed. Grow the composer and confirm the bar moves with it; inspect the
+  waveform, timer, focus states, and transcript disclosure at narrow widths and
+  with reduced motion enabled.
 - Configure a loopback hosted transcription fixture with its key in an
   environment variable from Settings > Models > Speech, then repeat Dictate. Confirm the multipart request
   includes the selected model and authorized key but the key value never

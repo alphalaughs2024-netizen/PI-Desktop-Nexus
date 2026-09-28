@@ -206,6 +206,8 @@ export const ko = {
     speech: "음성",
     dictate: "받아쓰기",
     voiceMode: "음성 모드",
+    showVoiceTranscript: "음성 대화 기록 보기",
+    hideVoiceTranscript: "음성 대화 기록 숨기기",
     voiceYou: "나",
     voiceNexus: "Nexus",
     listening: "듣는 중…",

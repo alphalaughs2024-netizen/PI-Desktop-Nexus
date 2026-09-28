@@ -197,6 +197,8 @@ export const es = {
     "speech": "Voz",
     "dictate": "Dictar",
     "voiceMode": "Modo de voz",
+    "showVoiceTranscript": "Mostrar transcripción de voz",
+    "hideVoiceTranscript": "Ocultar transcripción de voz",
     "voiceYou": "Tú",
     "voiceNexus": "Nexus",
     "listening": "Escuchando…",

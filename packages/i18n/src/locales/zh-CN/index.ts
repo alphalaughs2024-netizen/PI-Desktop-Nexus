@@ -195,6 +195,8 @@ export const zhCN = {
     speech: "语音",
     dictate: "语音输入",
     voiceMode: "语音模式",
+    showVoiceTranscript: "显示语音转写",
+    hideVoiceTranscript: "隐藏语音转写",
     voiceYou: "你",
     voiceNexus: "Nexus",
     listening: "正在聆听…",
