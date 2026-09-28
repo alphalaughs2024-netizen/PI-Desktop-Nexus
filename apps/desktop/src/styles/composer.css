@@ -462,6 +462,87 @@
   color: var(--ds-text-secondary);
 }
 
+.composer-speech-control { position: relative; flex: 0 0 auto; }
+.composer-speech-menu,
+.composer-dictation-status {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 12px);
+  z-index: 30;
+  border: 1px solid var(--ds-border-subtle);
+  border-radius: var(--radius-xs);
+  background: var(--ds-bg-composer);
+  box-shadow: var(--ds-shadow-composer);
+}
+.composer-speech-menu { width: 180px; padding: 4px; }
+.composer-speech-menu button {
+  display: block;
+  width: 100%;
+  padding: 9px 10px;
+  border-radius: var(--radius-2xs);
+  color: var(--ds-text-primary);
+  text-align: left;
+  font-size: var(--text-sm-plus);
+}
+.composer-speech-menu button:hover:not(:disabled),
+.composer-speech-menu button:focus-visible { background: var(--ds-bg-hover); }
+.composer-speech-menu button:disabled { opacity: .45; }
+.composer-dictation-status {
+  display: flex;
+  min-width: 220px;
+  min-height: 42px;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 6px 5px 12px;
+  color: var(--ds-text-primary);
+  white-space: nowrap;
+  font-size: var(--text-sm-plus);
+}
+.speech-indicator { width: 8px; height: 8px; flex: 0 0 8px; border-radius: 50%; background: var(--ds-text-muted); }
+.speech-indicator.recording { background: #ef665f; animation: speech-pulse 1.4s ease-in-out infinite; }
+.speech-done { margin-left: auto; padding: 5px 9px; border-radius: 5px; background: var(--ds-bg-active); color: var(--ds-text-primary); }
+.speech-done:hover { background: var(--ds-bg-hover); }
+@keyframes speech-pulse { 50% { opacity: .4; transform: scale(.72); } }
+
+.speech-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: color-mix(in oklab, #090d13 65%, transparent);
+  backdrop-filter: blur(12px);
+}
+.speech-dialog {
+  position: relative;
+  width: min(100%, 420px);
+  min-height: 330px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 44px 24px 24px;
+  border: 1px solid var(--ds-border-subtle);
+  border-radius: var(--radius-xs);
+  background: var(--ds-bg-composer);
+  box-shadow: var(--ds-shadow-composer);
+  color: var(--ds-text-primary);
+}
+.speech-close { position: absolute; top: 12px; right: 12px; display: grid; width: 30px; height: 30px; place-items: center; border-radius: 5px; color: var(--ds-text-secondary); }
+.speech-close:hover, .speech-close:focus-visible { background: var(--ds-bg-hover); color: var(--ds-text-primary); }
+.speech-orbit { display: grid; width: 84px; height: 84px; place-items: center; border: 1px solid var(--ds-border-subtle); border-radius: 50%; background: var(--ds-bg-active); color: var(--ds-text-primary); transition: background .25s, box-shadow .25s; }
+.speech-orbit.recording { background: color-mix(in oklab, #ef665f 20%, var(--ds-bg-composer)); box-shadow: 0 0 0 8px color-mix(in oklab, #ef665f 10%, transparent); }
+.speech-orbit.speaking { background: color-mix(in oklab, #4ebba0 20%, var(--ds-bg-composer)); box-shadow: 0 0 0 8px color-mix(in oklab, #4ebba0 10%, transparent); }
+.speech-dialog h2 { margin: 22px 0 2px; font-size: var(--text-lg); font-weight: 600; }
+.speech-state { margin: 0; color: var(--ds-text-secondary); font-size: var(--text-sm-plus); }
+.speech-transcript { max-width: 100%; max-height: 76px; overflow: auto; margin: 18px 0 0; color: var(--ds-text-secondary); text-align: center; font-size: var(--text-sm-plus); overflow-wrap: anywhere; }
+.speech-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: auto; padding-top: 24px; }
+.speech-primary, .speech-secondary { display: inline-flex; min-height: 34px; align-items: center; justify-content: center; gap: 7px; border-radius: 6px; padding: 0 13px; font-size: var(--text-sm-plus); }
+.speech-primary { background: var(--ds-text-primary); color: var(--ds-bg-composer); }
+.speech-primary:hover { opacity: .85; }
+.speech-secondary { background: var(--ds-bg-active); color: var(--ds-text-primary); }
+.speech-secondary:hover { background: var(--ds-bg-hover); }
+
 .composer-enhancement-error {
   display: flex;
   align-items: center;

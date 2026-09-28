@@ -12,6 +12,8 @@ allowBuilds:
   '@google/genai': true
   protobufjs: true
   electron-winstaller: true
+  onnxruntime-node: true
+  sharp: true
 # Advisory fixes for transitives whose parents still resolve the vulnerable
 # version. Drop each one once its parent ships a release that resolves the
 # patched version on its own.

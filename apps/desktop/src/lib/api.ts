@@ -474,6 +474,8 @@ export const api = {
   runImportModelConfigs: (items: ModelConfigImportCandidate[]) =>
     invoke<ImportRunResult>(IPC.invoke.modelConfigImportRun, items),
   getSettings: () => invoke<AppSettings>(IPC.invoke.settingsGet).then(normalizeSettings),
+  transcribeSpeech: (audioBase64: string) =>
+    invoke<{ text: string }>(IPC.invoke.speechTranscribe, audioBase64),
   setSettings: (settings: AppSettings) =>
     invoke(IPC.invoke.settingsSet, validateSettingsWrite(settings)),
   testNetworkProxy: (settings: unknown) =>

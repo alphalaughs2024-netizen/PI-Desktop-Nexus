@@ -96,6 +96,9 @@ export const SETTINGS_NAV: SettingsNavEntry[] = [
       "settings.linkOpenTarget",
       "settings.enterToSend",
       "settings.largePasteThreshold",
+      "settings.speechTitle",
+      "settings.transcriptionProvider",
+      "settings.speechVoice",
     ],
   },
   {

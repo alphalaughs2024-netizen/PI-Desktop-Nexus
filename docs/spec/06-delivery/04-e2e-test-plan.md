@@ -1,5 +1,24 @@
 # 04. E2E Test Plan
 
+### Speech input and voice mode
+
+- With no hosted speech settings or API key, start Dictate from the composer
+  microphone menu, speak, and press Done. Confirm the text remains editable in
+  the current draft and is not sent. Cancel a second recording and confirm the
+  draft is unchanged. Switch chats while transcribing and confirm the result
+  does not appear in the destination chat.
+- Start Voice mode in a chat with a configured model, speak one turn, and press
+  Done. Confirm one user message is sent through the normal prompt path, the
+  dialog waits for the assistant, and a completed reply is spoken with the
+  selected system voice. Stop speech and end the mode; audio capture and
+  playback must cease. Check toolbar wrapping at narrow widths.
+- Configure a loopback hosted transcription fixture with its key in an
+  environment variable, then repeat Dictate. Confirm the multipart request
+  includes the selected model and authorized key but the key value never
+  appears in renderer settings. Reject a non-loopback HTTP endpoint. Revert
+  to Local and confirm no hosted request is made.
+- **Specs linked**: `04-ux/17-speech-input-and-voice.md`, ADR 0244.
+
 ## Browser built-in Phase 0 contract matrix
 
 ### Work Panel Phase 0 presentation contract matrix

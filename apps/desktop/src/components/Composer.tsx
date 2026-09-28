@@ -69,6 +69,7 @@ import { ContextUsageInspector } from "./ContextUsageInspector";
 import { AskToolCard } from "./AskToolCard";
 import { PlanApprovalBar } from "./PlanApprovalBar";
 import { QueuedPromptRow } from "./QueuedPromptRow";
+import { SpeechControl } from "./SpeechControl";
 import {
   IconArrowUp,
   IconCornerDownLeft,
@@ -2738,6 +2739,21 @@ export function Composer({
                   </div>
                 ) : null}
               </div>
+              <SpeechControl
+                disabled={controlsBlocked || pasting}
+                canVoice={modelReady && !runActive}
+                onDictation={(text, sourceSessionId) => {
+                  if (sourceSessionId !== useAppStore.getState().activeSessionId || inputBlocked) return;
+                  const el = ref.current;
+                  const current = el ? readEditorValue(el) : valueRef.current;
+                  const { start, end } = el ? editorSelectionRange(el) : { start: current.length, end: current.length };
+                  const prefix = current.slice(0, start);
+                  const space = prefix && !/\s$/.test(prefix) ? " " : "";
+                  const inserted = `${space}${text}`;
+                  invalidatePromptEnhancement();
+                  applyEditorDraft(prefix + inserted + current.slice(end), fileReferencesRef.current, start + inserted.length);
+                }}
+              />
               <TooltipButton
                 type="button"
                 className={`icon-btn composer-enhance-btn${enhancingPrompt ? " is-loading" : ""}`}

@@ -1387,6 +1387,8 @@ export type AppSettings = {
    */
   fontSize?: number;
   enterToSend: boolean;
+  /** Speech capture stays local unless the user selects a hosted endpoint. */
+  speech?: SpeechSettings;
   /** Text length above which a plain-text paste becomes a session file reference. */
   largePasteThreshold?: number;
   /**
@@ -1420,6 +1422,17 @@ export type AppSettings = {
    */
   linkOpenTarget?: LinkOpenTarget;
   onboardingDismissed: boolean;
+};
+
+export type SpeechSettings = {
+  transcription: "local" | "hosted";
+  /** OpenAI-compatible audio transcription endpoint; used only in hosted mode. */
+  endpoint?: string;
+  model?: string;
+  /** Environment variable name; the secret value never enters renderer settings. */
+  apiKeyEnv?: string;
+  /** Browser/OS speech synthesis voice URI, if selected. */
+  voiceUri?: string;
 };
 
 export type CoreCapabilityId = "browser";

@@ -245,3 +245,4 @@ Each ADR includes:
 | 0226 | First-party scenic themes use a base palette and semantic token layer | Accepted |
 | 0227 | High-fidelity scenic themes use scoped material tiers | Accepted |
 | 0228 | Tier 2 checkpoint 1 session reliability and workflow surface | Accepted |
+| 0244 | Local-first speech input and voice conversation | Accepted |

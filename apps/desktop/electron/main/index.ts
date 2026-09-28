@@ -231,6 +231,7 @@ import {
 } from "./host-boot-diagnostics";
 import { collectWorkspaceDiff } from "./git-diff";
 import { BrowserPane, resolveLocalFile } from "./browser-view";
+import { transcribeSpeech } from "./speech";
 import { BrowserTabsPane } from "./browser-tabs-pane";
 import { resolveBrowserSurfaceReadiness } from "./browser-surface-readiness";
 import { browserSurfaceSessionUpdate } from "./browser-surface-session";
@@ -3182,6 +3183,16 @@ async function createWindow() {
     },
   });
   const window = mainWindow;
+  window.webContents.session.setPermissionRequestHandler((contents, permission, callback, details) => {
+    const audioOnly = permission === "media" &&
+      "mediaTypes" in details &&
+      Array.isArray(details.mediaTypes) &&
+      details.mediaTypes.length === 1 && details.mediaTypes[0] === "audio";
+    callback(audioOnly && contents.id === window.webContents.id);
+  });
+  window.webContents.session.setPermissionCheckHandler((contents, permission, _origin, details) =>
+    permission === "media" && contents?.id === window.webContents.id && details.mediaType === "audio",
+  );
   const initialBounds = window.getBounds();
   workPanelBaseBounds = savedState ? { ...savedState } : { ...initialBounds };
   workPanelLastAppliedBounds = { ...initialBounds };
@@ -7495,6 +7506,12 @@ function registerIpc() {
     const normalized = normalizeSettings(settings) as typeof settings & { coreCapabilities?: { browser?: { enabled?: boolean } } };
     browserCapabilityEnabled = normalized.coreCapabilities?.browser?.enabled !== false;
     return normalized;
+  });
+  handle(IPC.invoke.speechTranscribe, async (audioBase64: unknown) => {
+    if (!host) throw new Error("host unavailable");
+    if (typeof audioBase64 !== "string") throw new Error("Invalid speech recording");
+    const settings = await host.call("settings.get") as { speech?: import("@pi-desktop/shared").SpeechSettings };
+    return { text: await transcribeSpeech(audioBase64, settings.speech, join(dataDir, "speech-models")) };
   });
   handle(IPC.invoke.networkProxyTest, async (settings: unknown) => {
     return testNetworkProxy(settings);
