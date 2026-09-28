@@ -8488,6 +8488,7 @@ function registerIpc() {
 
   handle(IPC.invoke.composerCommands, async () => {
     const root = await optionalWorkspaceRoot();
+    const userSkills = await activeUserSkills(root ?? undefined);
     const disabledWorkflows = globalDisabledWorkflowIds(dataDir);
     const projectOverrides = projectWorkflowOverrides(dataDir, root);
     const slashWorkflows = WORKFLOW_MANIFESTS.filter((workflow) =>
@@ -8501,6 +8502,7 @@ function registerIpc() {
       ...(template.description ? { description: template.description } : {}),
       ...(template.argumentHint ? { argumentHint: template.argumentHint } : {}),
       source: template.source,
+      label: template.source === "project" ? "Project" : "Personal",
     }));
     // App-facing surfaces scope against the *window's* project, not a session's:
     // this menu belongs to whatever folder is open in front of the user.
@@ -8512,6 +8514,7 @@ function registerIpc() {
         kind: "plugin" as const,
         title: command.title,
         ...(command.category ? { description: command.category } : {}),
+        label: command.category ?? command.pluginId,
         id: command.id,
       }));
     // Trusted extension commands take arguments and run in the active
@@ -8521,10 +8524,27 @@ function registerIpc() {
       kind: "extension" as const,
       title: `/${command.name}`,
       description: command.description ?? command.extensionLabel,
+      label: command.extensionLabel,
       id: trustedExtensionCommandId(command.name),
     }));
-    // One namespace: builtin aliases win, then project templates, then user
-    // templates, then plugin commands, then extension commands (spec 04 §7).
+    const admittedSkillIds = new Set(instructionCatalogWithinBudget([
+      ...builtinSkills({ workspacePath: root, pluginPaths: plugins.listLoaded().map((loaded) => loaded.path), dataDir, projectOverrides })
+        .filter((skill) => slashWorkflows.some((workflow) => workflow.id === skill.id))
+        .map((skill) => ({ ...skill, source: "builtin" as const })),
+      ...listWorkflowPackages(dataDir, root)
+        .filter((workflow) => workflow.enabled && workflow.compatibility.status === "compatible")
+        .map((workflow) => ({ id: workflow.id, name: workflow.name, description: workflow.description, source: "user" as const })),
+      ...userSkills.map((skill) => ({ id: skill.id, name: skill.name, description: skill.description, source: "user" as const })),
+    ]).map((skill) => skill.id));
+    const skillCommands = userSkills.filter((skill) => admittedSkillIds.has(skill.id)).map((skill) => ({
+      name: skill.id,
+      kind: "skill" as const,
+      title: skill.name,
+      description: skill.description,
+      id: skill.id,
+    }));
+    // One namespace: existing app, template, and plugin aliases keep precedence
+    // over user skill ids; trusted extensions remain last (spec 04 §7).
     const merged = new Map<
       string,
       ReturnType<typeof builtinComposerCommands>[number]
@@ -8533,6 +8553,7 @@ function registerIpc() {
       ...builtinComposerCommands(slashWorkflows),
       ...templateCommands,
       ...pluginCommands,
+      ...skillCommands,
       ...extensionCommands,
     ]) {
       if (!merged.has(command.name)) merged.set(command.name, command);

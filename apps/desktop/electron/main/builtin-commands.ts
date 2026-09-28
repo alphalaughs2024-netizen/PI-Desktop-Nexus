@@ -31,15 +31,17 @@ export function builtinComposerCommands(workflows: readonly WorkflowManifest[] =
     kind: "builtin",
     title: def.title,
     ...(def.category ? { description: def.category } : {}),
+    ...(def.category ? { label: def.category } : {}),
     id: def.id,
   }));
   return [
     ...commands,
     ...workflows.filter((workflow) => workflow.slashAlias).map((workflow) => ({
       name: workflow.slashAlias!,
-      kind: "builtin" as const,
+      kind: "workflow" as const,
       title: workflow.name,
       description: workflow.description,
+      label: workflow.name,
       id: `builtin.workflow.${workflow.id}`,
     })),
   ];

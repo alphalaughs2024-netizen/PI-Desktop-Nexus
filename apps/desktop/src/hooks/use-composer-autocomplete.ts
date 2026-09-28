@@ -41,7 +41,7 @@ let filesCache: {
   truncated: boolean;
 } | null = null;
 
-const COMMAND_GROUP_ORDER = { template: 0, builtin: 1, plugin: 2, extension: 3 } as const;
+const COMMAND_GROUP_ORDER = { builtin: 0, plugin: 1, skill: 2, workflow: 3, template: 4, extension: 5 } as const;
 
 function filterCommands(
   commands: ComposerCommand[],
@@ -141,8 +141,20 @@ export function useComposerAutocomplete({
     truncated: boolean;
   } | null>(null);
   const [highlight, setHighlight] = useState(0);
+  const [commandsRevision, setCommandsRevision] = useState(0);
   const [dismissedKey, setDismissedKey] = useState<string | null>(null);
   const frozenRef = useRef<ComposerTrigger | null>(null);
+
+  useEffect(() => {
+    const invalidate = () => {
+      commandsCache = null;
+      setCommands(null);
+      setCommandsRevision((revision) => revision + 1);
+    };
+    const offPlugin = api.onPluginChanged(invalidate);
+    const offWorkflow = api.onWorkflowChanged(invalidate);
+    return () => { offPlugin(); offWorkflow(); };
+  }, []);
 
   const liveTrigger = useMemo(
     () => (enabled ? detectTrigger(value, cursor) : null),
@@ -220,7 +232,7 @@ export function useComposerAutocomplete({
     return () => {
       cancelled = true;
     };
-  }, [trigger?.mode, dismissed, workspaceKey, hasWorkspace]);
+  }, [trigger?.mode, dismissed, workspaceKey, hasWorkspace, commandsRevision]);
 
   const items = useMemo<AutocompleteItem[]>(() => {
     if (!trigger || dismissed) return [];

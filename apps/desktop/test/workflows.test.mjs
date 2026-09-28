@@ -90,7 +90,7 @@ test("every bundled workflow has a unique explicit slash alias", () => {
   const commands = builtinComposerCommands(WORKFLOW_MANIFESTS);
   assert.equal(new Set(commands.map((command) => command.name)).size, commands.length);
   for (const workflow of WORKFLOW_MANIFESTS) {
-    assert.ok(commands.some((command) => command.name === workflow.slashAlias && command.id === `builtin.workflow.${workflow.id}`));
+    assert.ok(commands.some((command) => command.name === workflow.slashAlias && command.kind === "workflow" && command.id === `builtin.workflow.${workflow.id}`));
     const body = readFileSync(join(desktopRoot, "resources/skills", workflow.skillFile), "utf8");
     assert.match(body, /^description: .+/m);
   }

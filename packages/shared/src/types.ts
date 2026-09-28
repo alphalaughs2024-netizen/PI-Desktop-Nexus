@@ -1994,14 +1994,16 @@ export type CommandItem = {
   extensionId?: string;
 };
 
-/** One entry of the composer "/" menu, merged from three sources (D123). */
+/** One entry of the composer "/" menu. */
 export type ComposerCommand = {
   /** Slash name typed after "/"; unique across the merged list. */
   name: string;
-  kind: "template" | "builtin" | "plugin" | "extension";
+  kind: "template" | "builtin" | "plugin" | "extension" | "skill" | "workflow";
   /** Display title (templates use their name). */
   title: string;
   description?: string;
+  /** Short right-aligned label; description remains searchable and available as a tooltip. */
+  label?: string;
   /** Template frontmatter `argument-hint`, shown as ghost text. */
   argumentHint?: string;
   /** Template provenance; project templates override user-global ones. */

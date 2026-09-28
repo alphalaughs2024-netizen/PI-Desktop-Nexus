@@ -42,6 +42,7 @@ describe("instructionCatalogPrompt", () => {
     expect(prompt).toContain("# Skills");
     expect(prompt).toContain("When the user says “list skills”");
     expect(prompt).toContain("never Nexus or plugin guidance");
+    expect(prompt).toContain("A user prompt beginning with `/<skill-id>` explicitly invokes the matching skill");
     expect(prompt.indexOf("# Skills")).toBeLessThan(prompt.indexOf("# Plugin guidance"));
   });
 

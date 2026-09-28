@@ -1688,10 +1688,10 @@ export function Composer({
         commandEnd === -1 ? undefined : commandEnd,
       );
       const command = name ? await resolveComposerCommand(name) : null;
-      if (command && command.kind !== "template" && command.id) {
+      if (command && command.kind !== "template" && command.kind !== "skill" && command.id) {
         const commandBody =
           commandEnd === -1 ? "" : serializedContent.slice(commandEnd).trim();
-        if (command.kind === "builtin" && command.id.startsWith("builtin.workflow.")) {
+        if (command.kind === "workflow" && command.id.startsWith("builtin.workflow.")) {
           try {
             const sessionId = useAppStore.getState().activeSessionId ?? await materializeDraftSession();
             if (!sessionId) throw new Error("Unable to open a session for this workflow.");

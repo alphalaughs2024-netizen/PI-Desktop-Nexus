@@ -2535,9 +2535,11 @@ Anatomy:
   scroll and `scrollIntoView(nearest)` keyboard follow.
 - Slash mode (`/` typed at position 0, cursor inside the first token, no
   whitespace yet): the placeholder teaches `Type / for commands · @ for files`
-  (localized in zh-CN), and groups appear in order — prompt templates (name +
-  `argument-hint` ghost text + description, project source before
-  user-global), app commands (builtin slash aliases), plugin commands.
+  (localized in zh-CN). Groups appear in order: App Commands, Plugin Commands,
+  Skills, Workflows, Prompt Templates, Extension Commands. Rows show a compact
+  command name and category; user skills show a clipped description. Full
+  descriptions remain searchable and available as tooltips. Templates retain
+  their `argument-hint` ghost text and project-before-global precedence.
   The core aliases remain `/new`, `/compact`, `/agent-mode`, `/plan-mode`, and
   `/goal-mode`; matched characters highlight in accent.
 - File mode (`@` token at cursor, boundary-preceded): rows persistently show

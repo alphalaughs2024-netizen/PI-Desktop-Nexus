@@ -239,6 +239,8 @@ export const zhTW = {
     slashGroupApp: "應用命令",
     slashGroupPlugins: "外掛命令",
     slashGroupExtensions: "擴充命令",
+    slashGroupSkills: "技能",
+    slashGroupWorkflows: "工作流程",
     slashEmpty: "沒有匹配的指令",
     fileMenu: "引用檔案",
     fileReferences: "此草稿引用的檔案",

@@ -244,6 +244,8 @@ export const de = {
     "slashGroupApp": "App-Befehle",
     "slashGroupPlugins": "Plugin-Befehle",
     "slashGroupExtensions": "Erweiterungsbefehle",
+    "slashGroupSkills": "Skills",
+    "slashGroupWorkflows": "Workflows",
     "slashEmpty": "Keine übereinstimmenden Befehle",
     "fileMenu": "Dateiverweise",
     "fileReferences": "Von diesem Entwurf referenzierte Dateien",

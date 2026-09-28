@@ -34,6 +34,7 @@
 
 .composer-ac-item {
   gap: 8px;
+  min-height: 34px;
 }
 
 .composer-ac-icon {
@@ -62,12 +63,22 @@
 }
 
 .composer-ac-desc {
-  flex: 1 1 auto;
+  flex: 0 1 auto;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   text-align: right;
+  color: var(--ds-text-muted);
+  font-size: var(--text-xs-plus, var(--text-sm));
+}
+
+.composer-ac-summary {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   color: var(--ds-text-muted);
   font-size: var(--text-xs-plus, var(--text-sm));
 }

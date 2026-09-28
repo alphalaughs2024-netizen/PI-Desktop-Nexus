@@ -53,7 +53,7 @@ function renderInstructionCatalog(skills: InstructionDocumentDef[]): string | un
       [
         "# Skills",
         "",
-        `These are the user's reusable task recipes, stored globally or for this project. When the user says “list skills”, “load a skill”, “use a skill”, “create a skill”, or otherwise says “skill” without naming a plugin, they mean this section — never Nexus or plugin guidance. Load a relevant recipe with the \`${SKILL_TOOL_NAME}\` tool using its exact id before doing the task; do not guess at its content. To create a skill, follow an applicable recipe here if one exists. Load each recipe at most once per task.`,
+        `These are the user's reusable task recipes, stored globally or for this project. When the user says “list skills”, “load a skill”, “use a skill”, “create a skill”, or otherwise says “skill” without naming a plugin, they mean this section — never Nexus or plugin guidance. A user prompt beginning with \`/<skill-id>\` explicitly invokes the matching skill in this list; load it with the \`${SKILL_TOOL_NAME}\` tool before handling the rest of that prompt. For other tasks, load a relevant recipe with the same tool using its exact id before doing the task; do not guess at its content. To create a skill, follow an applicable recipe here if one exists. Load each recipe at most once per task.`,
         "",
         ...catalogLines(userSkills),
       ].join("\n"),

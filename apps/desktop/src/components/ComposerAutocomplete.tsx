@@ -5,9 +5,11 @@ import type { AutocompleteItem, useComposerAutocomplete } from "../hooks/use-com
 import {
   IconFileText,
   IconFolder,
+  IconBookOpen,
   IconPlug,
   IconSlash,
   IconSparkles,
+  IconWorkflow,
 } from "./icons";
 
 /**
@@ -44,10 +46,14 @@ const GROUP_KEYS: Record<ComposerCommand["kind"], string> = {
   builtin: "chat.slashGroupApp",
   plugin: "chat.slashGroupPlugins",
   extension: "chat.slashGroupExtensions",
+  skill: "chat.slashGroupSkills",
+  workflow: "chat.slashGroupWorkflows",
 };
 
 function CommandIcon({ kind }: { kind: ComposerCommand["kind"] }) {
   if (kind === "template") return <IconSlash size={14} />;
+  if (kind === "skill") return <IconBookOpen size={14} />;
+  if (kind === "workflow") return <IconWorkflow size={14} />;
   if (kind === "plugin" || kind === "extension") return <IconPlug size={14} />;
   return <IconSparkles size={14} />;
 }
@@ -93,18 +99,21 @@ export function ComposerAutocomplete({
     };
     if (item.kind === "command") {
       return (
-        <button {...commonProps}>
+        <button {...commonProps} title={item.command.description ?? item.command.title} aria-label={`/${item.command.name}: ${item.command.title}`}>
           <span className="composer-ac-icon">
             <CommandIcon kind={item.command.kind} />
           </span>
           <span className="composer-ac-name">
             /<Highlighted text={item.command.name} ranges={item.match.ranges} />
           </span>
+          {item.command.kind === "skill" && item.command.description ? (
+            <span className="composer-ac-summary">{item.command.description}</span>
+          ) : null}
           {item.command.argumentHint ? (
             <span className="composer-ac-hint">{item.command.argumentHint}</span>
           ) : null}
-          {item.command.description ? (
-            <span className="composer-ac-desc">{item.command.description}</span>
+          {item.command.label ? (
+            <span className="composer-ac-desc">{item.command.label}</span>
           ) : null}
         </button>
       );

@@ -99,7 +99,12 @@ handled as ordinary unknown slash text unless supplied by another command
 source.
 
 Reviewed Nexus workflow guidance also appears in the composer menu as
-`/guide-*` commands. Every shipped workflow has one stable alias; disabled
+`/guide-*` commands under Workflows, distinct from App Commands. Project-scoped,
+enabled user skills appear under Skills as `/skill-id` entries. Selecting one
+inserts the alias into the draft; sending it remains a model turn, and the agent
+loads the matching document through `Skill` before handling the request. Skills
+cannot grant permissions. Existing app, template, and plugin aliases retain
+precedence when an id collides. Every shipped workflow has one stable alias; disabled
 guides are hidden unless the selected project explicitly enables them. An
 alias alone activates guidance in the current session, creating a session from
 home when needed. `/guide-debug <prompt>` and the other aliases activate the

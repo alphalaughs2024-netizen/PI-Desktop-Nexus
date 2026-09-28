@@ -1666,6 +1666,22 @@ membership when dropped on Ungrouped.
 - **Status**: Source-covered (`composer-placeholder-context.test.mjs`);
   full UI scenario Draft
 
+#### E2E-088c: Slash menu groups and scoped skill invocation
+
+- **Preconditions**: One enabled user skill is available in the current project;
+  another is disabled or scoped to a different project. A bundled guide and
+  plugin command are available.
+- **Steps**: Type `/` and inspect group order. Select the enabled skill, add a
+  request, and send. Repeat in a project where the skill is unavailable.
+  Disable a guide and reopen the menu.
+- **Expected**: Populated App Commands, Plugin Commands, Skills, Workflows,
+  Prompt Templates, and Extension Commands groups appear separately in that
+  order. Long descriptions remain readable. Only available skills and guides
+  appear. A sent skill alias loads its matching document for the agent.
+  Existing app and template aliases retain their behavior.
+- **Specs linked**: `04-ux/04-builtin-commands.md` (§7),
+  `04-ux/08-component-spec.md` (§11.8), ADR 0246
+
 #### E2E-089: Composer model menu opens upward and switches model
 
 - **Preconditions**: Chat route active; provider configured.
