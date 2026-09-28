@@ -293,15 +293,15 @@ the controls stay keyboard accessible. This rendered scenario is pending.
 - Host steering admission atomically distinguishes a queued record from one
   already shifted into execution; an already-started record is acknowledged
   without sending duplicate provider content.
-- After successful steering, the runtime resumes the interrupted agent loop so
-  the assistant produces a reply; the interrupted provider request is not
-  treated as the terminal end of the Host turn.
-- Steering clears the runtime's internal abort marker before resuming; the
-  handoff must not leave the session idle waiting for a new prompt.
-- The provider-delivery regression counts requests across the abort handoff and
-  verifies the sequence is exactly: original prompt, steered prompt.
-- Active steering aborts the current provider request after queue admission, then
-  resumes the same agent loop so the steered message is delivered immediately.
+- Steering during a provider request waits for the next assistant turn boundary;
+  the current request completes normally and the Host turn remains active.
+- Two steers admitted during one provider request are delivered once each in
+  order, with no `AGENT_BUSY` response or premature terminal Host event.
+- Steering while the parent waits for a subagent leaves that wait and the Host
+  turn active. When the report arrives, the parent's next loop consumes the
+  steer; Continue never races that loop or reports `AGENT_BUSY`.
+- Stop clears a steer that has not yet reached a provider request, so a later
+  prompt does not receive an instruction from the stopped turn.
 - Legacy accepted steering responses receive the same durable queue cleanup as
   typed accepted/queued outcomes.
 - A promoted "send now" row remains cancelable while move/edit actions stay

@@ -1632,6 +1632,7 @@ export class DesktopAgentRuntime {
   private compactionEnabled: boolean;
   private readonly compactionStrategy: CompactionStrategy;
   private pendingUserMessageId?: string;
+  private pendingSteeringMessages = new Set<AgentMessage>();
   private pendingOverflow = false;
   private overflowRecoveryAttempted = false;
   private suppressOverflowRunEnd = false;
@@ -6180,6 +6181,7 @@ export class DesktopAgentRuntime {
       }
       case "message_end": {
         if (event.message.role === "user") {
+          if (this.pendingSteeringMessages.delete(event.message)) break;
           const id = this.pendingUserMessageId ?? randomUUID();
           this.pendingUserMessageId = undefined;
           this.appendLiveEntry(id, event.message);
@@ -6752,6 +6754,8 @@ export class DesktopAgentRuntime {
   ): Promise<{ turnId: string }> {
     if (this.disposed) throw new Error("runtime disposed");
     this.assertNotRunning();
+    this.pendingSteeringMessages.clear();
+    this.agent.clearSteeringQueue();
     const nextTurnId = durableTurnId?.trim() || randomUUID();
     this.hostTurnId = nextTurnId;
     this.turnId = nextTurnId;
@@ -6940,6 +6944,8 @@ export class DesktopAgentRuntime {
     this.resolvePendingAskTools();
     this.abortRunningDelegations();
     this.turnSubagentUsage = undefined;
+    this.pendingSteeringMessages.clear();
+    this.agent.clearSteeringQueue();
     this.agent.abort();
     this.providerRetryAbort?.abort();
     if (this.compactionInProgress) this.compactionAborted = true;
@@ -6969,27 +6975,19 @@ export class DesktopAgentRuntime {
     }
     const content = promptContent(input);
     const agentMessage: AgentMessage = { role: "user", content, timestamp: Date.now() };
-    // Queue the steer first, then interrupt the active provider request. Once
-    // pi-agent-core settles the aborted run, continue() drains the steering
-    // queue immediately instead of waiting for the original generation.
+    // The active loop drains steering at its next turn boundary. If the parent
+    // is idle while delegates run, resumeAfterDelegations starts the next loop
+    // and drains it there. Aborting here would emit a terminal agent_end for
+    // the durable turn while the delegates are still running.
     try {
       this.agent.steer(agentMessage);
-      if (this.agent.signal) {
-        this.agent.abort();
-        await this.agent.waitForIdle();
-        this.runCancelled = false;
-        this.turnHadError = false;
-      }
-      if (!this.disposed && !this.runCancelled && expectedTurnId === this.turnId) {
-        this.setAgentActivity({ phase: "recovering", since: Date.now() });
-        await this.agent.continue();
-      }
     } catch (error) {
       const reason = error instanceof Error ? error.message : String(error);
       this.emitLifecycle("steering_failed", { expectedTurnId, reason });
       return { state: "failed", reason };
     }
     if (message) {
+      this.pendingSteeringMessages.add(agentMessage);
       this.appendLiveEntry(message.id, agentMessage);
       this.emit({ type: "message_start", message });
       this.emit({ type: "message_end", message });
@@ -7042,6 +7040,8 @@ export class DesktopAgentRuntime {
     this.pendingRepeatedToolTermination = undefined;
     this.terminatingToolCalls.clear();
     this.gracefulStopRequested = false;
+    this.pendingSteeringMessages.clear();
+    this.agent.clearSteeringQueue();
     this.hostCloseUnsubscribe?.();
     this.hostCloseUnsubscribe = undefined;
     this.agent.abort();
