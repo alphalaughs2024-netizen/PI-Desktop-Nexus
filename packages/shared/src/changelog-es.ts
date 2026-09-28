@@ -1,6 +1,14 @@
 import type { ChangelogEntry } from "./changelog.js";
 
 export const esEntries: ChangelogEntry[] = [{
+  version: "0.0.6",
+  date: "2026-09-28",
+  highlights: [
+    "Mejora las pestañas del navegador con estado de página separado, cierre fiable de la última pestaña, navegación paralela y controles de navegador para el agente.",
+    "Perfecciona el panel de trabajo redimensionable y la barra lateral plegable para mantener espacio útil de chat en diseños estrechos y amplios.",
+    "Añade controles de mensajes en cola arrastrables, acciones de guiar/eliminar con iconos, acciones de cola y modo de guía por chat.",
+  ],
+}, {
   version: "0.0.5",
   date: "2026-09-23",
   highlights: [

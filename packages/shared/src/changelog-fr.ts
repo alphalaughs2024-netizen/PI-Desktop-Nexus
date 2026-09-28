@@ -1,6 +1,14 @@
 import type { ChangelogEntry } from "./changelog.js";
 
 export const frEntries: ChangelogEntry[] = [{
+  version: "0.0.6",
+  date: "2026-09-28",
+  highlights: [
+    "Améliore les onglets du navigateur avec un état de page séparé, la fermeture fiable du dernier onglet, la navigation parallèle et les contrôles de navigateur de l'agent.",
+    "Affîne le panneau de travail redimensionnable et la barre latérale repliable afin de préserver l'espace de chat dans les mises en page étroites et larges.",
+    "Ajoute des contrôles de messages en attente déplaçables, des actions guider/supprimer par icônes, des actions de file et un mode de guidage par chat.",
+  ],
+}, {
   version: "0.0.5",
   date: "2026-09-23",
   highlights: [

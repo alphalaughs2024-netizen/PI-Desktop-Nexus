@@ -1,6 +1,14 @@
 import type { ChangelogEntry } from "./changelog.js";
 
 export const trEntries: ChangelogEntry[] = [{
+  version: "0.0.6",
+  date: "2026-09-28",
+  highlights: [
+    "Tarayıcı sekmelerini ayrı sayfa durumu, güvenilir son sekme kapatma, paralel gezinme ve aracı tarayıcı denetimleriyle geliştirdi.",
+    "Yeniden boyutlandırılabilir Çalışma Paneli ile daraltılabilir kenar çubuğunu iyileştirerek dar ve geniş düzenlerde sohbet alanını korudu.",
+    "Sürüklenebilir kuyruk mesajı denetimleri, yalnızca simgeli yönlendirme/silme işlemleri, kuyruk işlemleri ve sohbet başına yönlendirme modu ekledi.",
+  ],
+}, {
   version: "0.0.5",
   date: "2026-09-23",
   highlights: [

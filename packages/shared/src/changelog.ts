@@ -13,6 +13,14 @@ export type ChangelogEntry = {
 };
 
 const enEntries: ChangelogEntry[] = [{
+  version: "0.0.6",
+  date: "2026-09-28",
+  highlights: [
+    "Improved browser tabs with separate page state, reliable final-tab closing, parallel navigation, and agent browser controls.",
+    "Refined the resizable Work Panel and collapsible sidebar so chat keeps usable space across narrow and wide layouts.",
+    "Added draggable queued-message controls, icon-only steer/delete actions, queue actions, and per-chat steering mode.",
+  ],
+}, {
   version: "0.0.5",
   date: "2026-09-23",
   highlights: [
@@ -48,6 +56,14 @@ const enEntries: ChangelogEntry[] = [{
 }];
 
 const zhCNEntries: ChangelogEntry[] = [{
+  version: "0.0.6",
+  date: "2026-09-28",
+  highlights: [
+    "改进浏览器标签页，提供独立页面状态、可靠的最后标签关闭、并行导航和智能体浏览器控制。",
+    "优化可调整大小的工作面板和可折叠侧边栏，让聊天在窄屏和宽屏布局中都保持可用空间。",
+    "新增可拖动的待发送消息控件、仅图标的引导/删除操作、队列操作和按聊天启用的引导模式。",
+  ],
+}, {
   version: "0.0.5",
   date: "2026-09-23",
   highlights: [
@@ -83,6 +99,14 @@ const zhCNEntries: ChangelogEntry[] = [{
 }];
 
 const zhTWEntries: ChangelogEntry[] = [{
+  version: "0.0.6",
+  date: "2026-09-28",
+  highlights: [
+    "改善瀏覽器分頁，提供獨立頁面狀態、可靠的最後分頁關閉、平行導覽與 Agent 瀏覽器控制。",
+    "優化可調整大小的工作面板與可摺疊側邊欄，讓聊天在窄螢幕和寬螢幕版面都保有可用空間。",
+    "新增可拖曳的待發送訊息控制、僅圖示的引導/刪除操作、佇列操作與按聊天啟用的引導模式。",
+  ],
+}, {
   version: "0.0.5",
   date: "2026-09-23",
   highlights: [

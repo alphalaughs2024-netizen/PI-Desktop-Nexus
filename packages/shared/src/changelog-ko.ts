@@ -1,6 +1,14 @@
 import type { ChangelogEntry } from "./changelog.js";
 
 export const koEntries: ChangelogEntry[] = [{
+  version: "0.0.6",
+  date: "2026-09-28",
+  highlights: [
+    "브라우저 탭에 독립적인 페이지 상태, 마지막 탭 닫기, 병렬 탐색 및 에이전트 브라우저 제어를 개선했습니다.",
+    "크기 조절 가능한 작업 패널과 접을 수 있는 사이드바를 다듬어 좁거나 넓은 레이아웃에서도 채팅 공간을 유지합니다.",
+    "드래그 가능한 대기 메시지 제어, 아이콘 전용 조정/삭제 동작, 대기열 작업 및 채팅별 조정 모드를 추가했습니다.",
+  ],
+}, {
   version: "0.0.5",
   date: "2026-09-23",
   highlights: [

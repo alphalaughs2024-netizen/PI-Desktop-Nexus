@@ -1,6 +1,14 @@
 import type { ChangelogEntry } from "./changelog.js";
 
 export const deEntries: ChangelogEntry[] = [{
+  version: "0.0.6",
+  date: "2026-09-28",
+  highlights: [
+    "Verbessert Browser-Tabs mit getrenntem Seitenstatus, zuverlässigem Schließen des letzten Tabs, paralleler Navigation und Browser-Steuerung für Agenten.",
+    "Verfeinert das größenveränderbare Arbeitsfenster und die einklappbare Seitenleiste, damit der Chat in schmalen und breiten Layouts nutzbar bleibt.",
+    "Fügt ziehbare Warteschlangen-Steuerelemente, symbolbasierte Steuern/Löschen-Aktionen, Warteschlangenaktionen und chatbezogene Steuerung hinzu.",
+  ],
+}, {
   version: "0.0.5",
   date: "2026-09-23",
   highlights: [
