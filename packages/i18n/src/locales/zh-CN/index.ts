@@ -579,6 +579,8 @@ export const zhCN = {
     speechKeyEnv: "API 密钥变量",
     speechKeyEnvDesc: "Nexus 可访问的环境变量名称。密钥不会保存在设置中。",
     speechVoice: "回复语音",
+    voiceReplies: "语音回复",
+    voiceRepliesDesc: "在语音模式中朗读助手的回复",
     speechSystemVoice: "系统默认",
     title: "设置",
     providers: "AI 服务",

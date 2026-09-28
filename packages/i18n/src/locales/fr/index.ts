@@ -578,6 +578,8 @@ export const fr = {
     "speechKeyEnv": "Variable de clé API",
     "speechKeyEnvDesc": "Nom d'une variable d'environnement accessible à Nexus. La clé n'est pas enregistrée.",
     "speechVoice": "Voix de réponse",
+    "voiceReplies": "Réponses vocales",
+    "voiceRepliesDesc": "Lire les réponses à voix haute en mode vocal",
     "speechSystemVoice": "Voix système par défaut",
     "title": "Paramètres",
     "providers": "Fournisseurs d'IA",

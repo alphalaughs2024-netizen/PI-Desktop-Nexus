@@ -585,6 +585,8 @@ export const de = {
     "speechKeyEnv": "API-Schlüsselvariable",
     "speechKeyEnvDesc": "Name einer für Nexus verfügbaren Umgebungsvariable. Der Schlüssel wird nicht gespeichert.",
     "speechVoice": "Antwortstimme",
+    "voiceReplies": "Gesprochene Antworten",
+    "voiceRepliesDesc": "Antworten im Sprachmodus vorlesen",
     "speechSystemVoice": "Systemstandard",
     "title": "Einstellungen",
     "providers": "KI-Anbieter",

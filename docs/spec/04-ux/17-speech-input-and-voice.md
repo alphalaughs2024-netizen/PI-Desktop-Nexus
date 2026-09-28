@@ -17,7 +17,10 @@
   cannot appear in a different chat.
 - Settings > Models > Speech selects local or hosted transcription. Local is the
   default and requires no key. Hosted has endpoint, model, and environment
-  variable name fields. Reply voice selects an installed system voice.
+  variable name fields. Voice replies are on by default for existing settings.
+  Turning them off keeps voice input and text replies, skips speech synthesis,
+  and resumes listening when the reply completes. The reply voice selector is
+  unavailable while voice replies are off.
 - Local model files live in application data. Audio is held only during the
   active recording/transcription request; it is not saved to chat history or
   a workspace file. Hosted mode sends audio to the configured endpoint.

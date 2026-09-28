@@ -583,6 +583,8 @@ export const zhTW = {
     speechKeyEnv: "API 金鑰變數",
     speechKeyEnvDesc: "Nexus 可存取的環境變數名稱。金鑰不會儲存在設定中。",
     speechVoice: "回覆語音",
+    voiceReplies: "語音回覆",
+    voiceRepliesDesc: "在語音模式中朗讀助手的回覆",
     speechSystemVoice: "系統預設",
     title: "設定",
     providers: "AI 服務",

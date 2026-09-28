@@ -581,6 +581,8 @@ export const en = {
     speechKeyEnv: "API key variable",
     speechKeyEnvDesc: "Name of an environment variable available to Nexus. The key is never saved in settings.",
     speechVoice: "Reply voice",
+    voiceReplies: "Voice replies",
+    voiceRepliesDesc: "Speak assistant replies in voice mode",
     speechSystemVoice: "System default",
     title: "Settings",
     providers: "AI providers",

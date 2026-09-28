@@ -587,6 +587,8 @@ export const tr = {
     speechKeyEnv: "API anahtarı değişkeni",
     speechKeyEnvDesc: "Nexus'un erişebildiği ortam değişkeninin adı. Anahtar ayarlara kaydedilmez.",
     speechVoice: "Yanıt sesi",
+    voiceReplies: "Sesli yanıtlar",
+    voiceRepliesDesc: "Ses modunda asistan yanıtlarını seslendir",
     speechSystemVoice: "Sistem varsayılanı",
     title: "Ayarlar",
     providers: "AI servisleri",

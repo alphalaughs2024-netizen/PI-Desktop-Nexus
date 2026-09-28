@@ -19,6 +19,11 @@
   includes the selected model and authorized key but the key value never
   appears in renderer settings. Reject a non-loopback HTTP endpoint. Revert
   to Local and confirm no hosted request is made.
+- In Settings > Models > Speech, turn off Voice replies. Start Voice mode,
+  speak a prompt, and finish recording. Confirm the assistant reply remains
+  visible as text, no speech is played, and the dock listens for the next
+  spoken prompt. Re-enable Voice replies and confirm completed replies are
+  spoken again. The installed voice selector is disabled while replies are off.
 - **Specs linked**: `04-ux/17-speech-input-and-voice.md`, ADR 0244.
 
 ## Browser built-in Phase 0 contract matrix

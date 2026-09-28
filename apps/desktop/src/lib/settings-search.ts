@@ -99,6 +99,7 @@ export const SETTINGS_NAV: SettingsNavEntry[] = [
       "settings.speechTitle",
       "settings.transcriptionProvider",
       "settings.speechVoice",
+      "settings.voiceReplies",
     ],
   },
   {

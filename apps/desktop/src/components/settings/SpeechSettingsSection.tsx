@@ -65,9 +65,27 @@ export function SpeechSettingsSection({
         </>
       )}
       <div className="settings-row">
+        <div className="settings-row-copy">
+          <div className="settings-row-title">{t("settings.voiceReplies")}</div>
+          <div className="settings-row-desc">{t("settings.voiceRepliesDesc")}</div>
+        </div>
+        <div className="settings-row-control">
+          <button
+            type="button"
+            className={cx("settings-toggle", speech.voiceRepliesEnabled !== false && "on")}
+            role="switch"
+            aria-checked={speech.voiceRepliesEnabled !== false}
+            aria-label={t("settings.voiceReplies")}
+            onClick={() => void save({ voiceRepliesEnabled: speech.voiceRepliesEnabled === false })}
+          >
+            <span className="settings-toggle-thumb" />
+          </button>
+        </div>
+      </div>
+      <div className="settings-row">
         <div className="settings-row-copy"><div className="settings-row-title">{t("settings.speechVoice")}</div></div>
         <div className="settings-row-control">
-          <select className="field-select" value={speech.voiceUri ?? ""} onChange={(event) => void save({ voiceUri: event.target.value })}>
+          <select className="field-select" value={speech.voiceUri ?? ""} disabled={speech.voiceRepliesEnabled === false} onChange={(event) => void save({ voiceUri: event.target.value })}>
             <option value="">{t("settings.speechSystemVoice")}</option>
             {voices.map((voice) => <option key={voice.voiceURI} value={voice.voiceURI}>{voice.name} ({voice.lang})</option>)}
           </select>

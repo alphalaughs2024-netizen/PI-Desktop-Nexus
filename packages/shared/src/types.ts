@@ -1426,6 +1426,8 @@ export type AppSettings = {
 
 export type SpeechSettings = {
   transcription: "local" | "hosted";
+  /** Missing preserves the original spoken-reply behavior. */
+  voiceRepliesEnabled?: boolean;
   /** OpenAI-compatible audio transcription endpoint; used only in hosted mode. */
   endpoint?: string;
   model?: string;

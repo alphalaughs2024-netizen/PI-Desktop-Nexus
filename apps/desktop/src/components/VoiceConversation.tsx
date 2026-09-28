@@ -34,6 +34,7 @@ export function VoiceModeProvider({ children }: { children: ReactNode }) {
     s.activeSessionId ? s.runningSessions[s.activeSessionId] ?? false : false,
   );
   const voiceUri = useAppStore((s) => s.settings?.speech?.voiceUri);
+  const voiceRepliesEnabled = useAppStore((s) => s.settings?.speech?.voiceRepliesEnabled !== false);
   const showToast = useAppStore((s) => s.showToast);
 
   const stop = () => {
@@ -44,6 +45,8 @@ export function VoiceModeProvider({ children }: { children: ReactNode }) {
     window.speechSynthesis?.cancel();
     setActive(false);
     setState("idle");
+    setTranscript("");
+    setReplyText("");
   };
 
   useEffect(() => () => {
@@ -72,6 +75,14 @@ export function VoiceModeProvider({ children }: { children: ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active]);
 
+  useEffect(() => {
+    if (!active || state !== "speaking" || voiceRepliesEnabled) return;
+    cycle.current += 1;
+    window.speechSynthesis?.cancel();
+    void start();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active, state, voiceRepliesEnabled]);
+
   const start = async () => {
     recording.current?.cancel();
     recording.current = null;
@@ -80,8 +91,6 @@ export function VoiceModeProvider({ children }: { children: ReactNode }) {
     sourceSession.current = useAppStore.getState().activeSessionId;
     setActive(true);
     setState("idle");
-    setTranscript("");
-    setReplyText("");
     try {
       const next = await startSpeechRecording();
       if (cycle.current !== token) {
@@ -113,6 +122,7 @@ export function VoiceModeProvider({ children }: { children: ReactNode }) {
         return;
       }
       setTranscript(text);
+      setReplyText("");
       replyBaseline.current = useAppStore.getState().messages.at(-1)?.id;
       sendingVoice.current = true;
       const accepted = await sendPrompt(text);
@@ -135,6 +145,10 @@ export function VoiceModeProvider({ children }: { children: ReactNode }) {
     );
     if (!reply) return;
     setReplyText(reply.content);
+    if (!voiceRepliesEnabled) {
+      void start();
+      return;
+    }
     if (!window.speechSynthesis || typeof SpeechSynthesisUtterance === "undefined") {
       setState("idle");
       return;
@@ -148,7 +162,7 @@ export function VoiceModeProvider({ children }: { children: ReactNode }) {
     setState("speaking");
     window.speechSynthesis.speak(utterance);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active, state, isRunning, messages, voiceUri]);
+  }, [active, state, isRunning, messages, voiceUri, voiceRepliesEnabled]);
 
   return (
     <VoiceModeContext.Provider value={{ active, start: () => void start(), stop }}>

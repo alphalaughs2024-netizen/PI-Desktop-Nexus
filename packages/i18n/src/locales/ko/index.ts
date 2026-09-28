@@ -587,6 +587,8 @@ export const ko = {
     speechKeyEnv: "API 키 환경 변수",
     speechKeyEnvDesc: "Nexus에서 사용할 수 있는 환경 변수 이름입니다. 키는 설정에 저장되지 않습니다.",
     speechVoice: "답변 음성",
+    voiceReplies: "음성 답변",
+    voiceRepliesDesc: "음성 모드에서 어시스턴트 답변 읽기",
     speechSystemVoice: "시스템 기본값",
     title: "설정",
     providers: "AI 프로바이더",
