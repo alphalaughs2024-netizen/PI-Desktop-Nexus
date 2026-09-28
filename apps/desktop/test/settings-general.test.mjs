@@ -358,6 +358,7 @@ test("settings rail uses short parallel labels and descriptive page titles", () 
     "settings.nav.instructions",
     "settings.nav.models",
     "settings.nav.skills",
+    "settings.nav.workflows",
     "settings.nav.mcp",
     "settings.nav.subagents",
     "settings.nav.import",

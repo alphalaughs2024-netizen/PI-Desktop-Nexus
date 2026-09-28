@@ -78,7 +78,7 @@ export function ActiveWorkflowCard({ sessionId }: { sessionId?: string | null })
         </button>
         <button type="button" onClick={() => {
           const store = useAppStore.getState();
-          store.setSettingsTab("skills");
+          store.setSettingsTab("workflows");
           store.setPage("settings");
         }}>
           {t("workflow.settings")}

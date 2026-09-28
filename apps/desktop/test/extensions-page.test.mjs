@@ -140,7 +140,8 @@ test("the client hides development-only demo plugins from marketplace results", 
   assert.match(pageSrc, /setMarket\(\(res\.plugins \?\? \[\]\)\.filter\(isClientVisibleMarketPlugin\)\)/);
 });
 
-test("Settings exposes three independent Agent capability destinations", () => {
+test("Settings exposes separate Workflows and Skills destinations", () => {
+  assert.match(settingsPageSrc, /tab === "workflows" && <AgentWorkflowsPage \/>/);
   assert.match(settingsPageSrc, /tab === "skills" && <AgentSkillsPage \/>/);
   assert.match(settingsPageSrc, /tab === "mcp" && <AgentMcpPage \/>/);
   assert.match(settingsPageSrc, /tab === "subagents" && <AgentSubagentsPage \/>/);

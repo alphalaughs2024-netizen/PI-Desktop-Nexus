@@ -6555,11 +6555,14 @@ membership when dropped on Ungrouped.
   `~/.agents/skills`, `~/.agents/servers`, `~/.agents/subagents`, and the two
   projects' `.agents` directories; no `.pi` capability directory exists.
 - **Steps**:
-  1. Open Settings > Agent and verify Skills, MCP, and Subagents are three
+  1. Open Settings > Agent and verify Workflows, Skills, MCP, and Subagents are
      independent navigation destinations. Open Extensions and verify that only
      Installed and Marketplace tabs are present.
-  2. Open Skills. Confirm one toolbar sits above one panel, the panel shows a
-     separate read-only Nexus workflow-skills group, a global group header rooted at
+  2. Open Workflows. Confirm one toolbar sits above one panel with bundled
+     Nexus guides and global/project workflow packages; create a package,
+     inspect and toggle a bundled guide, run fixtures, and verify the active
+     workflow's Settings action returns here. Open Skills and confirm its panel
+     contains no workflow rows or New workflow action. Confirm a global group header rooted at
      the active Nexus profile's `agents/skills` directory, and a project group header
      rooted at project A's `.agents/skills`, both flow in one column at natural
      page height, and the project picker changes the selected project. Confirm
@@ -6638,10 +6641,10 @@ membership when dropped on Ungrouped.
       left-aligned, group headers drop the resolved path, and the page gains no
       horizontal overflow. With a pointer that cannot hover, confirm the row's
       edit and overflow controls are visible without hovering.
-  13. Inspect a Nexus workflow skill and confirm its body opens read-only; toggle
+  13. In Workflows, inspect a Nexus guide and confirm its body opens read-only; toggle
       it off, start a new session, and confirm it is absent from that catalog.
 - **Expected**:
-  - The three Settings pages use no tabs for switching capabilities, flow at
+  - The four Settings pages use no tabs for switching capabilities, flow at
     natural page height for empty and populated states, support dark and light
     themes, and begin with quiet page-specific descriptions plus
     project-over-global scope copy where relevant. Each page is one toolbar
@@ -6658,7 +6661,7 @@ membership when dropped on Ungrouped.
     counts are exposed to assistive technology. Empty states stay centered
     inside the panel without a decorative frame and offer the page's primary
     action, and no capability-specific color system is introduced.
-  - Nexus workflow skills are visibly separate from user-owned records, are
+  - Nexus guides appear only in Workflows, separate from user-owned skills, are
     inspectable and enable/disable-able, and cannot be edited or deleted. Their
     state is profile-local and does not modify packaged application resources.
   - Create, edit, and delete are available for all three capabilities without

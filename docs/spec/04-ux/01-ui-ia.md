@@ -279,7 +279,7 @@ are not tabs or sections of Extensions.
 ### 3.6 Settings (full-page takeover)
 Settings replaces the whole shell (D063): back-to-app + search + a grouped
 settings rail with concise, parallel destination labels. The Agent group
-contains independent Skills, MCP, and Subagents destinations alongside
+contains independent Workflows, Skills, MCP, and Subagents destinations alongside
 Instructions and Model configuration; selecting one
 changes the page destination rather than a tab inside a shared capability panel.
 Appearance lives inside General; global AI behavior (permissions and context
@@ -302,6 +302,10 @@ shared capability contract:
   scope note, then uses the same neutral elevated Settings surface as the other
   destinations; no capability page has a decorative hero, colored top bar, or
   separate visual theme.
+- Workflows and Skills are separate Settings destinations. Workflows shows
+  bundled Nexus guides and global/project workflow packages; Skills shows only
+  global/project user skills. Their existing activation and storage remain
+  separate, while both use the shared capability workbench layout.
 - Skills and MCP use stacked global/project card blocks in one column. Each
   block has a quiet heading row with a scope title, scope description,
   resolved `.agents` path, localized count, and its actions; the project

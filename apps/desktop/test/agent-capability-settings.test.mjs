@@ -14,6 +14,7 @@ const settingsPage = read("../src/pages/SettingsPage.tsx");
 const pluginsPage = read("../src/pages/PluginsPage.tsx");
 const layout = read("../src/components/settings/AgentCapabilityLayout.tsx");
 const skills = read("../src/components/settings/AgentSkillsPage.tsx");
+const activeWorkflow = read("../src/components/ActiveWorkflowCard.tsx");
 const mcp = read("../src/components/settings/AgentMcpPage.tsx");
 const subagents = read("../src/components/settings/AgentSubagentsPage.tsx");
 const subagentSettings = read("../src/components/settings/subagent-settings.ts");
@@ -28,12 +29,25 @@ const styles = await loadStyles();
 
 // Keep this suite source-oriented like the neighboring desktop contracts: it
 // catches IA regressions without requiring an Electron window or a native picker.
-test("agent settings have three independent destinations and extensions have two tabs", () => {
+test("agent settings separate workflows and skills while extensions keep two tabs", () => {
+  assert.match(settingsPage, /tab === "workflows" && <AgentWorkflowsPage \/>/);
+  assert.match(activeWorkflow, /setSettingsTab\("workflows"\)/);
   assert.match(settingsPage, /tab === "skills" && <AgentSkillsPage \/>/);
   assert.match(settingsPage, /tab === "mcp" && <AgentMcpPage \/>/);
   assert.match(settingsPage, /tab === "subagents" && <AgentSubagentsPage \/>/);
   assert.match(pluginsPage, /type TabId = "installed" \| "market"/);
   assert.doesNotMatch(pluginsPage, /plugins-(?:tab|panel)-(?:mcp|skills|subagents)/);
+});
+
+test("workflows and skills have separate data sources and visible groups", () => {
+  assert.match(skills, /if \(view === "workflows"\) \{/);
+  assert.match(skills, /api\.listBuiltinSkills\(\)/);
+  assert.match(skills, /api\.listWorkflowPackages\(/);
+  assert.match(skills, /view === "workflows" && filter !== "project"/);
+  assert.match(skills, /view === "skills" && showGlobal/);
+  assert.match(skills, /view === "skills" && showProject/);
+  assert.match(skills, /return <AgentSkillWorkflowPage view="workflows" \/>/);
+  assert.match(skills, /return <AgentSkillWorkflowPage view="skills" \/>/);
 });
 
 test("skills and MCP filter one list by level instead of stacking two sections", () => {

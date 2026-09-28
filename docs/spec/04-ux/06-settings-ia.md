@@ -324,10 +324,19 @@ confirmation only: Ask and Accept edits prompt, while Auto may run a mutating
 Bash command without confirmation. The AI Defaults card must describe that both
 contract modes are intent boundaries, not strict read-only security profiles.
 
-### Agent capability destinations (Skills / MCP / Subagents)
+### Agent capability destinations (Workflows / Skills / MCP / Subagents)
 
-Skills, MCP servers, and user-owned Subagents remain three independent
-destinations under the Agent group. They share a capability-management visual
+Workflows, Skills, MCP servers, and user-owned Subagents are four independent
+destinations under the Agent group. Workflows contains the read-only Nexus
+guides and global/project workflow packages, with their inspection, enablement,
+project overrides, creation, reveal, and fixture controls. Skills contains
+only global and project user skills, with their create, import, edit, reveal,
+remove, and enablement controls. Each destination owns its search, level filter,
+counts, and data fetch. An active workflow's Settings action opens Workflows.
+The existing skill loader and workflow resolver remain separate; a workflow
+may still use a skill as guidance.
+
+They share a capability-management visual
 system while preserving their different data ownership:
 
 - Each capability page starts with a quiet, page-specific description and a
@@ -620,12 +629,14 @@ system while preserving their different data ownership:
 20. Command shell selection persists a platform-valid catalog ID, exposes
     status only when it adds information (default, unavailable, fallback, or no
     effective shell), and never authorizes a stale ID/dialect
-21. Skills, MCP, and Subagents each render one toolbar above one panel; the
+21. Workflows, Skills, MCP, and Subagents each render one toolbar above one panel; the
     level filter changes which groups appear without hiding the toolbar or the
     primary actions, and the counts on the segments agree with the rows the
     panel renders under the active search
-22. Each capability page can create, edit, and delete a capability without
-    leaving Settings; new capabilities land at the level the filter points at,
+22. Each page preserves the management actions supported by its capability:
+    Skills, MCP, and user Subagents can create, edit, and delete; Workflows
+    can create packages, inspect bundled guidance, and run package fixtures.
+    New capabilities land at the level the filter points at,
     the primary action names that destination, and choosing a project level
     with no selected project reports it instead of failing silently
 23. Removing a capability requires two presses of the same menu item, the

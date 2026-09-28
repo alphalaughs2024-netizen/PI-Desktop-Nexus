@@ -120,12 +120,19 @@ type SkillCollection = {
 
 const EMPTY_SKILL_COLLECTION: SkillCollection = { builtin: [], global: [], project: [], workflows: [] };
 
-export function AgentSkillsPage() {
+function AgentSkillWorkflowPage({ view }: { view: "skills" | "workflows" }) {
   const { t } = useTranslation();
   const showToast = useAppStore((state) => state.showToast);
   const { selectedProjectPath, setSelectedProjectPath, options } = useAgentProjects();
   const fetchSkills = useCallback(async (): Promise<SkillCollection> => {
-    const [global, project, builtin, workflows] = await Promise.all([
+    if (view === "workflows") {
+      const [builtin, workflows] = await Promise.all([
+        api.listBuiltinSkills(),
+        api.listWorkflowPackages(selectedProjectPath ?? undefined),
+      ]);
+      return { builtin: builtin.skills ?? [], global: [], project: [], workflows: workflows.workflows ?? [] };
+    }
+    const [global, project] = await Promise.all([
       api.listUserSkills({
         level: "global",
         ...(selectedProjectPath ? { projectPath: selectedProjectPath } : {}),
@@ -133,11 +140,9 @@ export function AgentSkillsPage() {
       selectedProjectPath
         ? api.listUserSkills({ level: "project", projectPath: selectedProjectPath })
         : Promise.resolve({ skills: [] as UserSkillRecord[] }),
-      api.listBuiltinSkills(),
-      api.listWorkflowPackages(selectedProjectPath ?? undefined),
     ]);
-    return { builtin: builtin.skills ?? [], global: global.skills ?? [], project: project.skills ?? [], workflows: workflows.workflows ?? [] };
-  }, [selectedProjectPath]);
+    return { builtin: [], global: global.skills ?? [], project: project.skills ?? [], workflows: [] };
+  }, [selectedProjectPath, view]);
   const {
     data: { builtin: builtinSkills, global: globalSkills, project: projectSkills, workflows: workflowPackages },
     setData: setSkills,
@@ -432,12 +437,18 @@ export function AgentSkillsPage() {
       project: projectSkills.filter(match),
       workflows: workflowPackages.filter(match),
     };
-  }, [builtinSkills, globalSkills, projectSkills, search]);
+  }, [builtinSkills, globalSkills, projectSkills, workflowPackages, search]);
 
   const counts = {
-    all: visible.builtin.length + visible.global.length + visible.project.length + visible.workflows.length,
-    global: visible.global.length,
-    project: visible.project.length,
+    all: view === "workflows"
+      ? visible.builtin.length + visible.workflows.length
+      : visible.global.length + visible.project.length,
+    global: view === "workflows"
+      ? visible.builtin.length + visible.workflows.filter((workflow) => workflow.level === "global").length
+      : visible.global.length,
+    project: view === "workflows"
+      ? visible.workflows.filter((workflow) => workflow.level === "project").length
+      : visible.project.length,
   };
 
   const projectName = useMemo(
@@ -616,7 +627,7 @@ export function AgentSkillsPage() {
 
   return (
     <AgentCapabilityPage
-      description={t("settings.skillsDescription")}
+      description={t(view === "workflows" ? "settings.workflowsDescription" : "settings.skillsDescription")}
       note={t("settings.capabilityPriority")}
       toolbar={
         <CapabilityToolbar
@@ -625,7 +636,7 @@ export function AgentSkillsPage() {
           counts={counts}
           search={search}
           onSearchChange={setSearch}
-          searchPlaceholder={t("extensions.skills.searchPlaceholder")}
+          searchPlaceholder={t(view === "workflows" ? "settings.searchWorkflows" : "extensions.skills.searchPlaceholder")}
           projectPicker={
             <AgentProjectPicker
               value={selectedProjectPath}
@@ -635,16 +646,17 @@ export function AgentSkillsPage() {
             />
           }
           actions={
-            <>
+            view === "workflows" ? (
+              <CapabilityButton variant="primary" title={t("settings.newWorkflow")} busy={workflowBusyId === "create"} onClick={() => void createWorkflow()}>
+                <IconPlus size={14} />
+                {t("settings.newWorkflow")}
+              </CapabilityButton>
+            ) : (
               <CapabilityButton variant="primary" title={newSkillTitle} onClick={openCreate}>
                 <IconPlus size={14} />
                 {t("settings.newSkill")}
               </CapabilityButton>
-              <CapabilityButton title="Create a workflow package" busy={workflowBusyId === "create"} onClick={() => void createWorkflow()}>
-                <IconPlus size={14} />
-                New workflow
-              </CapabilityButton>
-            </>
+            )
           }
         />
       }
@@ -662,7 +674,7 @@ export function AgentSkillsPage() {
           />
         ) : (
           <>
-            {filter !== "project" ? (
+            {view === "workflows" && filter !== "project" ? (
               <>
                 <CapabilityGroupHeader
                   label={t("settings.nexusWorkflowSkills")}
@@ -672,19 +684,23 @@ export function AgentSkillsPage() {
                 {visible.builtin.map(renderBuiltinRow)}
               </>
             ) : null}
-            {showGlobal ? (
+            {view === "workflows" && showGlobal ? (
               <>
-                <CapabilityGroupHeader label="Workflow packages" path="~/.pi-desktop-nexus/agents/workflows" count={visible.workflows.filter((workflow) => workflow.level === "global").length} />
+                <CapabilityGroupHeader label={t("settings.workflowPackages")} path="~/.pi-desktop-nexus/agents/workflows" count={visible.workflows.filter((workflow) => workflow.level === "global").length} />
                 {visible.workflows.filter((workflow) => workflow.level === "global").map(renderWorkflowRow)}
               </>
             ) : null}
-            {showProject && selectedProjectPath ? (
+            {view === "workflows" && showProject ? (
               <>
-                <CapabilityGroupHeader label="Project workflow packages" path={`${selectedProjectPath}/.agents/workflows`} count={visible.workflows.filter((workflow) => workflow.level === "project").length} />
-                {visible.workflows.filter((workflow) => workflow.level === "project").map(renderWorkflowRow)}
+                <CapabilityGroupHeader label={t("settings.projectWorkflowPackages")} path={selectedProjectPath ? `${selectedProjectPath}/.agents/workflows` : "<project-root>/.agents/workflows"} count={visible.workflows.filter((workflow) => workflow.level === "project").length} />
+                {!selectedProjectPath ? (
+                  <CapabilityEmpty message={t("settings.selectProjectFirst")} />
+                ) : visible.workflows.every((workflow) => workflow.level !== "project") ? (
+                  <CapabilityEmpty message={t("settings.workflowsEmpty")} />
+                ) : visible.workflows.filter((workflow) => workflow.level === "project").map(renderWorkflowRow)}
               </>
             ) : null}
-            {showGlobal ? (
+            {view === "skills" && showGlobal ? (
               <>
                 <CapabilityGroupHeader
                   label={t("settings.globalLevel")}
@@ -708,7 +724,7 @@ export function AgentSkillsPage() {
                 )}
               </>
             ) : null}
-            {showProject ? (
+            {view === "skills" && showProject ? (
               <>
                 <CapabilityGroupHeader
                   label={t("settings.projectLevel")}
@@ -732,7 +748,7 @@ export function AgentSkillsPage() {
         )}
       </CapabilityPanel>
 
-      {editor ? (
+      {view === "skills" && editor ? (
         <SkillEditorSheet
           draft={editor.draft}
           setDraft={(draft) => setEditor((current) => (current ? { ...current, draft } : current))}
@@ -751,7 +767,7 @@ export function AgentSkillsPage() {
           }
         />
       ) : null}
-      {builtinViewer ? (
+      {view === "workflows" && builtinViewer ? (
         <BuiltinSkillViewer
           {...builtinViewer}
           onClose={() => setBuiltinViewer(null)}
@@ -759,4 +775,12 @@ export function AgentSkillsPage() {
       ) : null}
     </AgentCapabilityPage>
   );
+}
+
+export function AgentSkillsPage() {
+  return <AgentSkillWorkflowPage view="skills" />;
+}
+
+export function AgentWorkflowsPage() {
+  return <AgentSkillWorkflowPage view="workflows" />;
 }

@@ -42,6 +42,7 @@ import {
   IconFileText,
   IconInfo,
   IconUsage,
+  IconWorkflow,
   IconImage,
   IconKeyboard,
   IconSearch,
@@ -60,7 +61,7 @@ import { NetworkProxySection } from "../components/settings/NetworkProxySection"
 import { ReleaseNotesDialog } from "../components/ReleaseNotesDialog";
 import { ProjectsPage } from "./ProjectsPage";
 import { WorkspacesPage } from "./WorkspacesPage";
-import { AgentSkillsPage } from "../components/settings/AgentSkillsPage";
+import { AgentSkillsPage, AgentWorkflowsPage } from "../components/settings/AgentSkillsPage";
 import { AgentMcpPage } from "../components/settings/AgentMcpPage";
 import { AgentSubagentsPage } from "../components/settings/AgentSubagentsPage";
 import { UsagePage } from "../components/settings/UsagePage";
@@ -1309,6 +1310,7 @@ export function SettingsPage() {
       shortcuts: <IconKeyboard size={14} />,
       instructions: <IconFileText size={14} />,
       agent: <IconBot size={14} />,
+      workflows: <IconWorkflow size={14} />,
       skills: <IconBookOpen size={14} />,
       mcp: <IconServer size={14} />,
       subagents: <IconBot size={14} />,
@@ -1540,6 +1542,8 @@ export function SettingsPage() {
           )}
 
           {tab === "agent" && <ModelConfigPage />}
+
+          {tab === "workflows" && <AgentWorkflowsPage />}
 
           {tab === "skills" && <AgentSkillsPage />}
 

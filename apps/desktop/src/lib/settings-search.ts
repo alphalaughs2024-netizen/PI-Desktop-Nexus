@@ -12,6 +12,7 @@ export type SettingsTabId =
   | "shortcuts"
   | "instructions"
   | "agent"
+  | "workflows"
   | "skills"
   | "mcp"
   | "subagents"
@@ -137,6 +138,18 @@ export const SETTINGS_NAV: SettingsNavEntry[] = [
       "settings.apiKey",
       "settings.baseUrl",
       "settings.apiStyle",
+    ],
+  },
+  {
+    id: "workflows",
+    labelKey: "settings.nav.workflows",
+    titleKey: "settings.workflows",
+    group: "agent",
+    keywordKeys: [
+      "settings.workflowsDescription",
+      "settings.nexusWorkflowSkills",
+      "settings.workflowPackages",
+      "settings.projectWorkflowPackages",
     ],
   },
   {
