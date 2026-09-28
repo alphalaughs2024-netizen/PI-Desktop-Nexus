@@ -4,6 +4,7 @@ import { estimateUsageCost, type TokenUsageHistoryResult } from "@pi-desktop/sha
 import { api } from "../../lib/api";
 import { useAppStore } from "../../stores/app-store";
 import { Button, Select } from "../ui";
+import { IconActivity, IconArrowDown, IconArrowUp, IconChat, IconRefresh, IconSearch, IconUsage } from "../icons";
 
 type Bucket = TokenUsageHistoryResult["bucket"];
 
@@ -118,42 +119,48 @@ export function UsagePage() {
           <label className="usage-filter-control"><span className="sr-only">{t("settings.usageAllTools")}</span><select value={source} onChange={(event) => setSource(event.target.value)}><option value="">{t("settings.usageAllTools")}</option>{facets.sources.map((item) => <option value={item.id} key={item.id}>{item.label}</option>)}</select></label>
           <label className="usage-filter-control"><span className="sr-only">{t("settings.usageAllModels")}</span><select value={model} onChange={(event) => setModel(event.target.value)}><option value="">{t("settings.usageAllModels")}</option>{facets.models.map((item) => <option value={item.id} key={item.id}>{item.label}</option>)}</select></label>
           <label className="usage-filter-control"><span className="sr-only">{t("settings.usageAllProviders")}</span><select value={provider} onChange={(event) => setProvider(event.target.value)}><option value="">{t("settings.usageAllProviders")}</option>{facets.providers.map((item) => <option value={item.id} key={item.id}>{item.label}</option>)}</select></label>
-          <label className="usage-filter-search"><span aria-hidden="true">⌕</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t("settings.usageFilterPlaceholder")} aria-label={t("settings.usageFilterPlaceholder")} /></label>
+          <label className="usage-filter-search"><IconSearch size={16} aria-hidden="true" /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t("settings.usageFilterPlaceholder")} aria-label={t("settings.usageFilterPlaceholder")} /></label>
           {(range !== "30d" || source || model || provider || query) ? <button className="usage-clear-filters" type="button" onClick={clearFilters}>{t("settings.usageClearFilters")}</button> : null}
         </div>
       </div>
-      <div className="usage-hero">
-        <div>
-          <div className="usage-hero-top"><p className="usage-hero-greeting">{t("settings.usageGreeting")}</p><div className="usage-hero-badges">
+      <section className="usage-hero" aria-label={t("settings.usageTotal")}>
+        <div className="usage-hero-top">
+          <p className="usage-hero-greeting">{t("settings.usageGreeting")}</p>
+          <div className="usage-hero-badges">
             <span>{t("settings.usageStreak", { current: insights?.streak.current ?? 0 })} <strong>{t("settings.usageLongest", { longest: insights?.streak.longest ?? 0 })}</strong></span>
             {insights?.milestone ? <span>{t("settings.usageMilestoneReached", { value: formatTokens(insights.milestone.value), date: new Date(insights.milestone.reachedAt).toLocaleDateString(locale, { month: "short", day: "numeric" }) })}</span> : null}
-          </div></div>
-          <output className="usage-hero-title" aria-label={t("settings.usageTotal")} data-value={totals.totalTokens}>{formatFullTokens(totals.totalTokens)}</output>
-          <p className="usage-hero-stats">{t("settings.usageHeroStats", { turns: totals.turnCount, sessions: facets.sessions.length, days: activeDays })}</p>
-          {insights?.bestDay && peakHour ? <p className="usage-hero-note">{t("settings.usageBestDay", { date: new Date(insights.bestDay.timestamp).toLocaleDateString(locale, { month: "short", day: "numeric", year: "numeric" }), tokens: formatTokens(insights.bestDay.totalTokens), hour: peakHour })}</p> : <p className="usage-hero-note">{t("settings.usageDescription")}</p>}
-          <div className="usage-hero-sparkline" aria-hidden="true">{(history?.items ?? []).slice(-18).map((item) => <i key={item.date} style={{ height: `${Math.max(3, (item.totalTokens / maxTotal) * 100)}%` }} />)}</div>
-          {insights ? <div className="usage-milestone"><div><span>{t("settings.usageNextMilestone", { value: formatTokens(insights.nextMilestone.value) })}</span><span>{t("settings.usageMilestoneRemaining", { value: formatTokens(insights.nextMilestone.remaining) })}</span></div><span className="usage-milestone-track"><i style={{ width: `${milestoneProgress}%` }} /></span></div> : null}
+          </div>
         </div>
-        <div className="usage-toolbar-actions">
-          <Select aria-label={t("settings.usageRange")} value={bucket} onChange={(event) => setBucket(event.target.value as Bucket)}>
-            <option value="day">{t("settings.usageDaily")}</option>
-            <option value="week">{t("settings.usageWeekly")}</option>
-            <option value="month">{t("settings.usageMonthly")}</option>
-          </Select>
-          <Button variant="secondary" size="sm" onClick={() => void load()} disabled={loading}>{t("settings.refresh")}</Button>
+        <div className="usage-hero-summary">
+          <div>
+            <output className="usage-hero-title" aria-label={t("settings.usageTotal")} data-value={totals.totalTokens}>{formatFullTokens(totals.totalTokens)}</output>
+            <p className="usage-hero-stats">{t("settings.usageHeroStats", { turns: totals.turnCount, sessions: facets.sessions.length, days: activeDays })}</p>
+            {insights?.bestDay && peakHour ? <p className="usage-hero-note">{t("settings.usageBestDay", { date: new Date(insights.bestDay.timestamp).toLocaleDateString(locale, { month: "short", day: "numeric", year: "numeric" }), tokens: formatTokens(insights.bestDay.totalTokens), hour: peakHour })}</p> : <p className="usage-hero-note">{t("settings.usageDescription")}</p>}
+          </div>
+          <div className="usage-toolbar-actions">
+            <Select aria-label={t("settings.usageRange")} value={bucket} onChange={(event) => setBucket(event.target.value as Bucket)}>
+              <option value="day">{t("settings.usageDaily")}</option>
+              <option value="week">{t("settings.usageWeekly")}</option>
+              <option value="month">{t("settings.usageMonthly")}</option>
+            </Select>
+            <Button variant="secondary" size="sm" onClick={() => void load()} disabled={loading}><IconRefresh size={15} aria-hidden="true" />{t("settings.refresh")}</Button>
+          </div>
         </div>
-      </div>
+        <div className="usage-hero-sparkline" aria-hidden="true">{(history?.items ?? []).slice(-18).map((item) => <i key={item.date} style={{ height: `${Math.max(3, (item.totalTokens / maxTotal) * 100)}%` }} />)}</div>
+        <div className="usage-hero-axis" aria-hidden="true"><span>{history?.items.at(-18)?.date ?? ""}</span><span>{latest?.date ?? ""}</span></div>
+        {insights ? <div className="usage-milestone"><div><span>{t("settings.usageNextMilestone", { value: formatTokens(insights.nextMilestone.value) })}</span><span>{t("settings.usageMilestoneRemaining", { value: formatTokens(insights.nextMilestone.remaining) })}</span></div><span className="usage-milestone-track"><i style={{ width: `${milestoneProgress}%` }} /></span></div> : null}
+      </section>
       <section className="usage-dashboard-section usage-local-overview"><div className="usage-section-heading"><div><span className="usage-section-kicker">Local Nexus usage</span><h2>Usage overview</h2><p>Token activity and cost estimates from this installation.</p></div><span className="usage-source-badge is-estimate">Catalog estimate</span></div><div className="usage-overview-grid"><div><span>Total local tokens</span><strong>{formatTokens(totals.totalTokens)}</strong><small>{totals.turnCount} completed turns · {activeDays} active days</small></div><div><span>Current range</span><strong>{range.toUpperCase()}</strong><small>{t("settings.usageTokensInRange")}</small></div><div><span>Estimated spend</span><strong>{costEstimate.priced ? `$${costEstimate.total.toFixed(2)}` : "—"}</strong><small>Calculated from available model pricing</small></div></div></section>
       {error ? <div className="settings-recovery" role="status">{t("settings.usageUnavailable")}<Button variant="secondary" size="sm" onClick={() => void load()}>{t("errors.action.retry")}</Button></div> : null}
       <div className="usage-kpi-grid">
-        <div className="usage-kpi usage-kpi-primary"><span>{t("settings.usageTotal")}</span><strong>{formatTokens(totals.totalTokens)}</strong><small>{t("settings.usageTokensInRange")}</small></div>
-        <div className="usage-kpi"><span>{t("settings.usageTurns")}</span><strong>{totals.turnCount}</strong><small>{t("settings.usageCompleted")}</small></div>
-        <div className="usage-kpi"><span>{t("settings.usageInput")}</span><strong>{formatTokens(totals.inputTokens)}</strong><small>{t("settings.usageProviderInput")}</small></div>
-        <div className="usage-kpi"><span>{t("settings.usageOutput")}</span><strong>{formatTokens(totals.outputTokens)}</strong><small>{t("settings.usageProviderOutput")}</small></div>
+        <div className="usage-kpi usage-kpi-primary"><IconUsage size={20} aria-hidden="true" /><span>{t("settings.usageTotal")}</span><strong>{formatTokens(totals.totalTokens)}</strong><small>{t("settings.usageTokensInRange")}</small></div>
+        <div className="usage-kpi"><IconChat size={20} aria-hidden="true" /><span>{t("settings.usageTurns")}</span><strong>{totals.turnCount}</strong><small>{t("settings.usageCompleted")}</small></div>
+        <div className="usage-kpi"><IconArrowDown size={20} aria-hidden="true" /><span>{t("settings.usageInput")}</span><strong>{formatTokens(totals.inputTokens)}</strong><small>{t("settings.usageProviderInput")}</small></div>
+        <div className="usage-kpi"><IconArrowUp size={20} aria-hidden="true" /><span>{t("settings.usageOutput")}</span><strong>{formatTokens(totals.outputTokens)}</strong><small>{t("settings.usageProviderOutput")}</small></div>
       </div>
       <section className="usage-insight-grid">
-        <div className="settings-card-block usage-heatmap-card">
-          <div className="usage-card-heading"><div><h3>{t("settings.usageActivity")}</h3><span>{t("settings.usageActivityHint")}</span></div><span className="usage-heatmap-legend"><i data-level="0" /><i data-level="2" /><i data-level="4" /></span></div>
+        <div className="usage-heatmap-card">
+          <div className="usage-card-heading"><div><h3><IconActivity size={18} aria-hidden="true" />{t("settings.usageActivity")}</h3><span>{t("settings.usageActivityHint")}</span></div><span className="usage-heatmap-legend"><i data-level="0" /><i data-level="2" /><i data-level="4" /></span></div>
           <div className="usage-heatmap" aria-label={t("settings.usageActivity")}>
             {heatItems.map((item) => <span key={item.date} data-level={item.level} title={`${item.date}: ${formatTokens(item.totalTokens)}`} />)}
           </div>
@@ -161,22 +168,22 @@ export function UsagePage() {
         </div>
       </section>
       <section className="usage-dashboard-section usage-token-activity"><div className="usage-section-heading"><div><span className="usage-section-kicker">Local history</span><h2>Token activity</h2><p>Explore the usage patterns behind the estimate.</p></div></div><div className="usage-dashboard-grid">
-        <div className="settings-card-block usage-detail-card">
+        <div className="usage-detail-card">
           <div className="usage-card-heading"><div><h3>{t("settings.usageModelsTitle")}</h3><span>{t("settings.usageModelsHint")}</span></div><strong>{facets.models.length}</strong></div>
           <div className="usage-ranking-list">{facets.models.slice(0, 8).map((item) => <div className="usage-ranking-row" key={item.id}><div className="usage-ranking-label"><span>{item.label}</span><strong>{formatTokens(item.totalTokens)} · {item.turnCount}</strong></div><div className="usage-ranking-track"><span className="usage-ranking-fill" style={{ width: `${Math.max(3, (item.totalTokens / Math.max(1, facets.models[0]?.totalTokens ?? 1)) * 100)}%` }} /></div></div>)}</div>
         </div>
-        <div className="settings-card-block usage-detail-card usage-rhythm-card">
+        <div className="usage-detail-card usage-rhythm-card">
           <div className="usage-card-heading"><div><h3>{t("settings.usageRhythm")}</h3><span>{t("settings.usageRhythmHint")}</span></div><span>{history?.items.length ?? 0} {t("settings.usagePeriods")}</span></div>
           <div className="usage-bars" aria-label={t("settings.usageRhythm")}>
             {(history?.items ?? []).slice(-18).map((item) => <span key={item.date} title={`${item.date}: ${formatTokens(item.totalTokens)}`} style={{ height: `${Math.max(8, (item.totalTokens / maxTotal) * 100)}%` }} />)}
           </div>
           <div className="usage-axis"><span>{history?.items.at(-18)?.date ?? ""}</span><span>{latest?.date ?? ""}</span></div>
         </div>
-        <div className="settings-card-block usage-detail-card">
+        <div className="usage-detail-card">
           <div className="usage-card-heading"><div><h3>{t("settings.usageToolsTitle")}</h3><span>{t("settings.usageToolsHint")}</span></div><strong>{facets.sources.length}</strong></div>
           <div className="usage-ranking-list">{facets.sources.slice(0, 8).map((item) => <div className="usage-ranking-row" key={item.id}><div className="usage-ranking-label"><span>{item.label}</span><strong>{formatTokens(item.totalTokens)} · {item.turnCount}</strong></div><div className="usage-ranking-track"><span className="usage-ranking-fill" style={{ width: `${Math.max(3, (item.totalTokens / Math.max(1, facets.sources[0]?.totalTokens ?? 1)) * 100)}%` }} /></div></div>)}</div>
         </div>
-        <div className="settings-card-block usage-detail-card">
+        <div className="usage-detail-card">
           <div className="usage-card-heading"><div><h3>{t("settings.usageSessionsTitle")}</h3><span>{t("settings.usageSessionsHint")}</span></div><strong>{facets.sessions.length}</strong></div>
           <div className="usage-ranking-list">{facets.sessions.slice(0, 8).map((item) => <div className="usage-ranking-row" key={item.id}><div className="usage-ranking-label"><span>{item.label}</span><strong>{formatTokens(item.totalTokens)} · {item.turnCount}</strong></div><div className="usage-ranking-track"><span className="usage-ranking-fill" style={{ width: `${Math.max(3, (item.totalTokens / Math.max(1, facets.sessions[0]?.totalTokens ?? 1)) * 100)}%` }} /></div></div>)}</div>
         </div>

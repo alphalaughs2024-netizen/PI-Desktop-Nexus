@@ -41,11 +41,10 @@ test("native usage page exposes the Token Insights dashboard surfaces", async ()
   assert.match(usage, /aria-pressed/);
   assert.match(usage, /usage-filter-control/);
   assert.match(usage, /usageClearFilters/);
-  assert.match(usage, /usage-cost-card/);
   assert.match(usage, /usage-dashboard-section/);
-  assert.match(usage, /usage-page-header/);
-  assert.match(usage, /usage-privacy-popover/);
-  assert.match(usage, /usage-primary-summary/);
+  assert.match(usage, /usage-hero-summary/);
+  assert.match(usage, /usage-overview-grid/);
+  assert.match(usage, /usage-pricing-summary-grid/);
   assert.doesNotMatch(usage, /Future provider wiring/);
   assert.match(usage, /usage-local-overview/);
   assert.match(usage, /usage-cost-sources/);
@@ -55,6 +54,17 @@ test("native usage page exposes the Token Insights dashboard surfaces", async ()
   assert.match(usage, /Provider reported/);
   assert.match(usage, /Unpriced/);
   assert.match(usage, /Unavailable/);
+});
+
+test("usage dashboard styles cover the full page and narrow content panes", async () => {
+  const entry = await readFile(new URL("../src/styles/globals.css", import.meta.url), "utf8");
+  const styles = await readFile(new URL("../src/styles/usage-dashboard.css", import.meta.url), "utf8");
+  assert.match(entry, /@import "\.\/usage-dashboard\.css"/);
+  for (const section of ["usage-hero", "usage-heatmap", "usage-detail-card", "usage-pricing-section", "usage-provider-card"]) {
+    assert.match(styles, new RegExp(`\\.usage-page \\.${section}`));
+  }
+  assert.match(styles, /@container \(max-width: 780px\)/);
+  assert.match(styles, /@container \(max-width: 500px\)/);
 });
 
 test("chat spend popover has session and provider-account UI without billing wiring", async () => {

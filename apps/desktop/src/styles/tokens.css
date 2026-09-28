@@ -254,6 +254,7 @@
   --text-lg-plus: calc(18px * var(--font-scale));
   --text-xl: calc(20px * var(--font-scale));
   --text-2xl: calc(28px * var(--font-scale));
+  --text-3xl: calc(38px * var(--font-scale));
 
   --font-weight-normal: 400;
   --font-weight-medium: 500;

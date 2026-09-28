@@ -228,6 +228,16 @@ Usage & Pricing reliability scenarios include active-provider account selection,
 XKIRO stale-cache fallback, provider switching, and the Usage & Pricing settings
 label across shipped locales.
 
+Usage & Pricing visual scenario: open the destination in Dark, Light, and each
+bundled scenic theme with populated token history. Change the range, provider,
+model, source, and period bucket; confirm the filter toolbar wraps without
+clipping and the summary chart remains full width. Scroll through overview
+metrics, annual heatmap, model/tool/session rankings, pricing by model, cost
+sources, and provider accounts; labels and values remain legible over the
+backdrop. Narrow the window and confirm grids reflow while the heatmap scrolls
+within its own frame. Refresh and clear filters; the layout remains stable and
+the controls stay keyboard accessible. This rendered scenario is pending.
+
 - A qualifying architecture/refactor/resume prompt with relevant claims runs a
   bounded `contextVault.brief`, injects only reviewed/fresh claims, and records
   metadata-only retrieval provenance.

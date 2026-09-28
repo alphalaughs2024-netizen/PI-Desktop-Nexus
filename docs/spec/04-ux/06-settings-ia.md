@@ -151,8 +151,13 @@ Token usage is a native Settings destination. Completed-turn history stays
 host-owned (`session.endTurn.usage`, `stats.getTokenUsageHistory`). The Usage
 page provides token totals, bounded history, token breakdowns, and a dense
 Token Insights-style dashboard with activity heatmap, token-mix ranking, period
-rhythm, recent-period ranking, and completed-turn summary. Currency cost is
-intentionally a separate follow-up.
+rhythm, recent-period ranking, and completed-turn summary. The page also shows
+catalog-based cost estimates, their pricing provenance, model-level costs, and
+configured provider account availability. The filter toolbar wraps without
+horizontal clipping; the summary chart, metrics, heatmap, rankings, pricing,
+and provider account sections keep readable text and distinct surfaces across
+base and scenic themes. A narrow content pane reflows metric and ranking grids,
+while the annual heatmap can scroll horizontally inside its own frame.
 
 ### Shortcuts (`shortcuts` tab)
 - **Keyboard shortcuts** card:
