@@ -786,8 +786,8 @@ export const api = {
     invoke<{ skill: BuiltinSkillRecord; body: string }>(IPC.invoke.builtinSkillRead, { id }),
   workflowStatus: (sessionId: string) =>
     invoke<WorkflowSessionStatus & { projectPath?: string }>(IPC.invoke.workflowStatus, { sessionId }),
-  readWorkflow: (id: string) =>
-    invoke<{ workflow: unknown; body: string }>(IPC.invoke.workflowRead, { id }),
+  readWorkflow: (id: string, sessionId?: string) =>
+    invoke<{ workflow: unknown; body: string }>(IPC.invoke.workflowRead, { id, sessionId }),
   setProjectWorkflowEnabled: (projectPath: string, id: string, enabled: boolean | null) =>
     invoke(IPC.invoke.workflowSetProjectEnabled, { projectPath, id, enabled }),
   activateSessionWorkflow: (sessionId: string, id: string) =>

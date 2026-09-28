@@ -37,6 +37,7 @@ export type WorkflowReasonCategory =
   | "plugin_workspace"
   | "plugin_authoring_request"
   | "feature_request"
+  | "interface_design_request"
   | "approved_implementation"
   | "reproducible_failure"
   | "diagnosed_fix"
@@ -62,6 +63,8 @@ export type WorkflowManifest = {
   name: string;
   description: string;
   skillFile: string;
+  /** Explicit composer alias for reviewed, bundled guidance only. */
+  slashAlias?: string;
   supportedModes: Mode[];
   requiredCapabilities: WorkflowCapability[];
   priority: number;
@@ -78,6 +81,7 @@ export type WorkflowManifest = {
 export const AGENT_OPERATIONS_WORKFLOW_ID = "nexus/guidance/agent-operations";
 export const PLUGIN_DEVELOPMENT_WORKFLOW_ID = "nexus/guidance/plugin-development";
 export const BRAINSTORMING_WORKFLOW_ID = "nexus/quality/brainstorming";
+export const INTERFACE_DESIGN_WORKFLOW_ID = "nexus/quality/interface-design";
 export const SYSTEMATIC_DEBUGGING_WORKFLOW_ID = "nexus/quality/systematic-debugging";
 export const TEST_DRIVEN_DEVELOPMENT_WORKFLOW_ID = "nexus/quality/test-driven-development";
 export const VERIFICATION_WORKFLOW_ID = "nexus/quality/verification-before-completion";
@@ -98,6 +102,7 @@ export const WORKFLOW_MANIFESTS: readonly WorkflowManifest[] = [
     name: "Workflow package authoring",
     description: "Scaffold, validate, preview, fixture-test, and version Nexus-native workflow packages without expanding authority.",
     skillFile: "writing-workflows.md",
+    slashAlias: "guide-workflows",
     supportedModes: ["agent", "plan"],
     requiredCapabilities: ["core-agent-tools", "skill-loader", "file-tools", "terminal-tools", "test-execution"],
     priority: 99,
@@ -110,6 +115,7 @@ export const WORKFLOW_MANIFESTS: readonly WorkflowManifest[] = [
     name: "Nexus agent operations",
     description: "Nexus-native guidance for safe inspection, editing, preview, shell, and delegation work.",
     skillFile: "agent-operations.md",
+    slashAlias: "guide-operations",
     supportedModes: ["agent", "plan", "goal"],
     requiredCapabilities: ["core-agent-tools", "skill-loader"],
     priority: 10,
@@ -122,6 +128,7 @@ export const WORKFLOW_MANIFESTS: readonly WorkflowManifest[] = [
     name: "Nexus plugin development",
     description: "Nexus-native workflow for creating, validating, and packaging a plugin.",
     skillFile: "plugin-development.md",
+    slashAlias: "guide-plugins",
     supportedModes: ["agent", "plan"],
     requiredCapabilities: ["core-agent-tools", "skill-loader", "plugin-development-tools"],
     priority: 100,
@@ -134,6 +141,7 @@ export const WORKFLOW_MANIFESTS: readonly WorkflowManifest[] = [
     name: "Discovery and design",
     description: "Clarify a requested feature, inspect the relevant workspace, and present a bounded design before implementation.",
     skillFile: "brainstorming.md",
+    slashAlias: "guide-design",
     supportedModes: ["agent", "plan", "goal"],
     requiredCapabilities: ["core-agent-tools", "skill-loader", "file-tools"],
     priority: 80,
@@ -141,11 +149,25 @@ export const WORKFLOW_MANIFESTS: readonly WorkflowManifest[] = [
     fixtures: [{ positivePrompt: "Add a project activity feed.", negativePrompt: "What is product discovery?", expectedStage: "discovery" }],
   },
   {
+    id: INTERFACE_DESIGN_WORKFLOW_ID,
+    version: "1",
+    name: "Interface design",
+    description: "Inspect and improve the visual layout, interaction states, and responsive behavior of a Nexus interface.",
+    skillFile: "interface-design.md",
+    slashAlias: "guide-interface",
+    supportedModes: ["agent", "plan", "goal"],
+    requiredCapabilities: ["core-agent-tools", "skill-loader", "file-tools"],
+    priority: 82,
+    defaultStage: "discovery",
+    fixtures: [{ positivePrompt: "Polish the sidebar layout.", negativePrompt: "What is interface design?", expectedStage: "discovery" }],
+  },
+  {
     id: SYSTEMATIC_DEBUGGING_WORKFLOW_ID,
     version: "1",
     name: "Systematic debugging",
     description: "Reproduce an observed failure, gather evidence, isolate root cause, and then test one focused fix.",
     skillFile: "systematic-debugging.md",
+    slashAlias: "guide-debug",
     supportedModes: ["agent", "plan", "goal"],
     requiredCapabilities: ["core-agent-tools", "skill-loader", "file-tools", "terminal-tools"],
     priority: 90,
@@ -158,6 +180,7 @@ export const WORKFLOW_MANIFESTS: readonly WorkflowManifest[] = [
     name: "Test-first implementation",
     description: "Express the intended change with a focused failing test before making the smallest implementation change.",
     skillFile: "test-driven-development.md",
+    slashAlias: "guide-test-first",
     supportedModes: ["agent"],
     requiredCapabilities: ["core-agent-tools", "skill-loader", "file-tools", "terminal-tools", "test-execution"],
     priority: 85,
@@ -170,6 +193,7 @@ export const WORKFLOW_MANIFESTS: readonly WorkflowManifest[] = [
     name: "Verification before completion",
     description: "Select and run fresh, relevant checks before claiming a change is fixed, complete, or passing.",
     skillFile: "verification-before-completion.md",
+    slashAlias: "guide-verify",
     supportedModes: ["agent", "plan", "goal"],
     requiredCapabilities: ["core-agent-tools", "skill-loader", "terminal-tools", "test-execution"],
     priority: 95,
@@ -182,6 +206,7 @@ export const WORKFLOW_MANIFESTS: readonly WorkflowManifest[] = [
     name: "Plan authoring",
     description: "Inspect the workspace and submit a concrete implementation plan through Nexus Plan mode for explicit approval.",
     skillFile: "writing-plans.md",
+    slashAlias: "guide-plan",
     supportedModes: ["plan"],
     requiredCapabilities: ["core-agent-tools", "skill-loader", "file-tools", "terminal-tools"],
     priority: 95,
@@ -194,6 +219,7 @@ export const WORKFLOW_MANIFESTS: readonly WorkflowManifest[] = [
     name: "Plan execution",
     description: "Carry out a host-approved plan, retain its current lifecycle stage, and verify the completed work.",
     skillFile: "executing-plans.md",
+    slashAlias: "guide-execute-plan",
     supportedModes: ["agent"],
     requiredCapabilities: ["core-agent-tools", "skill-loader", "file-tools", "terminal-tools", "test-execution"],
     priority: 96,
@@ -206,6 +232,7 @@ export const WORKFLOW_MANIFESTS: readonly WorkflowManifest[] = [
     name: "Managed Git isolation",
     description: "Create and inspect a Nexus-managed local Git worktree with guarded paths, branch ownership, and explicit confirmation.",
     skillFile: "using-git-worktrees.md",
+    slashAlias: "guide-worktree",
     supportedModes: ["agent"],
     requiredCapabilities: ["core-agent-tools", "skill-loader", "git-worktree-operations"],
     priority: 92,
@@ -218,6 +245,7 @@ export const WORKFLOW_MANIFESTS: readonly WorkflowManifest[] = [
     name: "Development branch completion",
     description: "Validate a completed local development branch, merge only after explicit confirmation, and clean it up only after merge verification.",
     skillFile: "finishing-a-development-branch.md",
+    slashAlias: "guide-finish-branch",
     supportedModes: ["agent"],
     requiredCapabilities: ["core-agent-tools", "skill-loader", "git-worktree-operations", "terminal-tools", "test-execution"],
     priority: 94,
@@ -230,6 +258,7 @@ export const WORKFLOW_MANIFESTS: readonly WorkflowManifest[] = [
     name: "Code review request",
     description: "Prepare a bounded local review scope with fresh validation evidence before asking for review.",
     skillFile: "requesting-code-review.md",
+    slashAlias: "guide-request-review",
     supportedModes: ["agent", "plan", "goal"],
     requiredCapabilities: ["core-agent-tools", "skill-loader", "file-tools", "terminal-tools", "test-execution"],
     priority: 93,
@@ -242,6 +271,7 @@ export const WORKFLOW_MANIFESTS: readonly WorkflowManifest[] = [
     name: "Code review reception",
     description: "Evaluate review findings against the workspace, apply only sound changes, and verify each accepted fix.",
     skillFile: "receiving-code-review.md",
+    slashAlias: "guide-review-feedback",
     supportedModes: ["agent"],
     requiredCapabilities: ["core-agent-tools", "skill-loader", "file-tools", "terminal-tools", "test-execution"],
     priority: 97,
@@ -254,6 +284,7 @@ export const WORKFLOW_MANIFESTS: readonly WorkflowManifest[] = [
     name: "Parallel task coordination",
     description: "Split independent bounded investigation into accountable Nexus tasks and aggregate their reports before deciding the next action.",
     skillFile: "dispatching-parallel-agents.md",
+    slashAlias: "guide-parallel",
     supportedModes: ["agent"],
     requiredCapabilities: ["core-agent-tools", "skill-loader", "subagent-orchestration"],
     priority: 91,
@@ -266,6 +297,7 @@ export const WORKFLOW_MANIFESTS: readonly WorkflowManifest[] = [
     name: "Subagent-driven development",
     description: "Coordinate bounded implementation tasks through Nexus subagents while preserving isolated ownership and parent verification.",
     skillFile: "subagent-driven-development.md",
+    slashAlias: "guide-subagents",
     supportedModes: ["agent"],
     requiredCapabilities: ["core-agent-tools", "skill-loader", "subagent-orchestration", "git-worktree-operations", "test-execution"],
     priority: 98,
@@ -348,10 +380,19 @@ export function isPluginAuthoringWorkflowRequest(content: unknown): boolean {
   return typeof content === "string" && /\b(?:create|scaffold|build|develop|debug|validate|check|package|pack)\b[\s\S]{0,64}\bplugins?\b/i.test(content);
 }
 
+export function workflowEnabledByPreferences(
+  id: string,
+  globalDisabledIds: readonly string[],
+  projectOverrides: Record<string, boolean>,
+): boolean {
+  return Object.hasOwn(projectOverrides, id)
+    ? projectOverrides[id] === true
+    : !globalDisabledIds.includes(id);
+}
+
 function enabled(manifest: WorkflowManifest, input: WorkflowResolutionInput): boolean {
-  if (input.session.dismissedIds?.includes(manifest.id)) return false;
-  if (Object.hasOwn(input.projectOverrides, manifest.id)) return input.projectOverrides[manifest.id] === true;
-  return !input.globalDisabledIds.includes(manifest.id);
+  return !input.session.dismissedIds?.includes(manifest.id) &&
+    workflowEnabledByPreferences(manifest.id, input.globalDisabledIds, input.projectOverrides);
 }
 
 function unavailableReason(manifest: WorkflowManifest, input: WorkflowResolutionInput): WorkflowResolution["unavailable"][number]["reason"] | undefined {
@@ -370,9 +411,10 @@ function automaticReason(manifest: WorkflowManifest, input: WorkflowResolutionIn
     if (isPluginAuthoringWorkflowRequest(input.prompt)) return "plugin_authoring_request";
   }
   if (manifest.id === BRAINSTORMING_WORKFLOW_ID && isFeatureRequest(input.prompt)) return "feature_request";
+  if (manifest.id === INTERFACE_DESIGN_WORKFLOW_ID && isInterfaceDesignRequest(input.prompt)) return "interface_design_request";
   if (manifest.id === SYSTEMATIC_DEBUGGING_WORKFLOW_ID && isReproducibleFailure(input.prompt)) return "reproducible_failure";
   if (manifest.id === TEST_DRIVEN_DEVELOPMENT_WORKFLOW_ID) {
-    if (input.session.primaryId === BRAINSTORMING_WORKFLOW_ID && input.session.stage === "discovery" && isApprovedImplementationRequest(input.prompt)) return "approved_implementation";
+    if ([BRAINSTORMING_WORKFLOW_ID, INTERFACE_DESIGN_WORKFLOW_ID].includes(input.session.primaryId ?? "") && input.session.stage === "discovery" && isApprovedImplementationRequest(input.prompt)) return "approved_implementation";
     if (input.session.primaryId === SYSTEMATIC_DEBUGGING_WORKFLOW_ID && input.session.stage === "diagnosis" && isFixRequest(input.prompt)) return "diagnosed_fix";
   }
   if (
@@ -456,17 +498,24 @@ function text(value: unknown): string {
 export function isFeatureRequest(value: unknown): boolean {
   const prompt = text(value);
   if (!prompt || /\b(?:what is|explain|discuss|tell me about|should we use)\b/.test(prompt)) return false;
-  return /\b(?:add|create|build|implement|introduce|redesign|change)\b/.test(prompt) &&
-    /\b(?:feature|screen|page|panel|workflow|button|setting|support|integration|ability|feed|endpoint|command|ui|system)\b/.test(prompt) &&
+  return /\b(?:add|create|build|implement|introduce|redesign|change|improve|polish|refine)\b/.test(prompt) &&
+    /\b(?:feature|screen|page|panel|workflow|button|setting|support|integration|ability|feed|endpoint|command|ui|system|layout|experience|flow)\b/.test(prompt) &&
     !isPluginAuthoringWorkflowRequest(prompt);
+}
+
+export function isInterfaceDesignRequest(value: unknown): boolean {
+  const prompt = text(value);
+  if (!prompt || /\b(?:what is|explain|discuss|tell me about|should we use)\b/.test(prompt)) return false;
+  return /\b(?:design|redesign|polish|refresh|visual|appearance|look and feel)\b/.test(prompt) &&
+    /\b(?:ui|interface|screen|page|layout|sidebar|panel|theme|composer|button|settings)\b/.test(prompt);
 }
 
 /** Require an actual observed failure, not a request to explain debugging. */
 export function isReproducibleFailure(value: unknown): boolean {
   const prompt = text(value);
   if (!prompt || /\b(?:what is|explain|discuss|technique|tutorial)\b/.test(prompt)) return false;
-  return /\b(?:fails?|failing|failed|error|exception|crash(?:es|ed)?|broken|regression|does not work|won't start|cannot connect|refused)\b/.test(prompt) &&
-    /\b(?:test|app|build|plugin|screen|request|command|every time|reproduc|error|exception|crash|bug)\b/.test(prompt);
+  return /\b(?:fails?|failing|failed|error|exception|crash(?:es|ed)?|broken|regression|does not work|doesn't work|not working|won't start|cannot connect|refused|overlaps?|overlapping|clipped)\b/.test(prompt) &&
+    /\b(?:test|app|build|plugin|screen|page|panel|request|command|every time|reproduc|error|exception|crash|bug)\b/.test(prompt);
 }
 
 function isApprovedImplementationRequest(value: unknown): boolean {

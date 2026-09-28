@@ -1255,6 +1255,15 @@ authority or bypass confirmation. Active bodies are injected before the first
 model action; non-active guidance remains subject to the 8,000-character Skill
 catalog and session id gate.
 
+Bundled workflows also have stable `guide-*` composer aliases (ADR 0245).
+Invoking one alone activates it as a session override; a trailing prompt is
+sent only after successful host-validated activation. The host rejects a guide
+that is disabled or incompatible with the session mode or capabilities, and
+the composer retains the draft on rejection. A project enablement override
+applies consistently to automatic resolution, slash discovery, and the
+on-demand Skill catalog. `workflow.read` may read an active author-owned
+package only through its session's effective project scope.
+
 When a terminal agent event arrives, Electron keeps local turn ownership while
 `session.endTurn` persists the terminal state. The Agent Host queue is kicked
 only after that promise settles (success or failure), and the bridge reports the
@@ -1271,6 +1280,12 @@ discovery, or a focused fix after diagnosis, advances to
 `nexus/quality/test-driven-development` in Agent mode. A request to verify,
 validate, finish, or mark already-implemented work complete advances to
 `nexus/quality/verification-before-completion`.
+
+The later `nexus/quality/interface-design` guide specializes discovery for a
+concrete visual interface request. Its narrower design-and-surface match takes
+precedence over generic feature discovery, but a bug report still selects
+systematic debugging. An approved interface design advances to the same
+test-first implementation stage as other discovery work.
 
 The resolver deliberately does not select these workflows for questions about
 TDD or debugging, tutorials, or other casual discussion. Workflow transition is

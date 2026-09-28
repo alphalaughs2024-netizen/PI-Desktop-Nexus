@@ -97,3 +97,13 @@ The prompt body remains the visible user turn; a failed dispatch does not clear
 the composer draft. Former builtin aliases are no longer resolved and are
 handled as ordinary unknown slash text unless supplied by another command
 source.
+
+Reviewed Nexus workflow guidance also appears in the composer menu as
+`/guide-*` commands. Every shipped workflow has one stable alias; disabled
+guides are hidden unless the selected project explicitly enables them. An
+alias alone activates guidance in the current session, creating a session from
+home when needed. `/guide-debug <prompt>` and the other aliases activate the
+guide before sending the trailing text as an ordinary visible user message.
+The host checks mode, capability, and enablement; a rejected invocation shows
+an error and keeps the draft. These commands do not change permissions or
+execute a plugin.

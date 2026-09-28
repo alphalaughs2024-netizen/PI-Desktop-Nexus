@@ -2688,6 +2688,28 @@ membership when dropped on Ungrouped.
 - **Acceptance**: E (tools and permissions) + G (workflow guidance)
 - **Status**: Unit/source-contract covered; desktop journey Draft
 
+#### E2E-024IG: Explicit bundled guidance and active package inspection (ADR 0245)
+
+- **Preconditions**: A configured model, an ordinary project, all bundled
+  guides enabled, and one compatible project workflow package.
+- **Steps**: 1) Type `/guide-` and inspect the composer suggestions. 2) Send
+  `/guide-debug` from the home composer, then send a normal prompt. 3) Send
+  `/guide-verify Check this change` and inspect the visible user turn and active
+  workflow. 4) Change to an unsupported mode and try a guide that requires
+  Agent mode. 5) Disable a guide globally, re-enable it only for the project,
+  and inspect the slash menu and Skill catalog. 6) Activate the project package
+  and expand its active-workflow inspector.
+- **Expected**: Every enabled built-in has one unique slash entry. An alias
+  creates or uses the current session, activates before the next model turn,
+  and sends only trailing prompt text. An incompatible invocation keeps its
+  draft and shows an error. Project enablement is consistent across menu,
+  resolver, and Skill loader. The active project package body is inspectable;
+  no guide changes tools or permissions.
+- **Specs linked**: `03-runtime/01-ipc-protocol.md` §12b.1,
+  `04-ux/04-builtin-commands.md` §7, ADR 0245
+- **Acceptance**: G (workflow guidance) + UX
+- **Status**: Unit-covered; desktop journey Draft
+
 #### E2E-024J: Plugin theme applies and falls back when withdrawn
 
 - **Preconditions**: `examples/plugins/hello` enabled with `ui.theme` granted; a plugin whose CSS uses `@import` or a remote `url()` available for the rejection case.

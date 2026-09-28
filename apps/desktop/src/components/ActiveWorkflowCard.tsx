@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { WorkflowSessionStatus } from "@pi-desktop/shared";
 import { api } from "../lib/api";
@@ -11,17 +11,30 @@ export function ActiveWorkflowCard({ sessionId }: { sessionId?: string | null })
   const [expanded, setExpanded] = useState(false);
   const [body, setBody] = useState<string | null>(null);
   const primary = status?.primary;
+  const selectionKey = `${sessionId ?? ""}:${primary?.id ?? ""}`;
+  const selectionKeyRef = useRef(selectionKey);
+  selectionKeyRef.current = selectionKey;
+
+  useEffect(() => {
+    setBody(null);
+    setExpanded(false);
+  }, [sessionId, primary?.id]);
 
   useEffect(() => {
     if (!sessionId) {
       setStatus(null);
       return;
     }
-    const load = () => api.workflowStatus(sessionId).then(setStatus).catch(() => setStatus(null));
+    let current = true;
+    setStatus(null);
+    const load = () => api.workflowStatus(sessionId)
+      .then((result) => { if (current) setStatus(result); })
+      .catch(() => { if (current) setStatus(null); });
     void load();
-    return api.onWorkflowChanged((event) => {
+    const unsubscribe = api.onWorkflowChanged((event) => {
       if (!event.sessionId || event.sessionId === sessionId) void load();
     });
+    return () => { current = false; unsubscribe(); };
   }, [sessionId]);
 
   if (!sessionId || !primary) return null;
@@ -37,8 +50,11 @@ export function ActiveWorkflowCard({ sessionId }: { sessionId?: string | null })
     const next = !expanded;
     setExpanded(next);
     if (next && body === null) {
-      const result = await api.readWorkflow(primary.id).catch(() => null);
-      setBody(result?.body ?? t("workflow.guidanceUnavailable"));
+      const requestedKey = selectionKey;
+      const result = await api.readWorkflow(primary.id, sessionId).catch(() => null);
+      if (selectionKeyRef.current === requestedKey) {
+        setBody(result?.body ?? t("workflow.guidanceUnavailable"));
+      }
     }
   };
   return (

@@ -9,6 +9,7 @@ import {
   WORKFLOW_MANIFESTS,
   globalDisabledWorkflowIds,
   isPluginAuthoringWorkflowRequest,
+  workflowEnabledByPreferences,
 } from "./workflows";
 
 /**
@@ -106,6 +107,7 @@ export type BuiltinSkillInput = {
   /** The current user prompt explicitly asks to author a plugin. */
   pluginAuthoringRequested?: boolean;
   dataDir?: string;
+  projectOverrides?: Record<string, boolean>;
 };
 
 const builtinSkillFile = (dataDir: string) => join(dataDir, "agent-capabilities", "builtin-skills.json");
@@ -144,7 +146,7 @@ export function builtinSkills(input: BuiltinSkillInput): InstructionDocumentDef[
   const skills: InstructionDocumentDef[] = [];
   const disabled = disabledBuiltinSkillIds(input.dataDir);
   for (const manifest of WORKFLOW_MANIFESTS) {
-    if (disabled.has(manifest.id)) continue;
+    if (!workflowEnabledByPreferences(manifest.id, [...disabled], input.projectOverrides ?? {})) continue;
     if (
       manifest.id === PLUGIN_DEV_SKILL_ID &&
       !input.pluginAuthoringRequested &&

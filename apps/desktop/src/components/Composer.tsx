@@ -1691,6 +1691,28 @@ export function Composer({
       if (command && command.kind !== "template" && command.id) {
         const commandBody =
           commandEnd === -1 ? "" : serializedContent.slice(commandEnd).trim();
+        if (command.kind === "builtin" && command.id.startsWith("builtin.workflow.")) {
+          try {
+            const sessionId = useAppStore.getState().activeSessionId ?? await materializeDraftSession();
+            if (!sessionId) throw new Error("Unable to open a session for this workflow.");
+            await api.activateSessionWorkflow(sessionId, command.id.slice("builtin.workflow.".length));
+            if (commandBody) {
+              const visibleDraft = text.trim();
+              const visibleCommandEnd = visibleDraft.search(/\s/);
+              const visibleCommandBody = visibleCommandEnd === -1 ? "" : visibleDraft.slice(visibleCommandEnd).trim();
+              const accepted = await sendPrompt(
+                serializeInlineComposerFileReferences(visibleCommandBody, activeFileReferences),
+                draftSnapshot(visibleCommandBody),
+              );
+              if (accepted) clearDraftForKey(submittedDraftKey);
+            } else {
+              clearDraftForKey(submittedDraftKey);
+            }
+          } catch (error) {
+            showToast(error instanceof Error ? error.message : String(error), { variant: "error" });
+          }
+          return;
+        }
         const isModeCommand =
           command.id === "builtin.mode.agent" ||
           command.id === "builtin.mode.plan" ||

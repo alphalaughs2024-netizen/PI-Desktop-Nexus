@@ -189,6 +189,7 @@ import {
   setProjectWorkflowEnabled,
   setWorkflowSessionOverride,
   transitionPlanWorkflowSession,
+  workflowEnabledByPreferences,
   type WorkflowSessionRecord,
 } from "./workflows";
 import {
@@ -1840,6 +1841,7 @@ async function resolveAgentRuntimeLaunch(
       pluginPaths: plugins.listLoaded().map((loaded) => loaded.path),
       pluginAuthoringRequested: isPluginAuthoringRequest(overrides.prompt),
       dataDir,
+      projectOverrides: projectWorkflowOverrides(dataDir, projectPath),
     })
       // Keep the legacy on-demand catalog aligned with workflow preferences.
       .filter((skill) => workflowResolution.availableIds.includes(skill.id))
@@ -8486,6 +8488,11 @@ function registerIpc() {
 
   handle(IPC.invoke.composerCommands, async () => {
     const root = await optionalWorkspaceRoot();
+    const disabledWorkflows = globalDisabledWorkflowIds(dataDir);
+    const projectOverrides = projectWorkflowOverrides(dataDir, root);
+    const slashWorkflows = WORKFLOW_MANIFESTS.filter((workflow) =>
+      workflowEnabledByPreferences(workflow.id, disabledWorkflows, projectOverrides),
+    );
     const templates = await loadComposerTemplatesCached(root).catch(() => []);
     const templateCommands = templates.map((template) => ({
       name: template.name,
@@ -8523,7 +8530,7 @@ function registerIpc() {
       ReturnType<typeof builtinComposerCommands>[number]
     >();
     for (const command of [
-      ...builtinComposerCommands(),
+      ...builtinComposerCommands(slashWorkflows),
       ...templateCommands,
       ...pluginCommands,
       ...extensionCommands,
@@ -9741,12 +9748,22 @@ function registerIpc() {
   handle(IPC.invoke.workflowStatus, async (payload: { sessionId: string }) => {
     return workflowStatusForSession(String(payload?.sessionId ?? ""));
   });
-  handle(IPC.invoke.workflowRead, async (payload: { id: string }) => {
+  handle(IPC.invoke.workflowRead, async (payload: { id: string; sessionId?: string }) => {
     const id = String(payload?.id ?? "");
     const workflow = WORKFLOW_MANIFESTS.find((candidate) => candidate.id === id);
     const body = loadBuiltinSkillBody(id);
-    if (!workflow || !body) throw Object.assign(new Error("Workflow not found"), { errorCode: ErrorCodes.NOT_FOUND });
-    return { workflow, body: body.body };
+    if (workflow && body) return { workflow, body: body.body };
+    const sessionId = String(payload?.sessionId ?? "");
+    if (sessionId) {
+      const status = await workflowStatusForSession(sessionId);
+      if (status.primary?.id === id) {
+        const packageWorkflow = readWorkflowPackage(dataDir, id, status.projectPath);
+        if (packageWorkflow.workflow.enabled && packageWorkflow.record.compatibility.status === "compatible") {
+          return { workflow: packageWorkflow.workflow, body: packageWorkflow.body };
+        }
+      }
+    }
+    throw Object.assign(new Error("Workflow not found"), { errorCode: ErrorCodes.NOT_FOUND });
   });
   handle(IPC.invoke.workflowSetProjectEnabled, async (payload: { projectPath: string; id: string; enabled: boolean | null }) => {
     setProjectWorkflowEnabled(

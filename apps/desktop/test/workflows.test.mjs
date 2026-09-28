@@ -1,8 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { createRequire } from "node:module";
-import { readFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { dirname, join } from "node:path";
+import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -13,6 +14,7 @@ const loadTypeScript = requireFromRuntime("jiti")(join(repoRoot, "packages/agent
 const {
   AGENT_OPERATIONS_WORKFLOW_ID,
   BRAINSTORMING_WORKFLOW_ID,
+  INTERFACE_DESIGN_WORKFLOW_ID,
   SYSTEMATIC_DEBUGGING_WORKFLOW_ID,
   TEST_DRIVEN_DEVELOPMENT_WORKFLOW_ID,
   VERIFICATION_WORKFLOW_ID,
@@ -30,7 +32,10 @@ const {
   resolveWorkflows,
   transitionPlanWorkflowSession,
   validateWorkflowManifest,
+  workflowEnabledByPreferences,
 } = loadTypeScript(join(desktopRoot, "electron/main/workflows.ts"));
+const { builtinComposerCommands } = loadTypeScript(join(desktopRoot, "electron/main/builtin-commands.ts"));
+const { builtinSkills, setBuiltinSkillEnabled } = loadTypeScript(join(desktopRoot, "electron/main/builtin-skills.ts"));
 const runtimeSource = readFileSync(join(repoRoot, "packages/agent-runtime/src/runtime.ts"), "utf8");
 const mainSource = readFileSync(join(desktopRoot, "electron/main/index.ts"), "utf8");
 const surfaceSource = readFileSync(join(desktopRoot, "src/components/ChatSurface.tsx"), "utf8");
@@ -76,6 +81,41 @@ test("validates versioned Nexus workflow manifests", () => {
     }).ok,
     true,
   );
+});
+
+test("every bundled workflow has a unique explicit slash alias", () => {
+  const aliases = WORKFLOW_MANIFESTS.map((workflow) => workflow.slashAlias);
+  assert.equal(aliases.filter(Boolean).length, WORKFLOW_MANIFESTS.length);
+  assert.equal(new Set(aliases).size, WORKFLOW_MANIFESTS.length);
+  const commands = builtinComposerCommands(WORKFLOW_MANIFESTS);
+  assert.equal(new Set(commands.map((command) => command.name)).size, commands.length);
+  for (const workflow of WORKFLOW_MANIFESTS) {
+    assert.ok(commands.some((command) => command.name === workflow.slashAlias && command.id === `builtin.workflow.${workflow.id}`));
+    const body = readFileSync(join(desktopRoot, "resources/skills", workflow.skillFile), "utf8");
+    assert.match(body, /^description: .+/m);
+  }
+});
+
+test("project enablement admits a globally disabled guide to the skill catalog", () => {
+  const dataDir = mkdtempSync(join(tmpdir(), "nexus-guidance-test-"));
+  try {
+    setBuiltinSkillEnabled(dataDir, BRAINSTORMING_WORKFLOW_ID, false);
+    assert.equal(workflowEnabledByPreferences(BRAINSTORMING_WORKFLOW_ID, [BRAINSTORMING_WORKFLOW_ID], {}), false);
+    assert.equal(workflowEnabledByPreferences(BRAINSTORMING_WORKFLOW_ID, [BRAINSTORMING_WORKFLOW_ID], { [BRAINSTORMING_WORKFLOW_ID]: true }), true);
+    assert.ok(!builtinSkills({ dataDir }).some((skill) => skill.id === BRAINSTORMING_WORKFLOW_ID));
+    assert.ok(builtinSkills({ dataDir, projectOverrides: { [BRAINSTORMING_WORKFLOW_ID]: true } }).some((skill) => skill.id === BRAINSTORMING_WORKFLOW_ID));
+    assert.ok(!builtinSkills({ dataDir, projectOverrides: { [BRAINSTORMING_WORKFLOW_ID]: false } }).some((skill) => skill.id === BRAINSTORMING_WORKFLOW_ID));
+  } finally {
+    rmSync(dataDir, { recursive: true, force: true });
+  }
+});
+
+test("common feature and UI failure wording selects the relevant workflow", () => {
+  assert.equal(resolve({ prompt: "Polish the sidebar layout." }).primary?.id, INTERFACE_DESIGN_WORKFLOW_ID);
+  assert.equal(resolve({ prompt: "What is interface design?" }).primary?.id, AGENT_OPERATIONS_WORKFLOW_ID);
+  assert.equal(resolve({ prompt: "Yes, implement the approved design now.", session: { primaryId: INTERFACE_DESIGN_WORKFLOW_ID, stage: "discovery" } }).primary?.id, TEST_DRIVEN_DEVELOPMENT_WORKFLOW_ID);
+  assert.equal(resolve({ prompt: "The browser panel is clipped." }).primary?.id, SYSTEMATIC_DEBUGGING_WORKFLOW_ID);
+  assert.equal(resolve({ prompt: "The app doesn't work after reload." }).primary?.id, SYSTEMATIC_DEBUGGING_WORKFLOW_ID);
 });
 
 test("keeps operations available but makes plugin authoring the primary workflow", () => {
@@ -195,6 +235,7 @@ test("ships every Phase 2 workflow as rewritten Nexus guidance", () => {
 test("declares a positive and negative activation fixture for every quality workflow", () => {
   for (const id of [
     BRAINSTORMING_WORKFLOW_ID,
+    INTERFACE_DESIGN_WORKFLOW_ID,
     SYSTEMATIC_DEBUGGING_WORKFLOW_ID,
     TEST_DRIVEN_DEVELOPMENT_WORKFLOW_ID,
     VERIFICATION_WORKFLOW_ID,

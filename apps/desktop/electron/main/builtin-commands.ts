@@ -1,4 +1,5 @@
 import type { CommandItem, ComposerCommand } from "@pi-desktop/shared";
+import type { WorkflowManifest } from "./workflows";
 
 /**
  * Single source of truth for first-party commands: the palette search list
@@ -24,12 +25,22 @@ export function builtinPaletteItems(): CommandItem[] {
 }
 
 /** Composer "/" menu entries for the builtin group. */
-export function builtinComposerCommands(): ComposerCommand[] {
-  return BUILTIN_COMMANDS.map((def) => ({
+export function builtinComposerCommands(workflows: readonly WorkflowManifest[] = []): ComposerCommand[] {
+  const commands: ComposerCommand[] = BUILTIN_COMMANDS.map((def) => ({
     name: def.slash,
     kind: "builtin",
     title: def.title,
     ...(def.category ? { description: def.category } : {}),
     id: def.id,
   }));
+  return [
+    ...commands,
+    ...workflows.filter((workflow) => workflow.slashAlias).map((workflow) => ({
+      name: workflow.slashAlias!,
+      kind: "builtin" as const,
+      title: workflow.name,
+      description: workflow.description,
+      id: `builtin.workflow.${workflow.id}`,
+    })),
+  ];
 }
