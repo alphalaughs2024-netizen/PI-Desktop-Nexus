@@ -16,6 +16,8 @@
   the bar's measured height so the newest assistant reply is not covered.
   Emerald Afterglow and Twilight Mountains use theme-matched bar materials,
   controls, and waveform colors.
+  The Composer model menu remains above the bar while open so its model list
+  and controls are visible and clickable.
   It does not dim, blur, or block the chat or workspace. Done transcribes the
   spoken turn and sends it through the current session's normal prompt and
   queue rules. The dock shows recording, transcription, waiting, and speaking

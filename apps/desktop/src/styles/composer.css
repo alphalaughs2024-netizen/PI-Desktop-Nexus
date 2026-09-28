@@ -24,6 +24,10 @@
   background: transparent;
 }
 
+.composer-dock-docked:has(.composer-model-thinking-menu) {
+  z-index: 41;
+}
+
 /* Home mode: the shell is owned by the bottom-reserved home composer region. */
 .composer-dock-home {
   position: relative;

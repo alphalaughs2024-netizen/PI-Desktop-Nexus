@@ -14,6 +14,9 @@
   assistant reply. Check that the strip matches each theme and the latest reply
   remains readable above it. Expand transcript details and repeat in a narrow
   chat pane; closing the strip restores the original transcript spacing.
+- With Voice mode listening, open the Composer model and reasoning menu. Check
+  that both the short menu and the full searchable model list paint above the
+  voice strip and remain clickable in home and active chats.
 
 - With no hosted speech settings or API key, start Dictate from the composer
   microphone menu, speak, and press Done. Confirm the text remains editable in

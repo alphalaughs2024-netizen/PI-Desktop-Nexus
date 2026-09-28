@@ -510,6 +510,10 @@
   container-name: home-main-content;
 }
 
+.home-main-content:has(.composer-model-thinking-menu) {
+  z-index: 41;
+}
+
 .home-scroll {
   flex: 1;
   min-height: 0;
