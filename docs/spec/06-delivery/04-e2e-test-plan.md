@@ -2677,6 +2677,21 @@ membership when dropped on Ungrouped.
 - **Acceptance**: E (Task isolation) + G (workflow activation and guidance)
 - **Status**: Unit/runtime/source-contract covered; desktop journey Draft
 
+#### E2E-024IM: Local specialist skill market (ADR 0248)
+
+- **Preconditions**: A clean Nexus profile and a writable global skills folder.
+- **Steps**: 1) Open Settings > Skills > Market. 2) Search and filter the catalog.
+  3) Open a specialist skill and inspect the full document and source. 4) Check
+  that the skill is absent from My Skills and the agent skill catalog before
+  installation. 5) Install it, return to My Skills, and invoke it by name.
+  6) Reopen Market, confirm Installed, remove the skill in My Skills, and return.
+- **Expected**: The bundled document appears only after Install. Installation
+  creates a global user skill without changing workflows or plugins. Installed
+  tracks the actual user skill record and reverts to Install after removal.
+  Search, filters, preview, and cards work at narrow window widths.
+- **Specs linked**: `04-ux/06-settings-ia.md`, ADR 0248
+- **Status**: Desktop journey Draft
+
 #### E2E-024IF: Workflow package authoring, preview, and compatibility (ADR 0225)
 
 - **Preconditions**: A clean Nexus profile, an ordinary project, and a project

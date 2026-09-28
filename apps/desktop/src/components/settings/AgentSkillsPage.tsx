@@ -48,6 +48,8 @@ import {
 } from "../icons";
 
 import { Button, TooltipButton } from "../ui";
+import { Store } from "lucide-react";
+import { SpecialistSkillMarket } from "./SpecialistSkillMarket";
 const GLOBAL_SKILLS_PATH = "~/.pi-desktop-nexus/agents/skills";
 
 function projectSkillsPath(projectPath: string | null): string {
@@ -160,6 +162,7 @@ function AgentSkillWorkflowPage({ view }: { view: "skills" | "workflows" }) {
   const [builtinViewer, setBuiltinViewer] = useState<BuiltinSkillViewerState | null>(null);
   const [saving, setSaving] = useState(false);
   const [workflowBusyId, setWorkflowBusyId] = useState<string | null>(null);
+  const [marketOpen, setMarketOpen] = useState(false);
   const { armed, setArmed } = useArmedDelete();
 
   const rowKey = (level: AgentCapabilityLevel, id: string) => `${level}:${id}`;
@@ -625,6 +628,10 @@ function AgentSkillWorkflowPage({ view }: { view: "skills" | "workflows" }) {
     </CapabilityButton>
   );
 
+  if (view === "skills" && marketOpen) {
+    return <SpecialistSkillMarket installed={globalSkills} onInstalled={load} onBack={() => setMarketOpen(false)} />;
+  }
+
   return (
     <AgentCapabilityPage
       description={t(view === "workflows" ? "settings.workflowsDescription" : "settings.skillsDescription")}
@@ -652,10 +659,16 @@ function AgentSkillWorkflowPage({ view }: { view: "skills" | "workflows" }) {
                 {t("settings.newWorkflow")}
               </CapabilityButton>
             ) : (
-              <CapabilityButton variant="primary" title={newSkillTitle} onClick={openCreate}>
-                <IconPlus size={14} />
-                {t("settings.newSkill")}
-              </CapabilityButton>
+              <>
+                <CapabilityButton title={t("settings.specialistSkillMarket")} busy={loading} onClick={() => setMarketOpen(true)}>
+                  <Store size={14} aria-hidden="true" />
+                  {t("settings.specialistMarketButton")}
+                </CapabilityButton>
+                <CapabilityButton variant="primary" title={newSkillTitle} onClick={openCreate}>
+                  <IconPlus size={14} />
+                  {t("settings.newSkill")}
+                </CapabilityButton>
+              </>
             )
           }
         />

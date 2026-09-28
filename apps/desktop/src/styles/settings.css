@@ -2604,3 +2604,67 @@
   .usage-history-row { grid-template-columns: 64px minmax(50px, 1fr) 44px; }
   .usage-history-row .badge { display: none; }
 }
+
+.specialist-market { display: grid; gap: 17px; min-width: 0; }
+.specialist-market-top { display: grid; gap: 14px; }
+.specialist-market-back {
+  display: inline-flex; align-items: center; gap: 6px; justify-self: start;
+  border: 0; border-radius: 5px; padding: 5px 9px;
+  background: var(--ds-bg-hover); color: var(--ds-text-secondary); cursor: pointer;
+  font-size: var(--text-sm);
+}
+.specialist-market-back:hover { color: var(--ds-text-primary); }
+.specialist-market-heading { display: flex; align-items: end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.specialist-market-heading h2 { margin: 0 0 3px; color: var(--ds-text-primary); font-size: 19px; font-weight: 650; }
+.specialist-market-heading p { margin: 0; color: var(--ds-text-muted); font-size: var(--text-sm); }
+.specialist-market-search {
+  display: flex; align-items: center; gap: 8px; width: min(100%, 290px); min-height: 36px;
+  padding: 0 11px; border: 1px solid var(--ds-border-default); border-radius: 6px;
+  background: var(--ds-bg-primary); color: var(--ds-text-muted);
+}
+.specialist-market-search:focus-within { border-color: var(--ds-accent); }
+.specialist-market-search input { width: 100%; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--ds-text-primary); font: inherit; }
+.specialist-market-filters { display: flex; flex-wrap: wrap; gap: 7px; }
+.specialist-market-filters button {
+  min-height: 30px; padding: 4px 12px; border: 1px solid transparent; border-radius: 16px;
+  background: var(--ds-bg-hover); color: var(--ds-text-secondary); font-size: var(--text-sm); cursor: pointer;
+}
+.specialist-market-filters button:hover { color: var(--ds-text-primary); border-color: var(--ds-border-default); }
+.specialist-market-filters button.active { background: var(--ds-text-primary); color: var(--ds-bg-primary); }
+.specialist-market-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.specialist-market-card {
+  display: grid; grid-template-columns: 40px minmax(0, 1fr); column-gap: 12px;
+  min-height: 170px; padding: 16px; border: 1px solid var(--ds-border-default);
+  border-radius: 7px; background: color-mix(in srgb, var(--ds-bg-primary) 78%, transparent);
+  color: var(--ds-text-primary);
+}
+.specialist-market-card:hover { border-color: color-mix(in srgb, var(--ds-accent) 45%, var(--ds-border-default)); }
+.specialist-market-card-icon {
+  display: grid; place-items: center; width: 40px; height: 40px; border-radius: 7px;
+  background: color-mix(in srgb, var(--ds-accent) 15%, var(--ds-bg-primary)); color: var(--ds-accent);
+}
+.specialist-market-card-main { display: flex; min-width: 0; flex-direction: column; align-items: start; }
+.specialist-market-title {
+  max-width: 100%; padding: 1px 0; border: 0; background: none; color: var(--ds-text-primary);
+  font-size: var(--text-md); font-weight: 650; text-align: left; cursor: pointer; overflow-wrap: anywhere;
+}
+.specialist-market-title:hover { color: var(--ds-accent); }
+.specialist-market-category { margin-top: 5px; padding: 2px 7px; border-radius: 4px; background: var(--ds-bg-hover); color: var(--ds-text-secondary); font-size: var(--text-xs-plus); }
+.specialist-market-card-main p { margin: 8px 0 9px; color: var(--ds-text-secondary); font-size: var(--text-sm); line-height: 1.4; }
+.specialist-market-source { margin-top: auto; color: var(--ds-text-muted); font-size: var(--text-xs-plus); }
+.specialist-market-install {
+  display: inline-flex; align-items: center; justify-content: center; gap: 4px;
+  grid-column: 2; justify-self: end; min-height: 31px; margin-top: 10px; padding: 4px 12px;
+  border: 1px solid var(--ds-border-default); border-radius: 16px;
+  background: var(--ds-text-primary); color: var(--ds-bg-primary); font-size: var(--text-sm); font-weight: 600; cursor: pointer;
+}
+.specialist-market-install:disabled { background: var(--ds-bg-hover); color: var(--ds-text-muted); cursor: default; }
+.specialist-market-install:not(:disabled):hover { background: var(--ds-accent); color: var(--ds-bg-primary); }
+.specialist-market-empty { padding: 40px; text-align: center; color: var(--ds-text-muted); }
+.specialist-market-preview .ext-skill-body { white-space: pre-wrap; overflow-wrap: anywhere; }
+.specialist-market-license { margin-top: 18px; color: var(--ds-text-secondary); font-size: var(--text-sm); }
+.specialist-market-license summary { cursor: pointer; }
+.specialist-market-license pre { max-height: 200px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; font-size: var(--text-xs-plus); }
+.specialist-market :is(button, input):focus-visible, .specialist-market-preview button:focus-visible { outline: 2px solid var(--ds-accent); outline-offset: 2px; }
+@media (max-width: 1100px) { .specialist-market-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 660px) { .specialist-market-grid { grid-template-columns: 1fr; } .specialist-market-search { width: 100%; } }

@@ -336,6 +336,14 @@ counts, and data fetch. An active workflow's Settings action opens Workflows.
 The existing skill loader and workflow resolver remain separate; a workflow
 may still use a skill as guidance.
 
+Skills also offers a Market action beside New. The local Specialist Skill Market
+shows bundled, uninstalled specialist documents in searchable category cards.
+Opening a card previews the full original document and its source. Install
+creates an enabled global user skill through the existing host API; Installed
+reflects the global skill list, and removing that skill permits installation
+again. Catalog-only entries never appear in agent context or slash commands.
+The market is distinct from the plugin marketplace and has no remote source.
+
 They share a capability-management visual
 system while preserving their different data ownership:
 
