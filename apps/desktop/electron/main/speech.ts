@@ -1,9 +1,10 @@
 import { mkdir } from "node:fs/promises";
 import type { SpeechSettings } from "@pi-desktop/shared";
+import { transcribeLocalParakeet } from "./speech-local.ts";
 
 const SAMPLE_RATE = 16_000;
 const MAX_AUDIO_BYTES = SAMPLE_RATE * 2 * 60 + 44;
-const LOCAL_MODEL = "Xenova/whisper-tiny";
+const WHISPER_MODEL = "Xenova/whisper-tiny";
 
 type Transcriber = (audio: Float32Array, options: Record<string, unknown>) => Promise<unknown>;
 let localTranscriber: Promise<Transcriber> | null = null;
@@ -51,7 +52,7 @@ async function getLocalTranscriber(cacheDir: string): Promise<Transcriber> {
       const transformers = await import("@huggingface/transformers");
       transformers.env.cacheDir = cacheDir;
       transformers.env.allowRemoteModels = true;
-      return await transformers.pipeline("automatic-speech-recognition", LOCAL_MODEL, {
+      return await transformers.pipeline("automatic-speech-recognition", WHISPER_MODEL, {
         device: "cpu",
         dtype: "q8",
       }) as unknown as Transcriber;
@@ -80,10 +81,13 @@ export async function transcribeSpeech(
 ): Promise<string> {
   const samples = decodeSpeechWav(audioBase64);
   if (samples.length === 0) return "";
-  let energy = 0;
-  for (const sample of samples) energy += sample * sample;
-  if (Math.sqrt(energy / samples.length) < 0.003) return "";
+  let peak = 0;
+  for (const sample of samples) peak = Math.max(peak, Math.abs(sample));
+  if (peak < 300 / 32768) return "";
   if (settings?.transcription !== "hosted") {
+    if (settings?.localModel !== "whisper-tiny") {
+      return transcribeLocalParakeet(samples, settings?.localModel ?? "parakeet-tdt-0.6b-v2-int8", cacheDir);
+    }
     const transcriber = await getLocalTranscriber(cacheDir);
     const result = await transcriber(samples, { chunk_length_s: 30 });
     return typeof result === "object" && result !== null && "text" in result

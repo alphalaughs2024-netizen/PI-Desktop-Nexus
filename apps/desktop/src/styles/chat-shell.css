@@ -251,6 +251,10 @@
   padding: 20px 32px calc(var(--composer-dock-height, 228px) + 16px);
 }
 
+.chat-surface:has(.speech-overlay) .thread-content {
+  padding-bottom: calc(var(--composer-dock-height, 228px) + var(--speech-bar-height, 96px) + 16px);
+}
+
 /* Holds enough scroll height for the bounded first commit of a session switch to
  * reach its own bottom. Deliberately not proportional to the unmounted entries:
  * a guessed total gets corrected when the full history mounts, and that
@@ -298,6 +302,10 @@
   width: min(100%, var(--chat-content-max-width));
   padding: calc(var(--ds-toolbar-height) + 20px) 28px
     calc(var(--composer-dock-height, 228px) + 16px);
+}
+
+.chat-surface:has(.speech-overlay) .transcript-settle-veil-band {
+  padding-bottom: calc(var(--composer-dock-height, 228px) + var(--speech-bar-height, 96px) + 16px);
 }
 
 .transcript-skeleton-row {

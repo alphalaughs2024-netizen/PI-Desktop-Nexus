@@ -25,6 +25,7 @@ export function VoiceModeProvider({ children }: { children: ReactNode }) {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [recordingSeconds, setRecordingSeconds] = useState(0);
   const recording = useRef<SpeechRecording | null>(null);
+  const overlay = useRef<HTMLDivElement | null>(null);
   const cycle = useRef(0);
   const sourceSession = useRef<string | undefined>(undefined);
   const sendingVoice = useRef(false);
@@ -95,6 +96,21 @@ export function VoiceModeProvider({ children }: { children: ReactNode }) {
     const timer = window.setInterval(() => setRecordingSeconds(Math.floor((Date.now() - startedAt) / 1000)), 500);
     return () => window.clearInterval(timer);
   }, [state]);
+
+  useEffect(() => {
+    if (!active) return;
+    const surface = overlay.current?.closest<HTMLElement>(".chat-surface");
+    const element = overlay.current;
+    if (!surface || !element) return;
+    const update = () => surface.style.setProperty("--speech-bar-height", `${element.offsetHeight + 16}px`);
+    const observer = new ResizeObserver(update);
+    observer.observe(element);
+    update();
+    return () => {
+      observer.disconnect();
+      surface.style.removeProperty("--speech-bar-height");
+    };
+  }, [active]);
 
   const start = async () => {
     recording.current?.cancel();
@@ -181,7 +197,7 @@ export function VoiceModeProvider({ children }: { children: ReactNode }) {
     <VoiceModeContext.Provider value={{ active, start: () => void start(), stop }}>
       {children}
       {active && createPortal(
-        <div className="speech-overlay">
+        <div className="speech-overlay" ref={overlay}>
           <section className={`speech-dialog is-${state}`} role="region" aria-label={t("chat.voiceMode")}>
             <div className="speech-main-row">
               <div className={`speech-orbit ${state}`} aria-hidden="true"><IconMic size={20} /></div>

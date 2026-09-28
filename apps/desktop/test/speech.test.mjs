@@ -36,7 +36,7 @@ test("silence is not sent to a speech provider", async () => {
   assert.equal(await transcribeSpeech(wavBase64([0, 0, 0]), undefined, tmpdir()), "");
 });
 
-test("hosted transcription sends audio and reads a named environment key", async () => {
+test("hosted transcription accepts quiet speech and reads a named environment key", async () => {
   let auth;
   let body;
   const server = createServer(async (req, res) => {
@@ -54,7 +54,7 @@ test("hosted transcription sends audio and reads a named environment key", async
   process.env.NEXUS_SPEECH_TEST_KEY = "test-only-key";
   try {
     const address = server.address();
-    const text = await transcribeSpeech(wavBase64([100, -100]), {
+    const text = await transcribeSpeech(wavBase64([400, ...Array(100).fill(0), -400]), {
       transcription: "hosted",
       endpoint: `http://127.0.0.1:${address.port}/audio/transcriptions`,
       model: "test-model",
@@ -73,7 +73,7 @@ test("hosted transcription sends audio and reads a named environment key", async
 
 test("hosted transcription refuses plaintext non-loopback URLs", async () => {
   await assert.rejects(
-    transcribeSpeech(wavBase64([100]), { transcription: "hosted", endpoint: "http://example.com/speech" }, tmpdir()),
+    transcribeSpeech(wavBase64([400]), { transcription: "hosted", endpoint: "http://example.com/speech" }, tmpdir()),
     /HTTPS or local HTTP/,
   );
 });

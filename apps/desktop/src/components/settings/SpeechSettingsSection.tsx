@@ -48,6 +48,18 @@ export function SpeechSettingsSection({
           </div>
         </div>
       </div>
+      {speech.transcription === "local" && (
+        <div className="settings-row">
+          <div className="settings-row-copy"><div className="settings-row-title">{t("settings.speechModel")}</div></div>
+          <div className="settings-row-control">
+            <select className="field-select" value={speech.localModel ?? "parakeet-tdt-0.6b-v2-int8"} onChange={(event) => void save({ localModel: event.target.value as SpeechSettings["localModel"] })}>
+              <option value="parakeet-tdt-0.6b-v2-int8">{t("settings.speechParakeetEnglish")}</option>
+              <option value="parakeet-tdt-0.6b-v3-int8">{t("settings.speechParakeetMultilingual")}</option>
+              <option value="whisper-tiny">{t("settings.speechWhisperTiny")}</option>
+            </select>
+          </div>
+        </div>
+      )}
       {speech.transcription === "hosted" && (
         <>
           <div className="settings-row">

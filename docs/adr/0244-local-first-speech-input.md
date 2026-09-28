@@ -38,3 +38,13 @@ transcriptions reuse the local cache. Local recognition quality and CPU load
 depend on the device. Hosted compatibility depends on the selected service's
 support for the transcription multipart response shape. Spoken replies use
 installed system voices and may vary by operating system.
+
+## Amendment: Parakeet local models
+
+Parakeet TDT 0.6B v2 INT8 replaces Whisper Tiny as the default local
+transcriber. A user can select multilingual Parakeet v3 INT8 or retain Whisper
+Tiny for lower resource use. Both dictation and voice mode share this setting.
+The Parakeet ONNX models are downloaded into app data on first use and run via
+Sherpa ONNX in a dedicated worker thread. The model archives are fetched from
+the Sherpa ONNX release catalog; a missing or failed download is reported to
+the user rather than silently sending microphone audio to a cloud service.

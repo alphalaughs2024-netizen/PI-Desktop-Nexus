@@ -1426,6 +1426,8 @@ export type AppSettings = {
 
 export type SpeechSettings = {
   transcription: "local" | "hosted";
+  /** Shared by dictation and voice mode; missing selects English Parakeet. */
+  localModel?: "parakeet-tdt-0.6b-v2-int8" | "parakeet-tdt-0.6b-v3-int8" | "whisper-tiny";
   /** Missing preserves the original spoken-reply behavior. */
   voiceRepliesEnabled?: boolean;
   /** OpenAI-compatible audio transcription endpoint; used only in hosted mode. */

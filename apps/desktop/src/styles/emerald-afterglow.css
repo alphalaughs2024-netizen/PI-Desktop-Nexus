@@ -68,6 +68,25 @@
   backdrop-filter: blur(18px) saturate(1.06);
   -webkit-backdrop-filter: blur(18px) saturate(1.06);
 }
+:root[data-scenic-theme="emerald-afterglow"] .speech-dialog {
+  border-color: rgba(175, 233, 184, .44);
+  background: rgba(5, 29, 17, .92);
+  box-shadow: 0 12px 32px rgba(0, 16, 8, .45), inset 0 1px rgba(225, 251, 230, .16);
+}
+:root[data-scenic-theme="emerald-afterglow"] .speech-orbit { border-color: #77ca90; background: rgba(41, 112, 65, .28); color: #b3efbe; box-shadow: 0 0 0 5px rgba(91, 191, 119, .1); }
+:root[data-scenic-theme="emerald-afterglow"] .speech-orbit.recording { box-shadow: 0 0 0 5px rgba(91, 191, 119, .16), 0 0 20px rgba(91, 191, 119, .25); }
+:root[data-scenic-theme="emerald-afterglow"] .speech-dialog h2 { color: #f0fbf2; }
+:root[data-scenic-theme="emerald-afterglow"] :is(.speech-state, .speech-close, .speech-expand, .speech-transcript span) { color: #b9d8c0; }
+:root[data-scenic-theme="emerald-afterglow"] :is(.speech-timer, .speech-transcript) { color: #e5f8e9; }
+:root[data-scenic-theme="emerald-afterglow"] .speech-waveform::before { background: linear-gradient(90deg, transparent, #4fbd79 20%, #a8dc8f 80%, transparent); }
+:root[data-scenic-theme="emerald-afterglow"] .speech-waveform i { background: linear-gradient(180deg, #c3f3ae, #48b879); box-shadow: 0 0 7px rgba(101, 215, 132, .45); }
+:root[data-scenic-theme="emerald-afterglow"] .speech-primary { background: #e7f8e7; color: #0d2819; }
+:root[data-scenic-theme="emerald-afterglow"] .speech-primary:hover { background: #c6edcc; }
+:root[data-scenic-theme="emerald-afterglow"] .speech-expand { border-color: rgba(175, 233, 184, .35); background: rgba(7, 38, 22, .88); }
+:root[data-scenic-theme="emerald-afterglow"] .speech-expand:hover:not(:disabled),
+:root[data-scenic-theme="emerald-afterglow"] .speech-close:hover { background: rgba(113, 206, 137, .2); color: #fff; }
+:root[data-scenic-theme="emerald-afterglow"] .speech-details { border-bottom-color: rgba(175, 233, 184, .28); }
+:root[data-scenic-theme="emerald-afterglow"] :is(.speech-primary, .speech-close, .speech-expand):focus-visible { outline-color: #b7efc1; }
 :root[data-scenic-theme="emerald-afterglow"] .composer-shell:focus-within,
 :root[data-scenic-theme="emerald-afterglow"] .composer-shell.is-file-drop-active { border-color: var(--emerald-focus); box-shadow: 0 0 0 1px rgba(159, 221, 169, 0.28), var(--ds-shadow-composer), inset 0 1px rgba(229, 250, 232, 0.2); }
 :root[data-scenic-theme="emerald-afterglow"] :is(.dialog, .menu, .popover, .settings-theme-menu, .tool-row-content, pre, .permission-card, .toast, .context-vault-modal, .work-panel-context-menu) { background: var(--emerald-safety-surface); color: var(--ds-text-primary); border-color: var(--emerald-border); }

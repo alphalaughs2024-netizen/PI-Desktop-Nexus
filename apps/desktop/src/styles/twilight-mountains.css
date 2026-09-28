@@ -64,6 +64,25 @@
   filter: saturate(1.12) blur(var(--twilight-backdrop-blur, 2px));
   transform: scale(1.03);
 }
+:root[data-scenic-theme="twilight-mountains"] .speech-dialog {
+  border-color: rgba(177, 209, 255, .5);
+  background: rgba(7, 28, 72, .82);
+  box-shadow: 0 12px 32px rgba(0, 12, 44, .38), inset 0 1px rgba(235, 244, 255, .18);
+}
+:root[data-scenic-theme="twilight-mountains"] .speech-orbit { border-color: #97bfff; background: rgba(70, 119, 208, .28); color: #d0e4ff; box-shadow: 0 0 0 5px rgba(136, 185, 255, .1); }
+:root[data-scenic-theme="twilight-mountains"] .speech-orbit.recording { box-shadow: 0 0 0 5px rgba(136, 185, 255, .18), 0 0 20px rgba(94, 150, 245, .3); }
+:root[data-scenic-theme="twilight-mountains"] .speech-dialog h2 { color: #f6f9ff; }
+:root[data-scenic-theme="twilight-mountains"] :is(.speech-state, .speech-close, .speech-expand, .speech-transcript span) { color: #bdd2f4; }
+:root[data-scenic-theme="twilight-mountains"] :is(.speech-timer, .speech-transcript) { color: #e9f2ff; }
+:root[data-scenic-theme="twilight-mountains"] .speech-waveform::before { background: linear-gradient(90deg, transparent, #75aaff 20%, #b09bf5 80%, transparent); }
+:root[data-scenic-theme="twilight-mountains"] .speech-waveform i { background: linear-gradient(180deg, #bcdcff, #709bfa); box-shadow: 0 0 7px rgba(123, 169, 255, .55); }
+:root[data-scenic-theme="twilight-mountains"] .speech-primary { background: #eef5ff; color: #112f62; }
+:root[data-scenic-theme="twilight-mountains"] .speech-primary:hover { background: #d0e5ff; }
+:root[data-scenic-theme="twilight-mountains"] .speech-expand { border-color: rgba(177, 209, 255, .42); background: rgba(8, 33, 79, .88); }
+:root[data-scenic-theme="twilight-mountains"] .speech-expand:hover:not(:disabled),
+:root[data-scenic-theme="twilight-mountains"] .speech-close:hover { background: rgba(129, 177, 252, .22); color: #fff; }
+:root[data-scenic-theme="twilight-mountains"] .speech-details { border-bottom-color: rgba(177, 209, 255, .28); }
+:root[data-scenic-theme="twilight-mountains"] :is(.speech-primary, .speech-close, .speech-expand):focus-visible { outline-color: #a9d2ff; }
 
   :root[data-scenic-theme="twilight-mountains"] { --twilight-backdrop-blur: var(--scenic-backdrop-blur, 6px); }
 

@@ -2,6 +2,19 @@
 
 ### Speech input and voice mode
 
+- With local transcription selected, dictate the same clear English phrase using
+  Parakeet v2 and confirm editable text appears. Switch to Parakeet v3 and
+  dictate a supported non-English phrase; then select Whisper Tiny and confirm
+  local transcription still works. Repeat a spoken turn in Voice mode to verify
+  it uses the selected model. First-use Parakeet download must report failure
+  without switching to cloud if the model cannot be fetched.
+- Dictate a quiet but intelligible phrase and confirm it reaches the selected
+  local model rather than being discarded as silence.
+- In Emerald Afterglow and Twilight Mountains, open Voice mode during a long
+  assistant reply. Check that the strip matches each theme and the latest reply
+  remains readable above it. Expand transcript details and repeat in a narrow
+  chat pane; closing the strip restores the original transcript spacing.
+
 - With no hosted speech settings or API key, start Dictate from the composer
   microphone menu, speak, and press Done. Confirm the text remains editable in
   the current draft and is not sent. Cancel a second recording and confirm the

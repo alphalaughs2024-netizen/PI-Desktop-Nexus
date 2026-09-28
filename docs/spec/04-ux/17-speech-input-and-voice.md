@@ -12,7 +12,10 @@
   stopping spoken output, speaking again, and ending the mode. A disclosure
   reveals the latest transcript and reply without expanding the bar by default.
   The bar follows composer height changes and remains usable in narrow panes;
-  reduced-motion preference stops waveform animation.
+  reduced-motion preference stops waveform animation. The transcript reserves
+  the bar's measured height so the newest assistant reply is not covered.
+  Emerald Afterglow and Twilight Mountains use theme-matched bar materials,
+  controls, and waveform colors.
   It does not dim, blur, or block the chat or workspace. Done transcribes the
   spoken turn and sends it through the current session's normal prompt and
   queue rules. The dock shows recording, transcription, waiting, and speaking
@@ -22,16 +25,22 @@
 - A session switch or unmount ends capture and playback. Late speech results
   cannot appear in a different chat.
 - Settings > Models > Speech selects local or hosted transcription. Local is the
-  default and requires no key. Hosted has endpoint, model, and environment
+  default and requires no key. Local model selection applies to dictation and
+  voice mode: Parakeet v2 INT8 is the English default, Parakeet v3 INT8 handles
+  25 European languages, and Whisper Tiny remains a lightweight fallback.
+  Hosted has endpoint, model, and environment
   variable name fields. Voice replies are on by default for existing settings.
   Turning them off keeps voice input and text replies, skips speech synthesis,
   and resumes listening when the reply completes. The reply voice selector is
   unavailable while voice replies are off.
-- Local model files live in application data. Audio is held only during the
+- Local model files live in application data and are downloaded on first use.
+  Parakeet recognition runs in a dedicated worker so model loading and decoding
+  do not block Electron main. Audio is held only during the
   active recording/transcription request; it is not saved to chat history or
   a workspace file. Hosted mode sends audio to the configured endpoint.
 - Main accepts only bounded 16 kHz mono PCM WAV recordings. The microphone
   permission allows audio for the main window only, independently of plugin
-  grants. HTTPS is required for hosted endpoints except loopback HTTP.
+  grants. Quiet speech above the peak silence threshold still reaches the
+  selected model. HTTPS is required for hosted endpoints except loopback HTTP.
 
 See [ADR 0244](../../adr/0244-local-first-speech-input.md).
