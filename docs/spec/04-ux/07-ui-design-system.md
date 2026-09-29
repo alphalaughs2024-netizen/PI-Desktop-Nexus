@@ -1232,7 +1232,10 @@ Twilight and Obsidian composers use the scenic plugin's uniform translucent
 fills: `rgba(7, 31, 78, 0.5)` and `rgba(12, 28, 48, 0.72)`, respectively.
 The backdrop remains visible through the composer without an internal gradient.
 Their workflow strips keep their existing fills. Alpine and Emerald retain
-their existing composer materials.
+their existing composer materials. In all four themes, the completed chat
+entrance animation must release its transform so the composer blur samples the
+same scenery as the official plugin's sidebar. This does not alter the entrance
+motion, composer geometry or controls, or other themes.
 
 ## Scenic theme card copy
 

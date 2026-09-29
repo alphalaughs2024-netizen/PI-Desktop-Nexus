@@ -1,5 +1,14 @@
 .scenic-themes-page { display: flex; flex-direction: column; gap: 18px; }
 :root[data-scenic-theme] :is(.app-shell, .main-pane) { background: transparent; }
+:root:is(
+  [data-scenic-theme="twilight-mountains"],
+  [data-scenic-theme="obsidian-horizon"],
+  [data-scenic-theme="emerald-afterglow"],
+  [data-scenic-theme="alpine-light"]
+) .chat-surface.route-surface {
+  /* Release the entrance transform so composer backdrop blur samples the scenery. */
+  animation-fill-mode: none;
+}
 .scenic-theme-cards { display: grid; gap: 14px; }
 .scenic-theme-card { position: relative; min-height: 132px; display: flex; align-items: flex-end; justify-content: space-between; padding: 22px; border: 1px solid var(--ds-border-default); border-radius: var(--radius-xl); background-position: center; background-size: cover; color: var(--ds-text-primary); text-align: left; box-shadow: var(--ds-shadow-dialog); cursor: pointer; }
 .scenic-theme-card::before { content: ""; position: absolute; }

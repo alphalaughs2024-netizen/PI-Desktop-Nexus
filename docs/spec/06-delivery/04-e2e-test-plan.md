@@ -11005,23 +11005,23 @@ In each of the four scenic themes, compare the empty chat backdrop against its
 packaged image: colors and highlights remain visible without a dark vignette or
 multiple content tints. Inspect the sidebar, top title strip, composer, and an
 active workflow strip over the image. They should read as translucent glass,
-with the composer and workflow strip matching the sidebar's tinted glass depth,
+with the composer matching the official plugin sidebar's tinted glass depth,
 legible controls, and no visible perimeter strokes. Check home and docked composers,
 including thin theme-colored focus rings (Twilight dark blue, Obsidian black,
 Alpine white, Emerald dark green) and distinct file-drop cues. Repeat with a populated chat,
 reduced transparency, and unsupported backdrop filtering; dense menus and
 dialogs must remain readable and fallback surfaces must remain solid.
-Across all four themes, confirm the workflow strip matches the unfocused composer
-fill, frost blur, border, and elevation. Twilight and Obsidian should soften
-bright image detail beneath both surfaces without reading as solid panels;
-the backdrop image and its blur preference remain unchanged.
-For Twilight and Obsidian, first verify the composer glass against the supplied
-visual references without changing the workflow strip. After approval, verify
-the strip receives the approved material with unchanged controls and geometry.
+At 0px scenery blur, reload each theme and interact with the app after the
+entrance animation. Confirm the composer keeps the same material as the
+official plugin sidebar instead of changing appearance after interaction.
+Repeat at a normal scenery blur setting. Twilight and Obsidian should soften
+bright image detail beneath the composer without reading as solid panels;
+the backdrop image, blur preference, and workflow strip remain unchanged.
 Confirm the composer uses a uniform tinted fill matching the original scenic
 plugin's color rather than a decorative gradient. Bright image detail should
 remain faintly perceptible through its material blur without overpowering the
-composer surface.
+composer surface. Open and close the sidebar and work panel; the composer keeps
+its width and controls while moving with the existing shell animations.
 
 ### E2E-218 — Alpine Light Settings glass
 
