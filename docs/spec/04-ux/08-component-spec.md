@@ -3041,6 +3041,10 @@ compatibility remains owned by pi-ai.
 | Busy row | Test/update/delete actions disabled for that card |
 
 ### 19.4 Interactions
+- A new provider with a trustworthy model list preselects up to three distinct
+  stable chat models. Without catalog metadata, only the first plausible chat
+  model is suggested. Existing providers and user-edited selections are never
+  overwritten; the selected rows remain editable before saving.
 - Add provider opens a modal dialog that stays inside the overlay (it can shrink below its 1040px preferred width). Focused credential fields keep their 2px accent ring fully visible: the scrolling body reserves that gutter instead of clipping the ring. Cancel/close resets fields and dismisses the dialog
 - The model picker searches and toggles multiple models without using a native
   multiple select. Its portaled menu closes on outside press, Escape, scroll,

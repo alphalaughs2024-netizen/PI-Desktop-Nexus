@@ -22,6 +22,7 @@ import { Button, Field, Input, Select } from "../ui";
 import { ProviderHeadersEditor } from "./ProviderHeadersEditor";
 import { useProviderModels } from "./useProviderModels";
 import { ModelSelectionPanes, useModelSelection } from "./ModelSelectionPanes";
+import { recommendChatModels } from "./recommended-models";
 import { CUSTOM_SERVICE, ServicePicker } from "./ServicePicker";
 
 const API_STYLE_LABEL_KEYS: Record<CatalogApiStyle, string> = {
@@ -161,6 +162,8 @@ export function ProviderSetupDialog({
   const [headerPairs, setHeaderPairs] = useState(() => recordToPairs(provider?.headers));
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [models, setModels] = useState<ModelBinding[]>(provider?.models ?? []);
+  const modelSelectionTouched = useRef(false);
+  const recommendedServiceKey = useRef("");
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
   const [error, setError] = useState("");
@@ -194,7 +197,24 @@ export function ProviderSetupDialog({
     },
     provider,
   );
-  const selection = useModelSelection(discovery, models, setModels);
+  const serviceKey = `${service}|${requestBaseUrl}|${resolvedApiStyle}`;
+  const serviceChanged = recommendedServiceKey.current !== serviceKey;
+  useEffect(() => {
+    if (!serviceChanged) return;
+    recommendedServiceKey.current = serviceKey;
+    if (!editing && !modelSelectionTouched.current) setModels([]);
+  }, [serviceKey, serviceChanged, editing]);
+  useEffect(() => {
+    if (editing || serviceChanged || modelSelectionTouched.current || models.length ||
+        discovery.status !== "ready" || discovery.error ||
+        (discovery.source !== "remote" && discovery.source !== "catalog")) return;
+    const picks = recommendChatModels(discovery.models);
+    if (picks.length) setModels(picks);
+  }, [discovery, editing, models.length, serviceChanged]);
+  const selection = useModelSelection(discovery, models, (update) => {
+    modelSelectionTouched.current = true;
+    setModels(update);
+  });
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {

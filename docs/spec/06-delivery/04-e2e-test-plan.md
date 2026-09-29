@@ -293,8 +293,10 @@ the controls stay keyboard accessible. This rendered scenario is pending.
 - Host steering admission atomically distinguishes a queued record from one
   already shifted into execution; an already-started record is acknowledged
   without sending duplicate provider content.
-- Steering during a provider request waits for the next assistant turn boundary;
-  the current request completes normally and the Host turn remains active.
+- Steering during a provider request interrupts that generation, retains any
+  partial response as interrupted, and continues in the same durable Host turn.
+- A second steer interrupts the new generation; stale events from either
+  canceled request do not appear after continuation.
 - Two steers admitted during one provider request are delivered once each in
   order, with no `AGENT_BUSY` response or premature terminal Host event.
 - Steering while the parent waits for a subagent leaves that wait and the Host
@@ -302,6 +304,16 @@ the controls stay keyboard accessible. This rendered scenario is pending.
   steer; Continue never races that loop or reports `AGENT_BUSY`.
 - Stop clears a steer that has not yet reached a provider request, so a later
   prompt does not receive an instruction from the stopped turn.
+- An MCP SSE reply becomes available before a server closes its stream, and
+  oversized HTTP replies fail within the transport's byte limit.
+- A long transcript inlines no more than 30 MB of historical images, favoring
+  newer attachments. A subagent response cut off by output tokens reports a
+  truncation error; Responses-style compaction retains its session cache key.
+- A prompt with two active `/skill` mentions loads both in typed order; later
+  slash autocomplete offers skills only. Composer Up/Down recalls prompts only
+  from the current conversation and restores the original unsent draft.
+- A newly added provider shows recommended chat models before save, permits
+  editing them, and leaves manual selection intact after discovery refresh.
 - Legacy accepted steering responses receive the same durable queue cleanup as
   typed accepted/queued outcomes.
 - A promoted "send now" row remains cancelable while move/edit actions stay
