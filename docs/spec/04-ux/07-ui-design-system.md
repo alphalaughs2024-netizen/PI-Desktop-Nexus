@@ -1231,9 +1231,10 @@ Obsidian Horizon, white in Alpine Light, and dark green in Emerald Afterglow.
 File drag remains a distinct, stronger attachment cue.
 The workflow strip should match the unfocused composer fill, material blur,
 border, and elevation within each theme. Twilight and Obsidian composers use the
-original scenic plugin's uniform navigation-glass fill; Alpine and Emerald
-retain their existing composer materials. Twilight and Obsidian workflow strips
-retain the prior fill until the composer material is visually approved.
+original scenic plugin's tint at a denser opacity suited to Nexus's layout;
+Alpine and Emerald retain their existing composer materials. Twilight and
+Obsidian workflow strips retain the prior fill until the composer material is
+visually approved.
 
 ## Scenic theme card copy
 

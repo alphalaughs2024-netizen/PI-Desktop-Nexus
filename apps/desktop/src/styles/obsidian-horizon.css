@@ -4,7 +4,7 @@
   --obsidian-shell-glass: rgba(7, 14, 25, 0.58);
   --obsidian-navigation-glass: rgba(12, 28, 48, 0.72);
   --scenic-chat-glass-fill: rgba(12, 28, 48, 0.86);
-  --scenic-composer-fill: var(--obsidian-navigation-glass);
+  --scenic-composer-fill: rgba(12, 28, 48, 0.9);
   --scenic-chat-glass-filter: blur(18px) saturate(1.08);
   --scenic-chat-glass-shadow: var(--ds-shadow-composer);
   --obsidian-raised-glass: rgba(17, 28, 44, 0.68);

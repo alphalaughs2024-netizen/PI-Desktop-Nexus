@@ -38,12 +38,12 @@ workflow strip within each theme. Keep their material blur and avoid visible
 perimeter strokes so they read as floating glass rather than outlined panels.
 Check both surfaces over a detailed area of the backdrop, including home and
 docked composer states.
-Twilight and Obsidian composer fills use the original scenic plugin's uniform
-navigation-glass color and opacity. A denser custom gradient suppressed image
-highlights and made the composer read as a panel. The backdrop image and its
-user-selected blur are unchanged. The workflow strip should take the same fill,
-filter, shadow, and border treatment as the unfocused composer in each scenic
-theme after that material is visually approved.
+Twilight and Obsidian composer fills use the original scenic plugin's tint with
+higher opacity in Nexus. Reusing the navigation-glass opacity let backdrop
+details dominate the composer in Nexus's layout. Keep the fill uniform and the
+backdrop image and its user-selected blur unchanged. After visual approval,
+the workflow strip should take the same fill, filter, shadow, and border
+treatment as the unfocused composer in each scenic theme.
 Keep the composer material separate from the workflow strip until the composer
 is visually approved; then share the approved material without changing either
 surface's controls or geometry.
