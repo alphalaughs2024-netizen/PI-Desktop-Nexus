@@ -1222,19 +1222,16 @@ viewport, keeping them out from underneath composited native work-panel views.
 The active workflow card uses a borderless, translucent shared `--ds-*` surface
 with readable text, actions, and focus treatment. Theme styles may refine its
 material, but no base or scenic theme may add a high-contrast outer outline.
-In each scenic theme, the active workflow strip and composer share a tinted
-glass material with no visible perimeter stroke. Material
-blur is independent of the scenic image blur preference; reduced-transparency
-and unsupported-filter paths use solid readable surfaces.
+In each scenic theme, the active workflow strip and composer use tinted
+glass materials with no visible perimeter stroke. Material blur is independent
+of the scenic image blur preference; reduced-transparency and
+unsupported-filter paths use solid readable surfaces.
 Composer focus adds a one-pixel ring: dark blue in Twilight Mountains, black in
 Obsidian Horizon, white in Alpine Light, and dark green in Emerald Afterglow.
 File drag remains a distinct, stronger attachment cue.
-The workflow strip should match the unfocused composer fill, material blur,
-border, and elevation within each theme. Twilight and Obsidian composers use the
-original scenic plugin's tint at a denser opacity suited to Nexus's layout;
-Alpine and Emerald retain their existing composer materials. Twilight and
-Obsidian workflow strips retain the prior fill until the composer material is
-visually approved.
+Twilight and Obsidian composers use their reference left-to-right translucent
+blue and slate tint, respectively. Their workflow strips keep their existing
+flat fills. Alpine and Emerald retain their existing composer materials.
 
 ## Scenic theme card copy
 

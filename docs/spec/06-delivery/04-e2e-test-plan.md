@@ -2151,8 +2151,8 @@ membership when dropped on Ungrouped.
   surfaces. The scenic layer preserves the standard shell geometry: fixed and
   absolute controls, the work-panel toggle, and opening or closing the work
   panel stay aligned and behave as they do in Dark. Sidebar/title bands and
-  composer reads as translucent reflective blue glass rather than opaque
-  cobalt, while menus, dialogs,
+  composer reads as translucent blue glass with a deeper left side and lighter
+  right side, while its width and controls remain unchanged. Menus, dialogs,
   permission UI, code, tool output, and settings controls retain readable
   opaque-enough contrast. Window edges use a navy fallback. Reduced
   transparency removes blur and increases opacity without removing the scenic
@@ -11072,12 +11072,17 @@ existing three-failed-`Edit` recovery scenario remains unchanged.
   menus, dialogs, permissions, and tool output. Preview the `0px` through
   `20px` scenic blur slider, apply a value, switch the sidebar and work panel, switch away to each base theme and a
   plugin theme, and repeat at a narrow window width with reduced transparency.
+  Inspect the empty-home and thread-docked composer materials, including focus
+  and file-drop states.
 - **Expected**: Obsidian resolves to the dark base and shows its local moonlit
   backdrop with the applied image-only `0px` through `20px` blur. The backdrop never intercepts
   clicks; renderer-drawn Windows/Linux controls, titlebar reservations,
   work-panel actions, and Context Vault remain usable. The empty home hides the
-  mascot and uses the localized build greeting only for Obsidian. Settings
-  mixed-content panels may be tiles, while row-only parents are transparent
+  mascot and uses the localized build greeting only for Obsidian. The composer
+  retains its width and controls while its translucent material grades from
+  near-black blue at the left to slate at the right; focus and file-drop cues
+  remain visible. Settings mixed-content panels may be tiles, while row-only
+  parents are transparent
   and each row is a separate charcoal tile with no outer rectangle. Menus,
   dialogs, permissions, code, and tool output remain readable and more opaque.
   Reduced-transparency removes blur and keeps the same readable ownership.
