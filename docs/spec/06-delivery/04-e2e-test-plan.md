@@ -10996,6 +10996,16 @@ Alpine uses 4px, 8px, and 16px; fixed glass materials are unchanged; the value
 persists and the control is unavailable outside scenic themes. Unit/source coverage is in
 `apps/desktop/test/twilight-mountains-theme.test.mjs`.
 
+### E2E-218a — Scenic image and glass surfaces
+
+In each of the four scenic themes, compare the empty chat backdrop against its
+packaged image: colors and highlights remain visible without a dark vignette or
+multiple content tints. Inspect the sidebar, top title strip, composer, and an
+active workflow strip over the image. They should read as translucent glass,
+with legible controls and no opaque rectangle. Repeat with a populated chat,
+reduced transparency, and unsupported backdrop filtering; dense menus and
+dialogs must remain readable and fallback surfaces must remain solid.
+
 ### E2E-218 — Alpine Light Settings glass
 
 Select Alpine Light and visit General, Agent, Skills, MCP, Subagents, Plugins,

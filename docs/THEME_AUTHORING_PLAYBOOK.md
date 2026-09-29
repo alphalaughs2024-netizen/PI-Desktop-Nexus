@@ -23,6 +23,16 @@ assumptions, visual assets, or tool calls from other applications into Nexus.
 
 ## Non-negotiable outcome
 
+For the four built-in scenic themes, use the packaged image directly with a
+single restrained tint on content. Keep the app shell and main pane transparent;
+stacking translucent fills on all three layers dims the scene substantially.
+Navigation, title strips, composer, and the active workflow strip use the same
+theme-colored glass family. The image blur preference affects only the backdrop
+image; material blur is separate. Preserve solid fallbacks and opaque safety
+surfaces for dense or security-sensitive UI. The original scenic plugin package
+is a useful visual reference, but its selectors and theme mechanism do not
+replace Nexus's built-in theme contracts.
+
 A new theme must be:
 
 - optional and never the default unless the user explicitly changes that rule;
@@ -243,8 +253,8 @@ Emerald Afterglow is the sunlit-forest dark scenic reference implementation.
 Its source image is copied unchanged to
 `apps/desktop/resources/themes/emerald-afterglow.png`; it resolves to the
 existing `dark` base and uses a registered deep emerald-charcoal native fallback
-on Windows/Linux. The forest remains visible through a restrained
-emerald/charcoal vignette, while deep pine navigation glass, raised moss glass,
+on Windows/Linux. The forest remains visible without a dark backdrop wash,
+while deep pine navigation glass, raised moss glass,
 and an opaque forest-charcoal safety tier preserve contrast.
 
 Its default backdrop-image blur is `6px` through the shared per-theme `0px`
@@ -433,8 +443,8 @@ Instead:
 
 - keep the asset unchanged and choose a cover focal point that preserves the
   sun shafts, depth, and foliage;
-- use restrained top and lower charcoal/emerald vignettes to support reading
-  without erasing the forest;
+- put the reading contrast in glass and safety surfaces instead of tinting
+  the entire forest backdrop;
 - use dark pine navigation glass and a dark emerald composer for stable
   working surfaces;
 - reserve raised moss/slate glass for Settings rows and related content;
@@ -947,11 +957,9 @@ muddy, black, or unlike the supplied artwork.
 **Root cause:** the first overlay treatment applied a near-uniform dark wash.
 It hid the reference image's blue mountains, pink horizon, and lake depth.
 
-**Permanent lesson:** an image theme needs composition-specific lighting, not a
-single universal dark opacity. Use a restrained top vignette, deeper lower
-vignette, and optional localized glow where the reference needs it. Tune image
-position, saturation, overlay stops, and material opacity together. Evaluate on
-the real asset, not a neutral color block.
+**Permanent lesson:** protect the image's highlights and place reading contrast
+in the glass and safety surfaces. Tune image position, saturation, and material
+opacity together. Evaluate on the real asset, not a neutral color block.
 
 **Prevention:** write down the visual anchors in the source image before CSS:
 for example horizon, brightest focal region, readable dark region, and imagery

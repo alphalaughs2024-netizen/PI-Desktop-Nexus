@@ -705,9 +705,14 @@ High-frequency workstation feedback must remain compositor-friendly and bounded:
   streaming. Twilight Mountains is the narrow first-party exception: its one
   compositor-bounded composer shell may use blur as part of the scenic glass
   material, while transcript rows, list rows, code, and tool output never do.
-- Twilight Mountains keeps the scenic image luminous rather than uniformly
-  darkened: its backdrop uses a light top vignette, a moderate lower vignette,
-  and translucent shell glass. Its active project context and selected child
+- The four scenic themes show their bundled images without a separate vignette
+  or stacked shell tint. The shell and main pane are transparent; the content
+  has one restrained atmospheric tint. Sidebar, title strips, composer, and
+  active workflow strip use theme-colored translucent glass with blur. Dense
+  menus, dialogs, code, and tool output retain opaque safety surfaces. A
+  reduced-transparency or unsupported-filter environment uses solid surfaces.
+- Twilight Mountains keeps the scenic image luminous with translucent shell
+  glass. Its active project context and selected child
   session are separate adjacent surfaces with a visible gap; they must never
   read as one merged pill.
 - Twilight Mountains gives the full Settings shell a material hierarchy rather

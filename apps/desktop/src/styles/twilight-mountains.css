@@ -5,7 +5,7 @@
      surfaces intentionally stay opaque enough to read independently. */
   --twilight-atmosphere: rgba(4, 18, 48, 0.16);
   --twilight-shell-glass: rgba(7, 31, 78, 0.5);
-  --twilight-navigation-glass: rgba(8, 37, 91, 0.62);
+  --twilight-navigation-glass: rgba(7, 31, 78, 0.5);
   --twilight-raised-glass: rgba(29, 79, 156, 0.42);
   --twilight-safety-surface: rgba(5, 24, 61, 0.9);
   --twilight-luminous-border: rgba(204, 229, 255, 0.5);
@@ -21,7 +21,7 @@
   --ds-bg-under: #071326;
   --ds-bg-elevated: var(--twilight-raised-glass);
   --ds-bg-elevated-opaque: var(--twilight-safety-surface);
-  --ds-bg-composer: rgba(21, 66, 142, 0.58);
+  --ds-bg-composer: rgba(7, 31, 78, 0.5);
   --ds-bg-hover: rgba(198, 221, 255, 0.13);
   --ds-bg-active: rgba(211, 229, 255, 0.2);
   --ds-bg-chip: rgba(203, 224, 255, 0.13);
@@ -90,9 +90,7 @@
   content: "";
   position: absolute;
   inset: 0;
-  background:
-    radial-gradient(ellipse at 53% 29%, rgba(255, 177, 190, 0.28), transparent 29%),
-    linear-gradient(180deg, rgba(3, 16, 54, 0.1), rgba(3, 15, 45, 0.28) 55%, rgba(2, 10, 33, 0.45));
+  background: transparent;
 }
 
 :root[data-scenic-theme="twilight-mountains"] .app-shell,
@@ -103,7 +101,7 @@
 
 :root[data-scenic-theme="twilight-mountains"] :is(.sidebar, .sidebar-rail, .main-titlebar, .conversation-topbar, .window-controls, .settings-titlebar, .work-panel-header) {
   background-color: var(--twilight-navigation-glass);
-  background-image: linear-gradient(180deg, rgba(210, 232, 255, 0.13), transparent 70%);
+  background-image: none;
   backdrop-filter: blur(18px) saturate(1.08);
   -webkit-backdrop-filter: blur(18px) saturate(1.08);
 }
@@ -169,9 +167,7 @@
 
 :root[data-scenic-theme="twilight-mountains"] :is(.composer-shell, .composer-shell:focus-within, .composer-shell.is-file-drop-active) {
   border: 1px solid var(--twilight-luminous-border);
-  background:
-    radial-gradient(ellipse at 74% -18%, rgba(232, 202, 255, 0.2), transparent 48%),
-    linear-gradient(145deg, rgba(58, 119, 212, 0.46), rgba(8, 38, 101, 0.38));
+  background: var(--ds-bg-composer);
   box-shadow: inset 0 1px rgba(239, 248, 255, 0.34), 0 14px 34px rgba(0, 9, 35, 0.2);
   backdrop-filter: blur(18px) saturate(1.12);
   -webkit-backdrop-filter: blur(18px) saturate(1.12);

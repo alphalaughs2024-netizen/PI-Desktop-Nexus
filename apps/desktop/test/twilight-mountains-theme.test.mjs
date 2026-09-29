@@ -21,6 +21,9 @@ const mainSource = await readFile(new URL("../electron/main/index.ts", import.me
 const chatSurface = await readFile(new URL("../src/components/ChatSurface.tsx", import.meta.url), "utf8");
 const twilightStyles = await readFile(new URL("../src/styles/twilight-mountains.css", import.meta.url), "utf8");
 const alpineStyles = await readFile(new URL("../src/styles/alpine-light.css", import.meta.url), "utf8");
+const obsidianStyles = await readFile(new URL("../src/styles/obsidian-horizon.css", import.meta.url), "utf8");
+const emeraldStyles = await readFile(new URL("../src/styles/emerald-afterglow.css", import.meta.url), "utf8");
+const scenicStyles = await readFile(new URL("../src/styles/scenic-themes.css", import.meta.url), "utf8");
 const sharedTypes = await readFile(new URL("../../../packages/shared/src/types.ts", import.meta.url), "utf8");
 const packageJson = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
 const styles = await loadStyles();
@@ -62,6 +65,16 @@ test("Twilight maps the persisted blur strengths only to its backdrop image", ()
   assert.match(twilightStyles, /filter:\s*saturate\(1\.12\) blur\(var\(--twilight-backdrop-blur, 2px\)\)/);
   assert.match(twilightStyles, /--twilight-backdrop-blur:\s*var\(--scenic-backdrop-blur,\s*6px\)/);
   assert.doesNotMatch(twilightStyles, /data-scenic-backdrop-blur="(?:low|medium|high)"/);
+});
+
+test("scenic themes keep the image bright beneath shared glass surfaces", () => {
+  assert.match(scenicStyles, /:root\[data-scenic-theme\] :is\(\.app-shell, \.main-pane\) \{ background: transparent; \}/);
+  assert.match(scenicStyles, /:root\[data-scenic-theme\] \.active-workflow-card \{[\s\S]*?backdrop-filter: blur\(/);
+  assert.match(scenicStyles, /prefers-reduced-transparency[\s\S]*?\.active-workflow-card \{[\s\S]*?background: var\(--ds-bg-elevated-opaque\)/);
+  for (const sheet of [twilightStyles, alpineStyles, obsidianStyles, emeraldStyles]) {
+    assert.match(sheet, /\.app-scenic-backdrop::after \{[\s\S]*?background: transparent;/);
+    assert.match(sheet, /\.composer-shell[\s\S]*?backdrop-filter: blur\(/);
+  }
 });
 
 test("Twilight packages its backdrop and uses a navy native fallback", async () => {
@@ -123,7 +136,7 @@ test("Twilight uses layered blue-glass materials with readable safety surfaces",
 test("Twilight overrides the dark composer and Settings rail instead of inheriting black surfaces", () => {
   assert.match(
     styles,
-    /\[data-scenic-theme="twilight-mountains"\][\s\S]*?\.composer-shell\.is-file-drop-active[\s\S]*?background:\s*linear-gradient/,
+    /\[data-scenic-theme="twilight-mountains"\][\s\S]*?\.composer-shell\.is-file-drop-active[\s\S]*?background:\s*var\(--ds-bg-composer\)/,
   );
   assert.match(
     styles,
@@ -199,8 +212,8 @@ test("Twilight preserves scenic depth and separates adjacent selected sidebar ro
     /\.sidebar-session-group-body\.project\s*\{([^}]*)\}/.exec(styles)?.[1] ?? "";
 
   assert.match(styles, /\.app-scenic-backdrop[\s\S]*?filter:\s*saturate\(1\.12\) blur\(var\(--twilight-backdrop-blur, 2px\)\)/);
-  assert.match(styles, /linear-gradient\(180deg, rgba\(3, 16, 54, 0\.1\)/);
-  assert.match(styles, /\.composer-shell[\s\S]*?rgba\(58, 119, 212, 0\.46\)/);
+  assert.match(twilightStyles, /\.app-scenic-backdrop::after \{[\s\S]*?background: transparent;/);
+  assert.match(twilightStyles, /\.composer-shell\.is-file-drop-active\) \{[\s\S]*?background: var\(--ds-bg-composer\)/);
   assert.match(styles, /\.project-group\.active > \.sidebar-session-group-header[\s\S]*?background:\s*rgba\(125, 174, 246, 0\.18\)/);
   assert.match(styles, /\.project-group\.active > \.sidebar-session-group-header \+ \.sidebar-session-group-body\.project[\s\S]*?padding-top:\s*4px/);
   assert.match(projectSessionBodyRule, /gap:\s*4px/);
