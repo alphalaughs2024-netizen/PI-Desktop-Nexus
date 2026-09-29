@@ -1445,6 +1445,13 @@ export const zhTW = {
     never: "從未",
      tasks: "任務",
      recentRuns: "最近執行",
+     keepAwake: "工作期間保持喚醒",
+     reviewSettings: "檢查設定",
+     saveChanges: "儲存變更",
+     pause: "暫停",
+     enable: "啟用",
+     selectTask: "選取任務以檢視設定",
+     taskName: "任務名稱",
   },
   permission: {
     title: "需要許可權",

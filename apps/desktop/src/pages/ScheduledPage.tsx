@@ -4,7 +4,7 @@ import type { ProjectRecord, ProviderPublic, ScheduledTask, ScheduledTaskRun } f
 import { useAppStore } from "../stores/app-store";
 import { api } from "../lib/api";
 import { Badge, Button, Field, Input, Select, Textarea } from "../components/ui";
-import { IconClock } from "../components/icons";
+import { IconChevronLeft, IconClock, IconPlay, IconPlus, IconTrash } from "../components/icons";
 import "../styles/scheduled.css";
 
 type Draft = {
@@ -34,6 +34,7 @@ export function ScheduledPage() {
   const [runs, setRuns] = useState<ScheduledTaskRun[]>([]);
   const [keepAwake, setKeepAwake] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [loading, setLoading] = useState(true);
   const selected = tasks.find((task) => task.id === selectedId);
   const provider = providers.find((item) => item.id === draft.providerId);
   const locale = i18n.resolvedLanguage ?? i18n.language;
@@ -46,6 +47,7 @@ export function ScheduledPage() {
       setTasks(result.tasks ?? []);
       if (id && id !== "new") setRuns((await api.listScheduledRuns(id, 50)).runs);
     } catch (error) { showToast(String(error), { variant: "error" }); }
+    finally { setLoading(false); }
   };
   useEffect(() => {
     void refresh();
@@ -91,31 +93,45 @@ export function ScheduledPage() {
     } catch (error) { showToast(String(error), { variant: "error" }); }
   };
 
+  const toggleKeepAwake = async () => {
+    const value = !keepAwake;
+    setKeepAwake(value);
+    try { await api.setSettings({ ...await api.getSettings(), keepAwakeDuringWork: value }); }
+    catch (error) { setKeepAwake(!value); showToast(String(error), { variant: "error" }); }
+  };
+
   return <div className="thread-scroll"><div className="page-frame scheduled-page">
-    <header className="page-header scheduled-header"><h1 className="page-title">{t("scheduled.title")}</h1><Button variant="primary" onClick={() => select(null)}>+ {t("scheduled.create")}</Button></header>
-    <label className="scheduled-awake"><input type="checkbox" checked={keepAwake} onChange={async (event) => {
-      const value = event.target.checked; setKeepAwake(value);
-      try { await api.setSettings({ ...await api.getSettings(), keepAwakeDuringWork: value }); }
-      catch (error) { setKeepAwake(!value); showToast(String(error), { variant: "error" }); }
-    }} />Keep computer awake while an agent is working</label>
-    <div className={`scheduled-layout ${selectedId ? "scheduled-has-editor" : ""}`}>
-      <section className="scheduled-list" aria-label={t("scheduled.tasks")}>
-        {tasks.length === 0 && <div className="scheduled-empty"><IconClock size={20} />{t("scheduled.emptyTitle")}</div>}
-        {tasks.map((task) => <button key={task.id} type="button" className={`scheduled-item ${selectedId === task.id ? "active" : ""}`} onClick={() => select(task)}>
+    <header className="page-header scheduled-header">
+      <div><h1 className="page-title">{t("scheduled.title")}</h1><p className="page-subtitle">{t("scheduled.subtitle")}</p></div>
+      {tasks.length > 0 && <Button variant="primary" onClick={() => select(null)}><IconPlus size={16} />{t("scheduled.create")}</Button>}
+    </header>
+    <div className="scheduled-toolbar">
+      <div className="scheduled-toolbar-count"><IconClock size={16} /><span>{t("scheduled.tasks")}</span><strong>{tasks.length}</strong></div>
+      <button type="button" className="scheduled-awake" role="switch" aria-checked={keepAwake} onClick={() => void toggleKeepAwake()}><span>{t("scheduled.keepAwake")}</span><span className={`settings-toggle ${keepAwake ? "on" : ""}`} aria-hidden><span className="settings-toggle-thumb" /></span></button>
+    </div>
+    {loading ? <div className="scheduled-loading" aria-busy="true" /> : tasks.length === 0 && !selectedId ? (
+      <section className="scheduled-empty-state" aria-label={t("scheduled.emptyTitle")}>
+        <span className="scheduled-empty-icon"><IconClock size={24} /></span>
+        <h2>{t("scheduled.emptyTitle")}</h2>
+        <Button variant="primary" onClick={() => select(null)}><IconPlus size={16} />{t("scheduled.create")}</Button>
+      </section>
+    ) : <div className={`scheduled-layout ${selectedId ? "scheduled-has-editor" : ""} ${tasks.length === 0 ? "scheduled-creating-first" : ""}`}>
+      {tasks.length > 0 && <section className="scheduled-list" aria-label={t("scheduled.tasks")}>
+        {tasks.map((task) => <button key={task.id} type="button" className={`scheduled-item ${selectedId === task.id ? "active" : ""}`} aria-current={selectedId === task.id ? "true" : undefined} onClick={() => select(task)}>
           <span className="scheduled-item-top"><strong>{task.title}</strong><Badge tone={task.enabled ? "success" : "neutral"}>{task.enabled ? t("scheduled.enabled") : t("scheduled.disabled")}</Badge></span>
           <span className="scheduled-item-prompt">{task.prompt}</span>
-          <span className="scheduled-item-bottom">{cadenceLabel(task.cadence)}{task.nextRunAt ? ` · ${new Date(task.nextRunAt).toLocaleString(locale)}` : ""}</span>
-          {task.reviewRequired && <span className="scheduled-warning">Review settings</span>}
+          <span className="scheduled-item-bottom"><span>{cadenceLabel(task.cadence)}</span>{task.nextRunAt && <time>{new Date(task.nextRunAt).toLocaleString(locale)}</time>}</span>
+          {task.reviewRequired && <span className="scheduled-warning">{t("scheduled.reviewSettings")}</span>}
         </button>)}
-      </section>
+      </section>}
       <section className="scheduled-editor" aria-label={selected ? selected.title : t("scheduled.create")}>
         {selectedId ? <>
-          <div className="scheduled-editor-head"><Button variant="ghost" onClick={() => setSelectedId(null)}>Back</Button><h2>{selected ? selected.title : t("scheduled.create")}</h2>
-            {selected && <Button variant="ghost" onClick={async () => { try { await api.deleteScheduled(selected.id); setSelectedId(null); await refresh(null); } catch (error) { showToast(String(error), { variant: "error" }); } }}>{t("scheduled.delete")}</Button>}
+          <div className={`scheduled-editor-head ${selected ? "" : "is-new"}`}><Button variant="ghost" onClick={() => setSelectedId(null)}><IconChevronLeft size={16} />{t("nav.back")}</Button><div><h2>{selected ? selected.title : t("scheduled.create")}</h2>{selected && <span>{cadenceLabel(selected.cadence)}</span>}</div>
+            {selected && <Button variant="ghost" title={t("scheduled.delete")} aria-label={t("scheduled.delete")} onClick={async () => { try { await api.deleteScheduled(selected.id); setSelectedId(null); await refresh(null); } catch (error) { showToast(String(error), { variant: "error" }); } }}><IconTrash size={16} /></Button>}
           </div>
           <div className="scheduled-fields">
-            <Field label={t("nav.newTask")}><Input value={draft.title} onChange={(event) => update("title", event.target.value)} /></Field>
-            <Field label={t("scheduled.prompt")}><Textarea rows={5} value={draft.prompt} onChange={(event) => update("prompt", event.target.value)} /></Field>
+            <Field label={t("scheduled.taskName")}><Input value={draft.title} onChange={(event) => update("title", event.target.value)} /></Field>
+            <Field label={t("scheduled.prompt")}><Textarea rows={5} value={draft.prompt} placeholder={t("scheduled.promptPlaceholder")} onChange={(event) => update("prompt", event.target.value)} /></Field>
             <div className="scheduled-field-grid">
               <Field label="Project"><Select value={draft.workspacePath} onChange={(event) => update("workspacePath", event.target.value)}><option value="">No project</option>{draft.workspacePath && !projects.some((project) => project.path === draft.workspacePath) && <option value={draft.workspacePath}>Unavailable: {draft.workspacePath}</option>}{projects.map((project) => <option key={project.id} value={project.path}>{project.name}</option>)}</Select></Field>
               <Field label={t("scheduled.cadence")}><Select value={draft.cadence} onChange={(event) => update("cadence", event.target.value as Draft["cadence"])}>{(["manual", "hourly", "daily", "weekly"] as const).map((value) => <option key={value} value={value}>{cadenceLabel(value)}</option>)}</Select></Field>
@@ -126,12 +142,12 @@ export function ScheduledPage() {
               <Field label="Permission"><Select value={draft.permissionMode} onChange={(event) => update("permissionMode", event.target.value as Draft["permissionMode"])}><option value="ask">Ask</option><option value="accept-edits">Accept edits</option><option value="auto">Auto</option></Select></Field>
             </div>
           </div>
-          <div className="scheduled-editor-actions"><Button variant="primary" disabled={!canSave || busy} onClick={() => void save()}>{selected ? "Save changes" : t("scheduled.create")}</Button>
-            {selected && <><Button variant="secondary" onClick={async () => { try { await api.updateScheduled({ id: selected.id, enabled: !selected.enabled }); await refresh(); } catch (error) { showToast(String(error), { variant: "error" }); } }}>{selected.enabled ? "Pause" : "Enable"}</Button><Button variant="secondary" onClick={() => void runNow(selected)}>{t("scheduled.runNow")}</Button></>}
+          <div className="scheduled-editor-actions"><Button variant="primary" disabled={!canSave || busy} onClick={() => void save()}>{selected ? t("scheduled.saveChanges") : t("scheduled.create")}</Button>
+            {selected && <><Button variant="secondary" onClick={async () => { try { await api.updateScheduled({ id: selected.id, enabled: !selected.enabled }); await refresh(); } catch (error) { showToast(String(error), { variant: "error" }); } }}>{selected.enabled ? t("scheduled.pause") : t("scheduled.enable")}</Button><Button variant="secondary" onClick={() => void runNow(selected)}><IconPlay size={15} />{t("scheduled.runNow")}</Button></>}
           </div>
-          {selected && <div className="scheduled-history"><h3>{t("scheduled.recentRuns")}</h3>{runs.map((run) => <div className="scheduled-run" key={run.id}><span>{run.status}</span><time>{new Date(run.scheduledAt ?? run.startedAt).toLocaleString(locale)}</time>{run.errorCode && <span>{run.errorCode}</span>}</div>)}{selected.olderMissedCount > 0 && <div className="scheduled-run">{selected.olderMissedCount} older missed times</div>}{!runs.length && <div className="scheduled-run">{t("scheduled.never")}</div>}</div>}
-        </> : <div className="scheduled-empty"><IconClock size={22} />{t("scheduled.emptyTitle")}</div>}
+          {selected && <div className="scheduled-history"><h3>{t("scheduled.recentRuns")}</h3>{runs.map((run) => <div className="scheduled-run" key={run.id}><span className={`scheduled-run-status is-${run.status}`}>{run.status}</span><time>{new Date(run.scheduledAt ?? run.startedAt).toLocaleString(locale)}</time>{run.errorCode && <span>{run.errorCode}</span>}</div>)}{selected.olderMissedCount > 0 && <div className="scheduled-run">{selected.olderMissedCount} older missed times</div>}{!runs.length && <div className="scheduled-history-empty">{t("scheduled.never")}</div>}</div>}
+        </> : <div className="scheduled-select-state"><IconClock size={20} /><span>{t("scheduled.selectTask")}</span></div>}
       </section>
-    </div>
+    </div>}
   </div></div>;
 }

@@ -1435,7 +1435,14 @@ export const fr = {
     "lastRun": "Dernière exécution",
     "never": "Jamais",
      "tasks": "Tâches",
-     "recentRuns": "Exécutions récentes"
+     "recentRuns": "Exécutions récentes",
+     "keepAwake": "Rester éveillé pendant le travail",
+     "reviewSettings": "Vérifier les paramètres",
+     "saveChanges": "Enregistrer les modifications",
+     "pause": "Mettre en pause",
+     "enable": "Activer",
+     "selectTask": "Sélectionnez une tâche pour voir ses paramètres",
+     "taskName": "Nom de la tâche"
   },
   "permission": {
     "title": "Autorisation requise",

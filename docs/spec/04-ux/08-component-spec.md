@@ -9,6 +9,13 @@ a Back action to return to the list. A migrated recurring task visibly asks
 for review and remains paused until its execution settings are complete.
 The optional keep-awake toggle is visible on this page; it applies only while
 agent work is active.
+The page has one centered empty state when no tasks exist. With tasks, a
+scannable list and unframed editor sit in one theme-token surface; no task
+is selected until the user opens it. Status, next run, and review-needed state
+remain visible in the list. A compact keep-awake switch stays in the utility
+row. On narrow windows the selected editor takes the full width and exposes a
+Back action. The page uses opaque-enough semantic surfaces over scenic themes
+so controls and history remain legible without hiding the scene entirely.
 
 ## Built-in Browser Work Panel contract (Phase 0)
 

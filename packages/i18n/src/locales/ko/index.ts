@@ -1455,6 +1455,13 @@ export const ko = {
     never: "없음",
      tasks: "작업",
      recentRuns: "최근 실행",
+     keepAwake: "작업 중 절전 방지",
+     reviewSettings: "설정 검토",
+     saveChanges: "변경 사항 저장",
+     pause: "일시 중지",
+     enable: "사용",
+     selectTask: "설정을 보려면 작업을 선택하세요",
+     taskName: "작업 이름",
   },
   permission: {
     title: "권한 필요",

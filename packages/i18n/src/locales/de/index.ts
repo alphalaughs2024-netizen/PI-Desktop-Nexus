@@ -1442,7 +1442,14 @@ export const de = {
     "lastRun": "Letzte Ausführung",
     "never": "Nie",
      "tasks": "Aufgaben",
-     "recentRuns": "Letzte Läufe"
+     "recentRuns": "Letzte Läufe",
+     "keepAwake": "Während der Arbeit wach halten",
+     "reviewSettings": "Einstellungen prüfen",
+     "saveChanges": "Änderungen speichern",
+     "pause": "Pausieren",
+     "enable": "Aktivieren",
+     "selectTask": "Aufgabe auswählen, um Einstellungen anzuzeigen",
+     "taskName": "Aufgabenname"
   },
   "permission": {
     "title": "Berechtigung erforderlich",

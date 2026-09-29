@@ -1441,6 +1441,13 @@ export const zhCN = {
     never: "从未",
     tasks: "任务",
     recentRuns: "最近运行",
+    keepAwake: "工作期间保持唤醒",
+    reviewSettings: "检查设置",
+    saveChanges: "保存更改",
+    pause: "暂停",
+    enable: "启用",
+    selectTask: "选择任务以查看设置",
+    taskName: "任务名称",
   },
   permission: {
     title: "需要权限",

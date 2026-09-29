@@ -1449,6 +1449,13 @@ export const en = {
     never: "Never",
     tasks: "Tasks",
     recentRuns: "Recent runs",
+    keepAwake: "Keep awake during work",
+    reviewSettings: "Review settings",
+    saveChanges: "Save changes",
+    pause: "Pause",
+    enable: "Enable",
+    selectTask: "Select a task to view its settings",
+    taskName: "Task name",
   },
   permission: {
     title: "Permission needed",

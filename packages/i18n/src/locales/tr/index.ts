@@ -1455,6 +1455,13 @@ export const tr = {
     never: "Hiç",
      tasks: "Görevler",
      recentRuns: "Son çalıştırmalar",
+     keepAwake: "Çalışma sırasında uyanık tut",
+     reviewSettings: "Ayarları gözden geçir",
+     saveChanges: "Değişiklikleri kaydet",
+     pause: "Duraklat",
+     enable: "Etkinleştir",
+     selectTask: "Ayarlarını görmek için bir görev seçin",
+     taskName: "Görev adı",
   },
   permission: {
     title: "İzin gerekiyor",
