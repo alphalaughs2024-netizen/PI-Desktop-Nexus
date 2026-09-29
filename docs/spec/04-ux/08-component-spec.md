@@ -16,6 +16,8 @@ remain visible in the list. A compact keep-awake switch stays in the utility
 row. On narrow windows the selected editor takes the full width and exposes a
 Back action. The page uses opaque-enough semantic surfaces over scenic themes
 so controls and history remain legible without hiding the scene entirely.
+On scenic themes the empty state has no full-width opaque backdrop; its compact
+icon and action use the theme's raised surface and softly rounded corners.
 
 ## Built-in Browser Work Panel contract (Phase 0)
 

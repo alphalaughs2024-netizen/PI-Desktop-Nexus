@@ -11457,7 +11457,8 @@ to verify the CSP permits the granted module without enabling eval.
 
 Open Scheduled with no tasks in a standard dark theme and each scenic theme.
 Verify one empty state appears, the task count is zero, the create action is
-legible, and the keep-awake switch has distinct on/off states. Create a recurring task,
+legible, the scene is not covered by a full-width dark block, and the keep-awake
+switch has distinct on/off states. Create a recurring task,
 then verify its title, cadence, status, next run, and review warning fit in the
 list without clipping. Select it and check editor controls, actions, and run
 history at desktop and narrow widths; on narrow widths Back returns to the
