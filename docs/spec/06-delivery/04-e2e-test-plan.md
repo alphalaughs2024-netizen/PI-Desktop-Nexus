@@ -11002,9 +11002,10 @@ In each of the four scenic themes, compare the empty chat backdrop against its
 packaged image: colors and highlights remain visible without a dark vignette or
 multiple content tints. Inspect the sidebar, top title strip, composer, and an
 active workflow strip over the image. They should read as translucent glass,
-with the backdrop visibly present through both the composer and workflow strip,
-legible controls, and no opaque rectangle. Check home and docked composers,
-including focus and file-drop states. Repeat with a populated chat,
+with the composer and workflow strip matching the sidebar's tinted glass depth,
+legible controls, and no visible perimeter strokes. Check home and docked composers,
+including thin theme-colored focus rings (Twilight dark blue, Obsidian black,
+Alpine white, Emerald dark green) and distinct file-drop cues. Repeat with a populated chat,
 reduced transparency, and unsupported backdrop filtering; dense menus and
 dialogs must remain readable and fallback surfaces must remain solid.
 

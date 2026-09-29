@@ -15,7 +15,7 @@
   --ds-bg-inset: var(--obsidian-safety-surface);
   --ds-bg-elevated: var(--obsidian-raised-glass);
   --ds-bg-elevated-opaque: var(--obsidian-safety-surface);
-  --ds-bg-composer: rgba(12, 28, 48, 0.38);
+  --ds-bg-composer: var(--obsidian-navigation-glass);
   --ds-bg-hover: rgba(154, 190, 232, 0.14);
   --ds-bg-active: rgba(154, 190, 232, 0.2);
   --ds-text-primary: #edf4ff;
@@ -65,10 +65,18 @@
 }
 :root[data-scenic-theme="obsidian-horizon"] .composer-shell {
   background: var(--ds-bg-composer);
-  border-color: rgba(205, 224, 249, 0.4);
-  box-shadow: var(--ds-shadow-composer), inset 0 1px rgba(220, 236, 255, 0.14);
-  backdrop-filter: blur(10px) saturate(1.08);
-  -webkit-backdrop-filter: blur(10px) saturate(1.08);
+  border: 0;
+  box-shadow: var(--ds-shadow-composer);
+  backdrop-filter: blur(18px) saturate(1.08);
+  -webkit-backdrop-filter: blur(18px) saturate(1.08);
+}
+
+:root[data-scenic-theme="obsidian-horizon"] .composer-shell:focus-within {
+  box-shadow: 0 0 0 1px #020509, var(--ds-shadow-composer);
+}
+
+:root[data-scenic-theme="obsidian-horizon"] .composer-shell.is-file-drop-active {
+  box-shadow: 0 0 0 2px var(--obsidian-focus), var(--ds-shadow-composer);
 }
 :root[data-scenic-theme="obsidian-horizon"] :is(.dialog, .menu, .popover, .settings-theme-menu, .tool-row-content, pre, .permission-card, .toast, .context-vault-modal, .work-panel-context-menu) {
   background: var(--obsidian-safety-surface);

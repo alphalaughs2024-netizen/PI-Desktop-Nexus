@@ -1222,10 +1222,13 @@ viewport, keeping them out from underneath composited native work-panel views.
 The active workflow card uses a borderless, translucent shared `--ds-*` surface
 with readable text, actions, and focus treatment. Theme styles may refine its
 material, but no base or scenic theme may add a high-contrast outer outline.
-In the four scenic themes, the active workflow strip and composer share a
-lightweight translucent material that keeps the backdrop visible. Material blur
-is independent of the scenic image blur preference; reduced-transparency and
-unsupported-filter paths use solid readable surfaces.
+In the four scenic themes, the active workflow strip and composer use the same
+tinted glass fill as the sidebar, with no visible perimeter stroke. Material
+blur is independent of the scenic image blur preference; reduced-transparency
+and unsupported-filter paths use solid readable surfaces.
+Composer focus adds a one-pixel ring: dark blue in Twilight Mountains, black in
+Obsidian Horizon, white in Alpine Light, and dark green in Emerald Afterglow.
+File drag remains a distinct, stronger attachment cue.
 
 ## Scenic theme card copy
 
