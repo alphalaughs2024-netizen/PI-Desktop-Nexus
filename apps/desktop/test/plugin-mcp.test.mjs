@@ -347,6 +347,34 @@ test("a remote mcp server negotiates over http and keeps its session", async (t)
   assert.equal(requests.at(-1).headers["mcp-session-id"], "sess-42");
 });
 
+test("an SSE reply is available before the server closes its stream", async (t) => {
+  const controller = new AbortController();
+  const fetchImpl = async (_url, options) => {
+    const message = JSON.parse(options.body);
+    if (message.method === "notifications/initialized") return new Response(null, { status: 202 });
+    if (message.method === "initialize") {
+      return Response.json({ jsonrpc: "2.0", id: message.id, result: { capabilities: {} } });
+    }
+    const body = new ReadableStream({
+      start(stream) {
+        stream.enqueue(new TextEncoder().encode(
+          `data: ${JSON.stringify({ jsonrpc: "2.0", id: message.id, result: { tools: [{ name: "ready" }] } })}\n\n`,
+        ));
+        controller.signal.addEventListener("abort", () => stream.close(), { once: true });
+      },
+    });
+    return new Response(body, { headers: { "content-type": "text/event-stream" } });
+  };
+  const client = new McpServerClient({
+    rootPath: mkdtempSync(join(tmpdir(), "pi-mcp-sse-")),
+    server: { id: "held-open", transport: "http", url: "https://example.test/mcp" },
+    values: {}, connectTimeoutMs: 500, fetchImpl,
+  });
+  t.after(() => { client.close(); controller.abort(); });
+  const tools = await client.connect();
+  assert.deepEqual(tools.map((tool) => tool.name), ["ready"]);
+});
+
 test("an http failure is reported as HTTP_ERROR", async (t) => {
   const { url } = await startHttpServer(t);
   const client = new McpServerClient({

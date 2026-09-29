@@ -1102,11 +1102,18 @@ Implemented: streaming turns over the OpenAI-compatible protocol path
 `AGENT_BUSY`; real `turnId` returned per accepted prompt; provider failures
 mapped to `PROVIDER_UNAUTHORIZED` / `PROVIDER_RATE_LIMITED` /
 `MODEL_NOT_CONFIGURED` / `STREAM_FAILED` / `TURN_ABORTED` where detectable.
-Steering during an active parent loop enters pi-agent-core's steering queue and
-is consumed at the next assistant turn boundary. Repeated steers remain in the
-same durable turn and each is delivered once. If the parent is idle while
+Steering during model generation cancels only the current provider request,
+retains any partial assistant text as interrupted, and enters pi-agent-core's
+steering queue for the next assistant response in the same durable turn.
+Repeated steers interrupt each generation and each instruction is delivered
+once. A running tool finishes before the queued steer is consumed. If the parent is idle while
 subagents run, steering waits for the parent's report-resume loop; it does not
 start a competing loop or end the host turn. Stop clears undelivered steering.
+Historical image attachments have a 30 MB aggregate inline budget, allocated
+from newest to oldest; older images remain available through file references.
+An output-token-truncated subagent report is a failed delegate result with
+`SUBAGENT_OUTPUT_TRUNCATED`, distinct from its configured turn limit.
+Responses-style compaction summary requests preserve the session cache key.
 The desktop development lifecycle rebuilds `packages/agent-runtime/dist`
 before Electron starts so the spawned sidecar always executes the current
 normalization and error-mapping source.

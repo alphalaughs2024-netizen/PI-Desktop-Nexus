@@ -192,6 +192,7 @@ async function hydrateAttachmentHistory(
   // Same helper the live prompt path uses, on the same override-shaped config,
   // so a replayed image is inlined exactly when a fresh one would be.
   const supportsVision = visionFromModelConfig(params.provider.modelConfig);
+  let remainingImageBytes = 30 * 1024 * 1024;
   const roots = [
     params.scratchDir,
     params.projectPath,
@@ -228,9 +229,18 @@ async function hydrateAttachmentHistory(
       const shouldInline = attachment.kind === "image" && supportsVision;
       const size = (await stat(canonical)).size;
       const bytes =
-        shouldInline && size <= MAX_INLINE_IMAGE_BYTES
+        shouldInline && size <= MAX_INLINE_IMAGE_BYTES && size <= remainingImageBytes
           ? await readFile(canonical)
           : undefined;
+      if (bytes && bytes.byteLength <= remainingImageBytes &&
+          bytes.byteLength <= MAX_INLINE_IMAGE_BYTES) {
+        remainingImageBytes -= bytes.byteLength;
+      } else if (bytes) {
+        return {
+          attachment,
+          fallbackPath: await replayedAttachmentPath(params, attachment, canonical),
+        };
+      }
       if (attachment.kind === "image" && supportsVision && bytes) {
         return { attachment: { ...attachment, data: bytes.toString("base64") } };
       }
@@ -247,28 +257,34 @@ async function hydrateAttachmentHistory(
     }
   };
 
-  return Promise.all(
-    history.map(async (message) => {
-      if (message.role !== "user" || !message.attachments?.length) return message;
-      const resolved = await Promise.all(message.attachments.map(resolveAttachment));
-      const fallbackPaths = resolved
-        .map((item) => item.fallbackPath)
-        .filter((path): path is string => Boolean(path))
-        .map((path) => formatFileInsert(path, "file"))
-        .join("")
-        .trim();
-      const content = message.content.trim()
-        ? fallbackPaths
-          ? `${message.content}\n${fallbackPaths}`
-          : message.content
-        : fallbackPaths;
-      return {
-        ...message,
-        content,
-        attachments: resolved.map((item) => item.attachment),
-      };
-    }),
-  );
+  const hydrated = history.slice();
+  // Newer images keep their place in a bounded context when long histories
+  // contain more image data than a single provider request should carry.
+  for (let index = history.length - 1; index >= 0; index--) {
+    const message = history[index];
+    if (message.role !== "user" || !message.attachments?.length) continue;
+    const resolved = [];
+    for (let attachmentIndex = message.attachments.length - 1; attachmentIndex >= 0; attachmentIndex--) {
+      resolved[attachmentIndex] = await resolveAttachment(message.attachments[attachmentIndex]);
+    }
+    const fallbackPaths = resolved
+      .map((item) => item.fallbackPath)
+      .filter((path): path is string => Boolean(path))
+      .map((path) => formatFileInsert(path, "file"))
+      .join("")
+      .trim();
+    const content = message.content.trim()
+      ? fallbackPaths
+        ? `${message.content}\n${fallbackPaths}`
+        : message.content
+      : fallbackPaths;
+    hydrated[index] = {
+      ...message,
+      content,
+      attachments: resolved.map((item) => item.attachment),
+    };
+  }
+  return hydrated;
 }
 
 async function runtimeFor(

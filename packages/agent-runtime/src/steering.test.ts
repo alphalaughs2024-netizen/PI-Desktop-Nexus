@@ -150,4 +150,63 @@ describe("Slice 2 steering contract", () => {
     expect((runtime as any).fullEntries.filter((entry: any) => entry.message.role === "user")).toHaveLength(3);
     await runtime.dispose();
   });
+
+  it("interrupts each active generation without ending the durable turn", async () => {
+    const onEvent = vi.fn();
+    const runtime = new DesktopAgentRuntime({
+      host: { call: vi.fn(), onNotification: vi.fn(() => () => {}) } as never,
+      sessionId: "session-1", mode: "agent", turnId: "turn-1",
+      provider: {
+        id: "local", name: "Local", baseUrl: "http://localhost/v1", apiKey: "", authKind: "none",
+        modelId: "model-1", supportsReasoning: false, supportedThinkingLevels: ["off"],
+        modelConfig: { source: "generic", name: "Test", baseUrl: "http://localhost/v1", reasoning: false, input: ["text"], contextWindow: 4096, maxTokens: 256 },
+      },
+      commandShell: { id: "bash", label: "Bash", dialect: "posix", available: true, isDefault: true },
+      thinkingLevel: "off", onEvent,
+    });
+    const agent = (runtime as any).agent;
+    const providerInputs: string[] = [];
+    const aborted: boolean[] = [];
+    agent.streamFunction = (model: any, context: any, options: any) =>
+      (runtime as any).steerableGeneration(model, context, options, (generationOptions: any) => {
+        const stream = createAssistantMessageEventStream();
+        const last = context.messages.filter((entry: any) => entry.role === "user").at(-1);
+        providerInputs.push(typeof last?.content === "string" ? last.content : last?.content?.[0]?.text ?? "");
+        const index = providerInputs.length;
+        const partial = {
+          role: "assistant", content: [{ type: "text", text: `partial ${index}` }],
+          api: "openai-completions", provider: "local", model: "model-1",
+          usage: { input: 1, output: 1, cacheRead: 0, cacheWrite: 0, totalTokens: 2,
+            cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 } },
+          stopReason: "stop", timestamp: Date.now(),
+        } as any;
+        queueMicrotask(() => {
+          stream.push({ type: "start", partial });
+          if (index === 3) stream.push({ type: "done", reason: "stop", message: { ...partial, content: [{ type: "text", text: "final" }] } });
+        });
+        generationOptions.signal.addEventListener("abort", () => {
+          aborted[index - 1] = true;
+          stream.push({ type: "error", reason: "aborted", error: { ...partial, stopReason: "aborted" } });
+        });
+        return stream;
+      });
+    const prompt = runtime.prompt("initial", "initial-user", "turn-1");
+    const waitForRequest = async (count: number) => {
+      for (let attempt = 0; attempt < 50 && providerInputs.length < count; attempt += 1) {
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      }
+      expect(providerInputs).toHaveLength(count);
+    };
+    await waitForRequest(1);
+    await runtime.steer({ text: "first steer" }, "turn-1");
+    await waitForRequest(2);
+    await runtime.steer({ text: "second steer" }, "turn-1");
+    await waitForRequest(3);
+    await prompt;
+    expect(aborted).toEqual([true, true]);
+    expect(providerInputs).toEqual(["initial", "first steer", "second steer"]);
+    expect(onEvent.mock.calls.filter(([envelope]) => envelope.event.type === "agent_end")).toHaveLength(1);
+    expect(onEvent.mock.calls.filter(([envelope]) => envelope.event.type === "message_end" && envelope.event.message?.status === "aborted")).toHaveLength(2);
+    await runtime.dispose();
+  });
 });

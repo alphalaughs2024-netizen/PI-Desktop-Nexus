@@ -26,10 +26,13 @@ import {
   type PrepareNextTurnContext,
 } from "@earendil-works/pi-agent-core";
 import {
+  createAssistantMessageEventStream,
   isContextOverflow,
   Type,
   type Api,
   type AssistantMessage,
+  type AssistantMessageEventStream,
+  type Context,
   type ImageContent,
   type Model,
   type Models,
@@ -109,6 +112,7 @@ import {
   usageToPi,
 } from "./agent-messages.js";
 import { buildSessionContext } from "./session-context.js";
+import { withCompactionSessionKey } from "./compaction-request.js";
 import {
   apiBindingForProviderModel,
   buildProviderModel,
@@ -1633,6 +1637,7 @@ export class DesktopAgentRuntime {
   private readonly compactionStrategy: CompactionStrategy;
   private pendingUserMessageId?: string;
   private pendingSteeringMessages = new Set<AgentMessage>();
+  private activeGeneration?: { interrupt: () => void };
   private pendingOverflow = false;
   private overflowRecoveryAttempted = false;
   private suppressOverflowRunEnd = false;
@@ -1771,10 +1776,10 @@ export class DesktopAgentRuntime {
           ),
         );
         const hookedOptions = this.withExtensionProviderHooks(requestOptions, m);
-        return createProviderRetryStream(
+        return this.steerableGeneration(m, context, hookedOptions, (generationOptions) => createProviderRetryStream(
           m,
           context,
-          hookedOptions,
+          generationOptions,
           (retryOptions) => models.streamSimple(m, context, retryOptions),
           {
             claim: (error, phase) => this.claimProviderRetry(error, phase),
@@ -1792,7 +1797,7 @@ export class DesktopAgentRuntime {
               });
             },
           },
-        );
+        ));
       },
       // A vendor account has no long-lived key. Leaving it unset keeps pi-ai
       // from overriding the auth the provider just resolved for this request.
@@ -1838,6 +1843,82 @@ export class DesktopAgentRuntime {
         this.logEventHandlerFailure(event, error);
       }),
     );
+  }
+
+  private steerableGeneration(
+    model: Model<Api>,
+    _context: Context,
+    options: SimpleStreamOptions,
+    create: (options: SimpleStreamOptions) => AssistantMessageEventStream,
+  ): AssistantMessageEventStream {
+    const controller = new AbortController();
+    const signal = options.signal
+      ? AbortSignal.any([options.signal, controller.signal])
+      : controller.signal;
+    const source = create({ ...options, signal });
+    const output = createAssistantMessageEventStream();
+    let partial: Partial<AssistantMessage> | undefined;
+    let finished = false;
+    const release = () => {
+      if (this.activeGeneration?.interrupt === interrupt) this.activeGeneration = undefined;
+    };
+    const interrupt = () => {
+      if (finished) return;
+      finished = true;
+      const content = (partial?.content ?? [])
+        .filter((block) => block.type === "text" || block.type === "thinking")
+        .map((block) => ({ ...block }));
+      const message = {
+        role: "assistant" as const,
+        content,
+        api: model.api,
+        provider: model.provider,
+        model: model.id,
+        usage: partial?.usage ?? {
+          input: 0, output: 0, cacheRead: 0, cacheWrite: 0, totalTokens: 0,
+          cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 },
+        },
+        stopReason: "stop" as const,
+        timestamp: Date.now(),
+        __nexusSteered: true,
+      };
+      output.push({ type: "done", reason: "stop", message });
+      output.end(message);
+      controller.abort();
+      release();
+    };
+    this.activeGeneration = { interrupt };
+    void (async () => {
+      try {
+        for await (const event of source) {
+          if (finished) break;
+          if ("partial" in event && event.partial) partial = event.partial;
+          output.push(event);
+          if (event.type === "done" || event.type === "error") {
+            finished = true;
+            output.end(event.type === "done" ? event.message : event.error);
+          }
+        }
+        if (!finished) output.end(await source.result());
+      } catch (error) {
+        if (!finished) {
+          const message = {
+            role: "assistant" as const, content: [], api: model.api,
+            provider: model.provider, model: model.id,
+            usage: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0,
+              totalTokens: 0, cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 } },
+            stopReason: "error" as const,
+            errorMessage: error instanceof Error ? error.message : String(error),
+            timestamp: Date.now(),
+          };
+          output.push({ type: "error", reason: "error", error: message });
+          output.end(message);
+        }
+      } finally {
+        release();
+      }
+    })();
+    return output;
   }
 
   private logEventHandlerFailure(event: AgentEvent, error: unknown): void {
@@ -5826,7 +5907,7 @@ export class DesktopAgentRuntime {
   ): Promise<Awaited<ReturnType<typeof compact>>> {
     return compact(
       preparation,
-      this.models,
+      withCompactionSessionKey(this.models, this.sessionId),
       this.model,
       undefined,
       this.thinkingLevel,
@@ -6096,6 +6177,8 @@ export class DesktopAgentRuntime {
         break;
       case "message_start": {
         if (event.message.role === "assistant") {
+          if ((event.message as AssistantMessage & { __nexusSteered?: boolean }).__nexusSteered &&
+              !assistantContent(event.message.content).text.trim()) break;
           this.clearAgentActivity();
           this.streamStartedAt = Date.now();
           const content = assistantContent((event.message as any).content);
@@ -6206,6 +6289,7 @@ export class DesktopAgentRuntime {
           );
           const failed = stopReason === "error" || overflow;
           const aborted = stopReason === "aborted";
+          const steered = (event.message as AssistantMessage & { __nexusSteered?: boolean }).__nexusSteered === true;
           const errorMessage =
             failed &&
             typeof (event.message as any).errorMessage === "string" &&
@@ -6272,6 +6356,7 @@ export class DesktopAgentRuntime {
           const silentTurn =
             !failed &&
             !aborted &&
+            !steered &&
             responseText.trim().length === 0 &&
             !messageRequestsTools(event.message);
           if (silentTurn && !this.silentTurnRerunAttempted) {
@@ -6319,6 +6404,7 @@ export class DesktopAgentRuntime {
           const progressOnlyTurn =
             !failed &&
             !aborted &&
+            !steered &&
             !silentTurn &&
             this.autonomousExecution &&
             !this.silentTurnRerunAttempted &&
@@ -6396,7 +6482,7 @@ export class DesktopAgentRuntime {
                 : {}),
             status: failed || emptyResponse
               ? "error"
-              : aborted
+              : aborted || steered
                 ? "aborted"
                 : "complete",
             modelId: this.provider.modelId,
@@ -6946,6 +7032,7 @@ export class DesktopAgentRuntime {
     this.turnSubagentUsage = undefined;
     this.pendingSteeringMessages.clear();
     this.agent.clearSteeringQueue();
+    this.activeGeneration = undefined;
     this.agent.abort();
     this.providerRetryAbort?.abort();
     if (this.compactionInProgress) this.compactionAborted = true;
@@ -6975,12 +7062,12 @@ export class DesktopAgentRuntime {
     }
     const content = promptContent(input);
     const agentMessage: AgentMessage = { role: "user", content, timestamp: Date.now() };
-    // The active loop drains steering at its next turn boundary. If the parent
-    // is idle while delegates run, resumeAfterDelegations starts the next loop
-    // and drains it there. Aborting here would emit a terminal agent_end for
-    // the durable turn while the delegates are still running.
+    // The active loop drains steering at its next boundary. Interrupting only
+    // the provider stream makes that boundary immediate during generation.
+    // Tools and delegates retain their own lifecycle and finish first.
     try {
       this.agent.steer(agentMessage);
+      this.activeGeneration?.interrupt();
     } catch (error) {
       const reason = error instanceof Error ? error.message : String(error);
       this.emitLifecycle("steering_failed", { expectedTurnId, reason });

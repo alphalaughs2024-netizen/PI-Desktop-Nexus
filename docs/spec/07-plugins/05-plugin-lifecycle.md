@@ -1,5 +1,10 @@
 # 05. Plugin Lifecycle
 
+HTTP MCP replies dispatch each complete SSE event as it arrives, even if the
+server keeps the response open. HTTP response bodies have a 4 MB byte limit;
+closing a client aborts its active requests. Redirects to another origin do
+not receive the original endpoint's configured headers or MCP session id.
+
 ## 1. Goals
 
 Define the complete state machine from discovery to uninstall, guaranteeing:
