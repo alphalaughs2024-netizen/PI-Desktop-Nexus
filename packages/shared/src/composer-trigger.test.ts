@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   applyCompletion,
   detectTrigger,
+  findSkillMentions,
   fileReferenceLabel,
   formatCommandInsert,
   formatFileInsert,
@@ -11,6 +12,15 @@ import {
   serializeInlineComposerFileReferences,
   stripInlineComposerFileReferenceTokens,
 } from "./composer-trigger.js";
+
+describe("findSkillMentions", () => {
+  it("resolves multiple active skill tokens in order", () => {
+    const ids = new Map([["review", "skill/review"], ["test", "skill/test"]]);
+    expect(findSkillMentions("/review check this then /test it", ids).map((item) => item.id))
+      .toEqual(["skill/review", "skill/test"]);
+    expect(findSkillMentions("https://example.test/review /unknown", ids)).toEqual([]);
+  });
+});
 
 describe("detectTrigger — slash mode", () => {
   it("triggers on a bare slash at position 0", () => {
@@ -43,9 +53,9 @@ describe("detectTrigger — slash mode", () => {
     });
   });
 
-  it("never triggers mid-draft or on later lines", () => {
-    expect(detectTrigger("hi /cmd", 7)).toBeNull();
-    expect(detectTrigger("hi\n/cmd", 7)).toBeNull();
+  it("detects later slash tokens for skill completion", () => {
+    expect(detectTrigger("hi /cmd", 7)).toMatchObject({ mode: "slash", tokenStart: 3 });
+    expect(detectTrigger("hi\n/cmd", 7)).toMatchObject({ mode: "slash", tokenStart: 3 });
   });
 });
 

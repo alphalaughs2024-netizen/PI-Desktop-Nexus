@@ -4,8 +4,7 @@
  * tested away from React and IME timing.
  *
  * Grammar mirrors the pi CLI editor:
- * - "/" opens command mode only as the very first character of the draft,
- *   while the cursor is still inside that first whitespace-free token.
+ * - "/" opens command mode in the first token, or skill mode in later tokens.
  * - "@" opens file mode when the token containing the cursor starts with
  *   "@" and the character before it is start-of-input, whitespace, or one
  *   of the pi delimiters (" ' =). A `@"` prefix starts a quoted token that
@@ -23,6 +22,23 @@ export type ComposerTrigger = {
   /** End of the replaced region — always the cursor position. */
   tokenEnd: number;
 };
+
+export type SkillMention = { start: number; end: number; id: string };
+
+/** Resolve complete slash tokens against the active skill catalog at send time. */
+export function findSkillMentions(
+  content: string,
+  skillIds: ReadonlyMap<string, string>,
+): SkillMention[] {
+  const mentions: SkillMention[] = [];
+  for (const match of content.matchAll(/(^|\s)\/([^\s]+)/g)) {
+    const id = skillIds.get(match[2]);
+    if (!id) continue;
+    const start = match.index + match[1].length;
+    mentions.push({ start, end: start + match[2].length + 1, id });
+  }
+  return mentions;
+}
 
 export const DEFAULT_LARGE_PASTE_THRESHOLD = 600;
 export const MIN_LARGE_PASTE_THRESHOLD = 1;
@@ -57,19 +73,17 @@ export function detectTrigger(
 ): ComposerTrigger | null {
   if (cursor < 0 || cursor > value.length) return null;
 
-  // Slash mode: draft starts with "/", cursor inside the first token.
-  if (value.startsWith("/") && cursor >= 1) {
-    const head = value.slice(1, cursor);
-    let hasWhitespace = false;
-    for (const ch of head) {
-      if (WHITESPACE.has(ch)) {
-        hasWhitespace = true;
-        break;
-      }
+  let slashStart = cursor;
+  while (slashStart > 0 && !WHITESPACE.has(value[slashStart - 1])) slashStart -= 1;
+  if (value[slashStart] === "/" && cursor > slashStart) {
+    let tokenEnd = cursor;
+    if (slashStart > 0) {
+      while (tokenEnd < value.length && !WHITESPACE.has(value[tokenEnd])) tokenEnd += 1;
     }
-    if (!hasWhitespace) {
-      return { mode: "slash", query: head, tokenStart: 0, tokenEnd: cursor };
-    }
+    return {
+      mode: "slash", query: value.slice(slashStart + 1, cursor),
+      tokenStart: slashStart, tokenEnd,
+    };
   }
 
   // File mode, quoted form first: @"query with spaces

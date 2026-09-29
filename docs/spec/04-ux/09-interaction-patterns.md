@@ -632,6 +632,13 @@ may be retained while exactly one workspace supplies the visible shell context.
 
 ### 3.4 Queued send
 
+The composer accepts multiple `/skill` references anywhere in a prompt.
+Later slash tokens offer only skills in autocomplete; the first token retains
+the full command menu. Up/Down at the editable boundary recalls recent sent
+prompts from the current conversation's host transcript. Down past the newest
+entry or Escape restores the unsent draft. Assistant streaming text is revealed
+at a bounded frame rate and flushes immediately when streaming ends.
+
 - While a session is running, Send remains enabled alongside Abort. Accepted
   prompts clear the composer and enter that session's Host-owned queue;
   session switching never moves or clears another session's queue.
@@ -643,6 +650,11 @@ may be retained while exactly one workspace supplies the visible shell context.
   turn to steering and cancels that chat's existing queued rows. Rejection
   keeps the draft. The preference is runtime-only and can be turned back on
   from the composer.
+- Steering during model output interrupts that generation, retains its partial
+  answer as interrupted, and resumes the same turn with the new instruction.
+  Repeated steering follows the same rule. Running tools and subagents finish
+  before the parent applies the queued instruction. The queue and steer controls
+  keep their existing placement and appearance.
 - Send now moves its row to the head and requests the new `agent/stop` channel.
   The current assistant response and completed tool batch finish normally;
   after `agent_end`, the promoted row is dispatched through the normal

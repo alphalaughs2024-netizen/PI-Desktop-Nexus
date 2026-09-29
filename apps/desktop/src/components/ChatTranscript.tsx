@@ -31,6 +31,7 @@ import { ConversationMinimap } from "./ConversationMinimap";
 import { TurnOutcomeCard } from "./TurnOutcomeCard";
 import { ReviewChangeCard } from "./ReviewChangeCard";
 import { Markdown, useCopy } from "./Markdown";
+import { useSmoothText } from "../hooks/use-smooth-text";
 import { ToolChips, ToolDetailBlocks } from "./ToolDetails";
 import {
   formatToolDuration,
@@ -2091,9 +2092,7 @@ const MessageRow = memo(function MessageRow({
   const copyLabel = t("chat.copy");
   const editLabel = t("chat.editMessage");
   const deleteLabel = t("chat.deleteMessage");
-  // Runtime chunks are already progressive. Rendering that source directly
-  // avoids a second per-frame state loop while Markdown memoizes stable blocks.
-  const displayed = message.content || "";
+  const displayed = useSmoothText(message.content || "", !isUser && message.status === "streaming");
   const hasAnswer = Boolean((message.content || "").trim());
   const revisionCount = message.revisionCount ?? 0;
   const activeRevision = message.activeRevision ?? revisionCount;

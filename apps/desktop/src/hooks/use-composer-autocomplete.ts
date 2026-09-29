@@ -237,7 +237,10 @@ export function useComposerAutocomplete({
   const items = useMemo<AutocompleteItem[]>(() => {
     if (!trigger || dismissed) return [];
     if (trigger.mode === "slash") {
-      return commands ? filterCommands(commands, trigger.query) : [];
+      const options = trigger.tokenStart === 0
+        ? commands
+        : commands?.filter((command) => command.kind === "skill");
+      return options ? filterCommands(options, trigger.query) : [];
     }
     return files ? filterFiles(files.entries, trigger.query) : [];
   }, [trigger, dismissed, commands, files]);

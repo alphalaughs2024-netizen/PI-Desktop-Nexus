@@ -734,6 +734,14 @@ export function Composer({
   const enhancementVersionRef = useRef(0);
   const enhancementRequestRef = useRef<symbol | null>(null);
   const ref = useRef<HTMLDivElement>(null);
+  const historyRef = useRef<{
+    sessionId: string;
+    entries: ComposerDraftSnapshot[];
+    index: number;
+    original: ComposerDraftSnapshot;
+    loading: boolean;
+  } | null>(null);
+  useEffect(() => { historyRef.current = null; }, [activeSessionId]);
   const dockRef = useRef<HTMLDivElement>(null);
   const publishedDockHeightRef = useRef(-1);
   const draftKeyRef = useRef(draftKey);
@@ -1500,6 +1508,7 @@ export function Composer({
   };
 
   const clearDraftForKey = (key: string) => {
+    historyRef.current = null;
     invalidatePromptEnhancement();
     deleteComposerDraft(key);
     const currentKey = draftKeyForSession(useAppStore.getState().activeSessionId);
@@ -1797,6 +1806,7 @@ export function Composer({
     nextReferences: ComposerFileReference[],
     caret: number,
   ) => {
+    valueRef.current = nextText;
     pendingEditorCaretRef.current = caret;
     setValue(nextText);
     setCursor(caret);
@@ -1820,6 +1830,67 @@ export function Composer({
         ...(mimeType ? { mimeType } : {}),
         ...(token ? { token } : {}),
       }));
+
+  const applyHistoryEntry = (entry: ComposerDraftSnapshot, sessionId: string) => {
+    applyEditorDraft(
+      entry.text,
+      entry.fileReferences.map((reference) =>
+        createFileReference(reference.path, reference.name, sessionId, reference),
+      ),
+      entry.text.length,
+    );
+  };
+
+  const navigateInputHistory = (direction: "up" | "down"): boolean => {
+    const sessionId = useAppStore.getState().activeSessionId;
+    if (!sessionId || composing || inputBlocked) return false;
+    const current = historyRef.current;
+    if (current && current.sessionId === sessionId) {
+      if (current.loading) return true;
+      const next = current.index + (direction === "up" ? -1 : 1);
+      if (next < 0) return true;
+      if (next >= current.entries.length) {
+        applyHistoryEntry(current.original, sessionId);
+        historyRef.current = null;
+      } else {
+        current.index = next;
+        applyHistoryEntry(current.entries[next], sessionId);
+      }
+      return true;
+    }
+    if (direction !== "up") return false;
+    const editor = ref.current;
+    if (!editor || editorSelectionRange(editor).start !== 0) return false;
+    const original: ComposerDraftSnapshot = {
+      text: readEditorValue(editor),
+      fileReferences: snapshotReferences(sessionId),
+    };
+    const browsing = { sessionId, entries: [] as ComposerDraftSnapshot[], index: -1, original, loading: true };
+    historyRef.current = browsing;
+    void api.getSession(sessionId, { messageLimit: 500 }).then(({ session }) => {
+      if (historyRef.current !== browsing || useAppStore.getState().activeSessionId !== sessionId) return;
+      browsing.entries = (session?.messages ?? [])
+        .filter((message) => message.role === "user" && message.status === "complete")
+        .slice(-100)
+        .map((message) => ({
+          text: message.command || message.content,
+          fileReferences: (message.attachments ?? []).map((attachment) => ({
+            path: attachment.ref, name: attachment.name, kind: attachment.kind,
+            mimeType: attachment.mimeType,
+          })),
+        }));
+      browsing.loading = false;
+      if (!browsing.entries.length) {
+        historyRef.current = null;
+        return;
+      }
+      browsing.index = browsing.entries.length - 1;
+      applyHistoryEntry(browsing.entries[browsing.index], sessionId);
+    }).catch(() => {
+      if (historyRef.current === browsing) historyRef.current = null;
+    });
+    return true;
+  };
 
   const pickAndAttach = async () => {
     try {
@@ -2278,6 +2349,7 @@ export function Composer({
                   }
                 }}
                 onInput={(e) => {
+                  historyRef.current = null;
                   const el = e.currentTarget;
                   const nextValue = readEditorValue(el);
                   const { start } = editorSelectionRange(el);
@@ -2342,6 +2414,18 @@ export function Composer({
                       acceptCompletion(composerAc.highlight);
                       return;
                     }
+                  }
+                  if (e.key === "Escape" && historyRef.current && !composerAc.open) {
+                    e.preventDefault();
+                    const browsing = historyRef.current;
+                    historyRef.current = null;
+                    applyHistoryEntry(browsing.original, browsing.sessionId);
+                    return;
+                  }
+                  if ((e.key === "ArrowUp" || e.key === "ArrowDown") && !composerAc.open &&
+                      navigateInputHistory(e.key === "ArrowUp" ? "up" : "down")) {
+                    e.preventDefault();
+                    return;
                   }
                   if (e.key === "Enter" && e.altKey && !e.shiftKey && isRunning && hasDraftContent) {
                     e.preventDefault();

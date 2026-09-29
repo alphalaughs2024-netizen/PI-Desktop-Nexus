@@ -53,6 +53,7 @@ import {
   ok,
   parseMcpImport,
   draftMatchesExisting,
+  findSkillMentions,
   isModelConfigImportSource,
   modelConfigImportKey,
   providerCreateInputFromDraft,
@@ -9023,7 +9024,25 @@ function registerIpc() {
     // literal text.
     let promptContent = req.content;
     let slashCommand: string | undefined;
-    if (req.content.startsWith("/")) {
+    const activeSkills = new Map(
+      (launch.sidecarParams.instructionCatalog ?? []).map((skill) => [skill.id, skill.id] as const),
+    );
+    const skillMentions = findSkillMentions(req.content, activeSkills);
+    if (skillMentions.length) {
+      let body = "";
+      let end = 0;
+      for (const mention of skillMentions) {
+        body += req.content.slice(end, mention.start);
+        end = mention.end;
+      }
+      body = (body + req.content.slice(end)).trim();
+      const ids = [...new Set(skillMentions.map((mention) => mention.id))];
+      promptContent = [
+        `Call the Skill tool with each of these ids before answering, in order: ${ids.map((id) => JSON.stringify(id)).join(", ")}. Follow the loaded instructions.`,
+        body,
+      ].filter(Boolean).join("\n\n");
+      slashCommand = req.content;
+    } else if (req.content.startsWith("/")) {
       try {
         const root = await optionalWorkspaceRoot();
         const templates = await loadComposerTemplatesCached(root);
