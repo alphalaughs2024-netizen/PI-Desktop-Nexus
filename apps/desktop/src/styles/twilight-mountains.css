@@ -7,8 +7,7 @@
   --twilight-shell-glass: rgba(7, 31, 78, 0.5);
   --twilight-navigation-glass: rgba(7, 31, 78, 0.5);
   --scenic-chat-glass-fill: rgba(7, 31, 78, 0.78);
-  /* Compensate for the chat surface tint between the composer and the scene. */
-  --scenic-composer-fill: rgba(7.706, 34.059, 85.059, 0.404762);
+  --scenic-composer-fill: rgba(7, 31, 78, 0.5);
   --scenic-chat-glass-filter: blur(18px) saturate(1.08);
   --scenic-chat-glass-shadow: 0 14px 34px rgba(0, 9, 35, 0.2);
   --twilight-raised-glass: rgba(29, 79, 156, 0.42);
@@ -170,20 +169,20 @@
   background: linear-gradient(90deg, rgba(3, 12, 28, 0.28), transparent 72%);
 }
 
-:root[data-scenic-theme="twilight-mountains"] .composer-shell {
+:root[data-scenic-theme="twilight-mountains"] :is(.composer-shell, .composer-shell:focus-within, .composer-shell.is-file-drop-active) {
   border: 0;
   background: var(--scenic-composer-fill);
-  box-shadow: none;
+  box-shadow: var(--scenic-chat-glass-shadow);
   backdrop-filter: var(--scenic-chat-glass-filter);
   -webkit-backdrop-filter: var(--scenic-chat-glass-filter);
 }
 
 :root[data-scenic-theme="twilight-mountains"] .composer-shell:focus-within {
-  box-shadow: 0 0 0 1px #09265c;
+  box-shadow: 0 0 0 1px #09265c, var(--ds-shadow-composer);
 }
 
 :root[data-scenic-theme="twilight-mountains"] .composer-shell.is-file-drop-active {
-  box-shadow: 0 0 0 2px var(--twilight-focus-glow);
+  box-shadow: 0 0 0 2px var(--twilight-focus-glow), var(--ds-shadow-composer);
 }
 
 :root[data-scenic-theme="twilight-mountains"] :is(.thread-item.active, .thread-item:hover, .sidebar-session-group.active > .sidebar-session-group-header) {

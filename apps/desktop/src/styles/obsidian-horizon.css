@@ -4,7 +4,7 @@
   --obsidian-shell-glass: rgba(7, 14, 25, 0.58);
   --obsidian-navigation-glass: rgba(12, 28, 48, 0.72);
   --scenic-chat-glass-fill: rgba(12, 28, 48, 0.86);
-  --scenic-composer-fill: rgba(12.84, 29.867, 50.987, 0.658537);
+  --scenic-composer-fill: rgba(12, 28, 48, 0.72);
   --scenic-chat-glass-filter: blur(18px) saturate(1.08);
   --scenic-chat-glass-shadow: var(--ds-shadow-composer);
   --obsidian-raised-glass: rgba(17, 28, 44, 0.68);
@@ -70,17 +70,17 @@
 :root[data-scenic-theme="obsidian-horizon"] .composer-shell {
   background: var(--scenic-composer-fill);
   border: 0;
-  box-shadow: none;
-  backdrop-filter: blur(16px) saturate(1.08);
-  -webkit-backdrop-filter: blur(16px) saturate(1.08);
+  box-shadow: var(--scenic-chat-glass-shadow);
+  backdrop-filter: var(--scenic-chat-glass-filter);
+  -webkit-backdrop-filter: var(--scenic-chat-glass-filter);
 }
 
 :root[data-scenic-theme="obsidian-horizon"] .composer-shell:focus-within {
-  box-shadow: 0 0 0 1px #020509;
+  box-shadow: 0 0 0 1px #020509, var(--ds-shadow-composer);
 }
 
 :root[data-scenic-theme="obsidian-horizon"] .composer-shell.is-file-drop-active {
-  box-shadow: 0 0 0 2px var(--obsidian-focus);
+  box-shadow: 0 0 0 2px var(--obsidian-focus), var(--ds-shadow-composer);
 }
 :root[data-scenic-theme="obsidian-horizon"] :is(.dialog, .menu, .popover, .settings-theme-menu, .tool-row-content, pre, .permission-card, .toast, .context-vault-modal, .work-panel-context-menu) {
   background: var(--obsidian-safety-surface);
