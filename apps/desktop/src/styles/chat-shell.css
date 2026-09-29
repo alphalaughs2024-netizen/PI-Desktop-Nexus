@@ -49,13 +49,11 @@
 }
 
 /*
- * A collapsed sidebar gives the shell more room, but the chat content should
- * not become a wide, low-density reading surface. Keep the outer pane fluid
- * while tightening the centered content band to preserve focus.
+ * A collapsed sidebar gives the shell more room, but the transcript should
+ * retain a readable line length. Keep the composer at its expanded width.
  */
 .app-shell.sidebar-collapsed .main-pane {
   --chat-content-max-width: 640px;
-  --chat-composer-max-width: 640px;
   --chat-width-transition: var(--motion-duration-fast) var(--motion-ease-in);
 }
 

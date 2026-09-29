@@ -772,10 +772,9 @@ model):
 - Column `flex: 1; min-height: 0; overflow: hidden`
 - Inner scroller (`.home-scroll`) is the only vertical overflow surface for
   the hero and optional checklist
-- Stack (`.home-stack-inner`) uses content width **`min(100%, 768px)`** in the
-  expanded shell and **`min(100%, 640px)`** while the sidebar is collapsed,
-  with **`gap: 16px`** (workstation ceiling), and auto margins to center the
-  column when the viewport is tall
+- Stack (`.home-stack-inner`) uses content width **`min(100%, 768px)`** with
+  either sidebar state, **`gap: 16px`** (workstation ceiling), and auto margins
+  to center the column when the viewport is tall
 - The content order is **hero → optional onboarding checklist**. Task entry
   starts directly in the bottom composer; no starter prompt grid or contextual
   quick-action row is rendered (D204/D206).

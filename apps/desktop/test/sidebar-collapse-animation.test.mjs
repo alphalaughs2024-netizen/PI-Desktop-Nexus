@@ -98,7 +98,7 @@ test("the collapse keyframes cannot reflow the sidebar's content", () => {
   assert.match(sidebarBlock, /overflow:\s*hidden/);
 });
 
-test("a collapsed sidebar uses a narrower centered chat content band", () => {
+test("a collapsed sidebar narrows the transcript but keeps the composer width", () => {
   assert.match(
     appSource,
     /sidebarCollapsed && "sidebar-collapsed"/,
@@ -111,7 +111,7 @@ test("a collapsed sidebar uses a narrower centered chat content band", () => {
   const collapsedBlock =
     globalStyles.match(/\.app-shell\.sidebar-collapsed \.main-pane\s*\{[\s\S]*?\}/)?.[0] ?? "";
   assert.match(collapsedBlock, /--chat-content-max-width:\s*640px/);
-  assert.match(collapsedBlock, /--chat-composer-max-width:\s*640px/);
+  assert.doesNotMatch(collapsedBlock, /--chat-composer-max-width:/);
   assert.match(
     collapsedBlock,
     /--chat-width-transition:\s*var\(--motion-duration-fast\) var\(--motion-ease-in\)/,

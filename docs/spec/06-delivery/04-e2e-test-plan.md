@@ -4526,21 +4526,24 @@ membership when dropped on Ungrouped.
 - **Status**: Unit-covered (`sidebar-collapse-animation.test.mjs`); rendered
   interaction scenario Draft
 
-#### E2E-208: Collapsed sidebar tightens the centered chat content band
+#### E2E-208: Collapsed sidebar preserves the composer width cap
 
 - **Preconditions**: PI-Desktop is open with an active chat session at a
   viewport wide enough for the expanded 760–768px chat content band; reduced
   motion is off.
-- **Steps**: 1) Record the width of the centered transcript or empty-home
-  composer band with the sidebar expanded. 2) Collapse the sidebar. 3) Inspect
-  the same content band while the dock transition runs and after it settles.
-  4) Expand the sidebar and inspect the return transition.
-- **Expected**: The outer main pane fills the space released by the sidebar,
-  while the centered chat content band transitions from its expanded
-  760–768px ceiling to a 640px ceiling in the collapsed state. The transcript,
-  empty-home stack, and Composer use the same collapsed width envelope; no
-  content jumps, horizontal overflow, or clipped controls appear. Expanding
-  restores the expanded ceiling.
+- **Steps**: 1) Record the widths of the centered transcript and home or
+  docked composer with the sidebar expanded. 2) Collapse the sidebar. 3)
+  Inspect both widths while the dock transition runs and after it settles.
+  4) Expand the sidebar and inspect the return transition. 5) Open and close
+  the work panel with the sidebar both expanded and collapsed; repeat at a
+  narrower window width where the main pane cannot fit a 768px composer.
+- **Expected**: The outer main pane fills the space released by the sidebar.
+  The centered transcript transitions from its 760px ceiling to 640px, while
+  the home and docked composers retain their 768px ceiling. No content jumps,
+  horizontal overflow, or clipped controls appear. Expanding restores the
+  transcript's 760px ceiling. The composer follows the animated main-pane
+  width during work-panel open and close, staying at 768px when space allows
+  and resizing smoothly within the available pane when it does not.
 - **Specs linked**: `04-ux/01-ui-ia.md`, `04-ux/07-ui-design-system.md`,
   `04-ux/08-component-spec.md`
 - **Acceptance**: Quality
