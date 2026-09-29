@@ -1222,6 +1222,10 @@ viewport, keeping them out from underneath composited native work-panel views.
 The active workflow card uses a borderless, translucent shared `--ds-*` surface
 with readable text, actions, and focus treatment. Theme styles may refine its
 material, but no base or scenic theme may add a high-contrast outer outline.
+In the four scenic themes, the active workflow strip and composer share a
+lightweight translucent material that keeps the backdrop visible. Material blur
+is independent of the scenic image blur preference; reduced-transparency and
+unsupported-filter paths use solid readable surfaces.
 
 ## Scenic theme card copy
 

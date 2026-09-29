@@ -15,7 +15,7 @@
   --ds-bg-inset: var(--emerald-safety-surface);
   --ds-bg-elevated: var(--emerald-raised-glass);
   --ds-bg-elevated-opaque: var(--emerald-safety-surface);
-  --ds-bg-composer: rgba(8, 43, 25, 0.72);
+  --ds-bg-composer: rgba(8, 43, 25, 0.38);
   --ds-bg-hover: rgba(160, 228, 176, 0.14);
   --ds-bg-active: rgba(160, 228, 176, 0.22);
   --ds-text-primary: #f0fbf2;
@@ -65,8 +65,8 @@
   background: var(--ds-bg-composer);
   border-color: rgba(218, 245, 222, 0.4);
   box-shadow: var(--ds-shadow-composer), inset 0 1px rgba(229, 250, 232, 0.15);
-  backdrop-filter: blur(18px) saturate(1.06);
-  -webkit-backdrop-filter: blur(18px) saturate(1.06);
+  backdrop-filter: blur(10px) saturate(1.06);
+  -webkit-backdrop-filter: blur(10px) saturate(1.06);
 }
 :root[data-scenic-theme="emerald-afterglow"] .speech-dialog {
   border-color: rgba(175, 233, 184, .44);
