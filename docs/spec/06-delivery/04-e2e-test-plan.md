@@ -11015,6 +11015,9 @@ the backdrop image and its blur preference remain unchanged.
 For Twilight and Obsidian, first verify the composer glass against the supplied
 visual references without changing the workflow strip. After approval, verify
 the strip receives the approved material with unchanged controls and geometry.
+Confirm the composer uses a uniform tinted fill matching the original scenic
+plugin rather than a decorative gradient, and that bright image detail remains
+visible through its material blur.
 
 ### E2E-218 — Alpine Light Settings glass
 
