@@ -697,6 +697,11 @@ export const api = {
     invoke<{ plugins: PluginSummary[] }>(IPC.invoke.pluginList),
   loadDevPlugin: () => invoke(IPC.invoke.pluginLoadDev),
   reloadPlugin: (id: string) => invoke(IPC.invoke.pluginReload, id),
+  pluginRendererCatalog: () => invoke<{ modules: Array<{
+    pluginId: string; version: string; source: string; actions: string[]; tools: string[];
+  }> }>(IPC.invoke.pluginRendererCatalog),
+  pluginRendererCommand: (pluginId: string, id: string) =>
+    invoke(IPC.invoke.pluginRendererCommand, { pluginId, id }),
   createPluginFromTemplate: (template: string) =>
     invoke<{
       canceled?: boolean;

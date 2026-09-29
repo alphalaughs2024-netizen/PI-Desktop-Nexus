@@ -1825,6 +1825,7 @@ export const zhCN = {
       "agent.prompt.inject": "调整智能体指令",
       "agent.complete": "用你的模型发起一次补全",
       "agent.extension": "在 agent 内运行代码",
+      "renderer.extension": "在主界面运行代码",
       "desktop.control": "控制桌面操作",
       "models.list": "列出已登录的模型",
       "session.read": "读取当前发给模型的对话",
@@ -1855,6 +1856,7 @@ export const zhCN = {
       "agent.prompt.inject": "可能修改发送给智能体的指令。",
       "agent.complete": "会消耗你的模型额度发起一次补全。插件拿不到 API 密钥。",
       "agent.extension": "在 agent 进程内运行 ExtensionAPI 模块，拥有与 agent 自身工具相同的权限。只启用你信任的代码。",
+      "renderer.extension": "在主界面运行可访问对话内容的插件代码。只启用你信任的代码。",
       "desktop.control":
         "允许插件调用经过审查的 PI-Desktop 操作目录；破坏性操作仍需 confirm=true，插件永远拿不到 MCP bearer token。",
       "models.list": "可以看到你已登录的模型，但拿不到密钥。",

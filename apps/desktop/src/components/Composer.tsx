@@ -67,6 +67,7 @@ import { ComposerAutocomplete } from "./ComposerAutocomplete";
 import { TooltipButton } from "./ui";
 import { ContextUsageInspector } from "./ContextUsageInspector";
 import { AskToolCard } from "./AskToolCard";
+import { RendererSlotMount } from "../plugins/renderer-slots";
 import { PlanApprovalBar } from "./PlanApprovalBar";
 import { QueuedPromptRow } from "./QueuedPromptRow";
 import { SpeechControl } from "./SpeechControl";
@@ -1819,6 +1820,21 @@ export function Composer({
     });
   };
 
+  useEffect(() => {
+    const insert = (event: Event) => {
+      if (inputBlocked) return;
+      const text = (event as CustomEvent<{ text?: string }>).detail?.text;
+      if (typeof text !== "string") return;
+      const el = ref.current;
+      const current = el ? readEditorValue(el) : valueRef.current;
+      const { start, end } = el ? editorSelectionRange(el) : { start: current.length, end: current.length };
+      invalidatePromptEnhancement();
+      applyEditorDraft(current.slice(0, start) + text + current.slice(end), fileReferencesRef.current, start + text.length);
+    };
+    window.addEventListener("nexus:composer-insert", insert);
+    return () => window.removeEventListener("nexus:composer-insert", insert);
+  }, [inputBlocked]);
+
   /** Clean snapshot references (drop runtime-only fields). */
   const snapshotReferences = (sourceSessionId: string) =>
     fileReferencesRef.current
@@ -2845,6 +2861,7 @@ export function Composer({
                   </div>
                 ) : null}
               </div>
+              <RendererSlotMount slot="composerControl" position="left" props={{ position: "left", disabled: controlsBlocked }} />
               <SpeechControl
                 disabled={controlsBlocked || pasting}
                 canVoice={modelReady && !runActive}
@@ -2926,6 +2943,7 @@ export function Composer({
                   <IconArrowUp size={15} />
                 </TooltipButton>
               )}
+              <RendererSlotMount slot="composerControl" position="right" props={{ position: "right", disabled: controlsBlocked }} />
             </div>
           </div>
           {fullAccessConfirmOpen && typeof document !== "undefined"

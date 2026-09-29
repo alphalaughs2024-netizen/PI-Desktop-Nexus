@@ -50,6 +50,17 @@ cleared on exit.
 2. Crash isolation
 3. Resource limits (later: CPU/memory/timeout)
 
+### Trusted renderer extensions
+
+`renderer.extension` is a separate high-risk grant for code running directly in
+the Nexus renderer. It is an exception to the isolated UI requirement above:
+the host realm is not a security boundary. Use it only for trusted code. The
+loader resolves the real file inside the plugin directory, caps its size, and
+unloads registrations when the plugin is disabled or out of project scope.
+Declared renderer actions and plugin-owned command/tool checks constrain the
+supported API but cannot confine arbitrary host-realm JavaScript. Existing
+plugin panels remain isolated. See ADR 0250.
+
 ## 3.1 Contributed theme CSS
 
 A theme contribution (`ui.theme`) is the one case where plugin-authored content

@@ -24,6 +24,8 @@ type PluginManifestV1 = {
  repository?: string;
  icon?: string; // relative path
  main?: string; // plugin runtime entry
+ renderer?: string; // self-contained ES module in the plugin directory
+ rendererActions?: Array<"composer.insertText" | "plugin.command">;
  ui?: PluginUiConfig;
  contributes?: PluginContributes;
  permissions?: PluginPermission[];
@@ -49,6 +51,13 @@ type PluginManifestV1 = {
  enabledByDefault?: boolean;
 };
 ```
+
+`renderer` requires `renderer.extension` in `permissions`. The file must be a
+relative `.js` or `.mjs` path inside the loaded plugin directory and at most
+1 MiB. Its module exports `onLoad(api, React)` and may export `onUnload()`.
+The renderer API can register `userAction`, `assistantAction`, `entryExtra`,
+`toolCard`, `blockRenderer`, `composerControl`, and `composerTrigger` slots.
+Actions dispatched from these slots must appear in `rendererActions`.
 
 ## 3. UI config
 

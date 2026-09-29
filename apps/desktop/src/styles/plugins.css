@@ -1894,3 +1894,6 @@
   gap: 8px;
   padding: 14px 18px 18px;
 }
+.nexus-plugin-slot {
+  display: contents;
+}

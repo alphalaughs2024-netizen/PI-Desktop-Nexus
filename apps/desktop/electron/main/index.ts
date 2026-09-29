@@ -9436,6 +9436,42 @@ function registerIpc() {
     return { ...result, plugins: pluginsWithSettings.filter((plugin) => plugin?.id !== "pi.browser") };
   });
 
+  handle(IPC.invoke.pluginRendererCatalog, async () => {
+    const modules = await Promise.all(plugins.listLoaded().map(async (loaded) => {
+      const entry = loaded.manifest.renderer;
+      if (!entry || !loaded.permissions.has("renderer.extension")) return null;
+      try {
+        const root = await fs.promises.realpath(loaded.path);
+        const file = await fs.promises.realpath(resolve(root, entry));
+        const within = relative(root, file);
+        if (!within || within.startsWith("..") || isAbsolute(within) || !/\.m?js$/i.test(file)) return null;
+        if ((await fs.promises.stat(file)).size > 1024 * 1024) return null;
+        return {
+          pluginId: loaded.manifest.id, version: loaded.manifest.version,
+          source: await readFile(file, "utf8"),
+          actions: loaded.manifest.rendererActions ?? [],
+          tools: loaded.manifest.contributes?.agentTools?.map((tool) => tool.name) ?? [],
+        };
+      } catch (error) {
+        console.warn("Plugin renderer entry unavailable", loaded.manifest.id, error);
+        return null;
+      }
+    }));
+    return { modules: modules.filter((item) => item !== null) };
+  });
+  handle(IPC.invoke.pluginRendererCommand, async (payload: { pluginId?: string; id?: string }) => {
+    const pluginId = String(payload?.pluginId ?? "");
+    const loaded = plugins.getLoaded(pluginId);
+    if (!loaded?.permissions.has("renderer.extension") ||
+        !loaded.manifest.rendererActions?.includes("plugin.command")) {
+      throw new Error("renderer action was not granted and declared");
+    }
+    const command = plugins.getCommands().find((item) => item.pluginId === pluginId && item.id === payload.id);
+    if (!command) throw new Error("plugin command is not owned by this plugin");
+    await command.run();
+    return { ok: true };
+  });
+
   handle(IPC.invoke.pluginSettingsGet, async (id: string) => {
     if (id === "pi.browser") throw new Error("Browser is built into Nexus and has no plugin settings.");
     const settings = await plugins.getPluginSettings(String(id ?? ""));

@@ -13,6 +13,7 @@ import { parseNetDomains, type PluginNetDomain } from "./net-policy.js";
  * a lowercase dotted namespace such as `demo.hello` or `pi.browser`.
  */
 export const PLUGIN_ID_PATTERN = /^[a-z0-9]+(\.[a-z0-9_-]+)+$/;
+export * from "./renderer.js";
 
 /** `author` may be a display string or a contact object (manifest schema §2). */
 export type PluginManifestAuthor =
@@ -29,6 +30,9 @@ export type PluginManifest = {
   homepage?: string;
   repository?: string;
   main: string;
+  /** Self-contained ES module renderer entry; requires renderer.extension. */
+  renderer?: string;
+  rendererActions?: Array<"composer.insertText" | "plugin.command">;
   icon?: string;
   /**
    * First-registration default for bundled plugins. Omitted means enabled.
@@ -780,6 +784,7 @@ export const PLUGIN_PERMISSIONS = [
   "agent.prompt.inject",
   "agent.complete",
   "agent.extension",
+  "renderer.extension",
   "desktop.control",
   "models.list",
   "project.create",
@@ -823,6 +828,23 @@ export function validateManifest(raw: unknown): {
   }
   const mainError = relativePathError(m.main, "manifest.main");
   if (mainError) return { ok: false, error: mainError };
+  if (m.renderer !== undefined) {
+    if (typeof m.renderer !== "string" || !/\.m?js$/i.test(m.renderer)) {
+      return { ok: false, error: "manifest.renderer must be a JavaScript module path" };
+    }
+    const rendererError = relativePathError(m.renderer, "manifest.renderer");
+    if (rendererError) return { ok: false, error: rendererError };
+    if (!Array.isArray(m.permissions) || !m.permissions.includes("renderer.extension")) {
+      return { ok: false, error: "manifest.renderer requires renderer.extension" };
+    }
+  }
+  if (m.rendererActions !== undefined) {
+    if (!Array.isArray(m.rendererActions) || m.rendererActions.some((action) =>
+      action !== "composer.insertText" && action !== "plugin.command")) {
+      return { ok: false, error: "manifest.rendererActions contains an unknown action" };
+    }
+    if (!m.renderer) return { ok: false, error: "manifest.rendererActions requires manifest.renderer" };
+  }
   if (typeof m.schemaVersion !== "number") {
     return { ok: false, error: "manifest.schemaVersion is required" };
   }

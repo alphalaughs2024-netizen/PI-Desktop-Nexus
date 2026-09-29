@@ -45,6 +45,7 @@ import { installRendererApi } from "./capture/renderer-api";
 import { commitWorkPanelPresentation } from "./lib/work-panel-presentation";
 import { rendererPlatform } from "./lib/renderer-platform";
 import { browserPluginTab } from "./lib/work-panel-tabs";
+import { PluginRendererHost } from "./plugins/PluginRendererHost";
 import {
   clampSidebarWidth,
   loadSidebarWidth,
@@ -1171,6 +1172,7 @@ function AppShell() {
       style={{ "--ds-sidebar-width": `${sidebarWidth}px` } as CSSProperties}
     >
       <div className="app-scenic-backdrop" aria-hidden />
+      <PluginRendererHost />
       {shell}
       {splash}
     </div>

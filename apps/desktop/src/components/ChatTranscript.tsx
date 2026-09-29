@@ -32,6 +32,7 @@ import { TurnOutcomeCard } from "./TurnOutcomeCard";
 import { ReviewChangeCard } from "./ReviewChangeCard";
 import { Markdown, useCopy } from "./Markdown";
 import { useSmoothText } from "../hooks/use-smooth-text";
+import { RendererSlotMount, useRendererSlots } from "../plugins/renderer-slots";
 import { ToolChips, ToolDetailBlocks } from "./ToolDetails";
 import {
   formatToolDuration,
@@ -686,6 +687,7 @@ const ToolRow = memo(function ToolRow({
   const toggleSubagentPanel = useAppStore((s) => s.toggleSubagentPanel);
   const subagentPanel = useAppStore((s) => s.subagentPanel);
   const status = message.toolStatus;
+  const customToolCard = useRendererSlots("toolCard", undefined, message.toolName);
   const action = getToolAction(message.toolName);
   // A run row states what the command did, not what the call around it did: an
   // exit code the shell reported outranks a tool call that came back fine
@@ -830,6 +832,16 @@ const ToolRow = memo(function ToolRow({
           ? "is-denied"
           : "is-done";
   const caret = hasDetails ? <IconChevronRight size={12} /> : null;
+
+  if (customToolCard.length && message.toolName) {
+    return <RendererSlotMount slot="toolCard" lookup={message.toolName} props={{
+      toolName: message.toolName, toolCallId: message.toolCallId ?? "",
+      toolArgs: message.toolArgs, toolStatus: status ?? "running",
+      toolResult: message.toolResult, toolError: message.error,
+      durationMs: message.toolDurationMs, messageId: message.id,
+      sessionId: useAppStore.getState().activeSessionId ?? "",
+    }} />;
+  }
 
   return (
     <div
@@ -2081,6 +2093,7 @@ const MessageRow = memo(function MessageRow({
   const activateMessageRevision = useAppStore((s) => s.activateMessageRevision);
   const deleteMessage = useAppStore((s) => s.deleteMessage);
   const isUser = message.role === "user";
+  const slotSessionId = useAppStore((s) => s.activeSessionId ?? "");
   const workspaceRoot = useAppStore((s) => s.workspace?.path);
   const openFileRef = useOpenChatFileRef();
   // Slash prompts are stored expanded; editing works on the typed form so the
@@ -2228,6 +2241,7 @@ const MessageRow = memo(function MessageRow({
         ) : null}
         {!editing && (!isRunning || isUser) && (hasAnswer || showRevisionPager) ? (
           <div className="message-actions">
+            {isUser && <RendererSlotMount slot="userAction" position="left" props={{ message, messageId: message.id, sessionId: slotSessionId, position: "left" }} />}
             {showRevisionPager ? (
               <div className="message-revision-pager" role="group" aria-label={t("chat.revisions")}>
                 <TooltipButton
@@ -2264,6 +2278,7 @@ const MessageRow = memo(function MessageRow({
               </div>
             ) : null}
             {!isRunning && hasAnswer ? <CopyButton text={message.content} label={copyLabel} /> : null}
+            {isUser && <RendererSlotMount slot="userAction" position="right" props={{ message, messageId: message.id, sessionId: slotSessionId, position: "right" }} />}
             {isUser ? (
               <TooltipButton
                 className="copy-btn icon"
@@ -2469,6 +2484,7 @@ const AssistantTurn = memo(function AssistantTurn({
   runtimeActivity,
 }: AssistantTurnProps) {
   const { t } = useTranslation();
+  const slotSessionId = useAppStore((s) => s.activeSessionId ?? "");
   const retryAssistantMessage = useAppStore((s) => s.retryAssistantMessage);
   const forkAssistantMessage = useAppStore((s) => s.forkAssistantMessage);
   const messages = assistantTurnMessages(entry);
@@ -2553,6 +2569,7 @@ const AssistantTurn = memo(function AssistantTurn({
               {part.message.error ? (
                 <AssistantErrorMessage message={part.message} />
               ) : null}
+              <RendererSlotMount slot="entryExtra" props={{ message: part.message, messageId: part.message.id, sessionId: slotSessionId }} />
             </div>
           ),
         )}
@@ -2566,6 +2583,7 @@ const AssistantTurn = memo(function AssistantTurn({
         ) : null}
         {(content || hasError) && actionMessage ? (
           <div className="message-actions">
+            <RendererSlotMount slot="assistantAction" position="left" props={{ message: actionMessage, messageId: actionMessage.id, sessionId: slotSessionId, position: "left" }} />
             {complete ? (
               <CopyButton text={content} label={t("chat.copy")} />
             ) : null}
@@ -2579,6 +2597,7 @@ const AssistantTurn = memo(function AssistantTurn({
                 <IconBranch size={13} />
               </TooltipButton>
             ) : null}
+            <RendererSlotMount slot="assistantAction" position="right" props={{ message: actionMessage, messageId: actionMessage.id, sessionId: slotSessionId, position: "right" }} />
             {complete ? (
               <TooltipButton
                 className="copy-btn icon"

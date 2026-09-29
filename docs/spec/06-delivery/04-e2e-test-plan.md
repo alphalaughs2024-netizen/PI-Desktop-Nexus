@@ -11437,3 +11437,18 @@ hidden/zero-bounds behavior, no guest recreation during dock/maximize or
 resource switching, and no background focus theft. Strict screenshots cover
 every resource in docked/maximized, dark/light, narrow, focus, and
 reduced-motion states.
+
+# Trusted renderer plugin slots (ADR 0250)
+
+Install a local plugin whose manifest declares `renderer.extension`, a renderer
+module, and `rendererActions`. Before granting the permission, verify its slots
+are absent. Grant and enable it; verify message actions, assistant extras,
+plugin-owned tool cards, namespaced code blocks, composer controls, and trigger
+suggestions appear in Nexus's existing surfaces. Verify trigger acceptance
+replaces only the token and preserves the remaining draft. Try a second plugin
+claiming the same trigger or language, and verify the duplicate is rejected.
+Disable the plugin or leave its project scope and verify all registrations
+disappear, including after an asynchronous load. A missing renderer entry must
+not prevent another plugin's slots from loading. An undeclared action and a
+command owned by a different plugin must be refused. Run in a production build
+to verify the CSP permits the granted module without enabling eval.

@@ -1835,6 +1835,7 @@ export const en = {
       "agent.prompt.inject": "Adjust agent instructions",
       "agent.complete": "Run a one-shot completion with your models",
       "agent.extension": "Run code inside the agent",
+      "renderer.extension": "Run code in the main interface",
       "desktop.control": "Control the desktop",
       "models.list": "List authenticated models",
       "session.read": "Read the current conversation sent to the model",
@@ -1872,6 +1873,7 @@ export const en = {
       "agent.complete":
         "Can spend your model quota on a one-shot completion. The plugin never receives your API keys.",
       "agent.extension": "Runs ExtensionAPI modules inside the agent process with the same access as the agent's own tools. Enable only code you trust.",
+      "renderer.extension": "Runs plugin code in the main interface with access to conversation content. Enable only code you trust.",
       "desktop.control":
         "Lets the plugin invoke the reviewed PI-Desktop control catalog. Destructive operations still require confirm=true; the MCP bearer token is never exposed.",
       "models.list": "Can see which models you have signed in for. It does not receive keys.",

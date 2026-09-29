@@ -15,6 +15,7 @@ import {
   type FuzzyMatch,
 } from "@pi-desktop/shared";
 import { api } from "../lib/api";
+import { detectPluginTrigger, useRendererSlots, type Entry } from "../plugins/renderer-slots";
 import { useAppStore } from "../stores/app-store";
 
 /**
@@ -29,7 +30,8 @@ const SOURCE_TTL_MS = 10_000;
 
 export type AutocompleteItem =
   | { kind: "command"; command: ComposerCommand; match: FuzzyMatch }
-  | { kind: "path"; entry: FsIndexEntry; match: FuzzyMatch };
+  | { kind: "path"; entry: FsIndexEntry; match: FuzzyMatch }
+  | { kind: "plugin"; entry: Entry; label: string; insert: string };
 
 /** Module-level TTL caches so re-triggering stays IPC-free. */
 let commandsCache: { key: string; at: number; commands: ComposerCommand[] } | null =
@@ -143,7 +145,11 @@ export function useComposerAutocomplete({
   const [highlight, setHighlight] = useState(0);
   const [commandsRevision, setCommandsRevision] = useState(0);
   const [dismissedKey, setDismissedKey] = useState<string | null>(null);
-  const frozenRef = useRef<ComposerTrigger | null>(null);
+  const [pluginResult, setPluginResult] = useState<{
+    key: string; items: Array<{ label: string; insert: string }>;
+  } | null>(null);
+  const pluginTriggers = useRendererSlots("composerTrigger");
+  const frozenRef = useRef<ComposerTrigger | ReturnType<typeof detectPluginTrigger>>(null);
 
   useEffect(() => {
     const invalidate = () => {
@@ -157,8 +163,8 @@ export function useComposerAutocomplete({
   }, []);
 
   const liveTrigger = useMemo(
-    () => (enabled ? detectTrigger(value, cursor) : null),
-    [enabled, value, cursor],
+    () => (enabled ? detectTrigger(value, cursor) ?? detectPluginTrigger(value, cursor, pluginTriggers) : null),
+    [enabled, value, cursor, pluginTriggers],
   );
   // During IME composition the menu freezes: no opening, closing, or
   // re-filtering until compositionend re-evaluates (D125).
@@ -167,7 +173,7 @@ export function useComposerAutocomplete({
     if (!composing) frozenRef.current = liveTrigger;
   }, [composing, liveTrigger]);
 
-  const triggerKey = trigger ? `${trigger.mode}:${trigger.tokenStart}` : null;
+  const triggerKey = trigger ? `${trigger.mode}:${trigger.tokenStart}:${trigger.mode === "plugin" ? trigger.entry.id : ""}` : null;
   const dismissed = triggerKey !== null && triggerKey === dismissedKey;
 
   // Escape-dismissal clears once the trigger token goes away.
@@ -178,6 +184,7 @@ export function useComposerAutocomplete({
   // Lazy source fetch with a short TTL, keyed by workspace.
   useEffect(() => {
     if (!trigger || dismissed) return;
+    if (trigger.mode === "plugin") return;
     const now = Date.now();
     if (trigger.mode === "slash") {
       if (
@@ -234,8 +241,23 @@ export function useComposerAutocomplete({
     };
   }, [trigger?.mode, dismissed, workspaceKey, hasWorkspace, commandsRevision]);
 
+  useEffect(() => {
+    if (!trigger || trigger.mode !== "plugin" || dismissed) return;
+    let cancelled = false;
+    const key = `${triggerKey}:${trigger.query}`;
+    void Promise.resolve().then(() => trigger.entry.registration.items!(trigger.query)).then((items) => {
+      if (!cancelled) setPluginResult({ key, items: Array.isArray(items) ? items.slice(0, 50).filter((item) =>
+        typeof item?.label === "string" && typeof item?.insert === "string" &&
+        item.label.length <= 200 && item.insert.length <= 4096,
+      ) : [] });
+    }).catch(() => { if (!cancelled) setPluginResult({ key, items: [] }); });
+    return () => { cancelled = true; };
+  }, [trigger?.mode, trigger?.query, triggerKey, dismissed]);
+
   const items = useMemo<AutocompleteItem[]>(() => {
     if (!trigger || dismissed) return [];
+    if (trigger.mode === "plugin") return (pluginResult?.key === `${triggerKey}:${trigger.query}` ? pluginResult.items : [])
+      .map((item) => ({ kind: "plugin", entry: trigger.entry, ...item }));
     if (trigger.mode === "slash") {
       const options = trigger.tokenStart === 0
         ? commands
@@ -243,7 +265,7 @@ export function useComposerAutocomplete({
       return options ? filterCommands(options, trigger.query) : [];
     }
     return files ? filterFiles(files.entries, trigger.query) : [];
-  }, [trigger, dismissed, commands, files]);
+  }, [trigger, dismissed, commands, files, pluginResult, triggerKey]);
 
   // New query or mode restarts keyboard navigation at the top hit.
   const itemsKey = trigger ? `${trigger.mode}:${trigger.query}` : "";
@@ -253,7 +275,8 @@ export function useComposerAutocomplete({
 
   const sourceReady =
     !!trigger &&
-    (trigger.mode === "slash" ? commands !== null : files !== null);
+    (trigger.mode === "slash" ? commands !== null : trigger.mode === "file" ? files !== null :
+      pluginResult?.key === `${triggerKey}:${trigger.query}`);
   const open = !!trigger && !dismissed && sourceReady;
 
   const close = useCallback(() => {
@@ -273,9 +296,14 @@ export function useComposerAutocomplete({
       if (!trigger) return null;
       const item = items[index];
       if (!item) return null;
+      const completionTrigger = {
+        mode: "slash" as const, query: trigger.query,
+        tokenStart: trigger.tokenStart, tokenEnd: trigger.tokenEnd,
+      };
+      if (item.kind === "plugin") return applyCompletion(value, completionTrigger, item.insert);
       if (item.kind === "path" && item.entry.kind === "file") {
         return {
-          ...applyCompletion(value, trigger, ""),
+          ...applyCompletion(value, completionTrigger, ""),
           fileReference: {
             path: item.entry.path,
             name: fileReferenceLabel(item.entry.path),
@@ -286,7 +314,7 @@ export function useComposerAutocomplete({
         item.kind === "command"
           ? formatCommandInsert(item.command.name)
           : formatFileInsert(item.entry.path, item.entry.kind);
-      return applyCompletion(value, trigger, insert);
+      return applyCompletion(value, completionTrigger, insert);
     },
     [trigger, items, value],
   );

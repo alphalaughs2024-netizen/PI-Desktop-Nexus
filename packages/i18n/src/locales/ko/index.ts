@@ -1803,6 +1803,7 @@ export const ko = {
       "agent.prompt.inject": "에이전트 지침 조정",
       "agent.complete": "모델로 일회성 완성 실행",
       "agent.extension": "에이전트 안에서 코드 실행",
+      "renderer.extension": "기본 화면에서 코드 실행",
       "desktop.control": "데스크톱 제어",
       "models.list": "인증된 모델 목록 표시",
       "session.read": "모델에 전송되는 현재 대화 읽기",
@@ -1839,6 +1840,7 @@ export const ko = {
       "agent.complete":
         "모델 할당량을 사용해 일회성 완성을 실행할 수 있습니다. 플러그인은 API 키를 받지 않습니다.",
       "agent.extension": "ExtensionAPI 모듈을 에이전트 프로세스 안에서 에이전트 자체 도구와 같은 권한으로 실행합니다. 신뢰하는 코드만 켜세요.",
+      "renderer.extension": "플러그인 코드를 대화 내용에 접근할 수 있는 기본 화면에서 실행합니다. 신뢰하는 코드만 켜세요.",
       "desktop.control":
         "플러그인이 검토된 PI-Desktop 제어 카탈로그를 호출할 수 있습니다. 파괴적 작업에는 여전히 confirm=true가 필요하며 MCP bearer token은 노출되지 않습니다.",
       "models.list": "로그인한 모델을 볼 수 있지만 키는 받지 않습니다.",

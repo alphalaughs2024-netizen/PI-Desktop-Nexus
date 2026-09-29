@@ -84,7 +84,7 @@ export function ComposerAutocomplete({
       key:
         item.kind === "command"
           ? `c:${item.command.kind}:${item.command.name}`
-          : `p:${item.entry.path}`,
+          : item.kind === "plugin" ? `r:${item.entry.id}:${item.label}` : `p:${item.entry.path}`,
       type: "button" as const,
       role: "option" as const,
       "aria-selected": active,
@@ -117,6 +117,12 @@ export function ComposerAutocomplete({
           ) : null}
         </button>
       );
+    }
+    if (item.kind === "plugin") {
+      return <button {...commonProps} title={item.label} aria-label={item.label}>
+        <span className="composer-ac-icon"><IconPlug size={14} /></span>
+        <span className="composer-ac-name">{item.label}</span>
+      </button>;
     }
     const isDir = item.entry.kind === "dir";
     const name = item.entry.path.split("/").pop() ?? item.entry.path;

@@ -177,6 +177,8 @@ export const IPC = {
     extensionsUiRespond: "pi-desktop/extensions/ui/respond",
     pluginLoadDev: "pi-desktop/plugin/loadDev",
     pluginReload: "pi-desktop/plugin/reload",
+    pluginRendererCatalog: "pi-desktop/plugin/renderer/catalog",
+    pluginRendererCommand: "pi-desktop/plugin/renderer/command",
     pluginCreateFromTemplate: "pi-desktop/plugin/createFromTemplate",
     pluginInstallFromPath: "pi-desktop/plugin/installFromPath",
     pluginInstallFromPackage: "pi-desktop/plugin/installFromPackage",

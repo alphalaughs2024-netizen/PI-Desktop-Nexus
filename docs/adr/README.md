@@ -246,3 +246,5 @@ Each ADR includes:
 | 0227 | High-fidelity scenic themes use scoped material tiers | Accepted |
 | 0228 | Tier 2 checkpoint 1 session reliability and workflow surface | Accepted |
 | 0244 | Local-first speech input and voice conversation | Accepted |
+| 0249 | Host-owned scheduled execution | Accepted |
+| 0250 | Trusted renderer plugin slots | Accepted |

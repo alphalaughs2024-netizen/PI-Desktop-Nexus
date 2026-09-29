@@ -24,6 +24,7 @@ import rehypeRaw from "rehype-raw";
 import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 import { lexer } from "marked";
 import { useTranslation } from "react-i18next";
+import { RendererSlotMount, useRendererSlots } from "../plugins/renderer-slots";
 import type { ThemedToken } from "shiki";
 import "katex/dist/katex.min.css";
 import {
@@ -195,6 +196,10 @@ export function HighlightedCode({
 function CodeBlock({ code, lang }: { code: string; lang: string }) {
   const { t } = useTranslation();
   const { copied, copy } = useCopy();
+  const pluginRenderer = useRendererSlots("blockRenderer", undefined, lang.toLowerCase());
+  if (pluginRenderer.length) {
+    return <RendererSlotMount slot="blockRenderer" lookup={lang.toLowerCase()} props={{ language: lang, source: code }} />;
+  }
   return (
     <div className="code-block">
       <div className="code-block-head">

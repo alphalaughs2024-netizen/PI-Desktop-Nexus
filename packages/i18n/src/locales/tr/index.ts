@@ -1803,6 +1803,7 @@ export const tr = {
       "agent.prompt.inject": "Ajan yönergelerini ayarla",
       "agent.complete": "Modellerinizle tek seferlik tamamlatma çalıştır",
       "agent.extension": "Ajanın içinde kod çalıştır",
+      "renderer.extension": "Ana arayüzde kod çalıştır",
       "desktop.control": "Masaüstünü kontrol et",
       "models.list": "Kimliği doğrulanmış modelleri listele",
       "session.read": "Modele gönderilen geçerli konuşmayı oku",
@@ -1839,6 +1840,7 @@ export const tr = {
       "agent.complete":
         "Model kotanızı tek seferlik bir tamamlatma için harcayabilir. Eklenti API anahtarlarınızı almaz.",
       "agent.extension": "ExtensionAPI modüllerini ajan sürecinde, ajanın kendi araçlarıyla aynı erişimle çalıştırır. Yalnızca güvendiğiniz kodu etkinleştirin.",
+      "renderer.extension": "Eklenti kodunu konuşmalara erişerek ana arayüzde çalıştırır. Yalnızca güvendiğiniz kodu etkinleştirin.",
       "desktop.control":
         "Eklentinin incelenmiş PI-Desktop denetim kataloğunu çağırmasını sağlar. Yıkıcı işlemler yine confirm=true gerektirir; MCP bearer token eklentiye verilmez.",
       "models.list": "Oturum açtığınız modelleri görebilir. Anahtar almaz.",
