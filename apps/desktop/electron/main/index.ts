@@ -8,6 +8,7 @@ import {
   nativeImage,
   nativeTheme,
   Notification as SystemNotification,
+  powerSaveBlocker,
   screen,
   shell,
   Tray,
@@ -8788,9 +8789,19 @@ function registerIpc() {
       task: unknown;
       runId: string;
     }>("scheduled.run", { id });
-    // The renderer sends the prompt through the normal agent path; remember
-    // the run so agent_end can close it via scheduled.finishRun.
+    // The same prompt handler owns manual and automatic scheduled turns.
     scheduledRunsBySession.set(res.sessionId, res.runId);
+    try {
+      const promptHandler = ipcHandlers.get(IPC.invoke.agentPrompt);
+      if (!promptHandler) throw new Error("agent prompt handler unavailable");
+      await promptHandler({ sessionId: res.sessionId, content: res.prompt });
+    } catch (error) {
+      scheduledRunsBySession.delete(res.sessionId);
+      await host.call("scheduled.finishRun", {
+        runId: res.runId, status: "error", errorCode: "SCHEDULE_DISPATCH_FAILED",
+      }).catch(() => undefined);
+      throw error;
+    }
     return res;
   });
   handle(IPC.invoke.scheduledListRuns, async (input: { taskId?: string; limit?: number } = {}) => {
@@ -10480,6 +10491,73 @@ app.whenReady().then(async () => {
       logger.app("runtime", "warn", "agent host queue restore failed", { data: String(error) });
     });
   }
+  const scheduledAdmissions = new Set<string>();
+  let scheduledPolling = false;
+  const pollScheduled = async () => {
+    if (quitting || scheduledPolling || !host || !sidecar) return;
+    const currentHost = host;
+    scheduledPolling = true;
+    try {
+      const { ids } = await currentHost.call<{ ids: string[] }>("scheduled.due");
+      for (const id of ids) {
+        if (quitting || host !== currentHost || scheduledAdmissions.has(id)) continue;
+        scheduledAdmissions.add(id);
+        void (async () => {
+          let launch: { sessionId: string; prompt: string; runId: string } | undefined;
+          try {
+            const admitted = await currentHost.call<{ sessionId: string; prompt: string; runId: string }>(
+              "scheduled.run", { id, automatic: true },
+            );
+            launch = admitted;
+            if (host !== currentHost || !sidecar) throw new Error("scheduled runtime stopped");
+            scheduledRunsBySession.set(admitted.sessionId, admitted.runId);
+            await invokeIpc(IPC.invoke.agentPrompt, [{ sessionId: admitted.sessionId, content: admitted.prompt }]);
+          } catch (error) {
+            if (launch) {
+              scheduledRunsBySession.delete(launch.sessionId);
+              await currentHost.call("scheduled.finishRun", {
+                runId: launch.runId, status: "error", errorCode: "SCHEDULE_DISPATCH_FAILED",
+              }).catch(() => undefined);
+            }
+            logger.app("runtime", "warn", "scheduled task could not start", { data: { id, error: String(error) } });
+          } finally {
+            scheduledAdmissions.delete(id);
+          }
+        })();
+      }
+    } catch (error) {
+      logger.app("runtime", "warn", "scheduled due check failed", { data: String(error) });
+    } finally {
+      scheduledPolling = false;
+    }
+  };
+  const scheduledTimer = setInterval(() => void pollScheduled(), 30_000);
+  scheduledTimer.unref();
+  app.once("before-quit", () => clearInterval(scheduledTimer));
+  if (!bootError) void pollScheduled();
+  let awakeBlocker: number | undefined;
+  const syncAwakeBlocker = async () => {
+    if (quitting || !host) return;
+    try {
+      const settings = await host.call<{ keepAwakeDuringWork?: boolean }>("settings.get");
+      const active = settings.keepAwakeDuringWork === true &&
+        (activeTurns.size > 0 || scheduledRunsBySession.size > 0);
+      if (active && awakeBlocker === undefined) {
+        awakeBlocker = powerSaveBlocker.start("prevent-app-suspension");
+      } else if (!active && awakeBlocker !== undefined) {
+        powerSaveBlocker.stop(awakeBlocker);
+        awakeBlocker = undefined;
+      }
+    } catch (error) {
+      logger.app("runtime", "warn", "keep-awake setting unavailable", { data: String(error) });
+    }
+  };
+  const awakeTimer = setInterval(() => void syncAwakeBlocker(), 5_000);
+  awakeTimer.unref();
+  app.once("before-quit", () => {
+    clearInterval(awakeTimer);
+    if (awakeBlocker !== undefined) powerSaveBlocker.stop(awakeBlocker);
+  });
   if (host) {
     try {
       const stored = (await host.call("settings.get")) as {

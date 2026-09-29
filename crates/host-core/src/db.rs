@@ -9,7 +9,7 @@ use std::path::{Path, PathBuf};
 /// (D119, `transcripts.rs`). v11 adds the Plan/Goal approval kind (D198).
 /// v12 added A2A broker tables (ADR 0147); v13 drops them (ADR 0165).
 /// v14 adds plugin session ownership and the soft-delete marker (D367).
-pub const SCHEMA_VERSION: i64 = 17;
+pub const SCHEMA_VERSION: i64 = 18;
 
 /// Absolute approval deadline for a newly submitted Plan or Goal proposal.
 pub const PLAN_APPROVAL_TIMEOUT_MS: i64 = 30 * 60 * 1000;
@@ -349,7 +349,8 @@ CREATE TABLE task_runs (
   status     TEXT NOT NULL DEFAULT 'running',
   error_code TEXT,
   started_at INTEGER NOT NULL,
-  ended_at   INTEGER
+  ended_at   INTEGER,
+  scheduled_at INTEGER
 );
 CREATE INDEX idx_task_runs ON task_runs(task_id, started_at DESC);
 
@@ -557,12 +558,17 @@ impl Database {
             }
             15 => migrate_v15_to_v17(&conn, path)?,
             16 => migrate_v16_to_v17(&conn, path)?,
+            17 => {}
             SCHEMA_VERSION => {}
             other => {
                 return Err(anyhow!(
                     "database schema version {other} is newer than supported {SCHEMA_VERSION}"
                 ));
             }
+        }
+        let migrated: i64 = conn.query_row("PRAGMA user_version", [], |r| r.get(0))?;
+        if migrated == 17 {
+            migrate_v17_to_v18(&conn, path)?;
         }
         let db = Self { conn, data_dir };
         db.boot_maintenance()?;
@@ -688,7 +694,7 @@ impl Database {
                SELECT id FROM (
                  SELECT id, ROW_NUMBER() OVER (
                    PARTITION BY task_id ORDER BY started_at DESC
-                 ) AS rn FROM task_runs
+                 ) AS rn FROM task_runs WHERE status != 'missed'
                ) WHERE rn > ?1
              )",
             params![TASK_RUNS_KEEP],
@@ -1538,6 +1544,36 @@ fn migrate_v16_to_v17(conn: &Connection, path: &Path) -> Result<()> {
 fn migrate_v15_to_v17(conn: &Connection, path: &Path) -> Result<()> {
     migrate_v15_to_v16(conn, path)?;
     migrate_v16_to_v17(conn, path)
+}
+
+fn migrate_v17_to_v18(conn: &Connection, path: &Path) -> Result<()> {
+    let backup = create_migration_backup(conn, path, 17)?;
+    let tx = conn.unchecked_transaction()?;
+    let has_scheduled_at: bool = tx.query_row(
+        "SELECT EXISTS(SELECT 1 FROM pragma_table_info('task_runs') WHERE name = 'scheduled_at')",
+        [], |row| row.get(0),
+    )?;
+    if !has_scheduled_at {
+        tx.execute_batch("ALTER TABLE task_runs ADD COLUMN scheduled_at INTEGER;")?;
+    }
+    let tasks: Vec<(String, String)> = {
+        let mut stmt = tx.prepare("SELECT id, config_json FROM scheduled_tasks WHERE cadence != 'manual'")?;
+        let rows = stmt.query_map([], |row| Ok((row.get(0)?, row.get(1)?)))?;
+        rows.collect::<rusqlite::Result<Vec<_>>>()?
+    };
+    for (id, raw) in tasks {
+        let mut config: Value = serde_json::from_str(&raw)?;
+        if !config.is_object() { config = serde_json::json!({}); }
+        config["reviewRequired"] = serde_json::json!(true);
+        config["nextRunAt"] = Value::Null;
+        tx.execute(
+            "UPDATE scheduled_tasks SET config_json = ?1, enabled = 0 WHERE id = ?2",
+            params![config.to_string(), id],
+        )?;
+    }
+    tx.pragma_update(None, "user_version", 18i64)?;
+    tx.commit().with_context(|| format!("commit schema v17 to v18 migration; backup {} remains", backup.display()))?;
+    Ok(())
 }
 
 #[cfg(test)]

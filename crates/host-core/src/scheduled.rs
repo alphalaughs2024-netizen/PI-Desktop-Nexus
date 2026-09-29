@@ -7,6 +7,8 @@ use uuid::Uuid;
 use crate::db::{ms_to_ts, now_ms, ts_to_ms, Database};
 use crate::sessions;
 
+pub mod timing;
+
 /// Wire format matches the legacy Electron `scheduled-tasks.json` records so
 /// the renderer keeps working unchanged (camelCase, RFC3339 timestamps).
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -22,6 +24,20 @@ pub struct ScheduledTask {
     pub updated_at: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub last_run_at: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub schedule: Option<timing::Schedule>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub next_run_at: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub workspace_path: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub provider_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub model_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub permission_mode: Option<String>,
+    pub review_required: bool,
+    pub older_missed_count: u64,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -33,6 +49,7 @@ pub struct TaskRun {
     pub status: String,
     pub error_code: Option<String>,
     pub started_at: String,
+    pub scheduled_at: Option<String>,
     pub ended_at: Option<String>,
 }
 
@@ -98,7 +115,50 @@ fn config_with_mode(mut config: Value, mode: &str) -> String {
 }
 
 fn task_config_json(value: &Value) -> String {
-    config_with_mode(config_value(config_input(value)), &task_mode(value))
+    let mut config = config_value(config_input(value));
+    let cadence = normalize_cadence(value.get("cadence").and_then(Value::as_str));
+    let _ = configure_schedule(&mut config, value, &cadence, now_ms());
+    config_with_mode(config, &task_mode(value))
+}
+
+fn configure_schedule(config: &mut Value, input: &Value, cadence: &str, now: i64) -> Result<()> {
+    for key in ["workspacePath", "providerId", "modelId", "permissionMode"] {
+        if let Some(value) = input.get(key) {
+            if !value.is_null() && !value.as_str().is_some_and(|s| !s.trim().is_empty()) {
+                anyhow::bail!("{key} must be a nonempty string or null");
+            }
+            config[key] = value.clone();
+        }
+    }
+    if let Some(value) = config.get("permissionMode").and_then(Value::as_str) {
+        if !matches!(value, "ask" | "accept-edits" | "auto") {
+            anyhow::bail!("unsupported permission mode");
+        }
+    }
+    if let Some(value) = input.get("schedule") {
+        if value.is_null() {
+            config["schedule"] = Value::Null;
+        } else {
+            let schedule: timing::Schedule = serde_json::from_value(value.clone())?;
+            schedule.validate()?;
+            config["schedule"] = value.clone();
+        }
+    }
+    let complete = config.get("workspacePath").is_some()
+        && config.get("providerId").and_then(Value::as_str).is_some()
+        && config.get("modelId").and_then(Value::as_str).is_some()
+        && config.get("permissionMode").and_then(Value::as_str).is_some()
+        && config.get("schedule").and_then(|v| serde_json::from_value::<timing::Schedule>(v.clone()).ok()).is_some();
+    config["reviewRequired"] = Value::Bool(cadence != "manual" && !complete);
+    if input.get("schedule").is_some() || input.get("cadence").is_some() || input.get("enabled").is_some() {
+        let next = if complete {
+            config.get("schedule")
+                .and_then(|v| serde_json::from_value::<timing::Schedule>(v.clone()).ok())
+                .and_then(|schedule| schedule.next(cadence, now))
+        } else { None };
+        config["nextRunAt"] = serde_json::json!(next);
+    }
+    Ok(())
 }
 
 fn merge_config(base: &mut Value, incoming: &Value) {
@@ -142,16 +202,25 @@ fn updated_config_json(db: &Database, id: &str, params_json: &Value) -> Result<O
 }
 
 fn task_from_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<ScheduledTask> {
+    let config = config_json_value(&row.get::<_, String>(4)?);
     Ok(ScheduledTask {
         id: row.get(0)?,
         title: row.get(1)?,
         prompt: row.get(2)?,
         cadence: row.get(3)?,
-        mode: mode_from_config(&config_json_value(&row.get::<_, String>(4)?)),
+        mode: mode_from_config(&config),
         enabled: row.get::<_, i64>(5)? != 0,
         created_at: ms_to_ts(row.get(6)?),
         updated_at: ms_to_ts(row.get(7)?),
         last_run_at: row.get::<_, Option<i64>>(8)?.map(ms_to_ts),
+        schedule: config.get("schedule").and_then(|v| serde_json::from_value(v.clone()).ok()),
+        next_run_at: config.get("nextRunAt").and_then(Value::as_i64).map(ms_to_ts),
+        workspace_path: config.get("workspacePath").and_then(Value::as_str).map(str::to_string),
+        provider_id: config.get("providerId").and_then(Value::as_str).map(str::to_string),
+        model_id: config.get("modelId").and_then(Value::as_str).map(str::to_string),
+        permission_mode: config.get("permissionMode").and_then(Value::as_str).map(str::to_string),
+        review_required: config.get("reviewRequired").and_then(Value::as_bool).unwrap_or(false),
+        older_missed_count: config.get("olderMissedCount").and_then(Value::as_u64).unwrap_or(0),
     })
 }
 
@@ -195,16 +264,23 @@ pub fn create_task(db: &Database, params_json: &Value) -> Result<ScheduledTask> 
         .collect();
     let cadence = normalize_cadence(params_json.get("cadence").and_then(|v| v.as_str()));
     let mode = task_mode(params_json);
-    let config_json = config_with_mode(config_value(config_input(params_json)), &mode);
+    if cadence != "manual" && sessions::is_contract_mode(&mode) {
+        anyhow::bail!("Plan and Goal tasks require an interactive session");
+    }
+    let mut config = config_value(config_input(params_json));
+    configure_schedule(&mut config, params_json, &cadence, now_ms())?;
+    let enabled = params_json.get("enabled").and_then(Value::as_bool).unwrap_or(true)
+        && !config["reviewRequired"].as_bool().unwrap_or(false);
+    let config_json = config_with_mode(config, &mode);
     let id = Uuid::new_v4().to_string();
     let now = now_ms();
     db.conn()
         .prepare_cached(
             "INSERT INTO scheduled_tasks
                 (id, title, prompt, cadence, config_json, enabled, created_at, updated_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, 1, ?6, ?6)",
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?7)",
         )?
-        .execute(params![id, title, prompt, cadence, config_json, now])?;
+        .execute(params![id, title, prompt, cadence, config_json, if enabled { 1 } else { 0 }, now])?;
     Ok(get_task(db, &id)?.expect("task just inserted"))
 }
 
@@ -219,6 +295,20 @@ pub fn update_task(db: &Database, params_json: &Value) -> Result<Option<Schedule
     let Some(config_json) = updated_config_json(db, id, params_json)? else {
         return Ok(None);
     };
+    let mut config = config_json_value(&config_json);
+    let effective_cadence = cadence.as_deref().unwrap_or_else(|| "");
+    let effective_cadence = if effective_cadence.is_empty() {
+        get_task(db, id)?.map(|task| task.cadence).unwrap_or_default()
+    } else { effective_cadence.to_string() };
+    configure_schedule(&mut config, params_json, &effective_cadence, now_ms())?;
+    if effective_cadence != "manual" && sessions::is_contract_mode(&mode_from_config(&config)) {
+        anyhow::bail!("Plan and Goal tasks require an interactive session");
+    }
+    let review_required = config["reviewRequired"].as_bool().unwrap_or(false);
+    if review_required && params_json.get("enabled").and_then(Value::as_bool) == Some(true) {
+        anyhow::bail!("complete project, model, permission, and time before enabling this task");
+    }
+    let config_json = config.to_string();
     let n = db
         .conn()
         .prepare_cached(
@@ -227,7 +317,7 @@ pub fn update_task(db: &Database, params_json: &Value) -> Result<Option<Schedule
                 prompt = COALESCE(?2, prompt),
                 cadence = COALESCE(?3, cadence),
                 config_json = ?4,
-                enabled = COALESCE(?5, enabled),
+                enabled = CASE WHEN ?8 THEN 0 ELSE COALESCE(?5, enabled) END,
                 updated_at = ?6
              WHERE id = ?7",
         )?
@@ -241,7 +331,8 @@ pub fn update_task(db: &Database, params_json: &Value) -> Result<Option<Schedule
                 .and_then(|v| v.as_bool())
                 .map(|b| if b { 1 } else { 0 }),
             now_ms(),
-            id
+            id,
+            review_required,
         ])?;
     if n == 0 {
         return Ok(None);
@@ -279,7 +370,7 @@ pub fn import_tasks(db: &Database, tasks: &[Value]) -> Result<usize> {
         let enabled = task
             .get("enabled")
             .and_then(|v| v.as_bool())
-            .unwrap_or(true);
+            .unwrap_or(true) && cadence == "manual";
         let created = task
             .get("createdAt")
             .and_then(|v| v.as_str())
@@ -316,6 +407,10 @@ pub fn import_tasks(db: &Database, tasks: &[Value]) -> Result<usize> {
 
 /// Record a run start: stamps the task's last_run_at and opens a task_runs row.
 pub fn begin_run(db: &Database, task_id: &str, session_id: Option<&str>) -> Result<String> {
+    begin_run_at(db, task_id, session_id, now_ms())
+}
+
+pub fn begin_run_at(db: &Database, task_id: &str, session_id: Option<&str>, scheduled_at: i64) -> Result<String> {
     let conn = db.conn();
     let tx = conn.unchecked_transaction()?;
     let now = now_ms();
@@ -325,9 +420,9 @@ pub fn begin_run(db: &Database, task_id: &str, session_id: Option<&str>) -> Resu
     .execute(params![now, task_id])?;
     let run_id = Uuid::new_v4().to_string();
     tx.prepare_cached(
-        "INSERT INTO task_runs (id, task_id, session_id, started_at) VALUES (?1, ?2, ?3, ?4)",
+        "INSERT INTO task_runs (id, task_id, session_id, started_at, scheduled_at) VALUES (?1, ?2, ?3, ?4, ?5)",
     )?
-    .execute(params![run_id, task_id, session_id, now])?;
+    .execute(params![run_id, task_id, session_id, now, scheduled_at])?;
     tx.commit()?;
     Ok(run_id)
 }
@@ -363,25 +458,100 @@ pub fn list_runs(db: &Database, task_id: Option<&str>, limit: i64) -> Result<Vec
             error_code: row.get(4)?,
             started_at: ms_to_ts(row.get(5)?),
             ended_at: row.get::<_, Option<i64>>(6)?.map(ms_to_ts),
+            scheduled_at: row.get::<_, Option<i64>>(7)?.map(ms_to_ts),
         })
     };
     let mut out = Vec::new();
     if let Some(task_id) = task_id {
         let mut stmt = db.conn().prepare_cached(
-            "SELECT id, task_id, session_id, status, error_code, started_at, ended_at
+            "SELECT id, task_id, session_id, status, error_code, started_at, ended_at, scheduled_at
              FROM task_runs WHERE task_id = ?1 ORDER BY started_at DESC LIMIT ?2",
         )?;
         let rows = stmt.query_map(params![task_id, limit], map_row)?;
         out.extend(rows.collect::<rusqlite::Result<Vec<_>>>()?);
     } else {
         let mut stmt = db.conn().prepare_cached(
-            "SELECT id, task_id, session_id, status, error_code, started_at, ended_at
+            "SELECT id, task_id, session_id, status, error_code, started_at, ended_at, scheduled_at
              FROM task_runs ORDER BY started_at DESC LIMIT ?1",
         )?;
         let rows = stmt.query_map(params![limit], map_row)?;
         out.extend(rows.collect::<rusqlite::Result<Vec<_>>>()?);
     }
     Ok(out)
+}
+
+pub fn running(db: &Database, id: &str) -> Result<bool> {
+    Ok(db.conn().query_row(
+        "SELECT EXISTS(SELECT 1 FROM task_runs WHERE task_id = ?1 AND status = 'running')",
+        [id], |row| row.get::<_, bool>(0),
+    )?)
+}
+
+pub fn reschedule(db: &Database, task: &ScheduledTask, after: i64) -> Result<()> {
+    let raw: String = db.conn().query_row(
+        "SELECT config_json FROM scheduled_tasks WHERE id = ?1", [&task.id], |row| row.get(0),
+    )?;
+    let mut config = config_json_value(&raw);
+    config["nextRunAt"] = serde_json::json!(task.schedule.as_ref().and_then(|schedule| schedule.next(&task.cadence, after)));
+    db.conn().execute("UPDATE scheduled_tasks SET config_json = ?1 WHERE id = ?2", params![config.to_string(), task.id])?;
+    Ok(())
+}
+
+pub fn fail_due(db: &Database, task: &ScheduledTask, code: &str, now: i64) -> Result<()> {
+    let scheduled_at = task.next_run_at.as_deref().map(ts_to_ms).unwrap_or(now);
+    let run_id = begin_run_at(db, &task.id, None, scheduled_at)?;
+    finish_run(db, &run_id, "error", Some(code))?;
+    reschedule(db, task, now)
+}
+
+fn record_missed(db: &Database, task: &ScheduledTask, scheduled_at: i64) -> Result<()> {
+    let conn = db.conn();
+    conn.execute(
+        "INSERT INTO task_runs (id, task_id, status, started_at, scheduled_at, ended_at)
+         VALUES (?1, ?2, 'missed', ?3, ?3, ?4)",
+        params![Uuid::new_v4().to_string(), task.id, scheduled_at, now_ms()],
+    )?;
+    let removed = conn.execute(
+        "DELETE FROM task_runs WHERE id IN (
+           SELECT id FROM task_runs WHERE task_id = ?1 AND status = 'missed'
+           ORDER BY scheduled_at DESC LIMIT -1 OFFSET 50)", [&task.id],
+    )?;
+    if removed > 0 {
+        let raw: String = conn.query_row("SELECT config_json FROM scheduled_tasks WHERE id = ?1", [&task.id], |row| row.get(0))?;
+        let mut config = config_json_value(&raw);
+        let older = config.get("olderMissedCount").and_then(Value::as_u64).unwrap_or(0);
+        config["olderMissedCount"] = serde_json::json!(older.saturating_add(removed as u64));
+        conn.execute("UPDATE scheduled_tasks SET config_json = ?1 WHERE id = ?2", params![config.to_string(), task.id])?;
+    }
+    Ok(())
+}
+
+/// The host owns due admission and missed history; sleep and app closure never catch up.
+pub fn due(db: &Database, now: i64) -> Result<Vec<String>> {
+    let mut ids = Vec::new();
+    for task in list_tasks(db)? {
+        if !task.enabled || task.review_required || task.cadence == "manual" { continue; }
+        let Some(mut next) = task.next_run_at.as_deref().map(ts_to_ms) else { continue; };
+        let Some(schedule) = task.schedule.as_ref() else { continue; };
+        let overlapping = running(db, &task.id)?;
+        let active_time: Option<i64> = db.conn().query_row(
+            "SELECT scheduled_at FROM task_runs WHERE task_id = ?1 AND status = 'running' LIMIT 1",
+            [&task.id], |row| row.get(0),
+        ).optional()?;
+        while next <= now {
+            if overlapping && active_time == Some(next) { break; }
+            if now.saturating_sub(next) <= 90_000 && !overlapping {
+                ids.push(task.id.clone());
+                break;
+            }
+            record_missed(db, &task, next)?;
+            let Some(following) = schedule.next(&task.cadence, next) else { break; };
+            if following <= next { break; }
+            reschedule(db, &task, next)?;
+            next = following;
+        }
+    }
+    Ok(ids)
 }
 
 #[cfg(test)]
@@ -413,7 +583,8 @@ mod tests {
             serde_json::from_str::<Value>(&config).unwrap()["mode"],
             "agent"
         );
-        assert!(task.enabled);
+        assert!(!task.enabled);
+        assert!(task.review_required);
         assert_eq!(task.title, "run tests");
 
         let updated = update_task(&db, &json!({ "id": task.id.clone(), "enabled": false }))
@@ -432,6 +603,29 @@ mod tests {
 
         assert!(delete_task(&db, &task.id).unwrap());
         assert!(list_runs(&db, Some(&task.id), 10).unwrap().is_empty());
+    }
+
+    #[test]
+    fn due_runs_skip_catch_up_and_bound_missed_history() {
+        let db = test_db();
+        let task = create_task(&db, &json!({
+            "title": "Hourly", "prompt": "check", "cadence": "hourly",
+            "workspacePath": null, "providerId": "provider", "modelId": "model",
+            "permissionMode": "ask", "schedule": { "hour": 9, "minute": 0, "weekday": 0 }
+        })).unwrap();
+        assert!(task.enabled);
+        let first = ts_to_ms(task.next_run_at.as_deref().unwrap());
+        assert_eq!(due(&db, first).unwrap(), vec![task.id.clone()]);
+        let run = begin_run_at(&db, &task.id, None, first).unwrap();
+        assert!(due(&db, first).unwrap().is_empty());
+        finish_run(&db, &run, "completed", None).unwrap();
+        reschedule(&db, &task, first).unwrap();
+        assert!(due(&db, first + 56 * 3_600_000 + 120_000).unwrap().is_empty());
+        let runs = list_runs(&db, Some(&task.id), 100).unwrap();
+        assert_eq!(runs.iter().filter(|run| run.status == "missed").count(), 50);
+        let updated = get_task(&db, &task.id).unwrap().unwrap();
+        assert_eq!(updated.older_missed_count, 6);
+        assert!(ts_to_ms(updated.next_run_at.as_deref().unwrap()) > first + 56 * 3_600_000 + 120_000);
     }
 
     #[test]

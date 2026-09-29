@@ -588,6 +588,9 @@ fn validate_settings_value(value: &Value) -> Result<(), JsonRpcError> {
     let Some(object) = value.as_object() else {
         return Ok(());
     };
+    if object.get("keepAwakeDuringWork").is_some_and(|value| !value.is_boolean()) {
+        return Err(rpc_err(1002, "keepAwakeDuringWork must be a boolean", "INVALID_PARAMS"));
+    }
     if let Some(threshold_value) = object.get("largePasteThreshold") {
         let Some(threshold) = threshold_value.as_i64() else {
             return Err(rpc_err(
@@ -2598,10 +2601,42 @@ async fn handle_request(
             let task = scheduled::get_task(&st.db, id)
                 .map_err(|e| rpc_err(1000, e.to_string(), "INTERNAL"))?
                 .ok_or_else(|| rpc_err(1007, "task not found", "NOT_FOUND"))?;
+            let automatic = params.get("automatic").and_then(Value::as_bool).unwrap_or(false);
+            let now = crate::db::now_ms();
+            if scheduled::running(&st.db, id)
+                .map_err(|e| rpc_err(1000, e.to_string(), "INTERNAL"))? {
+                return Err(rpc_err(1002, "task is already running", "SCHEDULE_ALREADY_RUNNING"));
+            }
+            if automatic && !scheduled::due(&st.db, now)
+                .map_err(|e| rpc_err(1000, e.to_string(), "INTERNAL"))?
+                .contains(&id.to_string()) {
+                return Err(rpc_err(1002, "task is no longer due", "SCHEDULE_NOT_DUE"));
+            }
             // Both contract modes need a human to approve their proposal (D198),
             // so neither can run unattended.
             if sessions::is_contract_mode(&task.mode) {
                 return Err(plan_rpc_err("PLAN_REQUIRES_INTERACTIVE_SESSION"));
+            }
+            if let Some(path) = &task.workspace_path {
+                if !std::path::Path::new(path).is_dir() {
+                    if automatic {
+                        scheduled::fail_due(&st.db, &task, "SCHEDULE_PROJECT_UNAVAILABLE", now)
+                            .map_err(|e| rpc_err(1000, e.to_string(), "INTERNAL"))?;
+                    }
+                    return Err(rpc_err(1002, "scheduled project is unavailable", "SCHEDULE_PROJECT_UNAVAILABLE"));
+                }
+            }
+            if automatic {
+                let available = if let (Some(provider_id), Some(model_id)) = (task.provider_id.as_deref(), task.model_id.as_deref()) {
+                    providers::get_provider(&st.db, &st.secrets, provider_id)
+                    .map_err(|e| rpc_err(1000, e.to_string(), "INTERNAL"))?
+                    .is_some_and(|provider| provider.enabled && provider.models.iter().any(|model| model.id == model_id))
+                } else { false };
+                if !available {
+                    scheduled::fail_due(&st.db, &task, "SCHEDULE_MODEL_UNAVAILABLE", now)
+                        .map_err(|e| rpc_err(1000, e.to_string(), "INTERNAL"))?;
+                    return Err(rpc_err(1002, "scheduled model is unavailable", "SCHEDULE_MODEL_UNAVAILABLE"));
+                }
             }
             let settings = st
                 .db
@@ -2612,24 +2647,34 @@ async fn handle_request(
                 &st.db,
                 Some(task.title.clone()),
                 Some("agent".into()),
-                settings
+                task.provider_id.clone().or_else(|| settings
                     .get("defaultProviderId")
                     .and_then(|v| v.as_str())
-                    .map(str::to_string),
-                settings
+                    .map(str::to_string)),
+                task.model_id.clone().or_else(|| settings
                     .get("defaultModelId")
                     .and_then(|v| v.as_str())
-                    .map(str::to_string),
-                st.workspace.get().map(|w| w.path),
+                    .map(str::to_string)),
+                task.workspace_path.clone().or_else(|| if automatic { None } else { st.workspace.get().map(|w| w.path) }),
             )
             .map_err(|e| rpc_err(1000, e.to_string(), "INTERNAL"))?;
-            let run_id = match scheduled::begin_run(&st.db, id, Some(&session.id)) {
+            if let Some(permission) = task.permission_mode.as_deref().or(if automatic { Some("ask") } else { None }) {
+                sessions::configure_session_with_thinking(
+                    &st.db, &session.id, "agent", None, None, None, Some(permission),
+                ).map_err(|e| rpc_err(1000, e.to_string(), "INTERNAL"))?;
+            }
+            let scheduled_at = if automatic { task.next_run_at.as_deref().map(crate::db::ts_to_ms).unwrap_or(now) } else { now };
+            let run_id = match scheduled::begin_run_at(&st.db, id, Some(&session.id), scheduled_at) {
                 Ok(run_id) => run_id,
                 Err(error) => {
                     let _ = sessions::delete_session(&st.db, &session.id);
                     return Err(rpc_err(1000, error.to_string(), "INTERNAL"));
                 }
             };
+            if automatic {
+                scheduled::reschedule(&st.db, &task, now)
+                    .map_err(|e| rpc_err(1000, e.to_string(), "INTERNAL"))?;
+            }
             let task = scheduled::get_task(&st.db, id)
                 .map_err(|e| rpc_err(1000, e.to_string(), "INTERNAL"))?
                 .unwrap_or(task);
@@ -2639,6 +2684,12 @@ async fn handle_request(
                 "task": task,
                 "runId": run_id
             }))
+        }
+        "scheduled.due" => {
+            let st = state.lock().await;
+            let ids = scheduled::due(&st.db, crate::db::now_ms())
+                .map_err(|e| rpc_err(1000, e.to_string(), "INTERNAL"))?;
+            Ok(json!({ "ids": ids }))
         }
         "scheduled.finishRun" => {
             let run_id = params

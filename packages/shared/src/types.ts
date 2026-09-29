@@ -1353,6 +1353,7 @@ export function normalizeTwilightBackdropBlur(value: unknown): TwilightBackdropB
 export type CloseBehavior = "ask" | "tray" | "quit";
 
 export type AppSettings = {
+  keepAwakeDuringWork?: boolean;
   /** Core capability policy. Missing entries use product defaults. */
   coreCapabilities?: Partial<Record<CoreCapabilityId, { enabled: boolean }>>;
   defaultProviderId?: string;
@@ -2174,6 +2175,8 @@ export type OnboardingState = {
 
 export type ScheduledTaskCadence = "manual" | "hourly" | "daily" | "weekly";
 
+export type ScheduledTaskSchedule = { hour: number; minute: number; weekday: number };
+
 export type ScheduledTask = {
   id: string;
   title: string;
@@ -2184,15 +2187,24 @@ export type ScheduledTask = {
   createdAt: string;
   updatedAt: string;
   lastRunAt?: string;
+  schedule?: ScheduledTaskSchedule;
+  nextRunAt?: string;
+  workspacePath?: string | null;
+  providerId?: string;
+  modelId?: string;
+  permissionMode?: "ask" | "accept-edits" | "auto";
+  reviewRequired: boolean;
+  olderMissedCount: number;
 };
 
 export type ScheduledTaskRun = {
   id: string;
   taskId: string;
   sessionId?: string | null;
-  status: "running" | "completed" | "aborted" | "error";
+  status: "running" | "completed" | "aborted" | "error" | "missed";
   errorCode?: string | null;
   startedAt: string;
+  scheduledAt?: string | null;
   endedAt?: string | null;
 };
 

@@ -1,5 +1,15 @@
 # 08. Component Spec
 
+## Scheduled task editor
+
+Scheduled uses a compact task list beside an unframed editor. Selecting a task
+shows its prompt, project, provider/model, permission, cadence, local time, and
+run history. The editor takes the full content width on narrow windows, with
+a Back action to return to the list. A migrated recurring task visibly asks
+for review and remains paused until its execution settings are complete.
+The optional keep-awake toggle is visible on this page; it applies only while
+agent work is active.
+
 ## Built-in Browser Work Panel contract (Phase 0)
 
 Browser is a core Work Panel view with readiness states `uninitialized`,

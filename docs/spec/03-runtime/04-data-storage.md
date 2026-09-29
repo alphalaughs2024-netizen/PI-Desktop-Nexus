@@ -798,6 +798,13 @@ workspace deliverables only.
 
 ### 4.11 scheduled_tasks + task_runs — automations
 
+Schema v18 adds `task_runs.scheduled_at` and stores the task's local-time
+schedule, next run, project/model/permission binding, review marker, and
+older missed count in `config_json`. The migration pauses preexisting recurring
+tasks for review. Missed occurrences are individual `task_runs` rows, capped
+at 50 per task with older removals counted in the task config. Restart and
+sleep do not cause catch-up execution.
+
 Moves scheduled tasks out of Electron's `scheduled-tasks.json` (D002 fix) and
 adds the run-history the Automations page needs (定时任务 / 运行记录 tabs).
 

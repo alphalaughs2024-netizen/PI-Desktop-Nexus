@@ -233,6 +233,15 @@ Phase 1 reliability scenarios include:
   envelope without prompts, workspace content, secrets, or plugin contents.
 - Scheduled tasks show recent persisted run statuses and timestamps after a
   refresh; tasks with no history remain quiet.
+- A recurring task runs while Nexus is open even when Scheduled is never
+  visited. Its saved project, provider/model, and permission mode are used.
+- Closing Nexus or sleeping through occurrences records each missed local time
+  without catch-up execution. The latest 50 missed rows remain per task and
+  older omissions have a visible count. Overlapping runs are not started.
+- Existing recurring tasks migrate to paused review state. Unavailable saved
+  projects/models and unattended Plan/Goal tasks show actionable errors.
+- The Scheduled editor spans the content width in a narrow window. The
+  optional keep-awake setting blocks suspension only during active work.
 
 Phase 2 project workbench scenarios include:
 

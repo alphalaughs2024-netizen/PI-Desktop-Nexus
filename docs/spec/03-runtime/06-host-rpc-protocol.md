@@ -453,7 +453,16 @@ contract is being negotiated.
 - `scheduled.list` / `scheduled.create` / `scheduled.update` /
   `scheduled.delete`
 - `scheduled.import` — imports task records and normalizes their persisted mode
-- `scheduled.run` / `scheduled.finishRun` / `scheduled.listRuns`
+- `scheduled.due` / `scheduled.run` / `scheduled.finishRun` /
+  `scheduled.listRuns`
+
+The host stores project, provider/model, permission mode, local wall-clock
+schedule, `nextRunAt`, and `reviewRequired` per task. `scheduled.due` advances
+missed occurrences without launching them and omits overlapping runs.
+`scheduled.run` with `automatic: true` rechecks due time and overlap, uses the
+saved execution settings, and records `scheduledAt`. Unavailable projects or
+models produce actionable error codes and failed run history. The desktop
+polls while open and dispatches accepted runs through the normal prompt path.
 
 The wire `ScheduledTask.mode` is a normalized projection of the durable
 `config_json.mode`; create, update, and import map legacy `chat` to `plan` and
@@ -461,6 +470,8 @@ default missing values to `agent`. `scheduled.run` reads the selected task's
 persisted mode; a `plan` or `goal` task fails with
 `PLAN_REQUIRES_INTERACTIVE_SESSION` before creating a session or run. It never
 uses `settings.defaultMode` as the task mode.
+Recurring Plan/Goal tasks are rejected at create/update as well. Existing
+recurring tasks are paused by the schema v18 migration until fully reviewed.
 
 Canonical thinking levels at the host boundary are:
 
