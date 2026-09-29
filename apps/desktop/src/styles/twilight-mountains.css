@@ -7,7 +7,7 @@
   --twilight-shell-glass: rgba(7, 31, 78, 0.5);
   --twilight-navigation-glass: rgba(7, 31, 78, 0.5);
   --scenic-chat-glass-fill: rgba(7, 31, 78, 0.78);
-  --scenic-composer-fill: linear-gradient(108deg, rgba(7, 35, 86, 0.95), rgba(13, 43, 99, 0.93) 52%, rgba(33, 53, 109, 0.88) 78%, rgba(15, 45, 101, 0.92));
+  --scenic-composer-fill: rgba(7, 31, 78, 0.5);
   --scenic-chat-glass-filter: blur(18px) saturate(1.08);
   --scenic-chat-glass-shadow: 0 14px 34px rgba(0, 9, 35, 0.2);
   --twilight-raised-glass: rgba(29, 79, 156, 0.42);

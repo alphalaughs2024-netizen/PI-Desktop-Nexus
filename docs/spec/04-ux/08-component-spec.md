@@ -2217,8 +2217,8 @@ reasoning-level control.
 - Background: one solid semantic composer surface; no internal gradient,
   background image, or decorative wash in standard themes. Twilight Mountains
   and Obsidian Horizon are scoped first-party exceptions: the same shell
-  geometry uses a translucent left-to-right tint, blue in Twilight and
-  near-black slate in Obsidian. Their composer materials do not change the
+  geometry uses the scenic plugin's uniform translucent blue and dark-slate
+  fills, respectively. Their composer materials do not change the
   toolbar controls, width, or the other themes.
 - Elevation: 20px radius with the restrained soft shadow alone; the hairline
   stroke was removed in D297;

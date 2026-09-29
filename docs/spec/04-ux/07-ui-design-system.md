@@ -1229,9 +1229,11 @@ unsupported-filter paths use solid readable surfaces.
 Composer focus adds a one-pixel ring: dark blue in Twilight Mountains, black in
 Obsidian Horizon, white in Alpine Light, and dark green in Emerald Afterglow.
 File drag remains a distinct, stronger attachment cue.
-Twilight and Obsidian composers use their reference left-to-right translucent
-blue and slate tint, respectively. Their workflow strips keep their existing
-flat fills. Alpine and Emerald retain their existing composer materials.
+Twilight and Obsidian composers use the scenic plugin's uniform translucent
+fills: `rgba(7, 31, 78, 0.5)` and `rgba(12, 28, 48, 0.72)`, respectively.
+The backdrop remains visible through the composer without an internal gradient.
+Their workflow strips keep their existing fills. Alpine and Emerald retain
+their existing composer materials.
 
 ## Scenic theme card copy
 

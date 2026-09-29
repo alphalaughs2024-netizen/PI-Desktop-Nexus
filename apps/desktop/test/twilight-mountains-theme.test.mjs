@@ -77,8 +77,11 @@ test("scenic themes keep the image bright beneath shared glass surfaces", () => 
     assert.match(sheet, /--scenic-chat-glass-filter:/);
     assert.match(sheet, /--scenic-chat-glass-shadow:/);
   }
-  for (const sheet of [twilightStyles, obsidianStyles]) {
-    assert.match(sheet, /--scenic-composer-fill: linear-gradient\(108deg,/);
+  for (const [sheet, fill] of [
+    [twilightStyles, /rgba\(7, 31, 78, 0\.5\)/],
+    [obsidianStyles, /rgba\(12, 28, 48, 0\.72\)/],
+  ]) {
+    assert.match(sheet, new RegExp(`--scenic-composer-fill: ${fill.source};`));
     assert.match(sheet, /\.composer-shell[^}]*background: var\(--scenic-composer-fill\);[^}]*backdrop-filter: var\(--scenic-chat-glass-filter\);/);
   }
   for (const fallback of [

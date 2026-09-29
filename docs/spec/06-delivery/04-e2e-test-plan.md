@@ -2151,8 +2151,8 @@ membership when dropped on Ungrouped.
   surfaces. The scenic layer preserves the standard shell geometry: fixed and
   absolute controls, the work-panel toggle, and opening or closing the work
   panel stay aligned and behave as they do in Dark. Sidebar/title bands and
-  composer reads as translucent blue glass with a deeper left side and lighter
-  right side, while its width and controls remain unchanged. Menus, dialogs,
+  composer reads as uniform translucent blue glass that reveals the backdrop,
+  while its width and controls remain unchanged. Menus, dialogs,
   permission UI, code, tool output, and settings controls retain readable
   opaque-enough contrast. Window edges use a navy fallback. Reduced
   transparency removes blur and increases opacity without removing the scenic
@@ -11079,8 +11079,8 @@ existing three-failed-`Edit` recovery scenario remains unchanged.
   clicks; renderer-drawn Windows/Linux controls, titlebar reservations,
   work-panel actions, and Context Vault remain usable. The empty home hides the
   mascot and uses the localized build greeting only for Obsidian. The composer
-  retains its width and controls while its translucent material grades from
-  near-black blue at the left to slate at the right; focus and file-drop cues
+  retains its width and controls while its uniform dark-slate translucent
+  material reveals the backdrop; focus and file-drop cues
   remain visible. Settings mixed-content panels may be tiles, while row-only
   parents are transparent
   and each row is a separate charcoal tile with no outer rectangle. Menus,
