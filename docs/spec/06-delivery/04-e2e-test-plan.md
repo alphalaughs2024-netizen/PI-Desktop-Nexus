@@ -11012,6 +11012,9 @@ Across all four themes, confirm the workflow strip matches the unfocused compose
 fill, frost blur, border, and elevation. Twilight and Obsidian should soften
 bright image detail beneath both surfaces without reading as solid panels;
 the backdrop image and its blur preference remain unchanged.
+For Twilight and Obsidian, first verify the composer glass against the supplied
+visual references without changing the workflow strip. After approval, verify
+the strip receives the approved material with unchanged controls and geometry.
 
 ### E2E-218 — Alpine Light Settings glass
 

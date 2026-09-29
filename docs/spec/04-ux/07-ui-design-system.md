@@ -1233,6 +1233,9 @@ The workflow strip matches the unfocused composer fill, material blur, border,
 and elevation within each theme. Twilight and Obsidian use a denser composer
 fill over their high-contrast scenic backdrops; Alpine and Emerald keep
 their existing composer materials.
+Twilight and Obsidian composer fills are being calibrated separately against
+the visual references; their workflow strips retain the prior fill until the
+composer material is visually approved.
 
 ## Scenic theme card copy
 

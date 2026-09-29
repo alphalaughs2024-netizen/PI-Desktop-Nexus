@@ -42,6 +42,9 @@ Twilight and Obsidian need a denser composer fill over their high-contrast
 scenes. The backdrop image and its user-selected blur are unchanged. The
 workflow strip takes the same fill, filter, shadow, and border treatment as the
 unfocused composer in each scenic theme.
+When calibrating a composer from screenshots, keep its material separate from
+the workflow strip until the composer is visually approved; then share the
+approved material without changing either surface's controls or geometry.
 
 A new theme must be:
 
