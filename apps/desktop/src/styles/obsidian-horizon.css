@@ -3,6 +3,9 @@
   --obsidian-atmosphere: rgba(3, 8, 16, 0.18);
   --obsidian-shell-glass: rgba(7, 14, 25, 0.58);
   --obsidian-navigation-glass: rgba(12, 28, 48, 0.72);
+  --scenic-chat-glass-fill: rgba(12, 28, 48, 0.86);
+  --scenic-chat-glass-filter: blur(18px) saturate(1.08);
+  --scenic-chat-glass-shadow: var(--ds-shadow-composer);
   --obsidian-raised-glass: rgba(17, 28, 44, 0.68);
   --obsidian-safety-surface: rgba(8, 15, 26, 0.94);
   --obsidian-control-surface: rgba(18, 30, 47, 0.82);
@@ -64,11 +67,11 @@
   -webkit-backdrop-filter: blur(16px) saturate(1.08);
 }
 :root[data-scenic-theme="obsidian-horizon"] .composer-shell {
-  background: var(--ds-bg-composer);
+  background: var(--scenic-chat-glass-fill);
   border: 0;
-  box-shadow: var(--ds-shadow-composer);
-  backdrop-filter: blur(18px) saturate(1.08);
-  -webkit-backdrop-filter: blur(18px) saturate(1.08);
+  box-shadow: var(--scenic-chat-glass-shadow);
+  backdrop-filter: var(--scenic-chat-glass-filter);
+  -webkit-backdrop-filter: var(--scenic-chat-glass-filter);
 }
 
 :root[data-scenic-theme="obsidian-horizon"] .composer-shell:focus-within {

@@ -3,6 +3,9 @@
   --emerald-atmosphere: rgba(4, 18, 12, 0.18);
   --emerald-shell-glass: rgba(7, 29, 19, 0.62);
   --emerald-navigation-glass: rgba(8, 43, 25, 0.72);
+  --scenic-chat-glass-fill: var(--emerald-navigation-glass);
+  --scenic-chat-glass-filter: blur(18px) saturate(1.08);
+  --scenic-chat-glass-shadow: var(--ds-shadow-composer);
   --emerald-raised-glass: rgba(20, 53, 35, 0.7);
   --emerald-safety-surface: rgba(6, 25, 16, 0.95);
   --emerald-control-surface: rgba(21, 57, 38, 0.84);

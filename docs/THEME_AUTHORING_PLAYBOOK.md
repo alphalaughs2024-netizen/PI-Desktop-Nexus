@@ -33,11 +33,15 @@ surfaces for dense or security-sensitive UI. The original scenic plugin package
 is a useful visual reference, but its selectors and theme mechanism do not
 replace Nexus's built-in theme contracts.
 
-For scenic chat surfaces, use the navigation glass fill for the composer and
-active workflow strip. Keep their material blur and avoid visible perimeter
-strokes so they read like the sidebar rather than outlined, transparent panels.
+For scenic chat surfaces, use a shared material for the composer and active
+workflow strip within each theme. Keep their material blur and avoid visible
+perimeter strokes so they read as floating glass rather than outlined panels.
 Check both surfaces over a detailed area of the backdrop, including home and
 docked composer states.
+Twilight and Obsidian need a denser composer fill over their high-contrast
+scenes. The backdrop image and its user-selected blur are unchanged. The
+workflow strip takes the same fill, filter, shadow, and border treatment as the
+unfocused composer in each scenic theme.
 
 A new theme must be:
 

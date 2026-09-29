@@ -11008,6 +11008,10 @@ including thin theme-colored focus rings (Twilight dark blue, Obsidian black,
 Alpine white, Emerald dark green) and distinct file-drop cues. Repeat with a populated chat,
 reduced transparency, and unsupported backdrop filtering; dense menus and
 dialogs must remain readable and fallback surfaces must remain solid.
+Across all four themes, confirm the workflow strip matches the unfocused composer
+fill, frost blur, border, and elevation. Twilight and Obsidian should soften
+bright image detail beneath both surfaces without reading as solid panels;
+the backdrop image and its blur preference remain unchanged.
 
 ### E2E-218 — Alpine Light Settings glass
 

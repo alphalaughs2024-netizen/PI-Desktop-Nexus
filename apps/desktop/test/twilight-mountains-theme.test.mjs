@@ -69,11 +69,16 @@ test("Twilight maps the persisted blur strengths only to its backdrop image", ()
 
 test("scenic themes keep the image bright beneath shared glass surfaces", () => {
   assert.match(scenicStyles, /:root\[data-scenic-theme\] :is\(\.app-shell, \.main-pane\) \{ background: transparent; \}/);
-  assert.match(scenicStyles, /:root\[data-scenic-theme\] \.active-workflow-card \{[\s\S]*?backdrop-filter: blur\(/);
+  assert.match(scenicStyles, /:root\[data-scenic-theme\] \.active-workflow-card \{[^}]*background: var\(--scenic-chat-glass-fill\);[^}]*box-shadow: var\(--scenic-chat-glass-shadow\);[^}]*backdrop-filter: var\(--scenic-chat-glass-filter\);/);
   assert.match(scenicStyles, /prefers-reduced-transparency[\s\S]*?\.active-workflow-card \{[\s\S]*?background: var\(--ds-bg-elevated-opaque\)/);
   for (const sheet of [twilightStyles, alpineStyles, obsidianStyles, emeraldStyles]) {
     assert.match(sheet, /\.app-scenic-backdrop::after \{[\s\S]*?background: transparent;/);
-    assert.match(sheet, /\.composer-shell[\s\S]*?backdrop-filter: blur\(/);
+    assert.match(sheet, /--scenic-chat-glass-fill:/);
+    assert.match(sheet, /--scenic-chat-glass-filter:/);
+    assert.match(sheet, /--scenic-chat-glass-shadow:/);
+  }
+  for (const sheet of [twilightStyles, obsidianStyles]) {
+    assert.match(sheet, /\.composer-shell[^}]*background: var\(--scenic-chat-glass-fill\);[^}]*backdrop-filter: var\(--scenic-chat-glass-filter\);/);
   }
 });
 
@@ -136,7 +141,7 @@ test("Twilight uses layered blue-glass materials with readable safety surfaces",
 test("Twilight overrides the dark composer and Settings rail instead of inheriting black surfaces", () => {
   assert.match(
     styles,
-    /\[data-scenic-theme="twilight-mountains"\][\s\S]*?\.composer-shell\.is-file-drop-active[\s\S]*?background:\s*var\(--ds-bg-composer\)/,
+    /\[data-scenic-theme="twilight-mountains"\][\s\S]*?\.composer-shell\.is-file-drop-active[\s\S]*?background:\s*var\(--scenic-chat-glass-fill\)/,
   );
   assert.match(
     styles,
@@ -213,7 +218,7 @@ test("Twilight preserves scenic depth and separates adjacent selected sidebar ro
 
   assert.match(styles, /\.app-scenic-backdrop[\s\S]*?filter:\s*saturate\(1\.12\) blur\(var\(--twilight-backdrop-blur, 2px\)\)/);
   assert.match(twilightStyles, /\.app-scenic-backdrop::after \{[\s\S]*?background: transparent;/);
-  assert.match(twilightStyles, /\.composer-shell\.is-file-drop-active\) \{[\s\S]*?background: var\(--ds-bg-composer\)/);
+  assert.match(twilightStyles, /\.composer-shell\.is-file-drop-active\) \{[\s\S]*?background: var\(--scenic-chat-glass-fill\)/);
   assert.match(styles, /\.project-group\.active > \.sidebar-session-group-header[\s\S]*?background:\s*rgba\(125, 174, 246, 0\.18\)/);
   assert.match(styles, /\.project-group\.active > \.sidebar-session-group-header \+ \.sidebar-session-group-body\.project[\s\S]*?padding-top:\s*4px/);
   assert.match(projectSessionBodyRule, /gap:\s*4px/);

@@ -3,6 +3,9 @@
   --alpine-atmosphere: rgba(235, 243, 255, 0.18);
   --alpine-shell-glass: rgba(225, 237, 255, 0.48);
   --alpine-navigation-glass: rgba(222, 241, 250, 0.66);
+  --scenic-chat-glass-fill: var(--alpine-navigation-glass);
+  --scenic-chat-glass-filter: blur(16px) saturate(1.05);
+  --scenic-chat-glass-shadow: var(--ds-shadow-composer);
   --alpine-raised-glass: rgba(245, 249, 255, 0.68);
   --alpine-safety-surface: rgba(247, 251, 255, 0.94);
   --alpine-luminous-border: rgba(255, 255, 255, 0.82);
