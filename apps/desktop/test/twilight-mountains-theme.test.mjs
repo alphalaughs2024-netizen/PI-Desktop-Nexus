@@ -77,12 +77,9 @@ test("scenic themes keep the image bright beneath shared glass surfaces", () => 
     assert.match(sheet, /--scenic-chat-glass-filter:/);
     assert.match(sheet, /--scenic-chat-glass-shadow:/);
   }
-  for (const [sheet, fill] of [
-    [twilightStyles, /rgba\(7, 31, 78, 0\.5\)/],
-    [obsidianStyles, /rgba\(12, 28, 48, 0\.72\)/],
-  ]) {
-    assert.match(sheet, new RegExp(`--scenic-composer-fill: ${fill.source};`));
-    assert.match(sheet, /\.composer-shell[^}]*background: var\(--scenic-composer-fill\);[^}]*backdrop-filter: var\(--scenic-chat-glass-filter\);/);
+  for (const sheet of [twilightStyles, obsidianStyles, emeraldStyles]) {
+    assert.match(sheet, /--scenic-composer-fill: rgba\(/);
+    assert.match(sheet, /\.composer-shell[^}]*background: var\(--scenic-composer-fill\);/);
   }
   for (const fallback of [
     /@media \(prefers-reduced-transparency: reduce\)/,
@@ -90,6 +87,48 @@ test("scenic themes keep the image bright beneath shared glass surfaces", () => 
   ]) {
     assert.match(twilightStyles, new RegExp(`${fallback.source}[\\s\\S]*?:is\\(\\.composer-shell, \\.composer-shell:focus-within, \\.composer-shell\\.is-file-drop-active\\) \\{\\s*background: var\\(--ds-bg-elevated-opaque\\)`));
     assert.match(obsidianStyles, new RegExp(`${fallback.source}[\\s\\S]*?\\.composer-shell \\{ background: rgba\\(5, 11, 20, 0\\.96\\)`));
+  }
+});
+
+test("three dark scenic composers reproduce their sidebar material over the chat tint", () => {
+  const rgba = (sheet, token) => {
+    const value = new RegExp(`${token}: rgba\\(([^)]+)\\)`).exec(sheet)?.[1];
+    assert.ok(value, `Missing ${token}`);
+    return value.split(",").map((channel) => Number(channel.trim()));
+  };
+  const rule = (sheet, selector) => {
+    const start = sheet.indexOf(selector);
+    assert.ok(start >= 0, `Missing ${selector}`);
+    const opening = sheet.indexOf("{", start);
+    return sheet.slice(opening + 1, sheet.indexOf("}", opening));
+  };
+
+  for (const [theme, sheet, prefix] of [
+    ["twilight-mountains", twilightStyles, "twilight"],
+    ["obsidian-horizon", obsidianStyles, "obsidian"],
+    ["emerald-afterglow", emeraldStyles, "emerald"],
+  ]) {
+    const [r, g, b, alpha] = rgba(sheet, `--${prefix}-navigation-glass`);
+    const [ar, ag, ab, atmosphereAlpha] = rgba(sheet, `--${prefix}-atmosphere`);
+    const [cr, cg, cb, composerAlpha] = rgba(sheet, "--scenic-composer-fill");
+    for (const [sidebarChannel, atmosphereChannel, composerChannel] of [
+      [r, ar, cr], [g, ag, cg], [b, ab, cb],
+    ]) {
+      const sidebarResult = alpha * sidebarChannel;
+      const composerResult = composerAlpha * composerChannel
+        + (1 - composerAlpha) * atmosphereAlpha * atmosphereChannel;
+      assert.ok(Math.abs(sidebarResult - composerResult) < 0.001, `${theme} tint differs`);
+    }
+    assert.ok(Math.abs(1 - alpha - (1 - composerAlpha) * (1 - atmosphereAlpha)) < 0.001);
+
+    const sidebar = rule(sheet, `:root[data-scenic-theme="${theme}"] :is(.sidebar, .sidebar-rail,`);
+    const composer = rule(sheet, `:root[data-scenic-theme="${theme}"] .composer-shell {`);
+    const composerFilter = /backdrop-filter:\s*([^;]+);/.exec(composer)?.[1];
+    const resolvedFilter = composerFilter === "var(--scenic-chat-glass-filter)"
+      ? /--scenic-chat-glass-filter:\s*([^;]+);/.exec(sheet)?.[1]
+      : composerFilter;
+    assert.equal(resolvedFilter, /backdrop-filter:\s*([^;]+);/.exec(sidebar)?.[1]);
+    assert.match(composer, /box-shadow:\s*none;/);
   }
 });
 
@@ -229,7 +268,7 @@ test("Twilight preserves scenic depth and separates adjacent selected sidebar ro
 
   assert.match(styles, /\.app-scenic-backdrop[\s\S]*?filter:\s*saturate\(1\.12\) blur\(var\(--twilight-backdrop-blur, 2px\)\)/);
   assert.match(twilightStyles, /\.app-scenic-backdrop::after \{[\s\S]*?background: transparent;/);
-  assert.match(twilightStyles, /\.composer-shell\.is-file-drop-active\) \{[\s\S]*?background: var\(--scenic-composer-fill\)/);
+  assert.match(twilightStyles, /\.composer-shell\s*\{[^}]*background: var\(--scenic-composer-fill\)/);
   assert.match(styles, /\.project-group\.active > \.sidebar-session-group-header[\s\S]*?background:\s*rgba\(125, 174, 246, 0\.18\)/);
   assert.match(styles, /\.project-group\.active > \.sidebar-session-group-header \+ \.sidebar-session-group-body\.project[\s\S]*?padding-top:\s*4px/);
   assert.match(projectSessionBodyRule, /gap:\s*4px/);

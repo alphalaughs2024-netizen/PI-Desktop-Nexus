@@ -702,9 +702,10 @@ High-frequency workstation feedback must remain compositor-friendly and bounded:
 - Composer focus lifts by 1px with a restrained token-based shadow. Normal
   themes use a near-opaque surface with no backdrop blur: transcript updates
   beneath a blur layer would force avoidable repaint/compositing work while
-  streaming. Twilight Mountains is the narrow first-party exception: its one
-  compositor-bounded composer shell may use blur as part of the scenic glass
-  material, while transcript rows, list rows, code, and tool output never do.
+  streaming. Twilight Mountains, Obsidian Horizon, and Emerald Afterglow are
+  narrow first-party exceptions: their compositor-bounded composer shells may
+  use blur as part of the scenic glass material, while transcript rows, list
+  rows, code, and tool output never do.
 - The four scenic themes show their bundled images without a separate vignette
   or stacked shell tint. The shell and main pane are transparent; the content
   has one restrained atmospheric tint. Sidebar, title strips, composer, and
@@ -1229,11 +1230,14 @@ unsupported-filter paths use solid readable surfaces.
 Composer focus adds a one-pixel ring: dark blue in Twilight Mountains, black in
 Obsidian Horizon, white in Alpine Light, and dark green in Emerald Afterglow.
 File drag remains a distinct, stronger attachment cue.
-Twilight and Obsidian composers use the scenic plugin's uniform translucent
-fills: `rgba(7, 31, 78, 0.5)` and `rgba(12, 28, 48, 0.72)`, respectively.
-The backdrop remains visible through the composer without an internal gradient.
-Their workflow strips keep their existing fills. Alpine and Emerald retain
-their existing composer materials.
+Twilight Mountains, Obsidian Horizon, and Emerald Afterglow composers match
+their respective sidebar's visible glass depth and backdrop blur. The composer
+fill compensates for the chat surface's atmospheric tint, which is absent behind
+the sidebar; its CSS color therefore differs from the sidebar fill. Resting
+composers have no outer elevation shadow. Focus and file-drop rings remain
+distinct. The backdrop remains visible through each composer without an
+internal gradient. Composer geometry and controls, all workflow strips, and
+Alpine Light's composer material remain unchanged.
 
 ## Scenic theme card copy
 

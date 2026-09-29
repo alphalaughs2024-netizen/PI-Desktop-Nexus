@@ -19,6 +19,7 @@
   --ds-bg-elevated: var(--emerald-raised-glass);
   --ds-bg-elevated-opaque: var(--emerald-safety-surface);
   --ds-bg-composer: var(--emerald-navigation-glass);
+  --scenic-composer-fill: rgba(8.373, 45.333, 26.213, 0.658537);
   --ds-bg-hover: rgba(160, 228, 176, 0.14);
   --ds-bg-active: rgba(160, 228, 176, 0.22);
   --ds-text-primary: #f0fbf2;
@@ -65,11 +66,11 @@
   -webkit-backdrop-filter: blur(16px) saturate(1.06);
 }
 :root[data-scenic-theme="emerald-afterglow"] .composer-shell {
-  background: var(--ds-bg-composer);
+  background: var(--scenic-composer-fill);
   border: 0;
-  box-shadow: var(--ds-shadow-composer);
-  backdrop-filter: blur(18px) saturate(1.08);
-  -webkit-backdrop-filter: blur(18px) saturate(1.08);
+  box-shadow: none;
+  backdrop-filter: blur(16px) saturate(1.06);
+  -webkit-backdrop-filter: blur(16px) saturate(1.06);
 }
 :root[data-scenic-theme="emerald-afterglow"] .speech-dialog {
   border-color: rgba(175, 233, 184, .44);
@@ -91,10 +92,10 @@
 :root[data-scenic-theme="emerald-afterglow"] .speech-details { border-bottom-color: rgba(175, 233, 184, .28); }
 :root[data-scenic-theme="emerald-afterglow"] :is(.speech-primary, .speech-close, .speech-expand):focus-visible { outline-color: #b7efc1; }
 :root[data-scenic-theme="emerald-afterglow"] .composer-shell:focus-within {
-  box-shadow: 0 0 0 1px #082d1b, var(--ds-shadow-composer);
+  box-shadow: 0 0 0 1px #082d1b;
 }
 :root[data-scenic-theme="emerald-afterglow"] .composer-shell.is-file-drop-active {
-  box-shadow: 0 0 0 2px var(--emerald-focus), var(--ds-shadow-composer);
+  box-shadow: 0 0 0 2px var(--emerald-focus);
 }
 :root[data-scenic-theme="emerald-afterglow"] :is(.dialog, .menu, .popover, .settings-theme-menu, .tool-row-content, pre, .permission-card, .toast, .context-vault-modal, .work-panel-context-menu) { background: var(--emerald-safety-surface); color: var(--ds-text-primary); border-color: var(--emerald-border); }
 :root[data-scenic-theme="emerald-afterglow"] :is(.thread-item.active, .thread-item:hover, .project-group.active > .sidebar-session-group-header) { background: rgba(151, 221, 165, 0.18); border-color: rgba(215, 244, 220, 0.28); }

@@ -11001,24 +11001,21 @@ persists and the control is unavailable outside scenic themes. Unit/source cover
 In each of the four scenic themes, compare the empty chat backdrop against its
 packaged image: colors and highlights remain visible without a dark vignette or
 multiple content tints. Inspect the sidebar, top title strip, composer, and an
-active workflow strip over the image. They should read as translucent glass,
-with the composer and workflow strip matching the sidebar's tinted glass depth,
-legible controls, and no visible perimeter strokes. Check home and docked composers,
+active workflow strip over the image. They should read as translucent glass;
+Twilight, Obsidian, and Emerald composers match their sidebar's tinted glass
+depth, while workflow strips retain their own materials. Verify legible controls
+and no visible perimeter strokes. Check home and docked composers,
 including thin theme-colored focus rings (Twilight dark blue, Obsidian black,
 Alpine white, Emerald dark green) and distinct file-drop cues. Repeat with a populated chat,
 reduced transparency, and unsupported backdrop filtering; dense menus and
 dialogs must remain readable and fallback surfaces must remain solid.
-Across all four themes, confirm the workflow strip matches the unfocused composer
-fill, frost blur, border, and elevation. Twilight and Obsidian should soften
-bright image detail beneath both surfaces without reading as solid panels;
-the backdrop image and its blur preference remain unchanged.
-For Twilight and Obsidian, first verify the composer glass against the supplied
-visual references without changing the workflow strip. After approval, verify
-the strip receives the approved material with unchanged controls and geometry.
-Confirm the composer uses a uniform tinted fill matching the original scenic
-plugin's color rather than a decorative gradient. Bright image detail should
-remain faintly perceptible through its material blur without overpowering the
-composer surface.
+For Twilight Mountains, Obsidian Horizon, and Emerald Afterglow, compare each
+unfocused composer with its sidebar over similarly bright areas of the scene in
+home and docked chat. Confirm matching visible tint and frost blur, with no
+composer outer shadow or decorative gradient. Focus and file-drop rings remain
+visible, and composer width and controls do not move. Bright image detail remains
+faintly perceptible through the composer. The backdrop image, its blur preference,
+workflow strips, and Alpine Light composer remain unchanged.
 
 ### E2E-218 — Alpine Light Settings glass
 
