@@ -78,8 +78,11 @@ compaction and graceful stop do not silently fall back to pi. Existing features
 remain available in the default runtime. Full response timeline/timer rendering
 is Phase 3; full coding services are Phase 4. Existing chat migration is not
 required. Responses support alone does not establish custom-tool compatibility.
-The recorded OpenRouter Space Bunny trial passed commands/images/reasoning, but
-did not expose Codex's custom apply_patch tool and rejected a forced custom-tool
-request. Native patch parity on that route remains unverified. The xkiro route
-passed native patch/recovery checks. Local E2E suites remain unrun unless
+The original OpenRouter Space Bunny route did not expose the custom patch tool.
+[ADR 0253](../../adr/0253-openrouter-codex-patch-compatibility.md) adds an exact
+endpoint compatibility service: JSON function transport returns to Codex's native
+custom patch handler, preserving validation/permissions. Its loopback token is
+private, the upstream key stays in the bridge, and cancellation closes both.
+A disposable read/patch/read trial passed with one terminal outcome. The xkiro
+route passed native patch/recovery checks without this service. Local E2E suites remain unrun unless
 explicitly requested.

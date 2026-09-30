@@ -69,9 +69,21 @@ attach an image, interrupt a long request, and reload a chat. For mutation in
 Ask mode, use Allow once; keep tests inside the disposable workspace. The fresh
 profile has the authorized xkiro and OpenRouter Responses providers. Explicitly
 select a verified free model; OpenRouter's provider default is a paid model and
-was never used in these trials. Space Bunny has image input enabled. The
-OpenRouter native patch limitation above remains open; use the tested xkiro
-route for direct native patch acceptance. No old chat/profile was deleted or migrated.
+was never used in these trials. Space Bunny has image input enabled. The original
+OpenRouter patch limitation motivated ADR 0253. The compatibility probe completed
+a direct native read/patch/read in 17.502 seconds with one translated patch,
+three tool items and one completed turn. Private evidence is
+%USERPROFILE%/.nexus-codex-phase2/native-openrouter-bridge-report.json. This is one
+sample, not a speed benchmark. No old chat/profile was deleted or migrated.
+
+## Integrated compatibility recheck
+
+The source-integrated OpenRouter bridge passed direct native read/patch/read
+in 15.314 seconds, with no shell-edit substitute, and preserved the original
+provider identity in the snapshot. Explicit Full access passed a read of the
+prepared sibling fixture in 6.717 seconds. Both had one completed terminal
+outcome. Evidence: %USERPROFILE%/.nexus-codex-phase2/production-openrouter-report.json.
+These are single workflow samples, not engine latency comparisons.
 
 ## User acceptance feedback
 

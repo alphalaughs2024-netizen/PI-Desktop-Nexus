@@ -11562,7 +11562,12 @@ must remain stable through steps and renderer reload. Change the supported
 reasoning level between turns: the actual native request must use the selected
 endpoint effort without changing the thread handle; unsupported levels fail
 clearly. Responses-only metadata cannot stand in for a custom-tool compatibility
-check; record provider gaps instead of claiming parity. Inject duplicate, delayed
+check; record provider gaps instead of claiming parity. On OpenRouter Space
+Bunny verify a direct read/apply_patch/read workflow with no shell patch
+workaround. Mismatched patch context must fail through Codex's native handler.
+Verify the authenticated loopback service rejects other models/paths and closes
+on cancel/shutdown; original provider settings and recovery bindings remain
+unchanged. Inject duplicate, delayed
 and stale-run/native-turn events; they cannot alter current items or outcome.
 
 Exercise a context-mismatched patch, a nonzero command exit and a missing tool

@@ -5,6 +5,7 @@ import type { AgentEvent, AgentEventEnvelope, AgentStatus, AskToolResolution, En
 import { ExecutionContract } from "./contract.js";
 import { CodexSessionStore } from "./store.js";
 import { nativeEffort, nativePolicy, prepareLaunch, sessionDescriptor, type CodexConfig, type CodexLaunch } from "./config.js";
+import { needsOpenRouterBridge, startOpenRouterBridge, type ProviderBridge } from "./openrouter-bridge.js";
 import { AppServerTransport, type CodexRpc, type NativeEvent, type NativeRequest } from "./transport.js";
 export const CODEX_APPROVAL_TIMEOUT_MS = 120_000;
 type Dependencies = {
@@ -21,6 +22,7 @@ export class CodexAdapter implements EngineAdapter {
   private contract: ExecutionContract;
   private store: CodexSessionStore;
   private rpc?: CodexRpc;
+  private providerBridge?: ProviderBridge;
   private sequence = 0;
   private processGeneration = 0;
   private turnGeneration?: string;
@@ -104,8 +106,17 @@ export class CodexAdapter implements EngineAdapter {
     if (this.rpc) return;
     const preparationGeneration = this.processGeneration;
     await mkdir(this.config.workspace, { recursive: true });
-    const launch = await (this.dependencies.launch ?? prepareLaunch)(this.config, this.store.directory);
-    if (preparationGeneration !== this.processGeneration || this.disposed) throw Object.assign(new Error("CODEX_CONNECT_INTERRUPTED"), { errorCode: "TURN_ABORTED" });
+    const bridge = !this.dependencies.launch && needsOpenRouterBridge(this.config.provider) ? await startOpenRouterBridge(this.config.provider) : undefined;
+    this.providerBridge = bridge;
+    let launch: CodexLaunch;
+    try {
+      const launchConfig = bridge ? { ...this.config, provider: { ...this.config.provider, baseUrl: bridge.url, apiKey: bridge.token, headers: undefined } } : this.config;
+      launch = await (this.dependencies.launch ?? prepareLaunch)(launchConfig, this.store.directory);
+    } catch (error) { await bridge?.close(); if (this.providerBridge === bridge) this.providerBridge = undefined; throw error; }
+    if (preparationGeneration !== this.processGeneration || this.disposed) {
+      await bridge?.close(); if (this.providerBridge === bridge) this.providerBridge = undefined;
+      throw Object.assign(new Error("CODEX_CONNECT_INTERRUPTED"), { errorCode: "TURN_ABORTED" });
+    }
     const generation = ++this.processGeneration;
     const callbacks = {
       event: (event: NativeEvent) => { if (generation === this.processGeneration) this.nativeEvent(event); },
@@ -113,6 +124,7 @@ export class CodexAdapter implements EngineAdapter {
       exit: () => {
         if (generation !== this.processGeneration) return;
         this.rpc = undefined;
+        void bridge?.close(); if (this.providerBridge === bridge) this.providerBridge = undefined;
         if (!this.admission && this.getStatus().isRunning) void this.end(this.cancelled ? "interrupted" : "failed", "CODEX_PROCESS_EXITED");
       },
     };
@@ -131,7 +143,7 @@ export class CodexAdapter implements EngineAdapter {
       this.contract.bind(result.thread.id);
       await this.checkpoint();
     } catch (error) {
-      ++this.processGeneration; this.rpc = undefined; await rpc.close(); throw error;
+      ++this.processGeneration; this.rpc = undefined; await rpc.close(); await bridge?.close(); if (this.providerBridge === bridge) this.providerBridge = undefined; throw error;
     }
   }
   async start(input: { turnId: string; text: string; thinkingLevel?: ThinkingLevel; images?: Array<{ mimeType: string; data: string }> }): Promise<{ accepted: boolean; turnId: string }> {
@@ -311,7 +323,10 @@ export class CodexAdapter implements EngineAdapter {
     // Closing the session-owned engine ensures native commands cannot outlive cancel.
     await this.closeProcess();
   }
-  private async closeProcess(): Promise<void> { ++this.processGeneration; const rpc = this.rpc; this.rpc = undefined; if (rpc) await rpc.close(); }
+  private async closeProcess(): Promise<void> {
+    ++this.processGeneration; const rpc = this.rpc; const bridge = this.providerBridge; this.rpc = undefined; this.providerBridge = undefined;
+    try { if (rpc) await rpc.close(); } finally { await bridge?.close(); }
+  }
   async shutdown(): Promise<void> {
     this.disposed = true;
     await this.interrupt();

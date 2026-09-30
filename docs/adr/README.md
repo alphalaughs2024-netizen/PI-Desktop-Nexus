@@ -250,3 +250,4 @@ Each ADR includes:
 | 0250 | Trusted renderer plugin slots | Accepted |
 | 0251 | Isolated agent-foundation evaluation | Accepted for evaluation only |
 | 0252 | Opt-in Codex execution contract | Phase 2 manual acceptance pending |
+| 0253 | OpenRouter compatibility for native Codex patch tools | Phase 2 manual acceptance pending |
