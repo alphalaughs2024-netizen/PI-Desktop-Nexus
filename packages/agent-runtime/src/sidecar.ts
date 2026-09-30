@@ -463,7 +463,7 @@ function classifiedRuntimeError(err: unknown) {
 // permission dialog delivery).
 
 const codex = process.env.NEXUS_AGENT_ENGINE === "codex"
-  ? new CodexController(envelope => notify("agent.event", envelope))
+  ? new CodexController(envelope => notify("agent.event", envelope), hostProxy)
   : undefined;
 
 async function handle(method: string, params: any): Promise<unknown> {

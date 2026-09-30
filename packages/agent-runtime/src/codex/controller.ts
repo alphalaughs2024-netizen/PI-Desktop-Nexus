@@ -3,12 +3,16 @@ import { homedir } from "node:os";
 import type { AgentEventEnvelope, AskToolResolution } from "@pi-desktop/shared";
 import { CodexAdapter } from "./adapter.js";
 import { codexPermissionMode, type CodexConfig } from "./config.js";
+import type { RuntimeHost } from "../host-client.js";
+import { projectInstructionsPrompt } from "../project-instructions-prompt.js";
+import { instructionCatalogPrompt } from "../plugin-skills-prompt.js";
+import { startNexusToolBridge } from "./nexus-tools.js";
 import { CodexSessionStore } from "./store.js";
 export class CodexController {
   private sessions = new Map<string, CodexAdapter>();
   private admitting = new Set<string>();
   private dataDir?: string;
-  constructor(private emit: (event: AgentEventEnvelope) => void) {}
+  constructor(private emit: (event: AgentEventEnvelope) => void, private host?: RuntimeHost) {}
   configure(dataDir: string): void {
     // Explicit opt-in must never use the user's production profile.
     if (!process.env.PI_DESKTOP_DATA_DIR || resolve(dataDir).toLowerCase() === resolve(homedir(), ".pi-desktop-nexus").toLowerCase()) throw new Error("CODEX_FRESH_PROFILE_REQUIRED: set PI_DESKTOP_DATA_DIR to a separate profile");
@@ -26,13 +30,25 @@ export class CodexController {
         this.admitting.add(sessionId);
         try {
           const config: CodexConfig = { sessionId, dataDir: this.dataDir, workspace: params.projectPath || params.scratchDir, provider: params.provider,
-            permissionMode };
+            permissionMode, scratchDir: params.scratchDir, nexusToolsAvailable: !!this.host,
+            developerInstructions: [
+              "Nexus is the graphical host. Use Nexus MCP tools for browser/preview, skills, workflows and plugins; use native Codex tools for file changes, local images and shell. Every tool is bound to this chat. Preserve user work, inspect failures and never automatically replay an ambiguously applied mutation.",
+              params.scratchDir ? "Session scratch directory: " + params.scratchDir + ". Keep temporary files there; workspace deliverables belong in the workspace." : "",
+              projectInstructionsPrompt(params.projectInstructions), instructionCatalogPrompt(params.instructionCatalog ?? []),
+              params.activeWorkflow?.body,
+            ].filter(Boolean).join("\n\n") };
           if (!config.workspace || !params.turnId) throw new Error("CODEX_SESSION_IDENTITY_REQUIRED");
           let runtime = adapter;
           if (runtime && JSON.stringify(runtime.config) !== JSON.stringify(config)) {
             await runtime.shutdown(); this.sessions.delete(sessionId); runtime = undefined;
           }
-          if (!runtime) { runtime = new CodexAdapter(config, this.emit); this.sessions.set(sessionId, runtime); }
+          if (!runtime) {
+            runtime = new CodexAdapter(config, this.emit, this.host ? { tools: snapshot => startNexusToolBridge({
+              host: this.host!, sessionId, scratchDir: config.scratchDir ?? config.workspace, mode: "agent", snapshot,
+              tools: params.pluginTools ?? [], imageInput: config.provider.modelConfig?.input.includes("image") === true,
+            }) } : {});
+            this.sessions.set(sessionId, runtime);
+          }
           return await runtime.start({ turnId: params.turnId, text: params.content ?? "", thinkingLevel: params.thinkingLevel, images: (params.attachments ?? []).filter((a: any) => a.kind === "image" && a.data).map((a: any) => ({ mimeType: a.mimeType ?? "image/png", data: a.data })) });
         } finally { this.admitting.delete(sessionId); }
       }

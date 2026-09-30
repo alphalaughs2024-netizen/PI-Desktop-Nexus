@@ -1023,6 +1023,7 @@ const browserHost = new BrowserHost({
           | undefined;
         const path = res?.session?.projectPath?.trim();
         if (path) return path;
+        if (res?.session) return join(dataDir, "scratch", sessionId);
       } catch {
         // Fall through to the visible workspace.
       }
@@ -5421,18 +5422,13 @@ async function startSidecar(): Promise<void> {
     } catch {
       root = null;
     }
+    const scratchRoot = join(dataDir, "scratch", sessionId);
+    root = [root, scratchRoot].find(candidate => candidate && resolveLocalFile(raw, candidate)) ?? null;
     if (!root) {
       return {
         ok: false,
         isError: true,
-        content: "BrowserPreview: no workspace is open.",
-      };
-    }
-    if (!resolveLocalFile(raw, root)) {
-      return {
-        ok: false,
-        isError: true,
-        content: `BrowserPreview: "${raw}" does not resolve to an existing file inside the workspace.`,
+        content: `BrowserPreview: "${raw}" does not resolve to an existing file inside this session workspace or scratch directory.`,
       };
     }
     markBrowserSource(sessionId, "workspace-preview");

@@ -10,9 +10,10 @@ import type { CodexRpc } from "./transport.js";
 const directories: string[] = [];
 const adapters: CodexAdapter[] = [];
 afterEach(async () => { vi.useRealTimers(); await Promise.all(adapters.splice(0).map(a => a.shutdown())); await Promise.all(directories.splice(0).map(p => rm(p, { recursive: true, force: true }))); });
-async function fixture(dataDir?: string, nativeTurns: any[] = [], options: { steeringTimeoutMs?: number } = {}) {
+async function fixture(dataDir?: string, nativeTurns: any[] = [], options: { steeringTimeoutMs?: number } = {}, overrides: Partial<CodexConfig> = {}) {
   const dir = dataDir ?? await mkdtemp(join(tmpdir(), "nexus-contract-")); if (!dataDir) directories.push(dir);
   const config: CodexConfig = { sessionId: "s", dataDir: dir, workspace: join(dir, "workspace"), permissionMode: "ask", provider: { id: "p", name: "test", modelId: "m", apiKey: "transient-only", baseUrl: "http://127.0.0.1/v1", supportsReasoning: false, supportedThinkingLevels: [], modelConfig: { source: "generic", name: "m", baseUrl: "", reasoning: false, contextWindow: 32768, maxTokens: 8192, input: ["text", "image"] } } };
+  Object.assign(config, overrides);
   let callbacks: any;
   const calls: Array<{ method: string; params: any }> = [];
   const replies: Array<{ id: any; result: any }> = [];
@@ -35,6 +36,25 @@ async function fixture(dataDir?: string, nativeTurns: any[] = [], options: { ste
 const settle = async () => { await new Promise(resolve => setTimeout(resolve, 30)); };
 const runningTool = (f: Awaited<ReturnType<typeof fixture>>) => f.event("item/started", { item: { id: "running-command", type: "commandExecution", command: "long-running fixture" } });
 describe("Codex adapter lifecycle", () => {
+  it("switches model and provider between turns while resuming the same native history", async () => {
+    const first = await fixture(); await first.adapter.start({ turnId: "first", text: "Remember emerald" }); await settle();
+    first.event("item/completed", { item: { id: "old-answer", type: "agentMessage", text: "Remembered" } });
+    first.event("turn/completed", { turn: { id: "native-1", status: "completed" } }); await settle();
+    const handle = first.adapter.snapshot().session.nativeHandle; await first.adapter.shutdown();
+    const switched = await fixture(first.dir, [], {}, { provider: { ...first.config.provider, id: "selected-provider", modelId: "selected-model" } });
+    await switched.adapter.start({ turnId: "second", text: "What did I ask you to remember?" }); await settle();
+    expect(switched.adapter.snapshot().session).toMatchObject({ nativeHandle: handle, providerId: "selected-provider", modelId: "selected-model" });
+    expect(switched.calls.find(c => c.method === "thread/resume")?.params).toMatchObject({ threadId: handle, model: "selected-model" });
+    expect(switched.calls.some(c => c.method === "thread/start")).toBe(false);
+    expect(switched.calls.find(c => c.method === "turn/start")?.params.model).toBe("selected-model");
+    expect(switched.events.some(e => e.event.type === "message_start" && e.event.message.content === "Remembered")).toBe(false);
+  });
+  it("keeps the workspace and engine recovery identity immutable", async () => {
+    const first = await fixture(); await first.adapter.recover(); await first.adapter.shutdown();
+    const changed = await fixture(first.dir, [], {}, { workspace: join(first.dir, "other-workspace") });
+    await expect(changed.adapter.recover()).rejects.toThrow("CODEX_SESSION_BINDING_CHANGED");
+    expect(changed.calls).toHaveLength(0);
+  });
   it("interrupts active text generation and starts a corrected native segment in the original host turn", async () => {
     const f = await fixture(); await f.adapter.start({ turnId: "host", text: "Write a long answer" }); await settle();
     f.event("item/agentMessage/delta", { itemId: "old-text", delta: "partial old answer" });
@@ -399,6 +419,57 @@ describe("Codex adapter lifecycle", () => {
     await rejected;
     expect(transport).not.toHaveBeenCalled();
     expect(f.calls.some(c => c.method === "turn/start")).toBe(false);
+  });
+  it("closes a prepared tool bridge when launch fails without hiding the launch error", async () => {
+    const f = await fixture();
+    const close = vi.fn(async () => { throw new Error("cleanup failed"); });
+    const adapter = new CodexAdapter(f.config, () => undefined, {
+      tools: async () => ({ url: "http://127.0.0.1/mcp", token: "fixture", close }),
+      launch: async () => { throw new Error("launch failed"); },
+    }); adapters.push(adapter);
+    await expect(adapter.recover()).rejects.toThrow("launch failed");
+    expect(close).toHaveBeenCalledOnce();
+  });
+  it("closes both transport and tool bridge when initialization fails", async () => {
+    const f = await fixture();
+    const close = vi.fn(async () => undefined);
+    const rpcClose = vi.spyOn(f.rpc, "close");
+    vi.spyOn(f.rpc, "request").mockRejectedValue(new Error("initialize failed"));
+    const adapter = new CodexAdapter(f.config, () => undefined, {
+      tools: async () => ({ url: "http://127.0.0.1/mcp", token: "fixture", close }),
+      launch: async () => ({ command: "fixture", args: [], cwd: f.config.workspace, env: {} }),
+      transport: () => f.rpc,
+    }); adapters.push(adapter);
+    await expect(adapter.recover()).rejects.toThrow("initialize failed");
+    expect(rpcClose).toHaveBeenCalledOnce();
+    expect(close).toHaveBeenCalledOnce();
+  });
+  it("closes a late tool bridge without launching after preparation is cancelled", async () => {
+    const f = await fixture();
+    let release!: (value: any) => void;
+    const tools = vi.fn(() => new Promise<any>(resolve => { release = resolve; }));
+    const launch = vi.fn(async () => ({ command: "fixture", args: [], cwd: f.config.workspace, env: {} }));
+    const close = vi.fn(async () => undefined);
+    const adapter = new CodexAdapter(f.config, () => undefined, { tools, launch }); adapters.push(adapter);
+    const pending = adapter.start({ turnId: "cancelled-bridge", text: "hi" });
+    const rejected = expect(pending).rejects.toMatchObject({ errorCode: "TURN_ABORTED" });
+    await vi.waitFor(() => expect(tools).toHaveBeenCalledOnce());
+    await adapter.interrupt();
+    release({ url: "http://127.0.0.1/mcp", token: "fixture", close });
+    await rejected;
+    expect(close).toHaveBeenCalledOnce();
+    expect(launch).not.toHaveBeenCalled();
+  });
+  it("marks MCP errors failed and keeps encoded screenshots out of diagnostics and recovery", async () => {
+    const f = await fixture();
+    await f.adapter.start({ turnId: "host", text: "inspect browser" }); await settle();
+    f.event("item/completed", { item: { id: "failed-tool", type: "mcpToolCall", tool: "browser_snapshot", status: "completed", result: { isError: true, content: [{ type: "text", text: "guest unavailable" }] } } });
+    f.event("item/completed", { item: { id: "image-tool", type: "mcpToolCall", tool: "browser_screenshot", status: "completed", result: { content: [{ type: "image", mimeType: "image/png", data: "encoded-image-fixture" }] } } });
+    f.event("turn/completed", { turn: { id: "native-1", status: "completed" } }); await settle();
+    expect(f.adapter.snapshot().items.find(item => item.nativeId === "failed-tool")?.status).toBe("failed");
+    expect(f.adapter.snapshot().items.find(item => item.nativeId === "image-tool")?.result).toMatchObject({ content: [{ mimeType: "image/png", imageDataOmitted: true }] });
+    expect(JSON.stringify(f.events)).not.toContain("encoded-image-fixture");
+    expect(JSON.stringify(await new CodexSessionStore(f.dir, "s").read())).not.toContain("encoded-image-fixture");
   });
   it("rejects simultaneous submissions during preparation", async () => {
     const f = await fixture();

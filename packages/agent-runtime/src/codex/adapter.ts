@@ -6,9 +6,11 @@ import { ExecutionContract } from "./contract.js";
 import { CodexSessionStore, recoveryWriteError } from "./store.js";
 import { nativeEffort, nativePolicy, prepareLaunch, sessionDescriptor, type CodexConfig, type CodexLaunch } from "./config.js";
 import { needsOpenRouterBridge, startOpenRouterBridge, type ProviderBridge } from "./openrouter-bridge.js";
+import { nexusToolDiagnostics, type NexusToolBridge } from "./nexus-tools.js";
 import { AppServerTransport, type CodexRpc, type NativeEvent, type NativeRequest } from "./transport.js";
 export const CODEX_APPROVAL_TIMEOUT_MS = 120_000;
-type Dependencies = {
+export type CodexDependencies = {
+  tools?: (snapshot: () => EngineSnapshot) => Promise<NexusToolBridge>;
   steeringTimeoutMs?: number;
   launch?: (config: CodexConfig, directory: string) => Promise<CodexLaunch>;
   transport?: (launch: CodexLaunch, callbacks: { event: (event: NativeEvent) => void; request: (request: NativeRequest) => void; exit: () => void }) => CodexRpc;
@@ -24,6 +26,7 @@ export class CodexAdapter implements EngineAdapter {
   private store: CodexSessionStore;
   private rpc?: CodexRpc;
   private providerBridge?: ProviderBridge;
+  private nexusToolBridge?: NexusToolBridge;
   private sequence = 0;
   private processGeneration = 0;
   private turnGeneration?: string;
@@ -42,7 +45,7 @@ export class CodexAdapter implements EngineAdapter {
   private retiredTurns = new Set<string>();
   private disposed = false;
   private admission?: { id: string; startedAt: number };
-  constructor(readonly config: CodexConfig, private emit: (event: AgentEventEnvelope) => void, private dependencies: Dependencies = {}) {
+  constructor(readonly config: CodexConfig, private emit: (event: AgentEventEnvelope) => void, private dependencies: CodexDependencies = {}) {
     this.contract = new ExecutionContract(sessionDescriptor(config));
     this.store = new CodexSessionStore(config.dataDir, config.sessionId);
   }
@@ -91,7 +94,7 @@ export class CodexAdapter implements EngineAdapter {
     const restored = await this.store.read();
     if (restored) {
       const expected = sessionDescriptor(this.config);
-      if (restored.session.sessionId !== expected.sessionId || restored.session.workspace !== expected.workspace || restored.session.modelId !== expected.modelId || restored.session.providerId !== expected.providerId || restored.session.version !== expected.version) throw new Error("CODEX_SESSION_BINDING_CHANGED: start a new chat for a different workspace, provider or model");
+      if (restored.session.sessionId !== expected.sessionId || restored.session.workspace !== expected.workspace || restored.session.engine !== expected.engine || restored.session.version !== expected.version) throw new Error("CODEX_SESSION_BINDING_CHANGED: start a new chat for a different workspace or engine version");
       this.contract = new ExecutionContract(expected, restored);
       this.sequence = restored.sequence;
     }
@@ -118,45 +121,59 @@ export class CodexAdapter implements EngineAdapter {
   private async connect(): Promise<void> {
     if (this.rpc) return;
     const preparationGeneration = this.processGeneration;
-    await mkdir(this.config.workspace, { recursive: true });
-    const bridge = !this.dependencies.launch && needsOpenRouterBridge(this.config.provider) ? await startOpenRouterBridge(this.config.provider) : undefined;
-    this.providerBridge = bridge;
-    let launch: CodexLaunch;
-    try {
-      const launchConfig = bridge ? { ...this.config, provider: { ...this.config.provider, baseUrl: bridge.url, apiKey: bridge.token, headers: undefined } } : this.config;
-      launch = await (this.dependencies.launch ?? prepareLaunch)(launchConfig, this.store.directory);
-    } catch (error) { await bridge?.close(); if (this.providerBridge === bridge) this.providerBridge = undefined; throw error; }
-    if (preparationGeneration !== this.processGeneration || this.disposed) {
-      await bridge?.close(); if (this.providerBridge === bridge) this.providerBridge = undefined;
-      throw Object.assign(new Error("CODEX_CONNECT_INTERRUPTED"), { errorCode: "TURN_ABORTED" });
-    }
-    const generation = ++this.processGeneration;
-    const callbacks = {
-      event: (event: NativeEvent) => { if (generation === this.processGeneration) this.nativeEvent(event); },
-      request: (request: NativeRequest) => { if (generation === this.processGeneration) this.nativeRequest(request); },
-      exit: () => {
-        if (generation !== this.processGeneration) return;
-        this.rpc = undefined;
-        void bridge?.close(); if (this.providerBridge === bridge) this.providerBridge = undefined;
-        if (!this.admission && this.getStatus().isRunning) void this.end(this.cancelled ? "interrupted" : "failed", "CODEX_PROCESS_EXITED");
-      },
+    let toolBridge: NexusToolBridge | undefined;
+    let bridge: ProviderBridge | undefined;
+    let rpc: CodexRpc | undefined;
+    const checkPreparation = () => {
+      if (preparationGeneration !== this.processGeneration || this.disposed) {
+        throw Object.assign(new Error("CODEX_CONNECT_INTERRUPTED"), { errorCode: "TURN_ABORTED" });
+      }
     };
-    const rpc = this.dependencies.transport ? this.dependencies.transport(launch, callbacks) : new AppServerTransport(launch.command, launch.args, { cwd: launch.cwd, env: launch.env }, callbacks);
-    this.rpc = rpc;
     try {
+      await mkdir(this.config.workspace, { recursive: true });
+      checkPreparation();
+      toolBridge = await this.dependencies.tools?.(() => this.snapshot());
+      this.nexusToolBridge = toolBridge;
+      checkPreparation();
+      bridge = !this.dependencies.launch && needsOpenRouterBridge(this.config.provider) ? await startOpenRouterBridge(this.config.provider) : undefined;
+      this.providerBridge = bridge;
+      checkPreparation();
+      const launchConfig = { ...this.config, ...(toolBridge ? { toolBridge } : {}), ...(bridge ? { provider: { ...this.config.provider, baseUrl: bridge.url, apiKey: bridge.token, headers: undefined } } : {}) };
+      const launch = await (this.dependencies.launch ?? prepareLaunch)(launchConfig, this.store.directory);
+      checkPreparation();
+      const generation = ++this.processGeneration;
+      const callbacks = {
+        event: (event: NativeEvent) => { if (generation === this.processGeneration) this.nativeEvent(event); },
+        request: (request: NativeRequest) => { if (generation === this.processGeneration) this.nativeRequest(request); },
+        exit: () => {
+          if (generation !== this.processGeneration) return;
+          this.rpc = undefined;
+          void Promise.allSettled([bridge?.close(), toolBridge?.close()]);
+          if (this.nexusToolBridge === toolBridge) this.nexusToolBridge = undefined;
+          if (this.providerBridge === bridge) this.providerBridge = undefined;
+          if (!this.admission && this.getStatus().isRunning) void this.end(this.cancelled ? "interrupted" : "failed", "CODEX_PROCESS_EXITED");
+        },
+      };
+      rpc = this.dependencies.transport ? this.dependencies.transport(launch, callbacks) : new AppServerTransport(launch.command, launch.args, { cwd: launch.cwd, env: launch.env }, callbacks);
+      this.rpc = rpc;
       await rpc.request("initialize", { clientInfo: { name: "nexus", version: APP_VERSION }, capabilities: { experimentalApi: true } });
       rpc.notify("initialized");
       const handle = this.snapshot().session.nativeHandle;
       const result = await rpc.request(handle ? "thread/resume" : "thread/start", {
         ...(handle ? { threadId: handle } : {}), cwd: this.config.workspace,
         model: this.config.provider.modelId, modelProvider: "nexus", ...nativePolicy(this.config.permissionMode),
+        ...(this.config.developerInstructions ? { developerInstructions: this.config.developerInstructions } : {}),
         ephemeral: false, experimentalRawEvents: true,
       });
       if (generation !== this.processGeneration || this.disposed) throw new Error("CODEX_CONNECT_INTERRUPTED");
       this.contract.bind(result.thread.id);
       await this.checkpoint();
     } catch (error) {
-      ++this.processGeneration; this.rpc = undefined; await rpc.close(); await bridge?.close(); if (this.providerBridge === bridge) this.providerBridge = undefined; throw error;
+      if (rpc && this.rpc === rpc) { ++this.processGeneration; this.rpc = undefined; }
+      await Promise.allSettled([rpc?.close(), bridge?.close(), toolBridge?.close()]);
+      if (this.nexusToolBridge === toolBridge) this.nexusToolBridge = undefined;
+      if (this.providerBridge === bridge) this.providerBridge = undefined;
+      throw error;
     }
   }
   async start(input: { turnId: string; text: string; thinkingLevel?: ThinkingLevel; images?: Array<{ mimeType: string; data: string }> }): Promise<{ accepted: boolean; turnId: string }> {
@@ -189,7 +206,7 @@ export class CodexAdapter implements EngineAdapter {
     if (images.length && !this.snapshot().session.capabilities.imageInput) throw new Error("CODEX_IMAGE_UNSUPPORTED: selected model is not configured for image input");
     this.apply({ type: "phase", phase: "waiting-model" }); this.status();
     const result = await this.rpc!.request("turn/start", {
-      threadId: this.snapshot().session.nativeHandle,
+      threadId: this.snapshot().session.nativeHandle, model: this.config.provider.modelId,
       ...(effort !== undefined ? { effort } : {}),
       input: [{ type: "text", text: input.text }, ...images.map(image => ({ type: "image", url: "data:" + image.mimeType + ";base64," + image.data }))],
     });
@@ -274,7 +291,7 @@ export class CodexAdapter implements EngineAdapter {
       await this.checkpoint();
       this.steeringTransition = undefined;
       this.status();
-      const result = await rpc.request("turn/start", { threadId: this.snapshot().session.nativeHandle,
+      const result = await rpc.request("turn/start", { threadId: this.snapshot().session.nativeHandle, model: this.config.provider.modelId,
         ...(this.turnEffort !== undefined ? { effort: this.turnEffort } : {}),
         clientUserMessageId: messageId, input: [{ type: "text", text }] });
       if (this.cancelled || this.disposed || this.snapshot().turn?.runId !== turn.runId) throw new Error("CODEX_STEERING_CANCELLED");
@@ -326,9 +343,9 @@ export class CodexAdapter implements EngineAdapter {
     if (old?.status !== "running") { if (old) return; }
     const base = old ?? this.newItem(native.id, kind, label);
     const text = kind === "reasoning" ? [...(native.summary ?? []), ...(native.content ?? [])].map((x: any) => typeof x === "string" ? x : x.text ?? "").join("\n") : native.text ?? native.aggregatedOutput ?? base.text;
-    const failed = native.status === "failed" || native.status === "declined" || native.error || (typeof native.exitCode === "number" && native.exitCode !== 0);
+    const failed = native.status === "failed" || native.status === "declined" || native.error || native.result?.isError === true || (typeof native.exitCode === "number" && native.exitCode !== 0);
     this.update({ ...base, text, args: native.command ? { command: native.command, cwd: native.cwd } : native.changes ?? native.arguments ?? base.args,
-      result: native.aggregatedOutput ?? native.error ?? native.result ?? native.changes ?? text,
+      result: nexusToolDiagnostics(native.aggregatedOutput ?? native.error ?? native.result ?? native.changes ?? text),
       status: completed ? failed ? "failed" : "completed" : "running", ...(completed ? { completedAt: Date.now() } : {}) });
   }
   private raw(native: any): void {
@@ -443,7 +460,8 @@ export class CodexAdapter implements EngineAdapter {
   private async closeProcess(): Promise<void> {
     this.steeringTransition?.reject(new Error("CODEX_STEERING_TRANSPORT_CLOSED"));
     ++this.processGeneration; const rpc = this.rpc; const bridge = this.providerBridge; this.rpc = undefined; this.providerBridge = undefined;
-    try { if (rpc) await rpc.close(); } finally { await bridge?.close(); }
+    const tools = this.nexusToolBridge; this.nexusToolBridge = undefined;
+    try { if (rpc) await rpc.close(); } finally { await Promise.allSettled([bridge?.close(), tools?.close()]); }
   }
   async shutdown(): Promise<void> {
     this.disposed = true;

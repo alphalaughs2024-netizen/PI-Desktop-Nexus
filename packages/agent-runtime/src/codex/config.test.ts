@@ -2,13 +2,16 @@ import { afterEach, expect, it, vi } from "vitest";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { codexPermissionMode, nativeEffort, nativePolicy, prepareLaunch, resolveCodexEntrypoint, type CodexConfig } from "./config.js";
+import { codexPermissionMode, nativeEffort, nativePolicy, prepareLaunch, resolveCodexEntrypoint, sessionDescriptor, type CodexConfig } from "./config.js";
 import { CodexController } from "./controller.js";
 const dirs: string[] = [];
 afterEach(async () => { vi.unstubAllEnvs(); await Promise.all(dirs.splice(0).map(p => rm(p, { recursive: true, force: true }))); });
 const config: CodexConfig = { sessionId: "s", dataDir: "profile", workspace: "workspace", permissionMode: "ask", provider: { id: "p", name: "test", apiKey: "transient-secret", modelId: "m", baseUrl: "https://example.test/v1", apiStyle: "openai-responses", authKind: "api_key_and_base_url", supportsReasoning: false, supportedThinkingLevels: [], headers: { "X-Test": "private-header" } } };
 it("requires an explicit separate profile", () => {
   vi.stubEnv("PI_DESKTOP_DATA_DIR", ""); expect(() => new CodexController(() => undefined).configure("profile")).toThrow("CODEX_FRESH_PROFILE_REQUIRED");
+});
+it("does not claim managed preview processes merely because the tool bridge exists", () => {
+ expect(sessionDescriptor({ ...config, nexusToolsAvailable: true }).capabilities).toMatchObject({ browser: true, managedPreview: false });
 });
 it("rejects unsupported endpoint transports and OAuth rather than falling back", async () => {
   await expect(prepareLaunch({ ...config, provider: { ...config.provider, apiStyle: "openai-completions" } }, "unused")).rejects.toThrow("CODEX_RESPONSES_REQUIRED");

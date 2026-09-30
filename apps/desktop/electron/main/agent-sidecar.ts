@@ -1,3 +1,4 @@
+import { NEXUS_LOCAL_TOOL_SCHEMAS } from "./nexus-tool-schemas";
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { createInterface } from "node:readline";
 import { randomUUID } from "node:crypto";
@@ -483,6 +484,13 @@ export class AgentSidecar {
           this.writeToChild(
             JSON.stringify({ jsonrpc: "2.0", id: msg.id, result }) + "\n",
           );
+          return;
+        }
+        if (method === "tools.list") {
+          if (!this.host) throw new Error("host unavailable");
+          const listed = await this.host.call<{ tools: unknown[] }>(method, params);
+          const local = [...this.localTools.keys()].flatMap(name => NEXUS_LOCAL_TOOL_SCHEMAS[name] ? [{ name, ...NEXUS_LOCAL_TOOL_SCHEMAS[name] }] : []);
+          this.writeToChild(JSON.stringify({ jsonrpc: "2.0", id: msg.id, result: { tools: [...listed.tools, ...local] } }) + "\n");
           return;
         }
         // Main-local tools short-circuit before host-core (which doesn't

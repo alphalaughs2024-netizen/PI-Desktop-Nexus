@@ -56,7 +56,9 @@ writes private recovery snapshots and retains native Codex history. Reconnect
 resumes the native handle and reads its snapshot without inference. Known
 completion is retained; unresolved work becomes interrupted with partial output.
 An uncertain tool action is never replayed automatically. Explicit new user
-input starts a new turn. Changed session bindings require a new chat.
+input starts a new turn. Changed workspace/engine bindings require a new chat.
+Idle provider/model changes keep the native handle and update the session's
+effective model binding; the next turn explicitly names the chosen model.
 
 Unexpected process exit fails the active turn. Pending approvals are denied.
 Recovery write failure reports CODEX_RECOVERY_STORAGE_FULL for ENOSPC/EDQUOT,
@@ -80,9 +82,33 @@ Native user questions retain the existing non-expiring Ask behavior.
 Unknown server requests and unsupported secret questions fail clearly.
 
 Cancel interrupts and closes the owned native process tree, preserving partial
-output. Native command sessions are engine-owned. Dedicated preview servers,
-configurable browser viewports and screenshot tool results are later services,
-not capabilities claimed by this phase.
+output. Native command sessions are engine-owned. Dedicated preview process
+supervision is a later service and is not claimed by this phase. ADR 0254 adds
+session-bound Browser viewports and screenshots. File previews are available
+through the private tool bridge; `managedPreview` remains false until
+session-owned process supervision is implemented.
+
+## Nexus tool bridge (ADR 0255)
+
+A private authenticated loopback MCP bridge exposes executable Nexus Browser,
+file preview, skill, workflow, Git worktree and plugin services to Codex. Native
+Codex tools own file/shell work; Context Vault and Prompt Inspector stay outside
+this bridge. Nexus binds every dispatch to its session and active turn and
+retains host/Main permission enforcement. Project/workflow guidance enters
+developer instructions without granting permissions.
+
+Duplicate JSON-RPC IDs in one run share the same operation. Changed arguments
+fail. Cached replies are bounded to 128 entries and 16 MiB; active identities
+cannot be evicted. Up to 4096 hashed identities are retained per run, with at
+most 64 active requests. An expired reply is reported without replay; new calls
+over those limits fail before dispatch. Startup failure and interruption close
+owned bridges and preserve the original error.
+
+Screenshot results deliver actual image blocks to image-capable models while
+transcript/recovery diagnostics omit encoded bytes. Models without image input
+receive an explicit limitation. MCP `isError` results produce failed tool rows.
+Main-local cancellation, configured subagents, Plan/Goal and legacy extension
+commands remain pending integration, not capabilities established by this bridge.
 
 ## Acceptance boundaries
 
@@ -111,7 +137,7 @@ cleanup fails; only a rejected submission retracts its own optimistic row.
 Chat switching and reload hydration must keep the instruction exactly once.
 
 Agent mode, new user turns, native file/shell tools and configured image input
-are supported. Plan/Goal, legacy regenerate, plugin tools, manual
+are supported. Plan/Goal, legacy regenerate, manual
 compaction and graceful stop do not silently fall back to pi. Existing features
 remain available in the default runtime. Full response timeline/timer rendering
 is Phase 3; full coding services are Phase 4. Existing chat migration is not

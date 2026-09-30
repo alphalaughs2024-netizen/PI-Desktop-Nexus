@@ -11672,3 +11672,27 @@ or delete caches, profiles or earlier recovery files to hide this condition.
   controls, and panel geometry remain unchanged.
 - **Validation**: Targeted unit tests and an isolated native fixture; full local
   E2E suites are not run unless explicitly requested.
+
+### E2E-Codex-Nexus-Bridge: Host services, retries and diagnostic boundaries (ADR 0255)
+
+- **Preconditions**: Opt-in Codex profile with an image-capable Responses model,
+  a local HTML fixture, a host tool fixture with a delayed mutation and an
+  injected engine-start failure. Keep production data separate.
+- **Steps**: 1) Open/snapshot/screenshot the Browser, load an available skill,
+  inspect workflow status and preview a file in a Temporary chat's scratch.
+  2) Inspect the model request and GUI transcript after the screenshot.
+  3) Complete a failed MCP result. 4) Repeat one delayed mutation request while
+  more than 128 other requests complete; retry with changed arguments and retry
+  an evicted completed reply. 5) Fail launch/initialization and cancel while the
+  tool bridge is preparing. 6) Change the model while idle and send the next
+  request. 7) Inspect startup settings and recovery metadata for credentials.
+- **Expected**: Tools bind to the originating session; preview paths stay within
+  that workspace or scratch. Actual screenshot image input reaches the model
+  while GUI/recovery keep only metadata. Failed results display as failures.
+  Active retries share one mutation; conflicting and expired requests fail
+  without dispatch/replay. Admission/cache limits are explicit. Failed or
+  cancelled preparation releases owned servers and cannot launch late work.
+  The original startup error survives cleanup errors. Idle model changes keep
+  the chat/history and use the selected model; no fallback or credential leak.
+- **Validation**: Targeted lifecycle/bridge fixtures and a recorded native smoke
+  check. Full local E2E suites remain unrun unless explicitly requested.

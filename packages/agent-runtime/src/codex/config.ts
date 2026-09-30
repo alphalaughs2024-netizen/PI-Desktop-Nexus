@@ -12,10 +12,14 @@ export type CodexConfig = {
   workspace: string;
   provider: RuntimeProviderConfig;
   permissionMode: "ask" | "accept-edits" | "auto" | "full-access";
+  scratchDir?: string;
+  developerInstructions?: string;
+  nexusToolsAvailable?: boolean;
+  toolBridge?: { url: string; token: string };
 };
 export function sessionDescriptor(config: CodexConfig): EngineSession {
   return { sessionId: config.sessionId, engine: "codex", version: CODEX_VERSION, workspace: resolve(config.workspace), providerId: config.provider.id, modelId: config.provider.modelId,
-    capabilities: { imageInput: config.provider.modelConfig?.input.includes("image") === true, nativeTools: true, recovery: true, steering: true, browser: false, managedPreview: false } };
+    capabilities: { imageInput: config.provider.modelConfig?.input.includes("image") === true, nativeTools: true, recovery: true, steering: true, browser: config.nexusToolsAvailable === true, managedPreview: false } };
 }
 /** Preserve the selected endpoint effort; never silently spend at a higher level. */
 export function nativeEffort(provider: RuntimeProviderConfig, level?: ThinkingLevel): string | undefined {
@@ -115,6 +119,15 @@ export async function prepareLaunch(config: CodexConfig, directory: string): Pro
     ...(config.provider.apiKey ? setting("model_providers.nexus.env_key", "NEXUS_CODEX_PROVIDER_KEY") : []),
     ...setting("model_providers.nexus.requires_openai_auth", false),
   ];
+  if (config.toolBridge) {
+    env.NEXUS_CODEX_TOOL_TOKEN = config.toolBridge.token;
+    args.push(...setting("mcp_servers.nexus.url", config.toolBridge.url),
+      ...setting("mcp_servers.nexus.bearer_token_env_var", "NEXUS_CODEX_TOOL_TOKEN"),
+      ...setting("mcp_servers.nexus.startup_timeout_sec", 20),
+      ...setting("mcp_servers.nexus.tool_timeout_sec", 240),
+      ...setting("mcp_servers.nexus.required", true),
+      ...setting("mcp_servers.nexus.default_tools_approval_mode", "approve"));
+  }
   // Additional headers are private inherited environment values, never config values.
   const envHeaders: Record<string, string> = {};
   let headerIndex = 0;
