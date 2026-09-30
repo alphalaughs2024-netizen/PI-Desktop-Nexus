@@ -2,6 +2,22 @@
 
 ### Speech input and voice mode
 
+- In the fresh Codex profile, finish Dictate using both Parakeet v2 and v3.
+  Confirm loading/transcribing status and editable text with no agent submission.
+  With an uncached model, confirm download percentage appears; cancel during
+  preparation and retry. Test insufficient disk space and interrupted download: a
+  clear error appears, the draft is unchanged, and no cloud fallback occurs.
+- Let a recording reach 60 seconds. Confirm capture stops and transcription
+  begins automatically, with no oversize-WAV error or second submission.
+  Cancel during recording, decoding, and hosted transcription; then retry.
+  Reload while transcribing and confirm no old result appears after reload.
+- In a new Temporary Codex chat, finish a spoken turn. Confirm exactly one user
+  prompt, a completed assistant reply, playback with an installed system voice,
+  and resumed capture. Repeat with Voice replies off and verify listening
+  resumes without synthesis. Cancel or fail the assistant turn and confirm the
+  voice bar returns to Ready rather than waiting forever. Repeat in a packaged
+  Windows build to verify native Sherpa libraries load outside ASAR.
+
 - With local transcription selected, dictate the same clear English phrase using
   Parakeet v2 and confirm editable text appears. Switch to Parakeet v3 and
   dictate a supported non-English phrase; then select Whisper Tiny and confirm

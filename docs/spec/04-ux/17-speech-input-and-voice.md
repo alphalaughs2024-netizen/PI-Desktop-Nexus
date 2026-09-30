@@ -3,7 +3,8 @@
 - Two compact icon controls sit beside existing composer actions: microphone
   for Dictate and audio lines for Voice mode. Each has an accessible label and
   tooltip; no extra toolbar labels are shown.
-- Dictate records up to 60 seconds. Done transcribes and inserts plain,
+- Dictate records up to 60 seconds. Reaching that limit finishes capture and
+  transcribes automatically. Done transcribes and inserts plain,
   editable text at the current draft selection. It does not submit. Cancel
   discards audio. A failed or empty result leaves the draft unchanged.
 - Voice mode opens a composer-aligned conversation bar above the composer in
@@ -25,7 +26,9 @@
   Listening resumes after playback ends. Existing agent permission
   policies continue to apply.
 - A session switch or unmount ends capture and playback. Late speech results
-  cannot appear in a different chat.
+  cannot appear in a different chat. Cancellation also aborts an owned Parakeet
+  download or worker request and an owned hosted request; it does not merely
+  hide the result. A failed assistant turn returns Voice mode to its ready state.
 - Settings > Models > Speech selects local or hosted transcription. Local is the
   default and requires no key. Local model selection applies to dictation and
   voice mode: Parakeet v2 INT8 is the English default, Parakeet v3 INT8 handles
@@ -36,10 +39,23 @@
   and resumes listening when the reply completes. The reply voice selector is
   unavailable while voice replies are off.
 - Local model files live in application data and are downloaded on first use.
+  First use shows request-specific download progress, then model-loading and
+  transcription states. Parakeet archives stream directly into extraction of the
+  four catalogued model files without storing a second archive copy. Preparation
+  requires at least 850 MB free space and has a 15-minute deadline; insufficient
+  space and failed downloads produce errors without a cloud fallback.
   Parakeet recognition runs in a dedicated worker so model loading and decoding
   do not block Electron main. Audio is held only during the
   active recording/transcription request; it is not saved to chat history or
-  a workspace file. Hosted mode sends audio to the configured endpoint.
+  a workspace file. Each speech request has its own identity, progress, and
+  cancellation. Only the main renderer can invoke speech IPC; one transcription
+  runs at a time. Parakeet decoding has a 90-second deadline; worker failures,
+  timeout, cancellation, window reload, and shutdown release owned pending work.
+  A new request can restart the worker, and late events from the prior worker
+  cannot settle it. Native Sherpa libraries are unpacked alongside their
+  dependencies in packaged builds. Whisper cancellation suppresses late output;
+  its native inference cannot be preempted. Hosted mode sends audio to the
+  configured endpoint.
 - Main accepts only bounded 16 kHz mono PCM WAV recordings. The microphone
   permission allows audio for the main window only, independently of plugin
   grants. Quiet speech above the peak silence threshold still reaches the

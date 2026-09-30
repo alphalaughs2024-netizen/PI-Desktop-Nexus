@@ -31,11 +31,11 @@ function encodeWav(samples: Float32Array): string {
   return btoa(binary);
 }
 
-async function recordedAudioToWav(blob: Blob): Promise<string> {
+export async function recordedAudioToWav(blob: Blob): Promise<string> {
   const context = new AudioContext();
   try {
     const decoded = await context.decodeAudioData(await blob.arrayBuffer());
-    const frames = Math.ceil(decoded.duration * SAMPLE_RATE);
+    const frames = Math.min(SAMPLE_RATE * MAX_RECORDING_MS / 1000, Math.ceil(decoded.duration * SAMPLE_RATE));
     const offline = new OfflineAudioContext(1, Math.max(1, frames), SAMPLE_RATE);
     const source = offline.createBufferSource();
     source.buffer = decoded;
@@ -49,6 +49,7 @@ async function recordedAudioToWav(blob: Blob): Promise<string> {
 }
 
 export type SpeechRecording = {
+  finished: Promise<string>;
   stop: () => Promise<string>;
   cancel: () => void;
 };
@@ -58,47 +59,34 @@ export async function startSpeechRecording(): Promise<SpeechRecording> {
     throw new Error("Microphone recording is unavailable on this device");
   }
   const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-  const recorder = new MediaRecorder(stream);
+  let recorder: MediaRecorder;
+  try { recorder = new MediaRecorder(stream); } catch (error) {
+    stream.getTracks().forEach(track => track.stop()); throw error;
+  }
   const chunks: Blob[] = [];
   let canceled = false;
-  let settled = false;
-  const close = () => stream.getTracks().forEach((track) => track.stop());
+  let timer: number | undefined;
+  const close = () => { window.clearTimeout(timer); stream.getTracks().forEach(track => track.stop()); };
   const finished = new Promise<string>((resolve, reject) => {
-    recorder.ondataavailable = (event) => {
-      if (event.data.size) chunks.push(event.data);
-    };
-    recorder.onerror = () => {
-      close();
-      reject(new Error("Microphone recording failed"));
-    };
+    recorder.ondataavailable = event => { if (event.data.size) chunks.push(event.data); };
+    recorder.onerror = () => { close(); reject(new Error("Microphone recording failed")); };
     recorder.onstop = () => {
       close();
-      if (canceled) {
-        resolve("");
-        return;
-      }
+      if (canceled) { resolve(""); return; }
       void recordedAudioToWav(new Blob(chunks, { type: recorder.mimeType })).then(resolve, reject);
     };
   });
-  recorder.start(250);
-  const timer = window.setTimeout(() => {
-    if (recorder.state !== "inactive") recorder.stop();
-  }, MAX_RECORDING_MS);
+  // A device failure can precede the user's Stop; callers still receive the rejection.
+  void finished.catch(() => undefined);
+  try { recorder.start(250); } catch (error) { close(); throw error; }
+  timer = window.setTimeout(() => { if (recorder.state !== "inactive") recorder.stop(); }, MAX_RECORDING_MS);
   return {
-    stop: async () => {
-      if (!settled) {
-        settled = true;
-        window.clearTimeout(timer);
-        if (recorder.state !== "inactive") recorder.stop();
-      }
-      return finished;
-    },
+    finished,
+    stop: () => { if (recorder.state !== "inactive") recorder.stop(); return finished; },
     cancel: () => {
       canceled = true;
-      window.clearTimeout(timer);
       if (recorder.state !== "inactive") recorder.stop();
-      else close();
-      void finished.catch(() => undefined);
+      close();
     },
   };
 }

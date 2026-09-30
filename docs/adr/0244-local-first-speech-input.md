@@ -48,3 +48,20 @@ The Parakeet ONNX models are downloaded into app data on first use and run via
 Sherpa ONNX in a dedicated worker thread. The model archives are fetched from
 the Sherpa ONNX release catalog; a missing or failed download is reported to
 the user rather than silently sending microphone audio to a cloud service.
+
+## Amendment: Request ownership and preparation
+
+Speech stays an Electron-owned service independent of the selected agent engine.
+The main renderer submits a request identity; progress and cancellation use
+allowlisted IPC channels and the main-window sender check. Reload and shutdown
+close the service. Dictation edits the draft; Voice mode uses the normal prompt
+path, including the opt-in Codex backend.
+
+Parakeet preparation streams the trusted Sherpa release archive into extraction
+of its catalogued files. It checks available disk space, enforces a bounded
+deadline, and publishes only a complete model directory. It cleans only staging
+created by that invocation and preserves an existing incomplete cache for
+explicit repair. Recognition workers have per-request deadlines and generation
+ownership so an old worker exit cannot reject a new request. Cancellation
+terminates owned Parakeet work; native Whisper inference may finish in the
+background, but its canceled transcript is discarded.

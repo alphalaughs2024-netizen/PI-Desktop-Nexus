@@ -72,6 +72,7 @@ export const IPC = {
     notificationSetViewingSession: "pi-desktop/notification/setViewingSession",
     agentPrompt: "pi-desktop/agent/prompt",
     speechTranscribe: "pi-desktop/speech/transcribe",
+    speechCancel: "pi-desktop/speech/cancel",
     agentSteer: "pi-desktop/agent/steer",
     sessionTimelineGet: "pi-desktop/session/timelineGet",
     promptEnhance: "pi-desktop/prompt/enhance",
@@ -288,6 +289,7 @@ export const IPC = {
     nativeMenuAction: "pi-desktop/menu/nativeAction",
   },
   event: {
+    speechProgress: "pi-desktop/speech/event/progress",
     pluginChanged: "pi-desktop/event/pluginChanged",
     workflowChanged: "pi-desktop/event/workflowChanged",
     extensionsUiPrompt: "pi-desktop/extensions/event/uiPrompt",

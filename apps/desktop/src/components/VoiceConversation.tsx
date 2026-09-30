@@ -1,12 +1,13 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
-import { api } from "../lib/api";
+import type { SpeechTranscriptionProgress } from "@pi-desktop/shared";
+import { startSpeechTranscription, speechProgressText, type SpeechTranscription } from "../lib/speech-transcription";
 import { startSpeechRecording, type SpeechRecording } from "../lib/speech-capture";
 import { useAppStore } from "../stores/app-store";
 import { IconChevronDown, IconMic, IconStop, IconX } from "./icons";
 
-type VoiceState = "idle" | "recording" | "transcribing" | "waiting" | "speaking";
+type VoiceState = "starting" | "idle" | "recording" | "transcribing" | "waiting" | "speaking";
 type VoiceMode = { active: boolean; start: () => void; stop: () => void };
 const VoiceModeContext = createContext<VoiceMode | null>(null);
 
@@ -27,15 +28,19 @@ export function VoiceModeProvider({ children }: { children: ReactNode }) {
   const recording = useRef<SpeechRecording | null>(null);
   const overlay = useRef<HTMLDivElement | null>(null);
   const cycle = useRef(0);
+  const transcription = useRef<SpeechTranscription | null>(null);
+  const [progress, setProgress] = useState<SpeechTranscriptionProgress | null>(null);
   const sourceSession = useRef<string | undefined>(undefined);
   const sendingVoice = useRef(false);
   const replyBaseline = useRef<string | undefined>(undefined);
+  const outcomeBaseline = useRef<string | undefined>(undefined);
   const sendPrompt = useAppStore((s) => s.sendPrompt);
   const activeSessionId = useAppStore((s) => s.activeSessionId);
   const messages = useAppStore((s) => s.messages);
   const isRunning = useAppStore((s) =>
     s.activeSessionId ? s.runningSessions[s.activeSessionId] ?? false : false,
   );
+  const turnResult = useAppStore(s => s.activeSessionId ? s.latestTurnResults[s.activeSessionId] : undefined);
   const voiceUri = useAppStore((s) => s.settings?.speech?.voiceUri);
   const voiceRepliesEnabled = useAppStore((s) => s.settings?.speech?.voiceRepliesEnabled !== false);
   const showToast = useAppStore((s) => s.showToast);
@@ -46,6 +51,9 @@ export function VoiceModeProvider({ children }: { children: ReactNode }) {
     sendingVoice.current = false;
     recording.current?.cancel();
     recording.current = null;
+    transcription.current?.cancel();
+    transcription.current = null;
+    setProgress(null);
     window.speechSynthesis?.cancel();
     setActive(false);
     setState("idle");
@@ -58,6 +66,7 @@ export function VoiceModeProvider({ children }: { children: ReactNode }) {
   useEffect(() => () => {
     cycle.current += 1;
     recording.current?.cancel();
+    transcription.current?.cancel();
     window.speechSynthesis?.cancel();
   }, []);
 
@@ -115,11 +124,14 @@ export function VoiceModeProvider({ children }: { children: ReactNode }) {
   const start = async () => {
     recording.current?.cancel();
     recording.current = null;
+    transcription.current?.cancel();
+    transcription.current = null;
+    setProgress(null);
     window.speechSynthesis?.cancel();
     const token = ++cycle.current;
     sourceSession.current = useAppStore.getState().activeSessionId;
     setActive(true);
-    setState("idle");
+    setState("starting");
     try {
       const next = await startSpeechRecording();
       if (cycle.current !== token) {
@@ -128,6 +140,12 @@ export function VoiceModeProvider({ children }: { children: ReactNode }) {
       }
       recording.current = next;
       setState("recording");
+      void next.finished.then(wav => transcribe(wav, token), error => {
+        if (cycle.current !== token) return;
+        recording.current = null;
+        setState("idle");
+        showToast(error instanceof Error ? error.message : String(error), { variant: "error" });
+      });
     } catch (error) {
       if (cycle.current !== token) return;
       stop();
@@ -135,17 +153,16 @@ export function VoiceModeProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const finish = async () => {
-    const current = recording.current;
-    if (!current || state !== "recording") return;
+  const transcribe = async (wav: string, token: number) => {
+    if (cycle.current !== token || !wav) return;
     recording.current = null;
-    const token = cycle.current;
     setState("transcribing");
     try {
-      const wav = await current.stop();
-      if (cycle.current !== token || !wav) return;
-      const { text } = await api.transcribeSpeech(wav);
+      const task = startSpeechTranscription(wav, setProgress);
+      transcription.current = task;
+      const text = await task.result;
       if (cycle.current !== token || sourceSession.current !== useAppStore.getState().activeSessionId) return;
+      transcription.current = null;
       if (!text) {
         setState("idle");
         return;
@@ -153,6 +170,8 @@ export function VoiceModeProvider({ children }: { children: ReactNode }) {
       setTranscript(text);
       setReplyText("");
       replyBaseline.current = useAppStore.getState().messages.at(-1)?.id;
+      const origin = useAppStore.getState().activeSessionId;
+      outcomeBaseline.current = origin ? useAppStore.getState().latestTurnResults[origin]?.turnId : undefined;
       sendingVoice.current = true;
       const accepted = await sendPrompt(text);
       sendingVoice.current = false;
@@ -161,13 +180,24 @@ export function VoiceModeProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       if (cycle.current !== token) return;
       sendingVoice.current = false;
+      transcription.current = null;
       setState("idle");
       showToast(error instanceof Error ? error.message : String(error), { variant: "error" });
     }
   };
 
+  const finish = () => {
+    if (!recording.current || state !== "recording") return;
+    setState("transcribing");
+    void recording.current.stop().catch(() => undefined);
+  };
+
   useEffect(() => {
     if (!active || state !== "waiting" || isRunning) return;
+    if (turnResult && turnResult.turnId !== outcomeBaseline.current && turnResult.status === "failed") {
+      setState("idle");
+      return;
+    }
     const baselineIndex = messages.findIndex((message) => message.id === replyBaseline.current);
     const reply = messages.slice(baselineIndex + 1).findLast(
       (message) => message.role === "assistant" && message.status === "complete" && message.content.trim(),
@@ -191,7 +221,7 @@ export function VoiceModeProvider({ children }: { children: ReactNode }) {
     setState("speaking");
     window.speechSynthesis.speak(utterance);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active, state, isRunning, messages, voiceUri, voiceRepliesEnabled]);
+  }, [active, state, isRunning, messages, turnResult, voiceUri, voiceRepliesEnabled]);
 
   return (
     <VoiceModeContext.Provider value={{ active, start: () => void start(), stop }}>
@@ -203,7 +233,7 @@ export function VoiceModeProvider({ children }: { children: ReactNode }) {
               <div className={`speech-orbit ${state}`} aria-hidden="true"><IconMic size={20} /></div>
               <div className="speech-identity">
                 <div className="speech-heading"><h2>{t("chat.voiceMode")}</h2><span className={`speech-live-dot ${state}`} /></div>
-                <p className="speech-state" role="status">{t(state === "recording" ? "chat.listening" : state === "transcribing" ? "chat.transcribing" : state === "waiting" ? "chat.waitingReply" : state === "speaking" ? "chat.speaking" : "chat.readyToSpeak")}</p>
+                <p className="speech-state" role="status">{state === "transcribing" ? speechProgressText(progress, t) : t(state === "starting" ? "chat.requestingMicrophone" : state === "recording" ? "chat.listening" : state === "waiting" ? "chat.waitingReply" : state === "speaking" ? "chat.speaking" : "chat.readyToSpeak")}</p>
               </div>
               <div className={`speech-waveform ${state}`} aria-hidden="true">
                 {Array.from({ length: 43 }, (_, index) => <i key={index} style={{ animationDelay: `${(index % 11) * -0.12}s`, height: `${4 + (index * 7 % 13)}px` }} />)}

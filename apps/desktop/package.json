@@ -285,6 +285,7 @@
     },
     "asarUnpack": [
       "**/node_modules/onnxruntime-node/bin/**/*",
+      "**/node_modules/sherpa-onnx*/**/*",
       "**/node_modules/@img/**/*"
     ]
   }

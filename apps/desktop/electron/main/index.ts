@@ -234,7 +234,7 @@ import {
 } from "./host-boot-diagnostics";
 import { collectWorkspaceDiff } from "./git-diff";
 import { BrowserPane, resolveLocalFile } from "./browser-view";
-import { transcribeSpeech } from "./speech";
+import { SpeechService } from "./speech-service";
 import { BrowserTabsPane } from "./browser-tabs-pane";
 import { resolveBrowserSurfaceReadiness } from "./browser-surface-readiness";
 import { browserSurfaceSessionUpdate } from "./browser-surface-session";
@@ -419,6 +419,7 @@ const WORK_PANEL_NATIVE_RESIZE_SETTLE_MS = 180;
 const WORK_PANEL_CHAT_RESIZE_SETTLE_MS = WINDOW_BOUNDS_SETTLE_MS + 120;
 
 let mainWindow: BrowserWindow | null = null;
+let speechService: SpeechService | undefined;
 let tray: Tray | null = null;
 let pluginLauncherWindow: BrowserWindow | null = null;
 let pluginLauncherCreationPromise: Promise<BrowserWindow> | null = null;
@@ -3201,6 +3202,8 @@ async function createWindow() {
     },
   });
   const window = mainWindow;
+  window.webContents.on("did-start-loading", () => speechService?.close());
+  window.webContents.once("destroyed", () => speechService?.close());
   window.webContents.session.setPermissionRequestHandler((contents, permission, callback, details) => {
     const audioOnly = permission === "media" &&
       "mediaTypes" in details &&
@@ -7534,11 +7537,24 @@ function registerIpc() {
     browserCapabilityEnabled = normalized.coreCapabilities?.browser?.enabled !== false;
     return normalized;
   });
-  handle(IPC.invoke.speechTranscribe, async (audioBase64: unknown) => {
+  const speech = new SpeechService(join(dataDir, "speech-models"), async () => {
     if (!host) throw new Error("host unavailable");
-    if (typeof audioBase64 !== "string") throw new Error("Invalid speech recording");
     const settings = await host.call("settings.get") as { speech?: import("@pi-desktop/shared").SpeechSettings };
-    return { text: await transcribeSpeech(audioBase64, settings.speech, join(dataDir, "speech-models")) };
+    return settings.speech;
+  }, progress => sendToRenderer(IPC.event.speechProgress, progress));
+  speechService = speech;
+  app.once("before-quit", () => speech.close());
+  handleWithEvent(IPC.invoke.speechTranscribe, async (event, audioBase64: unknown, requestId: unknown) => {
+    assertMainWindowSender(event);
+    if (typeof audioBase64 !== "string") throw new Error("Invalid speech recording");
+    if (typeof requestId !== "string") throw new Error("Invalid speech request ID");
+    return { text: await speech.start(requestId, audioBase64) };
+  });
+  handleWithEvent(IPC.invoke.speechCancel, async (event, requestId: unknown) => {
+    assertMainWindowSender(event);
+    if (typeof requestId !== "string") throw new Error("Invalid speech request ID");
+    speech.cancel(requestId);
+    return { canceled: true };
   });
   handle(IPC.invoke.networkProxyTest, async (settings: unknown) => {
     return testNetworkProxy(settings);

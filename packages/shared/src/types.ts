@@ -2524,3 +2524,11 @@ export type ProjectCollectionMembership = {
   projectPath: string;
   order: number;
 };
+
+/** Bounded, request-scoped speech status; never includes recorded audio. */
+export type SpeechTranscriptionProgress = {
+  requestId: string;
+  stage: "downloading" | "loading" | "transcribing";
+  downloadedBytes?: number;
+  totalBytes?: number;
+};

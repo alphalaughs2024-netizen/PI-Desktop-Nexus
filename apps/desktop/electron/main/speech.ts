@@ -1,5 +1,6 @@
 import { mkdir } from "node:fs/promises";
 import type { SpeechSettings } from "@pi-desktop/shared";
+import type { SpeechProgress } from "./speech-models.ts";
 import { transcribeLocalParakeet } from "./speech-local.ts";
 
 const SAMPLE_RATE = 16_000;
@@ -78,7 +79,9 @@ export async function transcribeSpeech(
   audioBase64: string,
   settings: SpeechSettings | undefined,
   cacheDir: string,
+  options: { signal?: AbortSignal; onProgress?: (progress: SpeechProgress) => void } = {},
 ): Promise<string> {
+  options.signal?.throwIfAborted();
   const samples = decodeSpeechWav(audioBase64);
   if (samples.length === 0) return "";
   let peak = 0;
@@ -86,9 +89,12 @@ export async function transcribeSpeech(
   if (peak < 300 / 32768) return "";
   if (settings?.transcription !== "hosted") {
     if (settings?.localModel !== "whisper-tiny") {
-      return transcribeLocalParakeet(samples, settings?.localModel ?? "parakeet-tdt-0.6b-v2-int8", cacheDir);
+      return transcribeLocalParakeet(samples, settings?.localModel ?? "parakeet-tdt-0.6b-v2-int8", cacheDir, options);
     }
+    options.onProgress?.({ stage: "loading" });
     const transcriber = await getLocalTranscriber(cacheDir);
+    options.signal?.throwIfAborted();
+    options.onProgress?.({ stage: "transcribing" });
     const result = await transcriber(samples, { chunk_length_s: 30 });
     return typeof result === "object" && result !== null && "text" in result
       ? String(result.text).trim()
@@ -108,7 +114,7 @@ export async function transcribeSpeech(
     method: "POST",
     headers: key ? { Authorization: `Bearer ${key}` } : undefined,
     body: form,
-    signal: AbortSignal.timeout(90_000),
+    signal: AbortSignal.any([options.signal ?? new AbortController().signal, AbortSignal.timeout(90_000)]),
   });
   if (!response.ok) throw new Error(`Speech provider returned HTTP ${response.status}`);
   const data: unknown = await response.json();
