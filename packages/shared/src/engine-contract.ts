@@ -61,6 +61,7 @@ export type EngineEvent = {
 export interface EngineAdapter {
   start(input: { turnId: string; text: string; thinkingLevel?: import("./types.js").ThinkingLevel; images?: Array<{ mimeType: string; data: string }> }): Promise<{ accepted: boolean; turnId: string }>;
   interrupt(): Promise<void>;
+  steer(input: { expectedTurnId: string; text: string; messageId?: string }): Promise<import("./types.js").SteerOutcome>;
   snapshot(): EngineSnapshot;
   recover(): Promise<EngineSnapshot>;
   shutdown(): Promise<void>;

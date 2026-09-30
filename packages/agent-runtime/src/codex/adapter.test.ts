@@ -32,6 +32,84 @@ async function fixture(dataDir?: string, nativeTurns: any[] = []) {
 }
 const settle = async () => { await new Promise(resolve => setTimeout(resolve, 30)); };
 describe("Codex adapter lifecycle", () => {
+  it("steers the guarded native turn without restarting execution and persists one user message", async () => {
+    const f = await fixture(); await f.adapter.start({ turnId: "host-turn", text: "initial" }); await settle();
+    expect(f.adapter.steeringContext("host-turn")).toMatchObject({ projectPath: f.config.workspace, supportsVision: false });
+    const input = { expectedTurnId: "host-turn", text: "Use emerald instead", messageId: "steer-message" };
+    const first = f.adapter.steer(input); const duplicate = f.adapter.steer(input);
+    expect(await first).toEqual({ state: "accepted", sessionId: "s", expectedTurnId: "host-turn" }); expect(await duplicate).toEqual(await first);
+    const calls = f.calls.filter(c => c.method === "turn/steer"); expect(calls).toHaveLength(1);
+    expect(calls[0].params).toMatchObject({ threadId: "native-s", expectedTurnId: "native-1", clientUserMessageId: "steer-message", input: [{ type: "text", text: "Use emerald instead" }] });
+    expect(f.calls.filter(c => c.method === "turn/start")).toHaveLength(1);
+    expect(f.events.filter(e => e.event.type === "message_end" && e.event.message.id === "steer-message")).toHaveLength(1);
+    expect(f.adapter.getStatus().isRunning).toBe(true);
+  });
+  it("flushes an accepted steering instruction before a racing terminal event", async () => {
+    const f = await fixture(); await f.adapter.start({ turnId: "current", text: "initial" }); await settle();
+    let acknowledge!: (value: any) => void;
+    const original = f.rpc.request;
+    vi.spyOn(f.rpc, "request").mockImplementation((method, params) => method === "turn/steer"
+      ? new Promise(resolve => { acknowledge = resolve; }) : original(method, params));
+    const pending = f.adapter.steer({ expectedTurnId: "current", text: "amend", messageId: "racing" }); await settle();
+    f.event("turn/completed", { turn: { id: "native-1", status: "completed" } }); await settle();
+    expect(f.events.some(e => e.event.type === "agent_end")).toBe(false);
+    expect(await f.adapter.steer({ expectedTurnId: "current", text: "too late" })).toMatchObject({ state: "rejected", reason: "not_running" });
+    acknowledge({ turnId: "native-1" }); expect((await pending).state).toBe("accepted"); await settle();
+    const accepted = f.events.findIndex(e => e.event.type === "message_end" && e.event.message.id === "racing");
+    const terminal = f.events.findIndex(e => e.event.type === "agent_end");
+    expect(accepted).toBeGreaterThanOrEqual(0); expect(terminal).toBeGreaterThan(accepted);
+    expect(f.events[accepted].event).toMatchObject({ message: { steering: true } });
+    expect(f.events.filter(e => e.event.type === "agent_end")).toHaveLength(1);
+  });
+
+  it("cancels while completion waits for an uncertain steering acknowledgement", async () => {
+    const f = await fixture(); await f.adapter.start({ turnId: "current", text: "initial" }); await settle();
+    let rejectSteer!: (error: Error) => void;
+    const original = f.rpc.request;
+    vi.spyOn(f.rpc, "request").mockImplementation((method, params) => method === "turn/steer"
+      ? new Promise((_, reject) => { rejectSteer = reject; }) : original(method, params));
+    vi.spyOn(f.rpc, "close").mockImplementation(async () => { rejectSteer(new Error("transport closed")); });
+    const pending = f.adapter.steer({ expectedTurnId: "current", text: "amend", messageId: "uncertain" }); await settle();
+    f.event("turn/completed", { turn: { id: "native-1", status: "completed" } }); await settle();
+    await f.adapter.interrupt(); expect((await pending).state).toBe("failed");
+    expect(f.adapter.snapshot().turn?.outcome).toBe("interrupted");
+    expect(f.events.some(e => e.event.type === "agent_end")).toBe(false);
+    expect(f.events.filter(e => e.event.type === "error")).toHaveLength(1);
+  });
+
+  it("does not falsely accept a late steering acknowledgement after interruption", async () => {
+    const f = await fixture(); await f.adapter.start({ turnId: "current", text: "initial" }); await settle();
+    let acknowledge!: (value: any) => void;
+    const original = f.rpc.request;
+    vi.spyOn(f.rpc, "request").mockImplementation((method, params) => method === "turn/steer"
+      ? new Promise(resolve => { acknowledge = resolve; }) : original(method, params));
+    const pending = f.adapter.steer({ expectedTurnId: "current", text: "amend", messageId: "late" }); await settle();
+    f.event("turn/completed", { turn: { id: "native-1", status: "interrupted" } }); await settle();
+    acknowledge({ turnId: "native-1" }); expect((await pending).state).toBe("failed");
+    expect(f.events.some(e => e.event.type === "message_end" && e.event.message.id === "late")).toBe(false);
+    expect(f.adapter.snapshot().turn?.outcome).toBe("interrupted");
+  });
+
+  it("rejects stale, empty and completed steering before any native request", async () => {
+    const f = await fixture(); await f.adapter.start({ turnId: "current", text: "initial" }); await settle();
+    expect(await f.adapter.steer({ expectedTurnId: "old", text: "stale" })).toEqual({ state: "rejected", reason: "stale_turn" });
+    expect(await f.adapter.steer({ expectedTurnId: "current", text: " " })).toEqual({ state: "rejected", reason: "invalid" });
+    f.event("turn/completed", { turn: { id: "native-1", status: "completed" } }); await settle();
+    expect(await f.adapter.steer({ expectedTurnId: "current", text: "too late" })).toEqual({ state: "rejected", reason: "not_running" });
+    expect(f.calls.some(c => c.method === "turn/steer")).toBe(false);
+  });
+  it("retains uncertain steering failure without replay or a falsely accepted message", async () => {
+    const f = await fixture(); await f.adapter.start({ turnId: "current", text: "initial" }); await settle();
+    const original = f.rpc.request; const request = vi.spyOn(f.rpc, "request").mockImplementation(async (method, params) => {
+      if (method === "turn/steer") throw new Error("connection lost after dispatch"); return original(method, params);
+    });
+    const input = { expectedTurnId: "current", text: "amend", messageId: "uncertain" };
+    expect((await f.adapter.steer(input)).state).toBe("failed"); expect((await f.adapter.steer(input)).state).toBe("failed");
+    expect(request.mock.calls.filter(c => c[0] === "turn/steer")).toHaveLength(1);
+    expect(f.events.some(e => e.event.type === "message_end" && e.event.message.id === "uncertain")).toBe(false);
+    expect(f.adapter.getStatus().isRunning).toBe(true);
+  });
+
   it("sends the explicit Full access policy to the native thread", async () => {
     const f = await fixture(); f.config.permissionMode = "full-access";
     await f.adapter.start({ turnId: "full", text: "hi" }); await settle();

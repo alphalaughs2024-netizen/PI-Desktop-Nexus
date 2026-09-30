@@ -14,7 +14,7 @@ export type CodexConfig = {
 };
 export function sessionDescriptor(config: CodexConfig): EngineSession {
   return { sessionId: config.sessionId, engine: "codex", version: CODEX_VERSION, workspace: resolve(config.workspace), providerId: config.provider.id, modelId: config.provider.modelId,
-    capabilities: { imageInput: config.provider.modelConfig?.input.includes("image") === true, nativeTools: true, recovery: true, steering: false, browser: false, managedPreview: false } };
+    capabilities: { imageInput: config.provider.modelConfig?.input.includes("image") === true, nativeTools: true, recovery: true, steering: true, browser: false, managedPreview: false } };
 }
 /** Preserve the selected endpoint effort; never silently spend at a higher level. */
 export function nativeEffort(provider: RuntimeProviderConfig, level?: ThinkingLevel): string | undefined {

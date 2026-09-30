@@ -50,7 +50,15 @@ export class CodexController {
         return { snapshot: await this.storedSnapshot(sessionId) };
       }
       case "agent.recover": if (!adapter) throw new Error("CODEX_SESSION_NOT_LOADED"); return { snapshot: await adapter.recover() };
-      case "agent.steer": case "agent.steeringContext": return { state: "unavailable", reason: "Codex steering integration is not included in Phase 2" };
+      case "agent.steeringContext": {
+        if (!adapter) throw Object.assign(new Error("Codex session unavailable"), { errorCode: "MISSING_SESSION" });
+        return adapter.steeringContext(String(params.expectedTurnId ?? ""));
+      }
+      case "agent.steer": {
+        if (!adapter) return { state: "unavailable", reason: "missing_session" };
+        if (params.attachments?.length) return { state: "failed", reason: "Codex steering currently accepts text only. Send attachments in the next user turn." };
+        return adapter.steer({ expectedTurnId: String(params.expectedTurnId ?? ""), text: String(params.content ?? ""), messageId: params.messageId ?? params.message?.id });
+      }
       case "agent.resolveApproval": {
         if (params.decision !== "allow-once" && params.decision !== "deny") throw new Error("CODEX_APPROVAL_SCOPE_UNSUPPORTED: choose Allow once or Deny");
         for (const runtime of this.sessions.values()) if (runtime.resolveApproval(params.requestId, params.decision)) return { ok: true };

@@ -47,10 +47,12 @@ per-turn thinking effort, malformed frame shape, split-chunk credential
 redaction, the 120-second
 deny timeout, stale approval responses, unexpected process exit, partial-output
 recovery, cold disconnected snapshots, image input payloads, secret-free
-recovery/config/argv, unsupported capabilities and version mismatch.
+recovery/config/argv, unsupported capabilities and version mismatch. Steering
+checks cover native turn guards, duplicate IDs, uncertain acknowledgements,
+completion ordering and cancellation while completion drains steering.
 
-42 targeted runtime checks in seven files and 12 permission checks passed
-(54 total). Shared/runtime builds and desktop typecheck passed. Local E2E
+56 targeted runtime checks in eight files and 12 permission checks passed
+(68 total). Shared/runtime builds and desktop typecheck passed. Local E2E
 suites were not run. Theme CSS, composer geometry, icons and layout were not edited. Permission
 cards preserve their presentation and disable only unsupported session grants
 for native Codex requests.
@@ -85,6 +87,23 @@ prepared sibling fixture in 6.717 seconds. Both had one completed terminal
 outcome. Evidence: %USERPROFILE%/.nexus-codex-phase2/production-openrouter-report.json.
 These are single workflow samples, not engine latency comparisons.
 
+## Native text steering recheck
+
+The integrated adapter passed a live free OpenRouter Space Bunny trial. During
+an already-running 12-second native command, a text instruction changed the
+requested final answer from ORIGINAL to EMERALD. The final answer was EMERALD;
+one instruction was accepted and one terminal outcome was emitted. Both host
+and native turn IDs, and the original start timestamp, were preserved. Recovery
+retained the terminal snapshot and native handle without replay events. The
+trial took 22.199 seconds, including command/model time; this is not a benchmark.
+Evidence: %USERPROFILE%/.nexus-codex-phase2/native-steering-report.json.
+
+Deterministic checks also verify an acknowledgement racing completion is
+persisted before the terminal signal and that cancellation closes an unresolved
+request without false completion. Steering currently accepts text only. The
+running app must be quit normally and relaunched to load the updated sidecar;
+manual composer-path steering acceptance remains pending.
+
 ## User acceptance feedback
 
 The user reports passes for themes, appearance, image vision and conversation
@@ -94,10 +113,14 @@ because the controller rejected the mode; it now maps the explicit session
 choice to native danger-full-access/never. Global defaults remain unchanged.
 The user reports web-search success; Nexus has no visible search item for the
 recorded attempt, so provider-side search observability remains unverified.
+Canonical Nexus/native transcripts were inspected rather than SQLite index
+text: tool index rows have null text by design, while command outputs remain
+intact in canonical tool-call blocks. No persistence corruption is inferred
+from those index rows.
 Cancel/reload acceptance is not yet confirmed.
 
 Phase 3 owns the persistent timeline and whole-response timer UX. Phase 4 owns
 browser/viewports/preview and complete coding-service parity. Plan/Goal,
-regenerate, steering and legacy plugin tools are deliberately not claimed as
+regenerate and legacy plugin tools are deliberately not claimed as
 working in this Phase 2 adapter. Native reasoning is shown only if emitted.
 Keep the default runtime unchanged until user acceptance.

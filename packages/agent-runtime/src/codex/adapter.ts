@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import { mkdir } from "node:fs/promises";
 import { APP_VERSION } from "@pi-desktop/shared";
-import type { AgentEvent, AgentEventEnvelope, AgentStatus, AskToolResolution, EngineAdapter, EngineEvent, EngineItem, EngineOutcome, EngineSnapshot, ThinkingLevel, UiMessage } from "@pi-desktop/shared";
+import type { AgentEvent, AgentEventEnvelope, AgentStatus, AskToolResolution, SteerOutcome, EngineAdapter, EngineEvent, EngineItem, EngineOutcome, EngineSnapshot, ThinkingLevel, UiMessage } from "@pi-desktop/shared";
 import { ExecutionContract } from "./contract.js";
 import { CodexSessionStore } from "./store.js";
 import { nativeEffort, nativePolicy, prepareLaunch, sessionDescriptor, type CodexConfig, type CodexLaunch } from "./config.js";
@@ -31,6 +31,7 @@ export class CodexAdapter implements EngineAdapter {
   private starting?: Promise<void>;
   private checkpointTimer?: NodeJS.Timeout;
   private approvals = new Map<string, Approval>();
+  private steeringMessages = new Map<string, Promise<SteerOutcome>>();
   private rawCalls = new Map<string, { name: string; args: unknown }>();
   private restored = false;
   private reconstructing = false;
@@ -159,7 +160,7 @@ export class CodexAdapter implements EngineAdapter {
     const previous = this.snapshot().turn?.nativeTurnId;
     if (previous) this.retiredTurns.add(previous);
     const turn = this.contract.accept(input.turnId, acceptedAt);
-    this.sequence = 0; this.cancelled = false; this.ending = undefined; this.turnGeneration = turn.runId; this.rawCalls.clear();
+    this.sequence = 0; this.cancelled = false; this.ending = undefined; this.turnGeneration = turn.runId; this.rawCalls.clear(); this.steeringMessages.clear();
     await this.checkpoint();
     this.event({ type: "agent_start" }); this.event({ type: "turn_start" }); this.status();
     this.starting = this.begin(input).finally(() => { this.starting = undefined; });
@@ -182,6 +183,44 @@ export class CodexAdapter implements EngineAdapter {
     if (run !== this.turnGeneration || this.snapshot().turn?.outcome) return;
     if (result.turn?.id && !this.snapshot().turn?.nativeTurnId) this.apply({ type: "phase", phase: "waiting-model", nativeTurnId: result.turn.id });
     if (this.cancelled) await this.interrupt();
+  }
+  steeringContext(expectedTurnId: string): { projectPath: string; supportsVision: boolean } {
+    const state = this.snapshot();
+    if (this.disposed) throw Object.assign(new Error("Codex steering session unavailable"), { errorCode: "MISSING_SESSION" });
+    if (state.turn?.id !== expectedTurnId) throw Object.assign(new Error("Codex steering target is stale"), { errorCode: "STALE_TURN" });
+    if (!this.rpc || this.cancelled || this.ending || !state.turn.nativeTurnId || state.turn.outcome) throw Object.assign(new Error("No native turn available to steer"), { errorCode: "NOT_RUNNING" });
+    // Text-only until attachment preparation is shared with native steering.
+    return { projectPath: this.config.workspace, supportsVision: false };
+  }
+  steer(input: { expectedTurnId: string; text: string; messageId?: string }): Promise<SteerOutcome> {
+    if (!input.text.trim()) return Promise.resolve({ state: "rejected", reason: "invalid" });
+    const messageId = input.messageId ?? randomUUID();
+    const key = input.expectedTurnId + ":" + messageId;
+    const existing = this.steeringMessages.get(key); if (existing) return existing;
+    // Register before dispatch so terminal events can drain every admitted request.
+    const pending = Promise.resolve().then(() => this.sendSteer(input, messageId));
+    this.steeringMessages.set(key, pending);
+    return pending;
+  }
+  private async sendSteer(input: { expectedTurnId: string; text: string }, messageId: string): Promise<SteerOutcome> {
+    try { this.steeringContext(input.expectedTurnId); }
+    catch (error: any) { return error.errorCode === "STALE_TURN" ? { state: "rejected", reason: "stale_turn" } : error.errorCode === "NOT_RUNNING" ? { state: "rejected", reason: "not_running" } : { state: "unavailable", reason: "missing_session" }; }
+    const turn = this.snapshot().turn!;
+    const createdAt = new Date().toISOString();
+    this.event({ type: "lifecycle", lifecycle: { id: randomUUID(), kind: "steering_requested", ts: Date.now(), turnId: turn.id } });
+    try {
+      await this.rpc!.request("turn/steer", { threadId: this.snapshot().session.nativeHandle, expectedTurnId: turn.nativeTurnId,
+        clientUserMessageId: messageId, input: [{ type: "text", text: input.text }] });
+      if (this.snapshot().turn?.runId !== turn.runId) return { state: "rejected", reason: "stale_turn" };
+      if (this.cancelled || this.snapshot().turn?.outcome) return { state: "failed", reason: "The turn ended before steering was recorded. No steering request was replayed." };
+      const message: UiMessage = { id: messageId, role: "user", content: input.text, createdAt, status: "complete", steering: true };
+      this.event({ type: "message_start", message }); this.event({ type: "message_end", message });
+      this.event({ type: "lifecycle", lifecycle: { id: randomUUID(), kind: "steering_accepted", ts: Date.now(), turnId: turn.id } });
+      return { state: "accepted", sessionId: this.config.sessionId, expectedTurnId: turn.id };
+    } catch (error: any) {
+      this.event({ type: "lifecycle", lifecycle: { id: randomUUID(), kind: "steering_failed", ts: Date.now(), turnId: turn.id, reason: "Native steering failed; no request replayed." } });
+      return { state: "failed", reason: "Native steering was not confirmed. The original turn may still be running; no steering request was replayed." };
+    }
   }
   private belongs(params: any): boolean {
     const state = this.snapshot();
@@ -298,6 +337,10 @@ export class CodexAdapter implements EngineAdapter {
     if (this.ending) return this.ending;
     if (!this.getStatus().isRunning) return Promise.resolve();
     this.ending = (async () => {
+      // Keep the host turn owned until accepted steering messages are persisted.
+      // Cancellation must remain prompt; transport shutdown rejects pending RPCs.
+      if (outcome === "completed") await Promise.allSettled([...this.steeringMessages.values()]);
+      if (outcome === "completed" && this.cancelled) { outcome = "interrupted"; error = "Turn interrupted by user"; }
       for (const id of [...this.approvals.keys()]) this.resolveApproval(id, "deny");
       // Emit final partial item states before the terminal signal.
       for (const item of this.snapshot().items) if (item.status === "running" && item.kind !== "approval") this.update({ ...item, status: outcome === "completed" ? "failed" : outcome, completedAt: Date.now() });
@@ -319,6 +362,9 @@ export class CodexAdapter implements EngineAdapter {
       try { await this.rpc.request("turn/interrupt", { threadId: state.session.nativeHandle, turnId: state.turn.nativeTurnId }); }
       catch { await this.closeProcess(); }
     } else if (this.starting || this.admission) await this.closeProcess();
+    // A completing turn may be draining steering acknowledgements; close rejects
+    // those waiters immediately rather than delaying cancellation until timeout.
+    if (this.ending) await this.closeProcess();
     await this.end("interrupted", "Turn interrupted by user");
     // Closing the session-owned engine ensures native commands cannot outlive cancel.
     await this.closeProcess();

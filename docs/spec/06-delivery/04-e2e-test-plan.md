@@ -11587,7 +11587,17 @@ snapshot: no turn/start or tool replay occurs. Explicit new input starts a new
 turn. Reload during streaming and quit the app with command sessions alive;
 shutdown must stop the owned process tree. Do not claim packaged parity here.
 
-Verify Plan/Goal, regenerate, steering and unsupported legacy tools are refused
+Steer a running request with text: expect one native turn/steer request guarded
+by its native turn ID, one persisted user instruction, and the original host
+turn/timer identity. Duplicate message IDs cannot dispatch twice. Stale targets
+fail before dispatch. Inject a lost steering acknowledgement: report uncertainty
+without automatic replay or restarting mutation tools. Race completion against
+a steering acknowledgement: persist the accepted instruction before the terminal
+signal. Cancel while that acknowledgement is pending: no false completion or
+acknowledgement-timeout wait. Steering attachments
+fail explicitly.
+
+Verify Plan/Goal, regenerate and unsupported legacy tools are refused
 in the opt-in prototype. No paid/provider fallback occurs. Do not run local E2E
 suites merely because these scenarios are documented. Persistent whole-turn
 status/timer UX is the next phase's acceptance gate.

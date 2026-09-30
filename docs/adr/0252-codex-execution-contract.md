@@ -91,7 +91,7 @@ native capabilities of this adapter.
 ## Scope and acceptance
 
 Agent mode and forward new turns are supported. Legacy Plan/Goal, history
-regenerate, plugins/extensions, compaction UI, steering and graceful boundary
+regenerate, plugins/extensions, compaction UI and graceful boundary
 stop are not silently routed to pi. Their integration is deferred. No OAuth
 sign-in, paid fallback, universal endpoint compatibility, packaging or runtime
 retirement is implied. The selected API-key endpoint must support Responses.
@@ -103,5 +103,12 @@ scripts/agent-evaluation/PHASE2.md.
 
 Phase 2 acceptance requires deterministic lifecycle/approval/recovery checks,
 a real Windows native-tool/image trial, and a working opt-in pnpm dev prototype.
+Text steering now uses turn/steer with the native expectedTurnId precondition.
+Accepted instructions retain the original host turn identity and persist once;
+failed or uncertain requests are not replayed.
+Completion drains pending steering acknowledgements before releasing the host
+turn; cancellation closes pending transport requests and remains interruptible.
+Steering attachments are
+explicitly unavailable until shared attachment preparation is implemented.
 The persistent whole-response status/timer UI is Phase 3. Full coding environment
 capability parity and packaged Windows verification remain later gates.
