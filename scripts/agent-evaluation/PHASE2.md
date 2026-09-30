@@ -185,3 +185,30 @@ Repeat steering during a long command and cancel during generation. Do not
 merge or advance to Phase 3 until the user accepts. Whole-response timer and
 timeline rendering remain Phase 3 even though host turn/start identity is
 stable here. No local E2E suite or packaged build was run for this correction.
+
+## Windows console-window correction
+
+The user confirmed that steering and disappearing instructions were fixed.
+Their remaining acceptance issue was a console appearing on the first message
+in a new chat. The installed 0.157.1 CLI shim starts its native child without
+windowsHide even though Nexus hides the shim. Nexus now resolves and pins the
+Windows native package and launches codex.exe directly through the hidden,
+piped transport. No installed package was edited.
+
+Targeted launch/transport checks passed (16 tests), including x64/arm64,
+hoisted packages, missing binaries, mismatched versions and credential handling.
+All seven Codex runtime test files passed (73 tests), the runtime TypeScript
+build passed, and git diff --check was clean.
+An isolated Electron-as-Node Windows smoke trial used a local Responses fixture:
+initialize, real streamed output, sampling steering and cancellation passed;
+one terminal outcome was recorded for the completed turn. Window monitoring
+observed no new visible windows, and no owned processes remained after teardown.
+Evidence: %USERPROFILE%/.nexus-codex-phase2/native-console-check-1790795347150/
+(report.json and windows.json). No cloud requests were made. The first smoke
+attempt asserted terminal-event count before asynchronous output flushing;
+the corrected check waits for that event and passed.
+
+The running foreground app still uses its old sidecar. Quit normally and
+relaunch pnpm dev:codex before checking new-chat launch visibility. Manual
+acceptance of the console correction remains pending; no merge or push yet.
+No local E2E suite or packaged Windows build was run.

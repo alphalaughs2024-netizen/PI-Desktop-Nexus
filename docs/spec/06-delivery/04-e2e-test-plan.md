@@ -11548,7 +11548,12 @@ remain unresolved until specifically exercised; keep these limitations visible.
 
 ## Opt-in Codex backend contract (ADR 0252)
 
-Launch pnpm dev:codex with a separate profile and Codex 0.157.1. Verify the
+Launch pnpm dev:codex with a separate profile and Codex 0.157.1. On Windows,
+create several new chats and send a message in each: no separate console may
+appear. Verify Nexus directly owns the native codex.exe process, its package
+version matches the CLI pin, streaming works, and cancellation/shutdown leaves
+no owned engine children. A missing native executable or mismatched native
+package must fail clearly before model execution. Verify the
 production profile and a mismatched engine version are refused. Configure an
 API-key Responses provider; a Completions-only or OAuth launch must fail clearly
 without pi fallback. Ordinary pnpm dev retains the old runtime. Verify all

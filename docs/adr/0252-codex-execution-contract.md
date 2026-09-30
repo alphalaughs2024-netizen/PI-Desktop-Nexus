@@ -45,6 +45,17 @@ the production profile. Electron userData/sessionData use that profile too,
 isolating Chromium localStorage/cookies. A per-profile single-instance lock
 prevents two opt-in processes from sharing the same engine/application stores.
 
+## Windows engine launch
+
+Nexus launches the pinned Windows native binary directly, resolving the x64 or
+arm64 optional npm package through Node package resolution and checking its
+platform version. The parent package pin also remains enforced. The transport
+owns piped I/O, hidden-window creation and process-tree teardown. This removes
+the CLI shim's second spawn, which does not propagate windowsHide. Existing
+provider configuration, transient credential handling and approvals are kept.
+Missing binaries or unsupported architectures fail explicitly. This changes
+engine launch ownership, not the visual design or tool permission policy.
+
 ## Lifecycle and compatibility
 
 A fresh run ID fences each accepted turn. Native thread/turn IDs and transport

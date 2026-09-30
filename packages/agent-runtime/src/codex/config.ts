@@ -1,6 +1,7 @@
 import { access, mkdir, readFile, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
-import { join, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
+import { createRequire } from "node:module";
 import type { EngineSession, ThinkingLevel } from "@pi-desktop/shared";
 import type { RuntimeProviderConfig } from "../provider-binding.js";
 export const CODEX_VERSION = "0.157.1";
@@ -36,6 +37,31 @@ export function nativePolicy(mode: CodexConfig["permissionMode"]) {
   return { approvalPolicy: mode === "auto" || mode === "full-access" ? "never" : "on-request",
     sandbox: mode === "full-access" ? "danger-full-access" : mode === "ask" ? "read-only" : "workspace-write" };
 }
+/** Bypass the npm shim on Windows: its native child is not spawned hidden. */
+export async function resolveCodexEntrypoint(packageRoot: string, platform: NodeJS.Platform = process.platform, arch: string = process.arch): Promise<{ command: string; prefix: string[] }> {
+  if (platform !== "win32") {
+    const metadata = JSON.parse(await readFile(join(packageRoot, "package.json"), "utf8"));
+    const entry = resolve(packageRoot, typeof metadata.bin === "string" ? metadata.bin : metadata.bin.codex);
+    await access(entry);
+    return { command: process.execPath, prefix: [entry] };
+  }
+  if (arch !== "x64" && arch !== "arm64") throw new Error("CODEX_PLATFORM_UNSUPPORTED: " + arch);
+  const nativePackage = "@openai/codex-win32-" + arch;
+  let vendorRoot = join(packageRoot, "vendor");
+  let nativeMetadataPath: string | undefined;
+  try { nativeMetadataPath = createRequire(join(packageRoot, "package.json")).resolve(nativePackage + "/package.json"); }
+  catch (error) { if ((error as NodeJS.ErrnoException).code !== "MODULE_NOT_FOUND") throw error; }
+  if (nativeMetadataPath) {
+    const metadata = JSON.parse(await readFile(nativeMetadataPath, "utf8"));
+    if (metadata.version !== CODEX_VERSION + "-win32-" + arch) throw new Error("CODEX_VERSION_MISMATCH: native package must match " + CODEX_VERSION);
+    vendorRoot = join(dirname(nativeMetadataPath), "vendor");
+  }
+  const triple = arch === "x64" ? "x86_64-pc-windows-msvc" : "aarch64-pc-windows-msvc";
+  const command = join(vendorRoot, triple, "bin", "codex.exe");
+  try { await access(command); }
+  catch { throw new Error("CODEX_NATIVE_BINARY_MISSING: install the pinned Windows Codex package"); }
+  return { command, prefix: [] };
+}
 export async function prepareLaunch(config: CodexConfig, directory: string): Promise<CodexLaunch> {
   if (config.provider.authKind && !["api-key", "api_key", "api_key_and_base_url", "none"].includes(config.provider.authKind)) throw new Error("CODEX_PROVIDER_UNSUPPORTED: select an API-key Responses endpoint for this prototype");
   if (config.provider.apiStyle && !/responses/i.test(config.provider.apiStyle)) throw new Error("CODEX_RESPONSES_REQUIRED: configure this provider with the Responses API");
@@ -46,8 +72,7 @@ export async function prepareLaunch(config: CodexConfig, directory: string): Pro
   const packageRoot = join(process.env.APPDATA ?? join(homedir(), ".local", "lib"), "npm", "node_modules", "@openai", "codex");
   const metadata = JSON.parse(await readFile(join(packageRoot, "package.json"), "utf8"));
   if (metadata.version !== CODEX_VERSION) throw new Error("CODEX_VERSION_MISMATCH: this prototype requires " + CODEX_VERSION);
-  const entry = resolve(packageRoot, typeof metadata.bin === "string" ? metadata.bin : metadata.bin.codex);
-  await access(entry);
+  const executable = await resolveCodexEntrypoint(packageRoot);
   await mkdir(directory, { recursive: true });
   const contextWindow = config.provider.modelConfig?.contextWindow ?? config.provider.modelConfig?.limit?.context ?? 32768;
   const input = sessionDescriptor(config).capabilities.imageInput ? ["text", "image"] : ["text"];
@@ -70,9 +95,14 @@ export async function prepareLaunch(config: CodexConfig, directory: string): Pro
   await mkdir(env.CODEX_HOME, { recursive: true });
   // Credential lives only in the child environment; no plaintext config or argv.
   env.NEXUS_CODEX_PROVIDER_KEY = config.provider.apiKey;
-  env.ELECTRON_RUN_AS_NODE = "1";
+  if (process.platform === "win32") {
+    delete env.ELECTRON_RUN_AS_NODE;
+    for (const key of ["CODEX_MANAGED_BY_NPM", "CODEX_MANAGED_BY_BUN", "CODEX_MANAGED_BY_PNPM", "CODEX_MANAGED_BY_VITE_PLUS"]) delete env[key];
+    env.CODEX_MANAGED_PACKAGE_ROOT = packageRoot;
+    env.CODEX_MANAGED_BY_NPM = "1";
+  } else env.ELECTRON_RUN_AS_NODE = "1";
   const setting = (key: string, value: unknown) => ["-c", key + "=" + JSON.stringify(value)];
-  const args = [entry, "app-server",
+  const args = [...executable.prefix, "app-server",
     ...setting("model_provider", "nexus"), ...setting("model", config.provider.modelId),
     ...setting("model_catalog_json", catalog.replaceAll("\\", "/")),
     ...setting("model_context_window", contextWindow),
@@ -94,5 +124,5 @@ export async function prepareLaunch(config: CodexConfig, directory: string): Pro
   }
   for (const [name, key] of Object.entries(envHeaders)) args.push(...setting("model_providers.nexus.env_http_headers." + JSON.stringify(name), key));
   if (process.platform === "win32") args.push(...setting("windows.sandbox", "unelevated"));
-  return { command: process.execPath, args, env, cwd: config.workspace };
+  return { command: executable.command, args, env, cwd: config.workspace };
 }

@@ -15,6 +15,14 @@ may own that opt-in profile; a second launch surfaces the existing window.
 Pinned npm Codex 0.157.1 must already be installed. The prototype neither signs
 in nor installs/upgrades an engine. Configure an API-key Responses endpoint;
 unsupported transports/OAuth and mismatched engine versions fail explicitly.
+On Windows, Nexus resolves the matching x64/arm64 optional native npm package
+and launches codex.exe directly with piped I/O and windowsHide. The JavaScript
+CLI shim spawns its native child without that flag, so hiding only the shim is
+insufficient. Both package versions must match the pin; a missing native binary
+or unsupported architecture fails before execution. A bundled vendor binary
+is supported when the optional package is absent. Other platforms retain the
+existing shim launch. Native process-tree cancellation remains Nexus-owned.
+Creating a chat must not open a separate console window.
 Nexus still owns its GUI and appearance. Ordinary pnpm dev retains pi.
 When PI_DESKTOP_HOST_BIN explicitly names an existing compatible host binary,
 the launcher rebuilds JS dependencies and uses that binary without invoking
