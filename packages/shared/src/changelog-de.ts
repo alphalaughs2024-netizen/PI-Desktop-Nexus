@@ -1,6 +1,16 @@
 import type { ChangelogEntry } from "./changelog.js";
 
 export const deEntries: ChangelogEntry[] = [{
+  version: "0.0.7",
+  date: "2026-09-30",
+  highlights: [
+    "Ergänzt lokale Spracheingabe, parallele Sprachgespräche, reine Textantworten und Offline-Transkription mit Parakeet.",
+    "Ergänzt hostgesteuerte geplante Aufgaben mit prüfbaren Einstellungen und einem klareren Aufgabenbereich.",
+    "Ergänzt einen lokalen Markt für Spezialfähigkeiten und vertrauenswürdige Plugin-Ansichten mit getrennten Einstellungen für Workflows und Fähigkeiten.",
+    "Verbessert Prompt-Verlauf, Slash-Befehle und die Auswahl von Fähigkeiten; der Eingabebereich bleibt bei Panelbewegungen stabil.",
+    "Gleicht das Glas der Scenic-Eingabebereiche an die offiziellen Themen an und verbessert Modellvorschläge und Nutzungsanalysen.",
+  ],
+}, {
   version: "0.0.6",
   date: "2026-09-28",
   highlights: [

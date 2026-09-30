@@ -10054,10 +10054,12 @@ are withdrawn with ADR 0165.
 #### E2E-211: Windows portable exe launches without an installer (D364)
 
 - **Preconditions**: A Windows x64 tag or `dist:win` package has produced both
-  `PI-Desktop-Setup-<version>.exe` and `PI-Desktop-Portable-<version>.exe` from
+  `PI-Desktop-Nexus-Setup-<version>.exe` and
+  `PI-Desktop-Nexus-Portable-<version>.exe` from
   the shared electron-builder config; a clean user profile is available; the
   account is a standard user without administrator elevation.
-- **Steps**: 1) Inspect the release directory and `latest.yml`. 2) Launch the
+- **Steps**: 1) Inspect the release directory, installer blockmap, and
+  `latest.yml`. 2) Launch the
   portable exe without running the NSIS installer. 3) Confirm the process
   environment includes `PORTABLE_EXECUTABLE_FILE`. 4) Invoke Check for Updates.
   5) Confirm Settings → Info offers the releases page rather than Restart to
@@ -10066,7 +10068,7 @@ are withdrawn with ADR 0165.
   points at the NSIS installer only. The portable exe starts without a setup
   wizard or administrator prompt, uses the existing application data directory,
   and reports update mode `manual`. An available update does not download or
-  run `PI-Desktop-Setup-<version>.exe`. Relaunch restores sessions from that
+  run `PI-Desktop-Nexus-Setup-<version>.exe`. Relaunch restores sessions from that
   same profile.
 - **Specs linked**: `01-product/01-product-scope.md`,
   `06-delivery/06-release-runbook.md`, `03-runtime/07-process-model.md`,

@@ -1,6 +1,16 @@
 import type { ChangelogEntry } from "./changelog.js";
 
 export const trEntries: ChangelogEntry[] = [{
+  version: "0.0.7",
+  date: "2026-09-30",
+  highlights: [
+    "Yerel dikte, yan yana sesli görüşmeler, yalnızca metin sesli yanıtlar ve çevrimdışı Parakeet dökümü ekledi.",
+    "Gözden geçirilebilir ayarlar ve daha açık bir görev alanıyla ana makine tarafından yönetilen zamanlanmış görevler ekledi.",
+    "Yerel uzman beceri pazarı ve güvenilir eklenti görünümleri ekleyip iş akışı ve beceri ayarlarını ayırdı.",
+    "İstem geçmişini, eğik çizgi komutlarını ve beceri seçimini geliştirdi; paneller hareket ederken yazma alanı sabit kalır.",
+    "Scenic yazma alanının cam görünümünü resmi temalarla eşleştirip model önerilerini ve kullanım analizini geliştirdi.",
+  ],
+}, {
   version: "0.0.6",
   date: "2026-09-28",
   highlights: [

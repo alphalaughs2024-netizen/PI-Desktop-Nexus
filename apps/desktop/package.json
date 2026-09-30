@@ -1,6 +1,6 @@
 {
   "name": "@pi-desktop/desktop",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "desktopName": "pi-desktop-nexus.desktop",
   "private": true,
   "description": "PI Desktop Nexus local-first AI coding workspace",

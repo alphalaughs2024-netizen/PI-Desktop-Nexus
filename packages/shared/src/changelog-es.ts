@@ -1,6 +1,16 @@
 import type { ChangelogEntry } from "./changelog.js";
 
 export const esEntries: ChangelogEntry[] = [{
+  version: "0.0.7",
+  date: "2026-09-30",
+  highlights: [
+    "Añade dictado local, conversaciones de voz en paralelo, respuestas de voz solo en texto y transcripción sin conexión con Parakeet.",
+    "Añade tareas programadas gestionadas por el host, con ajustes revisables y un espacio de tareas más claro.",
+    "Añade un mercado local de habilidades especializadas y vistas de plugins de confianza, con ajustes separados para flujos y habilidades.",
+    "Mejora el historial de prompts, los comandos de barra y la selección de habilidades; el compositor permanece estable al mover los paneles.",
+    "Iguala el cristal del compositor scenic con los temas oficiales y mejora las sugerencias de modelos y el análisis de uso.",
+  ],
+}, {
   version: "0.0.6",
   date: "2026-09-28",
   highlights: [

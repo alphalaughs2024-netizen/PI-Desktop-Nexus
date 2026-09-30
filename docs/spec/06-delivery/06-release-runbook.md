@@ -439,8 +439,9 @@ Native-runner output matrix:
   `PI-Desktop-<version>-arm64-mac.zip`
 - macOS Intel x64: `PI-Desktop-<version>-x64.dmg` and
   `PI-Desktop-<version>-x64-mac.zip`
-- Windows x64: NSIS installer `PI-Desktop-Setup-<version>.exe` and portable
-  exe `PI-Desktop-Portable-<version>.exe`
+- Windows x64: NSIS installer `PI-Desktop-Nexus-Setup-<version>.exe`, its
+  `.blockmap`, `latest.yml`, and portable exe
+  `PI-Desktop-Nexus-Portable-<version>.exe`
 - Linux x64: AppImage, deb, and rpm
 - Linux x64 system Electron asset: `PI-Desktop-<version>-linux-x64.asar`
 

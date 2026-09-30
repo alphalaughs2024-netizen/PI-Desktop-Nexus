@@ -13,6 +13,16 @@ export type ChangelogEntry = {
 };
 
 const enEntries: ChangelogEntry[] = [{
+  version: "0.0.7",
+  date: "2026-09-30",
+  highlights: [
+    "Added local dictation, side-by-side voice conversations, text-only voice replies, and offline Parakeet transcription.",
+    "Added host-owned scheduled tasks with reviewed settings and a clearer task workspace.",
+    "Added a local specialist skill market and trusted plugin views, with separate workflow and skill settings.",
+    "Improved prompt recall, slash commands, and skill selection while keeping the composer stable as panels move.",
+    "Matched scenic composer glass to the official themes and improved model suggestions and usage insights.",
+  ],
+}, {
   version: "0.0.6",
   date: "2026-09-28",
   highlights: [
@@ -56,6 +66,16 @@ const enEntries: ChangelogEntry[] = [{
 }];
 
 const zhCNEntries: ChangelogEntry[] = [{
+  version: "0.0.7",
+  date: "2026-09-30",
+  highlights: [
+    "新增本地听写、并排语音对话、纯文本语音回复和离线 Parakeet 转录。",
+    "新增由主机管理的定时任务、可审查的设置和更清晰的任务工作区。",
+    "新增本地专家技能市场和可信插件视图，并将工作流与技能设置分开。",
+    "改进提示词历史、斜杠命令和技能选择；面板移动时输入框保持稳定。",
+    "让风景主题输入框玻璃材质与官方主题一致，并改进模型建议和用量分析。",
+  ],
+}, {
   version: "0.0.6",
   date: "2026-09-28",
   highlights: [
@@ -99,6 +119,16 @@ const zhCNEntries: ChangelogEntry[] = [{
 }];
 
 const zhTWEntries: ChangelogEntry[] = [{
+  version: "0.0.7",
+  date: "2026-09-30",
+  highlights: [
+    "新增本機聽寫、並排語音對話、純文字語音回覆與離線 Parakeet 轉錄。",
+    "新增由主機管理的排程任務、可審查的設定與更清晰的任務工作區。",
+    "新增本機專家技能市集與可信任的外掛檢視，並分開工作流程與技能設定。",
+    "改善提示詞歷史、斜線命令與技能選擇；面板移動時輸入框保持穩定。",
+    "讓風景主題輸入框的玻璃材質與官方主題一致，並改善模型建議與用量分析。",
+  ],
+}, {
   version: "0.0.6",
   date: "2026-09-28",
   highlights: [

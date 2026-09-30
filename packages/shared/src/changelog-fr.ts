@@ -1,6 +1,16 @@
 import type { ChangelogEntry } from "./changelog.js";
 
 export const frEntries: ChangelogEntry[] = [{
+  version: "0.0.7",
+  date: "2026-09-30",
+  highlights: [
+    "Ajoute la dictée locale, les conversations vocales côte à côte, les réponses vocales en texte seul et la transcription hors ligne avec Parakeet.",
+    "Ajoute des tâches planifiées gérées par l'hôte, avec des réglages vérifiables et un espace de travail plus clair.",
+    "Ajoute un marché local de compétences spécialisées et des vues de plugins fiables, avec des réglages distincts pour les workflows et les compétences.",
+    "Améliore l'historique des prompts, les commandes slash et le choix des compétences ; le compositeur reste stable quand les panneaux bougent.",
+    "Aligne le verre des compositeurs scenic sur les thèmes officiels et améliore les suggestions de modèles et l'analyse d'utilisation.",
+  ],
+}, {
   version: "0.0.6",
   date: "2026-09-28",
   highlights: [
