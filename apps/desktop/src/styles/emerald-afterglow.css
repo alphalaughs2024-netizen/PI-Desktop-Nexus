@@ -61,15 +61,15 @@
   background-color: var(--emerald-navigation-glass);
   background-image: none;
   border-color: var(--emerald-border);
-  backdrop-filter: blur(16px) saturate(1.06);
   -webkit-backdrop-filter: blur(16px) saturate(1.06);
+  backdrop-filter: blur(16px) saturate(1.06);
 }
 :root[data-scenic-theme="emerald-afterglow"] .composer-shell {
   background: var(--ds-bg-composer);
   border: 0;
   box-shadow: var(--ds-shadow-composer);
-  backdrop-filter: blur(18px) saturate(1.08);
   -webkit-backdrop-filter: blur(18px) saturate(1.08);
+  backdrop-filter: blur(18px) saturate(1.08);
 }
 :root[data-scenic-theme="emerald-afterglow"] .speech-dialog {
   border-color: rgba(175, 233, 184, .44);
@@ -112,10 +112,10 @@
 :root[data-scenic-theme="emerald-afterglow"] .settings-shell-full :is(.btn-secondary, .btn-ghost, .icon-btn, .settings-text-action, .settings-icon-button):hover:not(:disabled) { background: rgba(110, 189, 128, 0.34); }
 
 @media (prefers-reduced-transparency: reduce) {
-  :root[data-scenic-theme="emerald-afterglow"] :is(.sidebar, .sidebar-rail, .main-titlebar, .conversation-topbar, .window-controls, .settings-titlebar, .work-panel-header, .composer-shell) { backdrop-filter: none; -webkit-backdrop-filter: none; background-color: rgba(5, 25, 15, 0.97); }
+  :root[data-scenic-theme="emerald-afterglow"] :is(.sidebar, .sidebar-rail, .main-titlebar, .conversation-topbar, .window-controls, .settings-titlebar, .work-panel-header, .composer-shell) { -webkit-backdrop-filter: none; backdrop-filter: none; background-color: rgba(5, 25, 15, 0.97); }
   :root[data-scenic-theme="emerald-afterglow"] .settings-shell-full :is(.settings-panel, .settings-row, .shortcut-row, .provider-row, .model-provider-row, .agent-capability-row, .agent-capability-empty) { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(17, 49, 31, 0.97); }
 }
 @supports not (backdrop-filter: blur(1px)) {
-  :root[data-scenic-theme="emerald-afterglow"] :is(.sidebar, .sidebar-rail, .main-titlebar, .conversation-topbar, .window-controls, .settings-titlebar, .work-panel-header, .composer-shell) { backdrop-filter: none; -webkit-backdrop-filter: none; background-color: rgba(5, 25, 15, 0.97); }
+  :root[data-scenic-theme="emerald-afterglow"] :is(.sidebar, .sidebar-rail, .main-titlebar, .conversation-topbar, .window-controls, .settings-titlebar, .work-panel-header, .composer-shell) { -webkit-backdrop-filter: none; backdrop-filter: none; background-color: rgba(5, 25, 15, 0.97); }
   :root[data-scenic-theme="emerald-afterglow"] .settings-shell-full :is(.settings-panel, .settings-row, .shortcut-row, .provider-row, .model-provider-row, .agent-capability-row, .agent-capability-empty) { background: rgba(17, 49, 31, 0.97); }
 }

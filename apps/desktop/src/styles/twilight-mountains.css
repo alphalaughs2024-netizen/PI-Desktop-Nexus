@@ -106,8 +106,8 @@
 :root[data-scenic-theme="twilight-mountains"] :is(.sidebar, .sidebar-rail, .main-titlebar, .conversation-topbar, .window-controls, .settings-titlebar, .work-panel-header) {
   background-color: var(--twilight-navigation-glass);
   background-image: none;
-  backdrop-filter: blur(18px) saturate(1.08);
   -webkit-backdrop-filter: blur(18px) saturate(1.08);
+  backdrop-filter: blur(18px) saturate(1.08);
 }
 
 :root[data-scenic-theme="twilight-mountains"] .window-control-btn {
@@ -173,8 +173,8 @@
   border: 0;
   background: var(--scenic-composer-fill);
   box-shadow: var(--scenic-chat-glass-shadow);
-  backdrop-filter: var(--scenic-chat-glass-filter);
   -webkit-backdrop-filter: var(--scenic-chat-glass-filter);
+  backdrop-filter: var(--scenic-chat-glass-filter);
 }
 
 :root[data-scenic-theme="twilight-mountains"] .composer-shell:focus-within {
@@ -466,11 +466,13 @@
 
 @media (prefers-reduced-transparency: reduce) {
   :root[data-scenic-theme="twilight-mountains"] :is(.sidebar, .sidebar-rail, .main-titlebar, .conversation-topbar, .window-controls, .work-panel, .settings-shell-full, .plugins-page, .composer-shell, .dialog, .search-dialog, .provider-setup-dialog, .provider-advanced-dialog, .vendor-account-dialog, .oauth-dialog, .plugins-modal, .toast, .sidebar-row-menu, .sidebar-popover, .composer-permission-menu, .composer-model-menu, .composer-model-thinking-menu, .context-vault-modal, .work-panel-context-menu, .permission-card) {
-    backdrop-filter: none;
     -webkit-backdrop-filter: none;
+    backdrop-filter: none;
     background-color: var(--ds-bg-elevated-opaque);
   }
   :root[data-scenic-theme="twilight-mountains"] :is(.composer-shell, .composer-shell:focus-within, .composer-shell.is-file-drop-active) {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
     background: var(--ds-bg-elevated-opaque);
   }
 }
@@ -480,6 +482,8 @@
     background-color: var(--ds-bg-elevated-opaque);
   }
   :root[data-scenic-theme="twilight-mountains"] :is(.composer-shell, .composer-shell:focus-within, .composer-shell.is-file-drop-active) {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
     background: var(--ds-bg-elevated-opaque);
   }
 }

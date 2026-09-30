@@ -1228,6 +1228,11 @@ unsupported-filter paths use solid readable surfaces.
 Composer focus adds a one-pixel ring: dark blue in Twilight Mountains, black in
 Obsidian Horizon, white in Alpine Light, and dark green in Emerald Afterglow.
 File drag remains a distinct, stronger attachment cue.
+
+In production CSS, each scenic sidebar and composer must retain the standard
+`backdrop-filter` declaration. The prefixed fallback precedes it so CSS
+optimization cannot leave only the unsupported prefix in Electron.
+
 Twilight and Obsidian composers use the scenic plugin's uniform translucent
 fills: `rgba(7, 31, 78, 0.5)` and `rgba(12, 28, 48, 0.72)`, respectively.
 The backdrop remains visible through the composer without an internal gradient.

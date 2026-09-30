@@ -11016,6 +11016,8 @@ dialogs must remain readable and fallback surfaces must remain solid.
 At 0px scenery blur, reload each theme and interact with the app after the
 entrance animation. Confirm the composer keeps the same material as the
 official plugin sidebar instead of changing appearance after interaction.
+Repeat from a cold launch of the packaged Windows app: both the sidebar and
+composer retain visible backdrop blur and their theme tint after interaction.
 Repeat at a normal scenery blur setting. Twilight and Obsidian should soften
 bright image detail beneath the composer without reading as solid panels;
 the backdrop image, blur preference, and workflow strip remain unchanged.

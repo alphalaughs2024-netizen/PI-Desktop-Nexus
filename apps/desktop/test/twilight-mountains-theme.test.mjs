@@ -88,8 +88,20 @@ test("scenic themes keep the image bright beneath shared glass surfaces", () => 
     /@media \(prefers-reduced-transparency: reduce\)/,
     /@supports not \(backdrop-filter: blur\(1px\)\)/,
   ]) {
-    assert.match(twilightStyles, new RegExp(`${fallback.source}[\\s\\S]*?:is\\(\\.composer-shell, \\.composer-shell:focus-within, \\.composer-shell\\.is-file-drop-active\\) \\{\\s*background: var\\(--ds-bg-elevated-opaque\\)`));
+    assert.match(twilightStyles, new RegExp(`${fallback.source}[\\s\\S]*?:is\\(\\.composer-shell, \\.composer-shell:focus-within, \\.composer-shell\\.is-file-drop-active\\) \\{\\s*-webkit-backdrop-filter: none;\\s*backdrop-filter: none;\\s*background: var\\(--ds-bg-elevated-opaque\\)`));
     assert.match(obsidianStyles, new RegExp(`${fallback.source}[\\s\\S]*?\\.composer-shell \\{ background: rgba\\(5, 11, 20, 0\\.96\\)`));
+  }
+});
+
+test("scenic sidebar and composer keep the standard backdrop filter in production CSS", () => {
+  for (const sheet of [twilightStyles, alpineStyles, obsidianStyles, emeraldStyles]) {
+    const sidebarRule = /:root\[data-scenic-theme="[^"]+"\] :is\(\.sidebar,[^{]+\) \{([^}]*)\}/.exec(sheet)?.[1];
+    const composerRule = /:root\[data-scenic-theme="[^"]+"\] (?::is\(\.composer-shell[^}]*\)|\.composer-shell) \{([^}]*)\}/.exec(sheet)?.[1];
+    assert.ok(sidebarRule);
+    assert.ok(composerRule);
+    for (const rule of [sidebarRule, composerRule]) {
+      assert.match(rule, /-webkit-backdrop-filter:[^;]+;\s*backdrop-filter:/);
+    }
   }
 });
 

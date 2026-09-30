@@ -64,15 +64,15 @@
   background-color: var(--obsidian-navigation-glass);
   background-image: none;
   border-color: var(--obsidian-border);
-  backdrop-filter: blur(16px) saturate(1.08);
   -webkit-backdrop-filter: blur(16px) saturate(1.08);
+  backdrop-filter: blur(16px) saturate(1.08);
 }
 :root[data-scenic-theme="obsidian-horizon"] .composer-shell {
   background: var(--scenic-composer-fill);
   border: 0;
   box-shadow: var(--scenic-chat-glass-shadow);
-  backdrop-filter: var(--scenic-chat-glass-filter);
   -webkit-backdrop-filter: var(--scenic-chat-glass-filter);
+  backdrop-filter: var(--scenic-chat-glass-filter);
 }
 
 :root[data-scenic-theme="obsidian-horizon"] .composer-shell:focus-within {
@@ -116,12 +116,12 @@
 :root[data-scenic-theme="obsidian-horizon"] .settings-shell-full :is(.btn-secondary, .btn-ghost, .icon-btn, .settings-text-action, .settings-icon-button):hover:not(:disabled) { background: rgba(102, 145, 199, 0.34); }
 
 @media (prefers-reduced-transparency: reduce) {
-  :root[data-scenic-theme="obsidian-horizon"] :is(.sidebar, .sidebar-rail, .main-titlebar, .conversation-topbar, .window-controls, .settings-titlebar, .work-panel-header, .composer-shell) { backdrop-filter: none; -webkit-backdrop-filter: none; background-color: rgba(5, 11, 20, 0.96); }
+  :root[data-scenic-theme="obsidian-horizon"] :is(.sidebar, .sidebar-rail, .main-titlebar, .conversation-topbar, .window-controls, .settings-titlebar, .work-panel-header, .composer-shell) { -webkit-backdrop-filter: none; backdrop-filter: none; background-color: rgba(5, 11, 20, 0.96); }
   :root[data-scenic-theme="obsidian-horizon"] .composer-shell { background: rgba(5, 11, 20, 0.96); }
   :root[data-scenic-theme="obsidian-horizon"] .settings-shell-full :is(.settings-panel, .settings-row, .shortcut-row, .provider-row, .model-provider-row, .agent-capability-row, .agent-capability-empty) { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(18, 31, 48, 0.96); }
 }
 @supports not (backdrop-filter: blur(1px)) {
-  :root[data-scenic-theme="obsidian-horizon"] :is(.sidebar, .sidebar-rail, .main-titlebar, .conversation-topbar, .window-controls, .settings-titlebar, .work-panel-header, .composer-shell) { backdrop-filter: none; -webkit-backdrop-filter: none; background-color: rgba(5, 11, 20, 0.96); }
+  :root[data-scenic-theme="obsidian-horizon"] :is(.sidebar, .sidebar-rail, .main-titlebar, .conversation-topbar, .window-controls, .settings-titlebar, .work-panel-header, .composer-shell) { -webkit-backdrop-filter: none; backdrop-filter: none; background-color: rgba(5, 11, 20, 0.96); }
   :root[data-scenic-theme="obsidian-horizon"] .composer-shell { background: rgba(5, 11, 20, 0.96); }
   :root[data-scenic-theme="obsidian-horizon"] .settings-shell-full :is(.settings-panel, .settings-row, .shortcut-row, .provider-row, .model-provider-row, .agent-capability-row, .agent-capability-empty) { background: rgba(18, 31, 48, 0.96); }
 }
