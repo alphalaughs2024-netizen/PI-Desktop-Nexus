@@ -159,7 +159,7 @@ import {
   shouldCreateTaskNotification as shouldCreateTaskNotificationPolicy,
   shouldShowNativeNotification,
 } from "./notification-policy";
-import { PersistenceOutbox } from "./persistence-outbox";
+import { PersistenceOutbox, codexSteeringAppend } from "./persistence-outbox";
 import { InflightCheckpointer } from "./inflight-checkpoint";
 import { AgentSidecar } from "./agent-sidecar";
 import { PluginRuntime, resolveInsidePlugin as resolveInsidePluginRoot } from "./plugin-runtime";
@@ -6016,6 +6016,14 @@ function subagentTagged(message: UiMessage, envelope: AgentEventEnvelope): UiMes
 
 function persistAgentEvent(envelope: AgentEventEnvelope): UiMessage | undefined {
   const event = envelope.event;
+  const steeringAppend = codexSteeringAppend(envelope, codexEngineEnabled);
+  if (steeringAppend) {
+    void persistenceOutbox.enqueue(steeringAppend, () => host).catch((error) =>
+      logger.app("persistence", "warn", "steering message persistence enqueue failed", {
+        sessionId: envelope.sessionId, data: String(error),
+      }));
+    return undefined;
+  }
   if (event.type === "lifecycle" || event.type === "prompt_composed") {
     const timelinePath = path.join(dataDir, "lifecycle-events.jsonl");
     const record = event.type === "lifecycle"

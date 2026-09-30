@@ -106,6 +106,8 @@ a real Windows native-tool/image trial, and a working opt-in pnpm dev prototype.
 Text steering now uses turn/steer with the native expectedTurnId precondition.
 Accepted instructions retain the original host turn identity and persist once;
 failed or uncertain requests are not replayed.
+Electron owns persistence of accepted steering message events through the
+existing durable message outbox; the native engine retains its own history.
 Completion drains pending steering acknowledgements before releasing the host
 turn; cancellation closes pending transport requests and remains interruptible.
 Steering attachments are

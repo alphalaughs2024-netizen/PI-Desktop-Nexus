@@ -1,6 +1,7 @@
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import type { HostProcess } from "./host-process";
+import type { AgentEventEnvelope } from "@pi-desktop/shared";
 
 type MessageAppend = {
   key: string;
@@ -8,6 +9,15 @@ type MessageAppend = {
   message: unknown;
   turnId?: string;
 };
+
+/** Accepted native steering arrives through events, unlike ordinary user prompts. */
+export function codexSteeringAppend(envelope: AgentEventEnvelope, enabled: boolean): MessageAppend | undefined {
+  const event = envelope.event;
+  if (!enabled || envelope.parentToolCallId || !envelope.turnId || event.type !== "message_end"
+    || event.message.role !== "user" || event.message.steering !== true || event.message.status !== "complete") return undefined;
+  return { key: `message:${envelope.sessionId}:${event.message.id}`, sessionId: envelope.sessionId,
+    message: event.message, turnId: envelope.turnId };
+}
 
 type OutboxLogger = (level: "warn" | "error", message: string, data?: unknown) => void;
 

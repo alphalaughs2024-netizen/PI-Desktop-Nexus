@@ -11594,7 +11594,10 @@ fail before dispatch. Inject a lost steering acknowledgement: report uncertainty
 without automatic replay or restarting mutation tools. Race completion against
 a steering acknowledgement: persist the accepted instruction before the terminal
 signal. Cancel while that acknowledgement is pending: no false completion or
-acknowledgement-timeout wait. Steering attachments
+acknowledgement-timeout wait. Reopen the chat after an accepted correction:
+its user instruction must remain in the canonical transcript exactly once.
+Repeat with the host temporarily offline and restarted; the durable outbox must
+drain the correction once and must not duplicate ordinary prompt rows. Steering attachments
 fail explicitly.
 
 Verify Plan/Goal, regenerate and unsupported legacy tools are refused

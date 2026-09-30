@@ -81,6 +81,9 @@ Completion drains pending steering acknowledgements before releasing the host
 turn; cancellation closes pending transport requests and remains interruptible.
 Steering attachments
 currently fail explicitly; send them as a new user turn.
+Electron persists accepted native user-message events through its durable outbox
+using the original host turn and message ID. Normal prompt rows are not appended
+again. A host outage or app restart must retain the accepted instruction once.
 
 Agent mode, new user turns, native file/shell tools and configured image input
 are supported. Plan/Goal, legacy regenerate, plugin tools, manual

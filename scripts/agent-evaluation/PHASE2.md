@@ -51,8 +51,8 @@ recovery/config/argv, unsupported capabilities and version mismatch. Steering
 checks cover native turn guards, duplicate IDs, uncertain acknowledgements,
 completion ordering and cancellation while completion drains steering.
 
-56 targeted runtime checks in eight files and 12 permission checks passed
-(68 total). Shared/runtime builds and desktop typecheck passed. Local E2E
+56 targeted runtime checks in eight files, 12 permission checks, and eight
+desktop outbox/steering-persistence checks passed (76 total). Shared/runtime builds and desktop typecheck passed. Local E2E
 suites were not run. Theme CSS, composer geometry, icons and layout were not edited. Permission
 cards preserve their presentation and disable only unsupported session grants
 for native Codex requests.
@@ -102,7 +102,25 @@ Deterministic checks also verify an acknowledgement racing completion is
 persisted before the terminal signal and that cancellation closes an unresolved
 request without false completion. Steering currently accepts text only. The
 running app must be quit normally and relaunched to load the updated sidecar;
-manual composer-path steering acceptance remains pending.
+the user subsequently verified the composer path with the earlier correction.
+
+## Composer-path steering and persistence
+
+The user's first composer test produced ORIGINAL followed by EMERALD within one
+native turn: native history records the correction after ORIGINAL was already
+emitted. In the second test, the correction reached Codex during the command:
+one exec_command, one native turn, and a final answer of EMERALD. This confirms
+active-turn steering rather than a second turn or a restarted command.
+
+Read-only review also exposed a host persistence gap: accepted steering events
+were shown by the renderer but ignored by the assistant-only append path.
+Electron now sends accepted native user-message events through the existing
+durable outbox, scoped to the opt-in backend. A real existing-host trial with a
+separate disposable profile, host shutdown/restart, and outbox replay preserved
+one correction with the original message/turn identity. No model request was
+needed. Evidence: %USERPROFILE%/.nexus-codex-phase2/steering-persistence-report.json.
+The existing foreground app needs relaunch to load this persistence correction;
+manual reopen verification of a newly steered instruction remains pending.
 
 ## User acceptance feedback
 
