@@ -208,3 +208,11 @@ details:
 The frozen protocol remains v9 and storage schema remains v10. Future changes
 must preserve the automated M6 scenarios E2E-104 through E2E-117 or update the
 relevant decision record before changing the contract.
+
+## Agent foundation evaluation (ADR 0251)
+
+The developer-only evaluation harness uses independent profiles and does not
+change the production engine or Nexus's appearance. See
+[Agent foundation evaluation](03-runtime/20-agent-foundation-evaluation.md).
+Future engine selection and removal of unused runtime features are acceptance
+gates, not changes made by the evaluation harness.

@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Nexus engine evaluation</title><link rel="stylesheet" href="/prototype.css"></head>
+<body><main><h1>Nexus engine evaluation</h1><p>Phase 1 prototype. Production Nexus and its themes are unchanged.</p>
+<form id="trial"><label>Engine <select name="engine"><option>codex</option><option>opencode</option><option>pi</option></select></label>
+<label>Source <select name="mode"><option value="fixture">Scripted model — no inference</option><option value="xkiro">xkiro — verified free models only</option></select></label>
+<label>Cloud model <input name="model" value="qwen/qwen3.7-flash:free"></label>
+<label>Request <textarea name="prompt" rows="4">Read evaluation-note.txt using your read tool and report its exact contents. Then say the task is complete.</textarea></label>
+<label><input type="checkbox" name="image"> Include a generated test image (perception test, not website quality)</label>
+<label><input type="checkbox" name="cancel"> Interrupt after 750ms</label>
+<button type="submit">Run trial</button></form>
+<p id="status" role="status" aria-live="polite">Ready</p><p id="versions"></p><p id="report"></p>
+<details open><summary>Live execution timeline</summary><pre id="timeline"></pre></details>
+<p class="note">A transport pass does not prove coding quality, safe edits, process supervision, browser testing, or recovery. Each needs separate evidence before an engine can be selected.</p>
+</main><script src="/prototype.js"></script></body></html>
+

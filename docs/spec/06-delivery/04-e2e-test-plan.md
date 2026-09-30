@@ -11499,3 +11499,28 @@ then verify its title, cadence, status, next run, and review warning fit in the
 list without clipping. Select it and check editor controls, actions, and run
 history at desktop and narrow widths; on narrow widths Back returns to the
 list. Repeat with long task names, a missing provider/model, and keyboard focus.
+
+## Agent foundation evaluation prototype (ADR 0251)
+
+Run the doctor command and verify pinned-version mismatch prevents an inference
+trial. Launch the dashboard without `--allow-cloud`; verify cloud requests are
+refused. With explicit authorization, select a live-catalog free xkiro model and
+verify paid/unknown models are refused and no credential appears in profiles or
+evidence. Verify the dashboard binds to loopback, rejects a missing token and
+cross-origin requests, and refuses overlapping runs.
+
+For each engine, test quiet startup, an assistant/tool/assistant cycle, an image
+payload and its interpretation, incorrect/stale edits, managed process lifetime,
+desktop/mobile browser inspection, interruption, failures, and reload recovery.
+The status and overall timer must remain visible throughout. Terminal output
+must flush first and settle once. Switch generations and inject a late event;
+it must not alter the new turn. Reload the dashboard during a run and verify its
+snapshot includes the current items and original acceptance timestamp.
+
+Check every evidence status against the actual trial. A color-recognition test
+must not claim screenshot-guided website quality. A mocked provider must not
+claim cloud-model quality or provider latency. Keep untested capabilities visibly
+unresolved; do not select an engine before all mandatory gates pass. Verify
+production Nexus's renderer, themes, data profile, and selected engine are
+unchanged. These are documented acceptance scenarios; no local E2E suite is
+implicitly authorized by adding them.
