@@ -3,7 +3,7 @@ import { mkdir } from "node:fs/promises";
 import { APP_VERSION } from "@pi-desktop/shared";
 import type { AgentEvent, AgentEventEnvelope, AgentStatus, AskToolResolution, SteerOutcome, EngineAdapter, EngineEvent, EngineItem, EngineOutcome, EngineSnapshot, ThinkingLevel, UiMessage } from "@pi-desktop/shared";
 import { ExecutionContract } from "./contract.js";
-import { CodexSessionStore } from "./store.js";
+import { CodexSessionStore, recoveryWriteError } from "./store.js";
 import { nativeEffort, nativePolicy, prepareLaunch, sessionDescriptor, type CodexConfig, type CodexLaunch } from "./config.js";
 import { needsOpenRouterBridge, startOpenRouterBridge, type ProviderBridge } from "./openrouter-bridge.js";
 import { AppServerTransport, type CodexRpc, type NativeEvent, type NativeRequest } from "./transport.js";
@@ -65,7 +65,15 @@ export class CodexAdapter implements EngineAdapter {
     const applied = this.contract.apply(event);
     if (applied && !this.checkpointTimer) this.checkpointTimer = setTimeout(() => {
       this.checkpointTimer = undefined;
-      void this.store.save(this.snapshot()).catch(() => this.end("failed", "CODEX_RECOVERY_WRITE_FAILED"));
+      const checkpoint = this.snapshot();
+      void this.store.save(checkpoint).catch(async error => {
+        const current = this.snapshot().turn;
+        if (!current || current.outcome || current.runId !== checkpoint.turn?.runId) return;
+        const failure = recoveryWriteError(error);
+        // Stop owned execution before failing its visible turn; never leave hidden tools running.
+        await this.closeProcess();
+        await this.end("failed", failure.message, failure);
+      });
     }, 150);
     return applied;
   }
@@ -333,7 +341,7 @@ export class CodexAdapter implements EngineAdapter {
     if (item) this.update({ ...item, status: "completed", completedAt: Date.now(), result: "Question answered" });
     this.status(); return true;
   }
-  private end(outcome: EngineOutcome, error?: string): Promise<void> {
+  private end(outcome: EngineOutcome, error?: string, recoveryFailure?: ReturnType<typeof recoveryWriteError>): Promise<void> {
     if (this.ending) return this.ending;
     if (!this.getStatus().isRunning) return Promise.resolve();
     this.ending = (async () => {
@@ -345,11 +353,11 @@ export class CodexAdapter implements EngineAdapter {
       // Emit final partial item states before the terminal signal.
       for (const item of this.snapshot().items) if (item.status === "running" && item.kind !== "approval") this.update({ ...item, status: outcome === "completed" ? "failed" : outcome, completedAt: Date.now() });
       this.apply({ type: "terminal", outcome, error });
-      let persistenceFailed = false;
-      try { await this.checkpoint(); } catch { persistenceFailed = true; }
+      let persistenceError = recoveryFailure;
+      try { await this.checkpoint(); } catch (cause) { persistenceError = recoveryWriteError(cause); }
       this.status();
-      if (outcome === "completed" && !persistenceFailed) { this.event({ type: "turn_end" }); this.event({ type: "agent_end", messageIds: this.snapshot().items.filter(item => ["assistant", "reasoning"].includes(item.kind)).map(item => item.id) }); }
-      else this.event({ type: "error", error: { code: outcome === "interrupted" ? "TURN_ABORTED" : "CODEX_RUNTIME_FAILED", message: persistenceFailed ? "Engine recovery metadata could not be saved; partial chat output is retained." : error ?? (outcome === "interrupted" ? "Turn interrupted" : "Codex execution failed"), retriable: false } });
+      if (outcome === "completed" && !persistenceError) { this.event({ type: "turn_end" }); this.event({ type: "agent_end", messageIds: this.snapshot().items.filter(item => ["assistant", "reasoning"].includes(item.kind)).map(item => item.id) }); }
+      else this.event({ type: "error", error: { code: persistenceError?.code ?? (outcome === "interrupted" ? "TURN_ABORTED" : "CODEX_RUNTIME_FAILED"), message: persistenceError?.message ?? error ?? (outcome === "interrupted" ? "Turn interrupted" : "Codex execution failed"), ...(persistenceError ? { details: persistenceError.details } : {}), retriable: false } });
     })();
     return this.ending;
   }

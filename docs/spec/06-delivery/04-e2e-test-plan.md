@@ -11604,3 +11604,14 @@ Verify Plan/Goal, regenerate and unsupported legacy tools are refused
 in the opt-in prototype. No paid/provider fallback occurs. Do not run local E2E
 suites merely because these scenarios are documented. Persistent whole-turn
 status/timer UX is the next phase's acceptance gate.
+
+### Codex recovery storage pressure
+
+Inject ENOSPC and EDQUOT at snapshot write, then a rename failure. Verify an
+explicit storage error with a bounded filesystem code, no successful terminal
+signal, no assurance that visible output is durably saved, and the previous
+snapshot remains readable. The failed save removes only its own temporary
+file; an unrelated file remains. Restore storage and verify the next queued
+save succeeds. With the host transcript store also failing, preserve visible
+output and report that reload recovery is not confirmed. Do not replay tools
+or delete caches, profiles or earlier recovery files to hide this condition.

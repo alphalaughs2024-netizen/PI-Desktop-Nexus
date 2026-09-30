@@ -370,3 +370,16 @@ Examples:
    expiry, scheduled-rejection, and restart-interruption paths map to stable
    codes; only the documented pre-turn catalog fallback is allowed and no work
    is replayed
+
+## Opt-in Codex recovery errors (ADR 0252)
+
+| code | retriable | meaning |
+|---|---|---|
+| CODEX_RUNTIME_FAILED | false | Native execution failed; partial visible work is preserved and uncertain actions are not replayed |
+| CODEX_RECOVERY_STORAGE_FULL | false | ENOSPC or EDQUOT prevented an engine snapshot save; free space before an explicit retry |
+| CODEX_RECOVERY_WRITE_FAILED | false | Other filesystem failure prevented an engine snapshot save |
+
+Recovery-write errors include only a bounded `details.filesystemCode`. They do
+not include raw paths or secrets and do not assert that the separate host
+transcript store saved visible output. The previous snapshot is kept. Cleanup
+is confined to the failed save's own temporary file.

@@ -49,7 +49,11 @@ An uncertain tool action is never replayed automatically. Explicit new user
 input starts a new turn. Changed session bindings require a new chat.
 
 Unexpected process exit fails the active turn. Pending approvals are denied.
-Recovery write failure reports a failure and leaves application partial output.
+Recovery write failure reports CODEX_RECOVERY_STORAGE_FULL for ENOSPC/EDQUOT,
+or CODEX_RECOVERY_WRITE_FAILED for other errors, with a bounded filesystem code.
+It preserves visible partial output but does not claim it is durably saved.
+A failed save removes only its own temporary file, best effort, preserves the
+previous snapshot and permits later queued saves after storage recovers.
 Experimental raw patch/session output mapping is version-pinned and tested;
 upgrading Codex requires fixtures and a live Windows check.
 
@@ -99,3 +103,8 @@ private, the upstream key stays in the bridge, and cancellation closes both.
 A disposable read/patch/read trial passed with one terminal outcome. The xkiro
 route passed native patch/recovery checks without this service. Local E2E suites remain unrun unless
 explicitly requested.
+
+A periodic save failure for the active run stops its owned execution before
+reporting failure; a late failed save from an older/terminal run cannot stop
+the new run. Its original filesystem code remains explicit even if the final
+snapshot write subsequently succeeds.

@@ -32,6 +32,49 @@ async function fixture(dataDir?: string, nativeTurns: any[] = []) {
 }
 const settle = async () => { await new Promise(resolve => setTimeout(resolve, 30)); };
 describe("Codex adapter lifecycle", () => {
+  it("does not stop a newer run when an older periodic save fails late", async () => {
+    const f = await fixture(); await f.adapter.start({ turnId: "old-host", text: "initial" }); await settle();
+    await new Promise(resolve => setTimeout(resolve, 170));
+    let fail!: (error: Error) => void;
+    const save = vi.spyOn(CodexSessionStore.prototype, "save").mockImplementationOnce(() => new Promise<void>((_, reject) => { fail = reject; }));
+    const close = vi.spyOn(f.rpc, "close");
+    try {
+      vi.useFakeTimers(); f.event("item/agentMessage/delta", { itemId: "old-partial", delta: "old" });
+      await vi.advanceTimersByTimeAsync(200); vi.useRealTimers();
+      f.event("turn/completed", { turn: { id: "native-1", status: "completed" } }); await settle();
+      await f.adapter.start({ turnId: "new-host", text: "new" }); await settle();
+      fail(Object.assign(new Error("late old save"), { code: "ENOSPC" })); await settle();
+      expect(f.adapter.snapshot().turn).toMatchObject({ id: "new-host", nativeTurnId: "native-2" });
+      expect(f.adapter.getStatus().isRunning).toBe(true); expect(close).not.toHaveBeenCalled();
+    } finally { vi.useRealTimers(); save.mockRestore(); }
+  });
+  it("stops owned execution after a timed snapshot failure even when the terminal save succeeds", async () => {
+    const f = await fixture(); await f.adapter.start({ turnId: "host", text: "initial" }); await settle();
+    await new Promise(resolve => setTimeout(resolve, 170));
+    const close = vi.spyOn(f.rpc, "close");
+    const save = vi.spyOn(CodexSessionStore.prototype, "save").mockRejectedValueOnce(Object.assign(new Error("full"), { code: "ENOSPC" }));
+    try {
+      vi.useFakeTimers(); f.event("item/agentMessage/delta", { itemId: "partial", delta: "unfinished" });
+      await vi.advanceTimersByTimeAsync(200); vi.useRealTimers(); await settle();
+      expect(close).toHaveBeenCalledOnce(); expect(f.adapter.snapshot().turn?.outcome).toBe("failed");
+      expect(f.events.filter(e => e.event.type === "error")).toHaveLength(1);
+      expect(f.events.find(e => e.event.type === "error")?.event).toMatchObject({ error: { code: "CODEX_RECOVERY_STORAGE_FULL" } });
+      expect(f.events.some(e => e.event.type === "agent_end")).toBe(false);
+    } finally { vi.useRealTimers(); save.mockRestore(); }
+  });
+  it("reports an explicit storage failure without a successful terminal signal", async () => {
+    const f = await fixture(); await f.adapter.start({ turnId: "host", text: "initial" }); await settle();
+    const save = vi.spyOn(CodexSessionStore.prototype, "save").mockRejectedValue(Object.assign(new Error("private filesystem detail"), { code: "ENOSPC" }));
+    try {
+      f.event("turn/completed", { turn: { id: "native-1", status: "completed" } }); await settle();
+      const errors = f.events.filter(e => e.event.type === "error");
+      expect(errors).toHaveLength(1);
+      expect(errors[0].event).toMatchObject({ error: { code: "CODEX_RECOVERY_STORAGE_FULL", details: { filesystemCode: "ENOSPC" } } });
+      expect(f.events.some(e => e.event.type === "agent_end")).toBe(false);
+      expect(JSON.stringify(errors)).not.toContain("private filesystem detail");
+    } finally { save.mockRestore(); }
+  });
+
   it("steers the guarded native turn without restarting execution and persists one user message", async () => {
     const f = await fixture(); await f.adapter.start({ turnId: "host-turn", text: "initial" }); await settle();
     expect(f.adapter.steeringContext("host-turn")).toMatchObject({ projectPath: f.config.workspace, supportsVision: false });

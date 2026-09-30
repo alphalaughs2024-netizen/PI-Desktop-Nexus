@@ -58,7 +58,12 @@ uses thread/resume and thread/read; it does not invoke turn/start or replay a
 mutation. A recovered unresolved turn is interrupted unless native history
 proves completion/failure. The next request is an explicit new user turn, not
 an exact continuation. Snapshot-write failures are surfaced rather than
-silently claiming recoverability.
+silently claiming recoverability. ENOSPC/EDQUOT report
+CODEX_RECOVERY_STORAGE_FULL; other write errors report
+CODEX_RECOVERY_WRITE_FAILED with a bounded filesystem code. Visible output does
+not establish that host transcript persistence or engine recovery succeeded.
+Each failed save removes only its own partial temporary file, best effort,
+preserves the previous snapshot, and does not poison later queued saves.
 
 Codex's experimentalApi/experimentalRawEvents are explicitly enabled for the
 pinned version. Raw apply_patch/write_stdin results close validation failures
@@ -114,3 +119,8 @@ Steering attachments are
 explicitly unavailable until shared attachment preparation is implemented.
 The persistent whole-response status/timer UI is Phase 3. Full coding environment
 capability parity and packaged Windows verification remain later gates.
+
+A periodic save failure for the active run stops its owned execution before
+reporting failure; a late failed save from an older/terminal run cannot stop
+the new run. Its original filesystem code remains explicit even if the final
+snapshot write subsequently succeeds.
