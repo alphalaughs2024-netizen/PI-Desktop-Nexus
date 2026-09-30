@@ -70,7 +70,9 @@ and real Windows checks. Unknown request methods fail visibly without approval.
 
 Ask uses read-only sandbox with on-request escalation; accept-edits uses
 workspace-write with on-request escalation; Auto uses workspace-write and
-never grants an escalation request. Full access is unsupported. These mappings
+never grants an escalation request. Full access is session-only and maps to danger-full-access/never when explicitly
+selected in the existing composer. It does not become an inherited global default.
+These mappings
 are the actual engine policy, not claims that Nexus's old shell tool policy
 continues to govern native tools. Windows uses Codex's unelevated backend.
 

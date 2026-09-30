@@ -2,7 +2,7 @@ import { resolve } from "node:path";
 import { homedir } from "node:os";
 import type { AgentEventEnvelope, AskToolResolution } from "@pi-desktop/shared";
 import { CodexAdapter } from "./adapter.js";
-import type { CodexConfig } from "./config.js";
+import { codexPermissionMode, type CodexConfig } from "./config.js";
 import { CodexSessionStore } from "./store.js";
 export class CodexController {
   private sessions = new Map<string, CodexAdapter>();
@@ -22,11 +22,11 @@ export class CodexController {
         if (!this.dataDir) throw new Error("CODEX_NOT_CONFIGURED");
         if (this.admitting.has(sessionId) || adapter?.getStatus().isRunning) throw new Error("AGENT_BUSY");
         if (params.mode && params.mode !== "agent") throw new Error("CODEX_CAPABILITY_UNAVAILABLE: Plan and Goal integration arrive in later phases");
-        if (params.permissionMode && !["ask", "accept-edits", "auto"].includes(params.permissionMode)) throw new Error("CODEX_PERMISSION_MODE_UNSUPPORTED: use Ask, Accept edits or Auto");
+        const permissionMode = codexPermissionMode(params.permissionMode);
         this.admitting.add(sessionId);
         try {
           const config: CodexConfig = { sessionId, dataDir: this.dataDir, workspace: params.projectPath || params.scratchDir, provider: params.provider,
-            permissionMode: ["ask", "accept-edits", "auto"].includes(params.permissionMode) ? params.permissionMode : "ask" };
+            permissionMode };
           if (!config.workspace || !params.turnId) throw new Error("CODEX_SESSION_IDENTITY_REQUIRED");
           let runtime = adapter;
           if (runtime && JSON.stringify(runtime.config) !== JSON.stringify(config)) {

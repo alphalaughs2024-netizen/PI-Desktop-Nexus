@@ -11567,7 +11567,9 @@ and stale-run/native-turn events; they cannot alter current items or outcome.
 
 Exercise a context-mismatched patch, a nonzero command exit and a missing tool
 completion. They must display failure rather than false success. Native command
-execution must not inherit the transient provider key. Request a sandbox
+execution must not inherit the transient provider key. Select Full access for
+a disposable session and verify thread/start uses danger-full-access/never and
+the prompt is admitted; Ask and Auto must retain their original sandbox policy. Request a sandbox
 escalation: only Allow once and Deny are actionable, the countdown is 120 seconds,
 and timeout/cancel closes the card and denies the engine waiter. Answer a native
 question; unsupported secret questions and unknown server requests fail clearly.

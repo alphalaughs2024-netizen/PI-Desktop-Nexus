@@ -2,7 +2,7 @@ import { afterEach, expect, it, vi } from "vitest";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { nativeEffort, prepareLaunch, type CodexConfig } from "./config.js";
+import { codexPermissionMode, nativeEffort, nativePolicy, prepareLaunch, type CodexConfig } from "./config.js";
 import { CodexController } from "./controller.js";
 const dirs: string[] = [];
 afterEach(async () => { vi.unstubAllEnvs(); await Promise.all(dirs.splice(0).map(p => rm(p, { recursive: true, force: true }))); });
@@ -41,4 +41,12 @@ it("preserves endpoint effort mappings and rejects unavailable reasoning levels"
   expect(nativeEffort(mapped, "off")).toBe("none");
   expect(nativeEffort(config.provider, "off")).toBeUndefined();
   expect(() => nativeEffort(config.provider, "high")).toThrow("CODEX_REASONING_UNSUPPORTED");
+});
+
+it("maps explicit Full access to native unrestricted policy without weakening other modes", () => {
+  expect(codexPermissionMode("full-access")).toBe("full-access");
+  expect(nativePolicy(codexPermissionMode("full-access"))).toEqual({ approvalPolicy: "never", sandbox: "danger-full-access" });
+  expect(nativePolicy(codexPermissionMode(undefined))).toEqual({ approvalPolicy: "on-request", sandbox: "read-only" });
+  expect(nativePolicy(codexPermissionMode("auto"))).toEqual({ approvalPolicy: "never", sandbox: "workspace-write" });
+  expect(() => codexPermissionMode("unknown-mode")).toThrow("CODEX_PERMISSION_MODE_UNSUPPORTED");
 });

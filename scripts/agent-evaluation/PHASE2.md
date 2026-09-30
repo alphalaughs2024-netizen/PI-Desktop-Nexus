@@ -73,6 +73,17 @@ was never used in these trials. Space Bunny has image input enabled. The
 OpenRouter native patch limitation above remains open; use the tested xkiro
 route for direct native patch acceptance. No old chat/profile was deleted or migrated.
 
+## User acceptance feedback
+
+The user reports passes for themes, appearance, image vision and conversation
+in the `sup` test chat. The transcript was inspected read-only. Steering failed
+because it was explicitly unavailable in the initial adapter. Full access failed
+because the controller rejected the mode; it now maps the explicit session
+choice to native danger-full-access/never. Global defaults remain unchanged.
+The user reports web-search success; Nexus has no visible search item for the
+recorded attempt, so provider-side search observability remains unverified.
+Cancel/reload acceptance is not yet confirmed.
+
 Phase 3 owns the persistent timeline and whole-response timer UX. Phase 4 owns
 browser/viewports/preview and complete coding-service parity. Plan/Goal,
 regenerate, steering and legacy plugin tools are deliberately not claimed as

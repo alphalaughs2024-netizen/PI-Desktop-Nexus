@@ -57,7 +57,9 @@ upgrading Codex requires fixtures and a live Windows check.
 
 Ask: read-only plus on-request escalation. Accept edits: workspace-write plus
 on-request escalation. Auto: workspace-write, no escalation grants. Full access
-is unavailable in this prototype. Windows uses the unelevated native sandbox.
+maps to native danger-full-access with never approval, only when explicitly
+selected for this session; it is not a global default. Other modes retain their
+previous mappings. Windows uses the unelevated native sandbox for sandboxed modes.
 Only explicit Allow once grants a native escalation. Session grant controls are
 disabled for these requests. All approvals retain the 120-second deny timeout.
 Native user questions retain the existing non-expiring Ask behavior.

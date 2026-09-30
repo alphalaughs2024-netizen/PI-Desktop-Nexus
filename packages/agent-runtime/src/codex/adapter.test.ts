@@ -32,6 +32,11 @@ async function fixture(dataDir?: string, nativeTurns: any[] = []) {
 }
 const settle = async () => { await new Promise(resolve => setTimeout(resolve, 30)); };
 describe("Codex adapter lifecycle", () => {
+  it("sends the explicit Full access policy to the native thread", async () => {
+    const f = await fixture(); f.config.permissionMode = "full-access";
+    await f.adapter.start({ turnId: "full", text: "hi" }); await settle();
+    expect(f.calls.find(c => c.method === "thread/start")?.params).toMatchObject({ approvalPolicy: "never", sandbox: "danger-full-access" });
+  });
   it("passes the selected effort to each turn without changing session identity", async () => {
     const f = await fixture();
     f.config.provider.supportsReasoning = true;

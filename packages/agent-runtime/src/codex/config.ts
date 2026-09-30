@@ -10,7 +10,7 @@ export type CodexConfig = {
   dataDir: string;
   workspace: string;
   provider: RuntimeProviderConfig;
-  permissionMode: "ask" | "accept-edits" | "auto";
+  permissionMode: "ask" | "accept-edits" | "auto" | "full-access";
 };
 export function sessionDescriptor(config: CodexConfig): EngineSession {
   return { sessionId: config.sessionId, engine: "codex", version: CODEX_VERSION, workspace: resolve(config.workspace), providerId: config.provider.id, modelId: config.provider.modelId,
@@ -27,8 +27,14 @@ export function nativeEffort(provider: RuntimeProviderConfig, level?: ThinkingLe
   const mapped = provider.modelConfig?.thinkingLevelMap?.[level];
   return mapped === null || level === "off" ? "none" : mapped ?? level;
 }
+export function codexPermissionMode(value: unknown): CodexConfig["permissionMode"] {
+  if (value === undefined) return "ask";
+  if (value === "ask" || value === "accept-edits" || value === "auto" || value === "full-access") return value;
+  throw new Error("CODEX_PERMISSION_MODE_UNSUPPORTED: use Ask, Accept edits, Auto or Full access");
+}
 export function nativePolicy(mode: CodexConfig["permissionMode"]) {
-  return { approvalPolicy: mode === "auto" ? "never" : "on-request", sandbox: mode === "ask" ? "read-only" : "workspace-write" };
+  return { approvalPolicy: mode === "auto" || mode === "full-access" ? "never" : "on-request",
+    sandbox: mode === "full-access" ? "danger-full-access" : mode === "ask" ? "read-only" : "workspace-write" };
 }
 export async function prepareLaunch(config: CodexConfig, directory: string): Promise<CodexLaunch> {
   if (config.provider.authKind && !["api-key", "api_key", "api_key_and_base_url", "none"].includes(config.provider.authKind)) throw new Error("CODEX_PROVIDER_UNSUPPORTED: select an API-key Responses endpoint for this prototype");
