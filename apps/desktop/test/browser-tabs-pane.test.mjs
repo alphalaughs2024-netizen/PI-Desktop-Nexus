@@ -33,13 +33,13 @@ test("Browser tabs retain distinct pages and only the selected guest is visible"
   await tabs.navigateTabAndWait("session-a", "tab-b", "https://b.example", null);
   await tabs.navigateTabAndWait("session-a", "tab-a", "https://a.example/next", null);
   assert.equal(tabs.getState().url, "https://b.example");
-  assert.equal(created[1].visible, false);
-  assert.equal(created[2].visible, true);
+  assert.equal(created[0].visible, false);
+  assert.equal(created[1].visible, true);
   tabs.activate("session-a", "tab-a");
   assert.equal(tabs.getState().url, "https://a.example/next");
   assert.deepEqual(events, ["https://a.example", "https://b.example"]);
   tabs.close("session-a", "tab-b");
-  assert.equal(created[2].disposed, true);
+  assert.equal(created[1].disposed, true);
   assert.equal(tabs.listTabs().filter((tab) => tab.sessionId === "session-a").length, 1);
 });
 
@@ -63,8 +63,8 @@ test("closing the final tab disposes its page and reopening starts empty", async
   tabs.activate("session-a", "browser-core-1");
   await tabs.navigateTabAndWait("session-a", "browser-core-1", "https://old.example", null);
   tabs.close("session-a", "browser-core-1");
-  assert.equal(created[1].disposed, true);
+  assert.equal(created[0].disposed, true);
   tabs.activate("session-a", "browser-core-1");
   assert.equal(tabs.getState(), null);
-  assert.notEqual(created[2], created[1]);
+  assert.notEqual(created[1], created[0]);
 });

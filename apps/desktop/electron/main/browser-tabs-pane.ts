@@ -13,7 +13,8 @@ export class BrowserTabsPane {
   private readonly onState: (state: BrowserState) => void;
   private readonly createPane: (onState: (state: BrowserState) => void) => BrowserPane;
   private readonly tabs = new Map<string, BrowserPane>();
-  private readonly identities = new Map<string, { sessionId: string; browserId: string }>();
+  private readonly identities = new Map<string, { sessionId: string; browserId: string; incarnation: number }>();
+  private nextIncarnation = 0;
   private readonly activeBySession = new Map<string, string>();
   private activeKey: string | null = null;
   private activeSessionId = "";
@@ -24,15 +25,42 @@ export class BrowserTabsPane {
   constructor(onState: (state: BrowserState) => void, createPane: (onState: (state: BrowserState) => void) => BrowserPane) {
     this.onState = onState;
     this.createPane = createPane;
-    this.activate("", DEFAULT_TAB_ID);
+
   }
 
   private activePane(): BrowserPane | null {
     return this.activeKey ? this.tabs.get(this.activeKey) ?? null : null;
   }
 
-  activeBrowserId(): string {
-    return this.activeBySession.get(this.activeSessionId) ?? DEFAULT_TAB_ID;
+  activeBrowserId(sessionId = this.activeSessionId): string {
+    return this.activeBySession.get(sessionId) ?? DEFAULT_TAB_ID;
+  }
+
+  activeSession(): string { return this.activeSessionId; }
+
+  resolveTab(sessionId = this.activeSessionId, browserId?: string, createDefault = false) {
+    const id = browserId ?? this.activeBrowserId(sessionId);
+    const key = tabKey(sessionId, id);
+    let pane = this.tabs.get(key);
+    if (!pane && browserId && !(createDefault && browserId === DEFAULT_TAB_ID)) {
+      throw Object.assign(new Error("Browser tab is unavailable"), { code: "BROWSER_TAB_NOT_FOUND" });
+    }
+    if (!pane) pane = this.ensureTab(sessionId, id);
+    return { sessionId, browserId: id, pane, incarnation: this.identities.get(key)!.incarnation };
+  }
+
+  private ensureTab(sessionId: string, browserId: string): BrowserPane {
+    const key = tabKey(sessionId, browserId);
+    let pane = this.tabs.get(key);
+    if (!pane) {
+      pane = this.createPane((state) => {
+        if (this.activeKey === key) this.onState(state);
+      });
+      pane.setWindow(this.window);
+      this.tabs.set(key, pane);
+      this.identities.set(key, { sessionId, browserId, incarnation: ++this.nextIncarnation });
+    }
+    return pane;
   }
 
   hasTab(sessionId: string, browserId: string): boolean { return this.tabs.has(tabKey(sessionId, browserId)); }
@@ -49,15 +77,7 @@ export class BrowserTabsPane {
     this.activeKey = key;
     this.activeSessionId = sessionId;
     this.activeBySession.set(sessionId, id);
-    let pane = this.tabs.get(key);
-    if (!pane) {
-      pane = this.createPane((state) => {
-        if (this.activeKey === key) this.onState(state);
-      });
-      pane.setWindow(this.window);
-      this.tabs.set(key, pane);
-      this.identities.set(key, { sessionId, browserId: id });
-    }
+    const pane = this.ensureTab(sessionId, id);
     pane.setBounds(this.bounds);
     pane.setVisible(this.visible);
   }
@@ -100,7 +120,8 @@ export class BrowserTabsPane {
   getWebContents() { return this.activePane()?.getWebContents() ?? null; }
   async navigateTabAndWait(sessionId: string, browserId: string, raw: string, fileRoot: string | null): Promise<BrowserState | null> {
     const pane = this.tabs.get(tabKey(sessionId, browserId));
-    return pane ? pane.navigateAndWait(raw, fileRoot) : null;
+    if (!pane) throw Object.assign(new Error("Browser tab is unavailable"), { code: "BROWSER_TAB_NOT_FOUND" });
+    return pane.navigateAndWait(raw, fileRoot);
   }
   navigate(raw: string, fileRoot: string | null = null) { return this.activePane()?.navigate(raw, fileRoot) ?? null; }
   navigateAndWait(raw: string, fileRoot: string | null = null, timeoutMs?: number) { return this.activePane()?.navigateAndWait(raw, fileRoot, timeoutMs) ?? Promise.resolve(null); }

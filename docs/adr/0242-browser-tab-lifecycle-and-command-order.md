@@ -20,8 +20,8 @@ Panel resource. The existing Work Panel close behavior hides the panel when no
 other resource remains. A
 later explicit Browser open starts with one empty tab and a fresh guest.
 
-Explicit tab navigation and actions are ordered per session and tab. Browser
-commands without a tab ID retain the shared compatibility queue. Stop bypasses
+Explicit tab navigation and actions are ordered per session and tab. ADR 0254 also resolves commands without a tab ID to the originating
+session's selected tab before queuing, replacing the shared compatibility queue. Stop bypasses
 the mutation queue so it can interrupt an in-progress load. Toolbar pending
 state belongs to the selected tab and is reset when the selection changes.
 

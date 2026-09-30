@@ -142,6 +142,7 @@ function consoleText(args: unknown): string {
  * recreated. Snapshot uids are valid only until the next snapshot.
  */
 export class BrowserCdp {
+  private viewportOverride = false;
   private attachedId: number | null = null;
   private uids = new Map<string, number>();
   private messages: BrowserConsoleMessage[] = [];
@@ -261,6 +262,32 @@ export class BrowserCdp {
       nodeCount: flattened.uids.size,
       truncation,
     };
+  }
+
+  async setViewport(wc: WebContents, input: { width?: number; height?: number; mobile?: boolean; reset?: boolean }) {
+    await this.attach(wc);
+    if (input.reset === true) { await wc.debugger.sendCommand("Emulation.clearDeviceMetricsOverride"); this.viewportOverride = false; this.uids.clear(); this.documentGeneration += 1; this.lastSnapshotHash = undefined; return { reset: true }; }
+    const { width, height } = input;
+    if (!Number.isInteger(width) || !Number.isInteger(height) || width! < 240 || width! > 3840 || height! < 240 || height! > 2160) throw Object.assign(new Error("Viewport must be 240..3840 by 240..2160 CSS pixels"), { code: "BROWSER_INVALID_INPUT" });
+    await wc.debugger.sendCommand("Emulation.setDeviceMetricsOverride", { width, height, deviceScaleFactor: 1, mobile: input.mobile === true });
+    this.viewportOverride = true;
+    this.uids.clear(); this.documentGeneration += 1; this.lastSnapshotHash = undefined;
+    return { width, height, mobile: input.mobile === true, coordinateSpace: "css-pixels" };
+  }
+
+  /** Native hidden views need a viewport surface; preserve explicit emulation. */
+  async withRenderViewport<T>(wc: WebContents, work: () => Promise<T>): Promise<T> {
+    await this.attach(wc);
+    if (this.viewportOverride) return work();
+    const metrics = await wc.debugger.sendCommand("Page.getLayoutMetrics") as { cssLayoutViewport?: { clientWidth?: number; clientHeight?: number } };
+    const width = Math.min(3840, Math.max(240, Math.round(metrics.cssLayoutViewport?.clientWidth || 1280)));
+    const height = Math.min(2160, Math.max(240, Math.round(metrics.cssLayoutViewport?.clientHeight || 800)));
+    await wc.debugger.sendCommand("Emulation.setDeviceMetricsOverride", { width, height, deviceScaleFactor: 1, mobile: false });
+    try {
+      return await work();
+    } finally {
+      if (!wc.isDestroyed() && wc.debugger.isAttached()) await wc.debugger.sendCommand("Emulation.clearDeviceMetricsOverride");
+    }
   }
 
   async screenshot(

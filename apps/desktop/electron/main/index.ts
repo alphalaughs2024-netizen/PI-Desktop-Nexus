@@ -5468,7 +5468,9 @@ async function startSidecar(): Promise<void> {
       }
       if (["browser_open", "browser_navigate", "browser_list_tabs", "browser_snapshot", "browser_wait", "browser_screenshot"].includes(descriptor.name)) {
         const requestId = `activation-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-        const location = typeof (normalizedArgs as { url?: unknown })?.url === "string" ? String((normalizedArgs as { url: string }).url) : undefined;
+        // Inspection has no URL argument. Preserve the selected retained page
+        // instead of replacing its GUI projection with an empty New Tab.
+        const location = browserHost.stateForSession(sessionId)?.url || undefined;
         sendToRenderer(IPC.event.browserActivationRequested, { requestId, sessionId, location, source: "agent", focus: "panel", background: false });
       }
       const safeResult = descriptor.name === "browser_screenshot" && result && typeof result === "object" && "result" in result
@@ -10891,7 +10893,7 @@ app.on("before-quit", (event) => {
     // end every quit in error logs, toasts, and restarts into a closing app.
     const pluginShutdown = plugins.disposeAll();
     userMcp.disposeAll();
-    browserPane.dispose();
+    browserHost.disposeGuest();
     pluginViews.dispose();
     inflightCheckpointer.dispose();
     const sidecarShutdown = sidecar?.dispose();

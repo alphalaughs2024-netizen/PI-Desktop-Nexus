@@ -16,6 +16,16 @@ Browser ADR. Requests bind to their originating session/turn/mode and snapshot
 refs expire with their BrowserId/SnapshotId generation. Ambiguous mutating
 timeouts are never replayed.
 
+ADR 0254 binds Browser execution to the requesting session and a retained tab
+incarnation rather than global GUI selection. An implicit first open creates a
+real `about:blank` guest; unknown explicit tab IDs fail. Navigation returns a
+real state or a load/timeout failure, never successful null state. Per-guest CDP,
+per-session/tab refs, and command ordering survive panel/tab switches. A lazy
+Main-owned hidden render host temporarily uses the same guest for screenshot
+and input rendering. It does not select another chat or duplicate the page.
+Explicit desktop/mobile viewport overrides persist until reset; GUI attachment
+and geometry remain renderer-owned.
+
 Phase 8 security gate: all Browser callers use the Main-owned policy boundary.
 URL/path containment, CDP allowlisting, payload budgets, lifecycle invalidation,
 diagnostics/recovery, and privacy-safe telemetry are shared by core tools,

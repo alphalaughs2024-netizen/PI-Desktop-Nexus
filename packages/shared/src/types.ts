@@ -2304,7 +2304,7 @@ export type BrowserErrorCode = "BROWSER_UNAVAILABLE" | "BROWSER_POLICY_BLOCKED" 
 export type BrowserRequestContext = { requestId: BrowserRequestId; sessionId: string; turnId?: string; effectiveAgentId?: string; mode: "plan" | "agent"; permissionEpoch: number; browserId: BrowserId };
 export type BrowserResult<T = unknown> = { requestId: BrowserRequestId; ok: boolean; code?: BrowserErrorCode; retryable?: boolean; possiblyApplied?: boolean; message?: string; result?: T };
 export type BrowserWaitCondition = { kind: "url"; match: "equals" | "contains"; value: string } | { kind: "text"; value: string } | { kind: "page_load" };
-export type BrowserToolName = "browser_list_tabs" | "browser_open" | "browser_navigate" | "browser_snapshot" | "browser_screenshot" | "browser_click" | "browser_fill" | "browser_type" | "browser_keypress" | "browser_wait" | "browser_console" | "browser_evaluate" | "browser_cdp";
+export type BrowserToolName = "browser_list_tabs" | "browser_open" | "browser_navigate" | "browser_snapshot" | "browser_screenshot" | "browser_click" | "browser_fill" | "browser_type" | "browser_keypress" | "browser_wait" | "browser_console" | "browser_set_viewport" | "browser_evaluate" | "browser_cdp";
 export type BrowserReadiness = "uninitialized" | "starting" | "ready" | "loading" | "unavailable" | "blocked" | "closed";
 export type BrowserSource = "user" | "agent" | "workspace-preview" | "unknown";
 export type BrowserActivationRequest = { requestId: string; sessionId: string; location?: string; source: BrowserSource; focus: "panel" | "address" | "toolbar"; background: boolean; createTab?: boolean };

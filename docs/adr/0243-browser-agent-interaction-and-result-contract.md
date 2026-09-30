@@ -18,10 +18,13 @@ original page even though the click succeeded.
 
 The typed schema is the contract for Browser tool arguments. Main passes the
 declared fields to the broker and returns explicit failures to the agent.
-Interactions use the selected guest and current snapshot references. A wait
+Under ADR 0254, interactions use the requesting session's resolved retained
+guest and current snapshot references, independently of GUI selection. A wait
 checks live guest loading and URL state. Screenshot results expose a saved
-session scratch path and bounded metadata, never base64 image data in model
-content. A Browser tool that inspects or navigates, including `browser_list_tabs`,
+session scratch path and bounded metadata in text. A capable Codex model may
+also receive a structured multimodal image block through the authenticated
+Nexus tool bridge; encoded image data is never inserted into prose or GUI
+diagnostics. A Browser tool that inspects or navigates, including `browser_list_tabs`,
 reveals the Browser panel for the active conversation.
 
 An allowed page link requesting a new window navigates the current controlled

@@ -2,6 +2,7 @@ import type { BrowserState } from "@pi-desktop/shared";
 import type { SnapshotResult } from "./browser-cdp";
 import type { BrowserTabsPane } from "./browser-tabs-pane";
 import { BrowserCdp } from "./browser-cdp";
+import { BrowserRenderHost } from "./browser-render-host";
 import { convertBrowserSurfaceMeasurement, type BrowserSurfaceMeasurement } from "./browser-surface-geometry";
 import { writeFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
@@ -14,6 +15,8 @@ export type BrowserRect = {
   width: number;
   height: number;
 };
+
+export type BrowserTarget = { sessionId: string; browserId: string; incarnation?: number };
 
 export type BrowserNavigateInput = {
   url?: string;
@@ -73,7 +76,9 @@ type ChromeSurface = {
  */
 export class BrowserHost {
   private readonly pane: BrowserTabsPane;
-  private readonly cdp = new BrowserCdp();
+  private readonly clients = new Map<number, { cdp: BrowserCdp; wc: NonNullable<ReturnType<BrowserTabsPane["getWebContents"]>> }>();
+  private renderHost = new BrowserRenderHost();
+  private readonly preparations = new WeakMap<object, Promise<void>>();
   private readonly deps: BrowserHostDeps;
   private chrome: ChromeSurface | null = null;
   private hole: BrowserRect | null = null;
@@ -109,30 +114,35 @@ export class BrowserHost {
     this.chromeSessionId = next;
     if (next) {
       this.pane.activateSession(next);
-      if (restoreLocation && this.pane.activeBrowserId() === "browser-core-1" && !this.pane.getState()) void this.rebindSession(next);
+      if (restoreLocation && this.pane.activeBrowserId() === "browser-core-1" && !this.pane.getState()) void this.rebindSession(next).catch(() => undefined);
     }
   }
 
   activateTab(sessionId: string, browserId: string): BrowserState | null {
     this.setChromeSession(sessionId);
-    const previous = this.pane.getWebContents();
     this.pane.activate(sessionId, browserId);
-    if (previous !== this.pane.getWebContents()) this.cdp.detach(previous ?? undefined);
     this.applyGuest();
     return this.pane.getState();
   }
 
   closeTab(sessionId: string, browserId: string): void {
-    const previous = this.pane.getWebContents();
     this.pane.close(sessionId, browserId);
     if (!this.pane.listTabs().some((tab) => tab.sessionId === sessionId)) this.locations.delete(sessionId);
-    if (previous !== this.pane.getWebContents()) this.cdp.detach(previous ?? undefined);
     this.applyGuest();
   }
 
-  activeBrowserId(): string { return this.pane.activeBrowserId(); }
+  activeBrowserId(sessionId?: string): string { return this.pane.activeBrowserId(sessionId); }
+  activeSessionId(): string { return this.pane.activeSession(); }
+  resolveTarget(sessionId?: string, browserId?: string, createDefault = false): BrowserTarget {
+    const { sessionId: owner, browserId: id, incarnation } = this.pane.resolveTab(sessionId, browserId, createDefault);
+    return { sessionId: owner, browserId: id, incarnation };
+  }
   hasTab(sessionId: string, browserId: string): boolean { return this.pane.hasTab(sessionId, browserId); }
   listTabs() { return this.pane.listTabs(); }
+  stateForSession(sessionId: string): BrowserState | null {
+    const selectedId = this.activeBrowserId(sessionId);
+    return this.listTabs().find((tab) => tab.sessionId === sessionId && tab.browserId === selectedId)?.state ?? null;
+  }
 
   /**
    * Content-relative hole inside the calling plugin view. Last writer wins.
@@ -170,61 +180,50 @@ export class BrowserHost {
     input: BrowserNavigateInput,
     sessionId?: string,
     browserId?: string,
+    expected?: BrowserTarget,
   ): Promise<BrowserState | null> {
-    const target = String(input.path ?? input.url ?? "").trim();
-    if (!target) return this.pane.getState();
-    const background =
-      Boolean(sessionId) &&
-      Boolean(this.chromeSessionId) &&
-      sessionId !== this.chromeSessionId;
-    if (background && !browserId) return this.pane.getState();
-    if (browserId && !this.pane.hasTab(sessionId ?? "", browserId)) {
-      throw Object.assign(new Error("Browser tab is unavailable"), { code: "BROWSER_TAB_NOT_FOUND" });
+    const location = String(input.path ?? input.url ?? "").trim();
+    if (!location) throw Object.assign(new Error("Browser navigation requires a target"), { code: "BROWSER_INVALID_INPUT" });
+    const target = this.targetTab(expected ?? this.resolveTarget(sessionId, browserId));
+    const root = await this.deps.getFileRoot(target.sessionId || undefined);
+    // A close/reopen while the root is resolving must not navigate a new guest.
+    if (this.pane.resolveTab(target.sessionId, target.browserId).pane !== target.pane) {
+      throw Object.assign(new Error("Browser tab was replaced"), { code: "BROWSER_TAB_NOT_FOUND" });
     }
-    if (!background && !browserId && sessionId) this.setChromeSession(sessionId, false);
-    const root = await this.deps.getFileRoot(sessionId ?? this.chromeSessionId ?? undefined);
-    if (browserId && !this.pane.hasTab(sessionId ?? "", browserId)) {
-      throw Object.assign(new Error("Browser tab is unavailable"), { code: "BROWSER_TAB_NOT_FOUND" });
-    }
-    if (!browserId || browserId === "browser-core-1") this.rememberLocation(sessionId ?? this.chromeSessionId ?? undefined, target);
+    const state = await target.pane.navigateAndWait(location, root);
+    if (!state?.url) throw Object.assign(new Error("Browser navigation did not create a page"), { code: "UNAVAILABLE" });
+    if (target.browserId === "browser-core-1") this.rememberLocation(target.sessionId, location);
     this.started = true;
-    const state = browserId
-      ? await this.pane.navigateTabAndWait(sessionId ?? "", browserId, target, root)
-      : await this.pane.navigateAndWait(target, root);
     this.applyGuest();
-    if (state && (!browserId || (this.pane.activeBrowserId() === browserId && this.chromeSessionId === sessionId))) this.deps.onState(state);
     return state;
   }
 
-  action(action: "back" | "forward" | "reload" | "stop", sessionId?: string, browserId?: string): void {
-    if (browserId) this.pane.actionTab(sessionId ?? "", browserId, action);
-    else this.pane.action(action);
+  action(action: "back" | "forward" | "reload" | "stop", sessionId?: string, browserId?: string, expected?: BrowserTarget): void {
+    this.targetTab(expected ?? this.resolveTarget(sessionId, browserId)).pane.action(action);
   }
 
-  getState(): BrowserState | null {
-    return this.pane.getState();
+  getState(target?: BrowserTarget): BrowserState | null {
+    return target ? this.targetTab(target).pane.getState() : this.pane.getState();
   }
 
   openExternal(): void {
     this.pane.openExternal();
   }
 
-  async snapshot(): Promise<SnapshotResult> {
-    const wc = this.requireWebContents();
-    return this.cdp.snapshot(wc);
+  async snapshot(target?: BrowserTarget): Promise<SnapshotResult> {
+    const { wc, cdp } = await this.client(target);
+    return cdp.snapshot(wc);
   }
 
-  async screenshot(
-    input: { fullPage?: boolean } = {},
-    sessionId?: string,
-  ): Promise<{ mimeType: string; data: string; path?: string }> {
-    const wc = this.requireWebContents();
-    const shot = input.fullPage ? await this.cdp.screenshot(wc, input) : await this.cdp.viewportScreenshot(wc);
-    const scratch = this.deps.getScratchDir?.(sessionId ?? this.chromeSessionId ?? undefined);
+  async screenshot(input: { fullPage?: boolean } = {}, sessionId?: string, target?: BrowserTarget): Promise<{ mimeType: string; data: string; path?: string }> {
+    const { wc, cdp } = await this.client(target);
+    const pane = this.targetTab(target).pane;
+    const shot = await this.renderHost.run(pane, () => cdp.withRenderViewport(wc, () => cdp.screenshot(wc, input)));
+    const scratch = this.deps.getScratchDir?.(target?.sessionId ?? sessionId ?? this.chromeSessionId ?? undefined);
     if (!scratch) throw new Error("Browser screenshot requires a session scratch directory");
     try {
       mkdirSync(scratch, { recursive: true });
-      const path = join(scratch, `browser-screenshot-${Date.now()}.jpg`);
+      const path = join(scratch, `browser-screenshot-${wc.id}-${Date.now()}.jpg`);
       writeFileSync(path, Buffer.from(shot.data, "base64"));
       return { ...shot, path };
     } catch {
@@ -232,60 +231,61 @@ export class BrowserHost {
     }
   }
 
-  async click(uid: string): Promise<void> {
-    await this.cdp.click(this.requireWebContents(), uid);
+  async click(uid: string, target?: BrowserTarget): Promise<void> {
+    const { wc, cdp } = await this.client(target);
+    await this.renderHost.run(this.targetTab(target).pane, () => cdp.withRenderViewport(wc, async () => {
+      // Capture commits a compositor frame so reparented guests have hit-test data.
+      await cdp.screenshot(wc);
+      await cdp.click(wc, uid);
+    }));
   }
 
-  async fill(uid: string, text: string): Promise<void> {
-    await this.cdp.fill(this.requireWebContents(), uid, text);
+  async fill(uid: string, text: string, target?: BrowserTarget): Promise<void> {
+    const { wc, cdp } = await this.client(target);
+    await cdp.fill(wc, uid, text);
   }
 
-  async type(uid: string | undefined, text: string, clearFirst: boolean): Promise<void> {
-    await this.cdp.type(this.requireWebContents(), uid, text, clearFirst);
+  async type(uid: string | undefined, text: string, clearFirst: boolean, target?: BrowserTarget): Promise<void> {
+    const { wc, cdp } = await this.client(target);
+    await this.renderHost.run(this.targetTab(target).pane, () => cdp.withRenderViewport(wc, () => cdp.type(wc, uid, text, clearFirst)));
   }
 
-  async keypress(uid: string | undefined, key: string, modifiers: string[]): Promise<void> {
-    await this.cdp.keypress(this.requireWebContents(), uid, key, modifiers);
+  async keypress(uid: string | undefined, key: string, modifiers: string[], target?: BrowserTarget): Promise<void> {
+    const { wc, cdp } = await this.client(target);
+    await this.renderHost.run(this.targetTab(target).pane, () => cdp.withRenderViewport(wc, () => cdp.keypress(wc, uid, key, modifiers)));
   }
 
-  async evaluate(expression: string): Promise<unknown> {
-    return this.cdp.evaluate(this.requireWebContents(), expression);
+  async setViewport(input: { width?: number; height?: number; mobile?: boolean; reset?: boolean }, target?: BrowserTarget) {
+    const { wc, cdp } = await this.client(target);
+    return cdp.setViewport(wc, input);
   }
 
-  console(limit?: number): { messages: ReturnType<BrowserCdp["console"]> } {
-    this.ensureCdp();
-    return { messages: this.cdp.console(limit) };
+  async evaluate(expression: string, target?: BrowserTarget): Promise<unknown> {
+    const { wc, cdp } = await this.client(target);
+    return cdp.evaluate(wc, expression);
   }
 
-  async cdpCommand(method: string, params?: unknown): Promise<unknown> {
-    return this.cdp.send(this.requireWebContents(), method, params);
+  async console(limit?: number, target?: BrowserTarget): Promise<{ messages: ReturnType<BrowserCdp["console"]> }> {
+    const { wc, cdp } = await this.client(target);
+    await cdp.attach(wc);
+    return { messages: cdp.console(limit) };
   }
 
-  /**
-   * Host `BrowserPreview` facade: plugin must be enabled; the guest loads the
-   * workspace file only when that session's chrome is visible (D142).
-   */
-  async previewWorkspaceFile(
-    sessionId: string,
-    path: string,
-    root: string,
-  ): Promise<{ ok: true } | { ok: false; content: string }> {
+  async cdpCommand(method: string, params?: unknown, target?: BrowserTarget): Promise<unknown> {
+    const { wc, cdp } = await this.client(target);
+    return cdp.send(wc, method, params);
+  }
+
+  /** Preview execution uses the session's retained guest, even while hidden. */
+  async previewWorkspaceFile(sessionId: string, path: string, root: string, target?: BrowserTarget): Promise<{ ok: true } | { ok: false; content: string }> {
     if (this.deps.isCapabilityEnabled && !this.deps.isCapabilityEnabled()) {
-      return {
-        ok: false,
-        content:
-          "BrowserPreview is blocked by the Browser capability setting. Re-enable Browser in Settings and retry.",
-      };
+      return { ok: false, content: "BrowserPreview is blocked by the Browser capability setting. Re-enable Browser in Settings and retry." };
     }
+    const resolved = this.targetTab(target ?? this.resolveTarget(sessionId));
+    await resolved.pane.navigateAndWait(path, root);
     this.rememberLocation(sessionId, path);
-    const background =
-      Boolean(this.chromeSessionId) && this.chromeSessionId !== sessionId;
-    if (!background) {
-      this.setChromeSession(sessionId, false);
-      this.started = true;
-      await this.pane.navigateAndWait(path, root);
-      this.applyGuest();
-    }
+    this.started = true;
+    this.applyGuest();
     return { ok: true };
   }
 
@@ -296,8 +296,11 @@ export class BrowserHost {
   }
 
   disposeGuest(): void {
-    this.cdp.detach(this.pane.getWebContents() ?? undefined);
+    for (const { cdp, wc } of this.clients.values()) cdp.detach(wc);
+    this.clients.clear();
     this.pane.dispose();
+    this.renderHost.dispose();
+    this.renderHost = new BrowserRenderHost();
     this.started = false;
     this.hole = null;
     this.holePluginId = null;
@@ -334,18 +337,37 @@ export class BrowserHost {
     if (this.chromeSessionId === sessionId) this.applyGuest();
   }
 
-  private requireWebContents() {
-    const wc = this.pane.getWebContents();
-    if (!wc || wc.isDestroyed()) {
-      throw Object.assign(new Error("browser guest is not available"), {
-        code: "UNAVAILABLE",
-      });
+  private targetTab(target?: BrowserTarget) {
+    const resolved = this.pane.resolveTab(target?.sessionId, target?.browserId);
+    if (target?.incarnation !== undefined && resolved.incarnation !== target.incarnation) {
+      throw Object.assign(new Error("Browser tab was replaced"), { code: "BROWSER_TAB_NOT_FOUND" });
     }
-    return wc;
+    return resolved;
   }
 
-  private ensureCdp(): void {
-    const wc = this.pane.getWebContents();
-    if (wc && !wc.isDestroyed()) void this.cdp.attach(wc);
+  private async client(target?: BrowserTarget) {
+    const resolved = this.targetTab(target);
+    if (!resolved.pane.getWebContents()) {
+      let preparation = this.preparations.get(resolved.pane);
+      if (!preparation) {
+        preparation = resolved.pane.navigateAndWait("about:blank").then(() => undefined);
+        this.preparations.set(resolved.pane, preparation);
+        void preparation.finally(() => this.preparations.delete(resolved.pane)).catch(() => undefined);
+      }
+      await preparation;
+    }
+    if (this.pane.resolveTab(resolved.sessionId, resolved.browserId).pane !== resolved.pane) {
+      throw Object.assign(new Error("Browser tab was replaced"), { code: "BROWSER_TAB_NOT_FOUND" });
+    }
+    const wc = resolved.pane.getWebContents();
+    if (!wc || wc.isDestroyed()) throw Object.assign(new Error("browser guest is not available"), { code: "UNAVAILABLE" });
+    let client = this.clients.get(wc.id);
+    if (!client) {
+      client = { cdp: new BrowserCdp(), wc };
+      this.clients.set(wc.id, client);
+      const owned = client;
+      wc.once("destroyed", () => { owned.cdp.detach(wc); this.clients.delete(wc.id); });
+    }
+    return client;
   }
 }

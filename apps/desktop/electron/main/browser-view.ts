@@ -26,6 +26,7 @@ const SURFACE_CAPTURE_TIMEOUT_MS = 5_000;
 export function normalizeUrl(raw: string): string | null {
   const trimmed = raw.trim();
   if (!trimmed) return null;
+  if (trimmed === "about:blank") return trimmed;
   const withScheme = /^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(trimmed)
     ? trimmed
     : `http://${trimmed}`;
@@ -79,6 +80,7 @@ export function resolveLocalFile(raw: string, root: string | null): string | nul
 export class BrowserPane {
   private view: WebContentsView | null = null;
   private window: BrowserWindow | null = null;
+  private renderWindow: BrowserWindow | null = null;
   private visible = false;
   private bounds = { x: 0, y: 0, width: 0, height: 0 };
   private onState: (state: BrowserState) => void;
@@ -166,22 +168,28 @@ export class BrowserPane {
     const target = localPath
       ? pathToFileURL(localPath).toString()
       : normalizeUrl(raw);
-    if (!target) return this.getState();
+    if (!target) throw Object.assign(new Error("Invalid Browser navigation target"), { code: "BROWSER_INVALID_INPUT" });
     if (localPath) this.watchDirForReload(dirname(localPath));
     else this.clearLiveReload();
     const view = this.ensureView();
     if (this.visible) this.attach();
+    let timer: ReturnType<typeof setTimeout> | undefined;
     try {
       await Promise.race([
         view.webContents.loadURL(target),
-        new Promise<void>((resolve) => {
-          setTimeout(resolve, Math.max(1, timeoutMs));
+        new Promise<never>((_, reject) => {
+          timer = setTimeout(() => {
+            reject(Object.assign(new Error("Browser navigation timed out"), { code: "TIMEOUT" }));
+            if (!view.webContents.isDestroyed()) view.webContents.stop();
+          }, Math.max(1, timeoutMs));
         }),
       ]);
-    } catch {
-      // Load failures surface through did-fail-load → state push.
+      const state = this.getState();
+      if (!state?.url) throw Object.assign(new Error("Browser guest is not available"), { code: "UNAVAILABLE" });
+      return state;
+    } finally {
+      if (timer) clearTimeout(timer);
     }
-    return this.getState();
   }
 
   action(action: "back" | "forward" | "reload" | "stop"): void {
@@ -236,6 +244,7 @@ export class BrowserPane {
   dispose(): void {
     this.surfaceEpoch += 1;
     this.clearLiveReload();
+    this.detachRenderHost();
     this.detach();
     if (this.view) {
       this.view.webContents.close();
@@ -248,7 +257,34 @@ export class BrowserPane {
     this.childOrder = "unknown";
   }
 
+  async withRenderHost<T>(window: BrowserWindow, work: () => Promise<T>): Promise<T> {
+    const view = this.view;
+    if (!view || view.webContents.isDestroyed()) throw Object.assign(new Error("browser guest is not available"), { code: "UNAVAILABLE" });
+    if (this.attached) return work();
+    this.renderWindow = window;
+    window.contentView.addChildView(view);
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    try {
+      return await Promise.race([
+        work(),
+        new Promise<never>((_, reject) => {
+          timer = setTimeout(() => reject(Object.assign(new Error("Browser page operation timed out"), { code: "TIMEOUT" })), 15_000);
+        }),
+      ]);
+    } finally {
+      if (timer) clearTimeout(timer);
+      this.detachRenderHost();
+    }
+  }
+
+  private detachRenderHost(): void {
+    const window = this.renderWindow;
+    if (window && !window.isDestroyed() && this.view && window.contentView.children.includes(this.view)) window.contentView.removeChildView(this.view);
+    this.renderWindow = null;
+  }
+
   private attach(): void {
+    this.detachRenderHost();
     if (!this.window || this.window.isDestroyed() || !this.view) return;
     const children = this.window.contentView.children;
     // The guest hole sits on top of plugin chrome. Re-adding a plugin view
@@ -355,8 +391,11 @@ export class BrowserPane {
         contextIsolation: true,
         nodeIntegration: false,
         partition: PARTITION,
+        backgroundThrottling: false,
       },
     });
+    // Detached agent tabs need a real viewport before GUI geometry arrives.
+    view.setBounds({ x: 0, y: 0, width: 1280, height: 800 });
     const wc = view.webContents;
     wc.setWindowOpenHandler(({ url }) => {
       const allowed = parseAllowedExternalUrl(url);

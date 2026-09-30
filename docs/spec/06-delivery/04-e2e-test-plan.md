@@ -11647,3 +11647,28 @@ file; an unrelated file remains. Restore storage and verify the next queued
 save succeeds. With the host transcript store also failing, preserve visible
 output and report that reload recovery is not confirmed. Do not replay tools
 or delete caches, profiles or earlier recovery files to hide this condition.
+
+### E2E-Browser-Session-Execution: Guest initialization and independent tool execution (ADR 0254)
+
+- **Preconditions**: A fresh chat and a local page with a labelled field, button,
+  console message, navigation link, and a deliberately stalled endpoint.
+- **Steps**: 1) Ask for Browser open with no URL while the panel is closed;
+  snapshot the blank page. 2) Repeat with the panel already open. 3) Navigate,
+  snapshot, fill/type, click, keypress, and wait for the resulting page.
+  4) Set desktop 1440×900 and mobile 390×844 viewports, capture screenshots,
+  inspect the saved images, then reset the viewport. 5) Select another tab/chat
+  and execute the same tools against the first session's retained page.
+  6) Reuse the same browser ID in another session and verify refs cannot cross
+  between them; navigate one tab and keep refs in the other. 7) Close/reopen a
+  tab during an admitted command and root lookup. 8) Navigate a failing/stalled
+  endpoint, press Stop during a load, hide/reveal the panel, and close the app.
+- **Expected**: Blank open returns a real state and snapshot. No manual panel
+  mounting is required. The correct session/tab executes without stealing GUI
+  selection. Screenshots contain real page pixels at the reported viewport;
+  image-capable models receive actual structured image input. Ref failures and
+  failed/stalled loads are explicit. Reopened tabs do not inherit outstanding
+  commands. Stop interrupts its tab; other tabs can proceed. Hiding preserves
+  the page; shutdown releases guests and the hidden render host. Materials,
+  controls, and panel geometry remain unchanged.
+- **Validation**: Targeted unit tests and an isolated native fixture; full local
+  E2E suites are not run unless explicitly requested.

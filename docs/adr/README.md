@@ -251,3 +251,4 @@ Each ADR includes:
 | 0251 | Isolated agent-foundation evaluation | Accepted for evaluation only |
 | 0252 | Opt-in Codex execution contract | Phase 2 manual acceptance pending |
 | 0253 | OpenRouter compatibility for native Codex patch tools | Phase 2 manual acceptance pending |
+| 0254 | Browser execution against retained session tabs | Proposed; user approval pending |
