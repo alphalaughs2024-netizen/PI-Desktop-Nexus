@@ -19,8 +19,12 @@ projects their events into one evaluation timeline, and exports bounded metadata
 The existing Nexus runtime is a separate baseline, not synonymous with pi.
 
 No production engine, IPC, database schema, renderer, theme, or tool policy is
-changed by this phase. Evaluation artifacts are outside the checkout and outside
-`.pi-desktop-nexus`. The future production ownership contract requires its own ADR.
+changed by this phase. Profiles and reports remain under LocalAppData; private
+workspaces are under the user's dedicated .nexus-agent-evaluation directory.
+Restricted Windows write trials failed under AppData and passed outside it; this
+is an observed configuration constraint, not a promise of packaged parity.
+Artifacts remain outside the checkout and .pi-desktop-nexus. The future
+production ownership contract requires its own ADR.
 
 The default is a scripted local model fixture. Explicitly authorized cloud trials
 use xkiro models verified against its live catalog as free with zero input/output
@@ -39,3 +43,22 @@ Nexus can measure native runtime behavior without changing the production app.
 Mock tests establish the harness contract; native/cloud trials establish only
 the explicitly recorded scope. Engine-specific feature gaps remain visible.
 The evaluation adapters do not commit Nexus to a multi-engine product.
+
+## Evaluation services and limits
+
+pi trials use the full coding SDK and native SessionManager. Codex and OpenCode
+retain their native thread/session handles and stores. File tools belong to the
+engine; the preview supervisor, Chromium capture and mutation fault injector
+belong to the harness and are labelled accordingly. Preview/browser capabilities
+are preapproved for disposable workspaces; other approval requests are denied.
+Human approval waiting has not been measured. Production approval ownership and
+the existing 120-second deny timeout remain a later-phase requirement.
+
+Codex custom-provider trials explicitly declare a model descriptor and enable
+the unelevated Windows backend. Raw patch outputs cover validation errors missing
+from typed file-change events. Raw event opt-in is experimental/internal in the
+inspected source and must not silently become a production API guarantee.
+
+The same-model website comparison and lifecycle evidence are recorded in
+scripts/agent-evaluation/COMPARISON.md. No candidate becomes the default through
+this ADR. Human acceptance precedes any implementation of later phases.

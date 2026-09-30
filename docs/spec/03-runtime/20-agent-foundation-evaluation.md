@@ -71,3 +71,51 @@ Targeted unit/integration checks cover lifecycle ordering, duplicate/stale
 notifications, streaming flushes, model gating, and local server access.
 Document manual acceptance scenarios. Do not run local E2E suites unless asked.
 Present the prototype and evidence before phase acceptance or production changes.
+
+## Tested services and native recovery
+
+Use each engine's native file/session implementation. pi uses the complete
+coding SDK, resource loader and SessionManager with network discovery, extensions
+and foreground context loading disabled. Codex uses app-server threads; OpenCode
+uses server sessions and assistant-only part projections. Native snapshots and
+recovery handles remain available before teardown.
+
+The shared companion owns a session preview process and Chromium. It provides
+start/status/stop, bounded logs, PID and exit status. Captures use explicit desktop
+and mobile viewports and return text diagnostics plus image content, not a path
+alone. Console repeats are aggregated; at most 100 unique messages and 100 page errors
+are retained, with explicit dropped counts. Transcript item text retains at most
+1MiB and exposes truncation. Separate calls observe the same preview;
+trial shutdown verifies its port/process stops. This proves the harness service,
+not equivalent built-in functionality in all three engines.
+
+Use private workspaces outside AppData for restricted Windows Codex trials;
+profiles/reports remain under LocalAppData. Record the path change and earlier
+failures. Explicit model descriptors are capability hypotheses to verify, not
+provider support declarations. Experimental raw events expose patch validation
+failures; production integration requires a compatibility decision.
+
+An active fault tool can write a single marker and wait. Cancellation must retain
+it and produce interruption rather than completion. Completed-turn reconstruction
+and uncertain-result reconstruction are separate trials. Reconnect must not
+invoke the model or duplicate the marker. An explicit retry after uncertain work
+is not authorized automatically by a successful reconstruction.
+
+## Timing and manual acceptance
+
+Start timing at request acceptance, before profile preparation. Record local
+version/reference/adapter preparation separately from provider catalog and
+credential setup. Tool, response, wait and reasoning phases are exclusive known
+states, not inferred provider compute durations. Clip provider intervals to the
+turn and union overlaps. Incomplete requests remain marked incomplete.
+
+The dashboard keeps a persistent total timer and incrementally updates keyed
+item nodes. It records bounded projection-to-delivery, DOM task and next-frame
+samples; these are headless/display scheduling observations, not paint profiling.
+Human approval timing remains unmeasured because this harness declines requests
+and preapproves only its fixture services. A real approval UI is a later gate.
+
+See the recorded comparison and limitations in
+scripts/agent-evaluation/COMPARISON.md. Present the Windows prototype and website
+artifacts for human review. Leave the isolated branch pending acceptance; no
+engine replacement, production visual change, merge or push is part of this gate.

@@ -11524,3 +11524,24 @@ unresolved; do not select an engine before all mandatory gates pass. Verify
 production Nexus's renderer, themes, data profile, and selected engine are
 unchanged. These are documented acceptance scenarios; no local E2E suite is
 implicitly authorized by adding them.
+
+
+For screenshot-guided website comparison, choose the cloud website trial. Use
+the same zero-price vision-capable model for each engine; the request/reference
+are fixed. Inspect retained desktop/mobile screenshots and independently click
+Start a session. Verify real image content appears in subsequent model requests,
+not just a screenshot path. Distinguish native file tools from harness-owned
+preview/browser services. Compare approximation quality honestly; no pixel-exact
+claim follows from zero overflow or a successful button click.
+
+Interrupt a pending fault tool after its single marker write. Verify one
+interrupted terminal outcome and preserved marker. Restart from native history
+without a new prompt; verify no inference/tool replay. Record abrupt process
+shutdown separately from pi SDK cancellation. Show uncertain work explicitly;
+do not automatically retry it. Test an expected stale patch failure even when
+no typed file-change event exists. Verify native tool errors remain visible.
+
+Inspect bounded renderer samples and the original accepted timestamp after a
+reload. Provider HTTP union must be clipped to that turn and must not sum
+concurrent/title requests. Human approval wait and packaged restricted execution
+remain unresolved until specifically exercised; keep these limitations visible.
