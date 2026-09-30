@@ -249,3 +249,4 @@ Each ADR includes:
 | 0249 | Host-owned scheduled execution | Accepted |
 | 0250 | Trusted renderer plugin slots | Accepted |
 | 0251 | Isolated agent-foundation evaluation | Accepted for evaluation only |
+| 0252 | Opt-in Codex execution contract | Phase 2 manual acceptance pending |

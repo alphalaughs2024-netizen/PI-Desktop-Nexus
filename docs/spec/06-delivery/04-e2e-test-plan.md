@@ -11545,3 +11545,42 @@ Inspect bounded renderer samples and the original accepted timestamp after a
 reload. Provider HTTP union must be clipped to that turn and must not sum
 concurrent/title requests. Human approval wait and packaged restricted execution
 remain unresolved until specifically exercised; keep these limitations visible.
+
+## Opt-in Codex backend contract (ADR 0252)
+
+Launch pnpm dev:codex with a separate profile and Codex 0.157.1. Verify the
+production profile and a mismatched engine version are refused. Configure an
+API-key Responses provider; a Completions-only or OAuth launch must fail clearly
+without pi fallback. Ordinary pnpm dev retains the old runtime. Verify all
+themes, composers and sidebar/work-panel geometry are visually unchanged.
+
+Submit an Agent-mode request with a real image. Verify preparation is visible
+before model text, actual image input reaches the engine, and one host turn
+contains commentary, native tools and final answer. Inspect executionSnapshot
+through the existing preload API: original acceptance time and native handle
+must remain stable through steps and renderer reload. Change the supported
+reasoning level between turns: the actual native request must use the selected
+endpoint effort without changing the thread handle; unsupported levels fail
+clearly. Responses-only metadata cannot stand in for a custom-tool compatibility
+check; record provider gaps instead of claiming parity. Inject duplicate, delayed
+and stale-run/native-turn events; they cannot alter current items or outcome.
+
+Exercise a context-mismatched patch, a nonzero command exit and a missing tool
+completion. They must display failure rather than false success. Native command
+execution must not inherit the transient provider key. Request a sandbox
+escalation: only Allow once and Deny are actionable, the countdown is 120 seconds,
+and timeout/cancel closes the card and denies the engine waiter. Answer a native
+question; unsupported secret questions and unknown server requests fail clearly.
+
+Cancel during connection preparation, model waiting and a running command.
+Verify no inference begins after cancelled preparation, native processes stop,
+partial output is retained and only one terminal outcome is recorded. Kill the
+engine after an uncertain mutation, reconnect by native handle and inspect the
+snapshot: no turn/start or tool replay occurs. Explicit new input starts a new
+turn. Reload during streaming and quit the app with command sessions alive;
+shutdown must stop the owned process tree. Do not claim packaged parity here.
+
+Verify Plan/Goal, regenerate, steering and unsupported legacy tools are refused
+in the opt-in prototype. No paid/provider fallback occurs. Do not run local E2E
+suites merely because these scenarios are documented. Persistent whole-turn
+status/timer UX is the next phase's acceptance gate.

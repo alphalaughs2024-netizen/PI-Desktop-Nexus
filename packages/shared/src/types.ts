@@ -537,6 +537,8 @@ export type MessageRevisionSummary = {
 };
 
 export type AgentStatus = {
+  /** Opt-in engine identity and whole-turn state; legacy runtimes omit it. */
+  execution?: { session: import("./engine-contract.js").EngineSession; turn?: import("./engine-contract.js").EngineTurn; sequence: number };
   sessionId: string;
   isRunning: boolean;
   currentTurnId?: string;
@@ -755,6 +757,8 @@ export type AgentCompactResponse = {
 };
 
 export type ToolPermissionRequest = {
+  /** Engine-specific scope; omitted for legacy full permission choices. */
+  allowedDecisions?: PermissionDecision[];
   requestId: string;
   sessionId: string;
   toolCallId: string;

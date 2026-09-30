@@ -605,6 +605,12 @@ export class AgentSidecar {
 
   async dispose(): Promise<void> {
     this.disposed = true;
+    if (process.env.NEXUS_AGENT_ENGINE === "codex" && this.child.exitCode === null) {
+      await Promise.race([
+        this.call("sidecar.shutdown").catch(() => undefined),
+        new Promise<void>(resolve => setTimeout(resolve, 5_000)),
+      ]);
+    }
     this.projectInstructionRoots.clear();
     this.vendorAuthBindings.clear();
     this.closeTransport(new Error("agent sidecar disposed"));
@@ -619,7 +625,10 @@ export class AgentSidecar {
         clearTimeout(timer);
         resolve();
       });
-      this.child.kill();
+      if (process.env.NEXUS_AGENT_ENGINE === "codex" && process.platform === "win32" && this.child.pid) {
+        const killer = spawn("taskkill.exe", ["/PID", String(this.child.pid), "/T", "/F"], { windowsHide: true, stdio: "ignore" });
+        killer.on("error", () => this.child.kill());
+      } else this.child.kill();
     });
   }
 }

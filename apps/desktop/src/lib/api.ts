@@ -667,6 +667,8 @@ export const api = {
     invoke<{ hits: unknown[]; nextOffset?: number | null }>(IPC.invoke.sessionSearch, { query, offset }),
   getStatus: (sessionId: string) =>
     invoke<{ status: AgentStatus }>(IPC.invoke.agentGetStatus, sessionId),
+  getExecutionSnapshot: (sessionId: string) =>
+    invoke<{ snapshot: import("@pi-desktop/shared").EngineSnapshot | null }>(IPC.invoke.agentExecutionSnapshot, { sessionId }),
   getAgentInstructions: (projectPath?: string) =>
     invoke<{ global: AgentInstructionFile; project?: AgentInstructionFile }>(
       IPC.invoke.agentInstructionsGet,

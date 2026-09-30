@@ -245,3 +245,9 @@ or generated website is committed (the owned reference fixture is source data).
 
 Model screening: model-probe-2eec1b81, ec6d9a1d, 442b3b03, dab0bf69, 47bd760d,
 ecf09323 and 39f2d6ca, respectively in the model table's order.
+
+## Accepted engine selection
+
+The user accepted the recommendation on 2026-09-30 and selected real Codex
+app-server as Nexus's future backend. Phase 2 remains opt-in pending manual
+acceptance. See [Phase 2 verification](PHASE2.md) and ADR 0252.

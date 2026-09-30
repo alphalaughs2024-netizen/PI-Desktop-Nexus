@@ -22,6 +22,7 @@
 | [18-line-anchored-edit-contract.md](18-line-anchored-edit-contract.md) | Line-anchored Edit contract |
 | [19-remote-agent-control-protocol.md](19-remote-agent-control-protocol.md) | Remote Agent Control Protocol |
 
-## Agent foundation evaluation
+## Agent foundation
 
 - [20. Agent foundation evaluation](20-agent-foundation-evaluation.md)
+- [21. Codex execution contract](21-codex-execution-contract.md)

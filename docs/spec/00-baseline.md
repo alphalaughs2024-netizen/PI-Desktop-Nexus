@@ -216,3 +216,10 @@ change the production engine or Nexus's appearance. See
 [Agent foundation evaluation](03-runtime/20-agent-foundation-evaluation.md).
 Future engine selection and removal of unused runtime features are acceptance
 gates, not changes made by the evaluation harness.
+
+## Selected engine prototype (ADR 0252)
+
+Phase 1 selection is accepted: Codex app-server supplies the new foundation.
+The [Phase 2 execution contract](03-runtime/21-codex-execution-contract.md) is
+opt-in with a fresh data profile. The current production runtime and visual
+design remain in place until the phased acceptance gates are complete.

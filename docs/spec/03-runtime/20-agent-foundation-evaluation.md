@@ -119,3 +119,9 @@ See the recorded comparison and limitations in
 scripts/agent-evaluation/COMPARISON.md. Present the Windows prototype and website
 artifacts for human review. Leave the isolated branch pending acceptance; no
 engine replacement, production visual change, merge or push is part of this gate.
+
+## Accepted selection
+
+The user selected Codex after Phase 1. The evaluation remains a separate
+instrument. The [Phase 2 contract](21-codex-execution-contract.md) introduces
+the opt-in backend without changing the default runtime.

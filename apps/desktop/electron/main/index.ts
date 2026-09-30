@@ -344,6 +344,7 @@ const ErrorCodes = {
 // Nexus must never share the official PI-Desktop host profile by default.
 // PI_DESKTOP_DATA_DIR remains an explicit override for development and tests.
 const DEFAULT_DATA_DIR_NAME = ".pi-desktop-nexus";
+const codexEngineEnabled = process.env.NEXUS_AGENT_ENGINE === "codex";
 
 /**
  * Strip the Windows extended-length path prefix (`\\?\`) so that shell APIs
@@ -385,7 +386,19 @@ if (process.platform === "win32") {
 // `PI_DESKTOP_DATA_DIR`: a run pointed at its own data directory (E2E
 // harnesses, the capture rig, a side-by-side profile) shares no state with the
 // default installation and stays launchable while one is running.
-const singleInstanceRequired = !process.env.PI_DESKTOP_DATA_DIR;
+if (codexEngineEnabled) {
+  const profile = process.env.PI_DESKTOP_DATA_DIR;
+  if (!profile || resolve(profile).toLowerCase() === resolve(homedir(), DEFAULT_DATA_DIR_NAME).toLowerCase()) {
+    throw new Error("Codex requires a separate explicit test profile.");
+  }
+  // SQLite alone is not a fresh profile: Chromium localStorage and cookies
+  // otherwise share the production Electron userData directory.
+  const electronProfile = join(resolve(profile), "electron");
+  mkdirSync(electronProfile, { recursive: true });
+  app.setPath("userData", electronProfile);
+  app.setPath("sessionData", electronProfile);
+}
+const singleInstanceRequired = codexEngineEnabled || !process.env.PI_DESKTOP_DATA_DIR;
 const hasSingleInstanceLock = singleInstanceRequired
   ? app.requestSingleInstanceLock()
   : true;
@@ -2014,6 +2027,7 @@ async function resolveAgentRuntimeLaunch(
       ...(overrides.turnId ? { turnId: overrides.turnId } : {}),
       thinkingLevel,
       commandShell,
+      permissionMode: session.permissionMode === "inherit" ? settings.defaultPermissionMode ?? "ask" : session.permissionMode ?? "ask",
       scratchDir: join(dataDir, "scratch", sessionId),
       attachmentsDir: join(dataDir, "attachments"),
       projectPath,
@@ -5190,6 +5204,7 @@ function wireSidecar(s: AgentSidecar) {
     if (method === "agent.event") {
       const envelope = params as AgentEventEnvelope;
       const event = envelope.event;
+      if (codexEngineEnabled && envelope.turnId && activeTurns.get(envelope.sessionId) !== envelope.turnId) return;
       if (event.type === "tool_start") {
         logger.app("tool", "info", "tool start", {
           sessionId: envelope.sessionId,
@@ -8940,6 +8955,9 @@ function registerIpc() {
         errorCode: ErrorCodes.NOT_FOUND,
       });
     }
+    if (codexEngineEnabled && (req.truncateFromMessageId || req.truncateBefore !== undefined || (session.mode && session.mode !== "agent"))) {
+      throw new Error("The Codex prototype supports Agent mode and new turns. Create a new chat instead of regenerating history.");
+    }
     const truncateFromMessageId =
       typeof req.truncateFromMessageId === "string"
         ? req.truncateFromMessageId.trim()
@@ -9038,7 +9056,7 @@ function registerIpc() {
     const activeSkills = new Map(
       (launch.sidecarParams.instructionCatalog ?? []).map((skill) => [skill.id, skill.id] as const),
     );
-    const skillMentions = findSkillMentions(req.content, activeSkills);
+    const skillMentions = codexEngineEnabled ? [] : findSkillMentions(req.content, activeSkills);
     if (skillMentions.length) {
       let body = "";
       let end = 0;
@@ -9293,6 +9311,11 @@ function registerIpc() {
     return sidecar.call("agent.getStatus", { sessionId });
   });
 
+  handle(IPC.invoke.agentExecutionSnapshot, async (req: { sessionId: string }) => {
+    if (!codexEngineEnabled || !sidecar) return { snapshot: null };
+    return sidecar.call("agent.engineSnapshot", req);
+  });
+
   // The Host-owned turn queue (D375 / D386). The renderer mirrors it; the
   // headless module admits, orders, and drains it.
   handle(IPC.invoke.agentQueuePush, async (req: AgentQueuePushRequest) => {
@@ -9326,7 +9349,9 @@ function registerIpc() {
     logger.app("permission", "info", "permission resolved", {
       data: { requestId: resolution.requestId, decision: resolution.decision },
     });
-    const resolved = await host.call("permissions.resolve", resolution);
+    const resolved = codexEngineEnabled && resolution.requestId.startsWith("codex:")
+      ? await sidecar!.call("agent.resolveApproval", resolution)
+      : await host.call("permissions.resolve", resolution);
     agentHostBridge?.settleApproval(resolution.requestId, {
       ...(resolution.decision === "allow-once" ||
       resolution.decision === "allow-session" ||

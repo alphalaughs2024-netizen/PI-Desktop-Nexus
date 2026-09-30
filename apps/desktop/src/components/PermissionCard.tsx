@@ -137,7 +137,7 @@ export function PermissionCard({
         </Button>
         <Button
           variant="secondary"
-          disabled={resolving}
+          disabled={resolving || (permission.allowedDecisions !== undefined && !permission.allowedDecisions.includes("allow-session"))}
           onClick={() => void resolve("allow-session")}
         >
           {t("permission.allowSession")}

@@ -28,3 +28,5 @@ export * from "./usage-cost.js";
 export * from "./provider-retry.js";
 export * from "./built-in-themes.js";
 export * from "./feature-flags.js";
+
+export * from "./engine-contract.js";

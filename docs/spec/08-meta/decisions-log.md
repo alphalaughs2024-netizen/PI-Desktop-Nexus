@@ -4499,3 +4499,11 @@ D193, and D194.
 
 | D179 | Consecutive identical tool-call guard | **AgentRuntime keeps a per-prompt canonical tool-call streak and rejects the fourth exact repeat before host dispatch with retriable `TOOL_REPEAT_LIMIT_EXCEEDED`; changed arguments, intervening calls, and new prompts reset it. `Edit` and patch-style `Bash` remain under the specialized mutation guard.** | Small models can burn a turn repeating unchanged calls; a bounded runtime guard is safer and more consistent than an optional plugin. |
 | D-Phase9 | Browser API/Main wiring | **Typed Browser renderer contracts are authoritative: Main validates and routes toolbar, recovery, screenshot, and surface operations through BrowserBroker; session-routed view state and safe diagnostics remain Main-owned.** | Prevents renderer fallbacks and compatibility paths from bypassing policy or exposing Browser internals. |
+
+## 2026-09-30 — Selected Codex engine and opt-in execution contract
+
+The user accepted the Phase 1 recommendation and chose real Codex app-server
+as Nexus's future engine. ADR 0252 establishes session/turn/item ownership,
+pinned protocol compatibility, native permission enforcement and no-replay
+recovery. The Phase 2 runtime is an opt-in fresh-profile prototype pending
+manual acceptance. Nexus's production default and visual design remain in place.

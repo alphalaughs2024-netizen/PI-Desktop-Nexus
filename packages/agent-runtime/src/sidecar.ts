@@ -9,6 +9,7 @@ import { constants as fsConstants } from "node:fs";
 import { copyFile, mkdir, readFile, realpath, stat } from "node:fs/promises";
 import { isAbsolute, relative, resolve } from "node:path";
 import type { ModelAuth } from "@earendil-works/pi-ai";
+import { CodexController } from "./codex/controller.js";
 import { ParentHostProxy } from "./parent-host-proxy.js";
 import { visionFromModelConfig } from "./model-capabilities.js";
 import { classifyAgentError } from "./agent-errors.js";
@@ -461,15 +462,24 @@ function classifiedRuntimeError(err: unknown) {
 // it to the renderer directly; re-emitting it here would duplicate the
 // permission dialog delivery).
 
+const codex = process.env.NEXUS_AGENT_ENGINE === "codex"
+  ? new CodexController(envelope => notify("agent.event", envelope))
+  : undefined;
+
 async function handle(method: string, params: any): Promise<unknown> {
+  if (codex && (method.startsWith("agent.") || method === "asktool.resolve" || method === "extensions.command.run")) return codex.handle(method, params);
   switch (method) {
     case "sidecar.configure": {
+      if (codex) codex.configure(String(params.dataDir ?? ""));
       // Main owns host-core; sidecar only keeps config metadata.
       if (params && typeof params === "object" && "networkProxy" in params) {
         applyNodeNetworkProxy(normalizeNetworkProxy(params.networkProxy));
       }
       return { ok: true, mode: "host-proxy" };
     }
+    case "sidecar.shutdown":
+      await codex?.shutdown();
+      return { ok: true };
     case "sidecar.health":
       return { ok: true, runtimes: runtimes.size };
     case "agent.testRuntimeIdentity": {
@@ -612,6 +622,10 @@ async function handle(method: string, params: any): Promise<unknown> {
 }
 
 const rl = createInterface({ input: process.stdin });
+if (codex) {
+  rl.on("close", () => { void codex.shutdown().finally(() => process.exit(0)); });
+  process.on("SIGTERM", () => { void codex.shutdown().finally(() => process.exit(0)); });
+}
 rl.on("line", async (line) => {
   if (!line.trim()) return;
   let msg: any;
