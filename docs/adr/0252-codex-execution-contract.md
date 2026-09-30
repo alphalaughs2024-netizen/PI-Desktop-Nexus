@@ -108,9 +108,24 @@ scripts/agent-evaluation/PHASE2.md.
 
 Phase 2 acceptance requires deterministic lifecycle/approval/recovery checks,
 a real Windows native-tool/image trial, and a working opt-in pnpm dev prototype.
-Text steering now uses turn/steer with the native expectedTurnId precondition.
+Text steering during sampling uses turn/interrupt, waits for the native terminal,
+then starts a corrected native segment on the same thread. Native 0.157.1 queues
+turn/steer input until sampling finishes, which cannot satisfy immediate text
+steering. During an active tool or approval, retain turn/steer with the native
+expectedTurnId guard so already-running work reaches its boundary.
+
+A Nexus turn may therefore contain several native segments. EngineTurn records
+retired native IDs/outcomes while preserving the original host ID, run ID,
+start time, accumulated partial items and one host terminal outcome. The selected
+effort is preserved. New corrections serialize; duplicate IDs share their first
+outcome. Interruption must be acknowledged and observed before starting corrected
+input. Unknown interrupt/start outcomes are reported without retry or tool replay.
+Cancellation, native failure and late original start acknowledgements cannot
+resurrect a retired segment or strand the host turn as busy.
+
 Accepted instructions retain the original host turn identity and persist once;
-failed or uncertain requests are not replayed.
+failed or uncertain requests are not replayed. Renderer queue cleanup is a
+separate operation; its failure cannot retract already-admitted steering.
 Electron owns persistence of accepted steering message events through the
 existing durable message outbox; the native engine retains its own history.
 Completion drains pending steering acknowledgements before releasing the host

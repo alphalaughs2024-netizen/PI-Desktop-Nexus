@@ -91,3 +91,7 @@ Each mandatory gate needs its own evidence. A fixture pass is not a cloud qualit
 pass; an image payload is not evidence of interpretation. Recommendations remain
 provisional until the user's prototype/deliverable acceptance. No production
 engine replacement, merge, push, E2E suite, sign-in, or paid trial is implied.
+
+## Native sampling steering check
+
+After building shared/runtime, run `node scripts/agent-evaluation/codex-stream-steering.mjs <isolated-evidence-directory>`. The local Responses fixture streams an unfinished answer through pinned Codex, then checks real native interruption, corrected sampling, one host outcome and read-only recovery. It makes no cloud request and reports transport/lifecycle behaviour, not model quality. Its evidence directory is retained for inspection. This is a targeted native integration probe, not a local Nexus E2E suite.

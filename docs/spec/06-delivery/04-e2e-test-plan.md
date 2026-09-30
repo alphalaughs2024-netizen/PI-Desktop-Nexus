@@ -11587,15 +11587,26 @@ snapshot: no turn/start or tool replay occurs. Explicit new input starts a new
 turn. Reload during streaming and quit the app with command sessions alive;
 shutdown must stop the owned process tree. Do not claim packaged parity here.
 
-Steer a running request with text: expect one native turn/steer request guarded
-by its native turn ID, one persisted user instruction, and the original host
-turn/timer identity. Duplicate message IDs cannot dispatch twice. Stale targets
+Steer while actual answer text is streaming: the old stream must stop before
+finishing. Expect turn/interrupt, the observed native terminal, then one corrected
+turn/start on the same thread. Preserve the original host turn/run/start time,
+partial answer and one host terminal outcome; record the retired native segment.
+Verify selected effort is unchanged, the old segment's late deltas and delayed
+start acknowledgement are ignored, and no previous tool is replayed. Repeat
+while reasoning or a quiet model wait is active. During an active command or
+approval, expect guarded native turn/steer and boundary consumption instead
+of restarting running work. These are separate acceptance trials.
+Expect one persisted user instruction and the original host turn/timer identity. Duplicate message IDs cannot dispatch twice. Stale targets
 fail before dispatch. Inject a lost steering acknowledgement: report uncertainty
 without automatic replay or restarting mutation tools. Race completion against
 a steering acknowledgement: persist the accepted instruction before the terminal
 signal. Cancel while that acknowledgement is pending: no false completion or
 acknowledgement-timeout wait. Reopen the chat after an accepted correction:
 its user instruction must remain in the canonical transcript exactly once.
+Switch to another chat and back, then reload the renderer: it must remain
+visible once at the correct chronological position. Inject a failure in later
+renderer queue cleanup after native admission: the accepted instruction stays
+visible and the submission remains accepted.
 Repeat with the host temporarily offline and restarted; the durable outbox must
 drain the correction once and must not duplicate ordinary prompt rows. Steering attachments
 fail explicitly.

@@ -20,6 +20,14 @@ describe("execution contract", () => {
     expect(contract.apply(event(2, { type: "phase", phase: "running", nativeTurnId: "stale" }))).toBe(false);
     expect(contract.apply(event(2, { type: "phase", phase: "waiting-model", nativeTurnId: "native" }))).toBe(true);
   });
+  it("advances an explicitly guarded native segment while preserving user turn identity", () => {
+    const { contract, turn, event } = fixture();
+    contract.apply(event(1, { type: "phase", phase: "running", nativeTurnId: "native-1" }));
+    expect(contract.apply(event(2, { type: "native-segment", expectedNativeTurnId: "old", outcome: "interrupted" }))).toBe(false);
+    expect(contract.apply(event(2, { type: "native-segment", expectedNativeTurnId: "native-1", outcome: "interrupted" }))).toBe(true);
+    expect(contract.apply(event(3, { type: "phase", phase: "waiting-model", nativeTurnId: "native-2" }))).toBe(true);
+    expect(contract.snapshot().turn).toMatchObject({ id: "t", runId: turn.runId, startedAt: 100, nativeTurnId: "native-2", nativeSegments: [{ nativeTurnId: "native-1", outcome: "interrupted", completedAt: 200 }] });
+  });
   it.each(["completed", "failed", "interrupted"])("seals %s once and preserves partial items", outcome => {
     const { contract, event } = fixture();
     contract.apply(event(1, { type: "item", item: { id: "i", nativeId: "i", kind: "tool", label: "tool", status: "running", text: "partial", startedAt: 101 } }));

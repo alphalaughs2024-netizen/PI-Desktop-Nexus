@@ -33,6 +33,7 @@ import type {
   SessionDetail,
   SessionSummary,
   ThinkingLevel,
+  SteerOutcome,
   UiMessage,
 } from "@pi-desktop/shared";
 import {
@@ -2355,10 +2356,12 @@ export const useAppStore = create<AppState>((set, get) => ({
     const message = optimisticUserMessage(crypto.randomUUID(), content, draft?.fileReferences ?? []);
     message.steering = true;
     insertOptimisticUserMessage(sessionId, message);
+    let admittedOutcome: SteerOutcome | undefined;
     try {
       const response = await api.steer({ sessionId, expectedTurnId, content, messageId: message.id, queuedPromptId: durableQueuedPrompt, attachments: draft ? promptAttachmentsFromDraft(draft.fileReferences) : [] });
       const outcome = "state" in response ? response : { state: "accepted" as const, sessionId, expectedTurnId: response.turnId };
-      if ((outcome.state === "accepted" || outcome.state === "queued") && durableQueuedPrompt) {
+      if (outcome.state === "accepted" || outcome.state === "queued") admittedOutcome = outcome;
+      if (admittedOutcome && durableQueuedPrompt) {
         queuedDrafts.delete(durableQueuedPrompt);
         try {
           await api.removeQueuedPrompt(durableQueuedPrompt);
@@ -2376,6 +2379,11 @@ export const useAppStore = create<AppState>((set, get) => ({
       return outcome;
     }
     catch (error) {
+      // Admission belongs to the engine. Later queue cleanup cannot retract it.
+      if (admittedOutcome) {
+        get().showToast(error instanceof Error ? error.message : String(error), { variant: "error" });
+        return admittedOutcome;
+      }
       if (durableQueuedPrompt) {
         hiddenQueueEntries.delete(durableQueuedPrompt);
         await get().refreshQueuedPrompts(sessionId);

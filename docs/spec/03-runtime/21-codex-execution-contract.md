@@ -24,8 +24,10 @@ Cargo. This is development reuse, not verification of a fresh or packaged build.
 
 EngineSession binds engine version, provider/model, workspace and native handle,
 with truthful capabilities. Temporary chats use their session scratch root.
-EngineTurn contains a durable host turn ID, fresh run ID, native turn ID,
-original accepted timestamp, phase, terminal timestamp and one outcome.
+EngineTurn contains a durable host turn ID, fresh run ID, current native turn ID,
+retired nativeSegments, original accepted timestamp, phase, terminal timestamp
+and one outcome. Explicit guarded segment advancement retires the prior native
+ID and returns to waiting-model without changing the host run or start time.
 EngineItem holds assistant text, supplied reasoning, tools, approvals or
 artifacts. No hidden reasoning is synthesized. The selected thinking level is
 forwarded per turn using endpoint metadata; unavailable levels fail clearly
@@ -76,8 +78,16 @@ not capabilities claimed by this phase.
 
 ## Acceptance boundaries
 
-Text steering targets the current native turn with expectedTurnId, preserves
-the original host turn and records an accepted instruction once. Stale/completed
+Text steering preserves the original host turn and records an accepted
+instruction once. During model text/reasoning generation (including a quiet
+model wait), interrupt the current native turn, wait for its terminal event,
+and start a corrected native segment on the same thread with the original
+reasoning effort. Preserve partial output and retire the old native ID.
+During an active tool or approval, use native turn/steer with expectedTurnId;
+its input is consumed at that work boundary, not by replaying tools.
+A delayed initial start acknowledgement cannot rebind a retired native ID.
+Failure after an observed native terminal closes the host turn; uncertain
+interruption does not resubmit input. Cancellation prevents corrected restart. Stale/completed
 turns reject without native dispatch. Requests with the same message ID are
 deduplicated for the active run; uncertain failures are not replayed and never
 reported accepted. Native tool work is not restarted.
@@ -88,6 +98,9 @@ currently fail explicitly; send them as a new user turn.
 Electron persists accepted native user-message events through its durable outbox
 using the original host turn and message ID. Normal prompt rows are not appended
 again. A host outage or app restart must retain the accepted instruction once.
+An engine-admitted instruction remains visible even if later renderer queue
+cleanup fails; only a rejected submission retracts its own optimistic row.
+Chat switching and reload hydration must keep the instruction exactly once.
 
 Agent mode, new user turns, native file/shell tools and configured image input
 are supported. Plan/Goal, legacy regenerate, plugin tools, manual

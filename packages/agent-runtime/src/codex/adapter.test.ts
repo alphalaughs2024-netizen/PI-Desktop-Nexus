@@ -10,7 +10,7 @@ import type { CodexRpc } from "./transport.js";
 const directories: string[] = [];
 const adapters: CodexAdapter[] = [];
 afterEach(async () => { vi.useRealTimers(); await Promise.all(adapters.splice(0).map(a => a.shutdown())); await Promise.all(directories.splice(0).map(p => rm(p, { recursive: true, force: true }))); });
-async function fixture(dataDir?: string, nativeTurns: any[] = []) {
+async function fixture(dataDir?: string, nativeTurns: any[] = [], options: { steeringTimeoutMs?: number } = {}) {
   const dir = dataDir ?? await mkdtemp(join(tmpdir(), "nexus-contract-")); if (!dataDir) directories.push(dir);
   const config: CodexConfig = { sessionId: "s", dataDir: dir, workspace: join(dir, "workspace"), permissionMode: "ask", provider: { id: "p", name: "test", modelId: "m", apiKey: "transient-only", baseUrl: "http://127.0.0.1/v1", supportsReasoning: false, supportedThinkingLevels: [], modelConfig: { source: "generic", name: "m", baseUrl: "", reasoning: false, contextWindow: 32768, maxTokens: 8192, input: ["text", "image"] } } };
   let callbacks: any;
@@ -22,16 +22,90 @@ async function fixture(dataDir?: string, nativeTurns: any[] = []) {
     if (method === "thread/start" || method === "thread/resume") return { thread: { id: "native-s" } } as any;
     if (method === "thread/read") return { thread: { id: "native-s", turns: nativeTurns } } as any;
     if (method === "turn/start") { const id = "native-" + ++turnCounter; callbacks.event({ method: "turn/started", params: { threadId: "native-s", turn: { id } } }); return { turn: { id } } as any; }
+    if (method === "turn/steer") return { turnId: adapter.snapshot().turn?.nativeTurnId } as any;
+    if (method === "turn/interrupt") { callbacks.event({ method: "turn/completed", params: { threadId: "native-s", turn: { id: adapter.snapshot().turn?.nativeTurnId, status: "interrupted" } } }); }
     return {} as any;
   }, notify: () => undefined, reply: (id, result) => { replies.push({ id, result }); }, reject: (id, message) => { replies.push({ id, result: { error: message } }); }, close: async () => undefined };
   const events: AgentEventEnvelope[] = [];
-  const adapter = new CodexAdapter(config, e => events.push(e), { launch: async () => ({ command: "fixture", args: [], cwd: config.workspace, env: {} }), transport: (_, cb) => { callbacks = cb; return rpc; } });
+  const adapter = new CodexAdapter(config, e => events.push(e), { ...options, launch: async () => ({ command: "fixture", args: [], cwd: config.workspace, env: {} }), transport: (_, cb) => { callbacks = cb; return rpc; } });
   adapters.push(adapter);
   const event = (method: string, params: any) => callbacks.event({ method, params: { threadId: "native-s", turnId: adapter.snapshot().turn?.nativeTurnId, ...params } });
   return { adapter, dir, config, calls, replies, events, rpc, event, request: (method: string, params: any) => callbacks.request({ id: "approval-1", method, params: { threadId: "native-s", turnId: adapter.snapshot().turn?.nativeTurnId, ...params } }), exit: () => callbacks.exit() };
 }
 const settle = async () => { await new Promise(resolve => setTimeout(resolve, 30)); };
+const runningTool = (f: Awaited<ReturnType<typeof fixture>>) => f.event("item/started", { item: { id: "running-command", type: "commandExecution", command: "long-running fixture" } });
 describe("Codex adapter lifecycle", () => {
+  it("interrupts active text generation and starts a corrected native segment in the original host turn", async () => {
+    const f = await fixture(); await f.adapter.start({ turnId: "host", text: "Write a long answer" }); await settle();
+    f.event("item/agentMessage/delta", { itemId: "old-text", delta: "partial old answer" });
+    const before = f.adapter.snapshot().turn!;
+    expect((await f.adapter.steer({ expectedTurnId: "host", text: "Reply EMERALD now", messageId: "correction" })).state).toBe("accepted");
+    const after = f.adapter.snapshot();
+    expect(after.turn).toMatchObject({ id: "host", runId: before.runId, startedAt: before.startedAt, nativeTurnId: "native-2" });
+    expect(after.turn?.nativeSegments).toMatchObject([{ nativeTurnId: "native-1", outcome: "interrupted" }]);
+    expect(after.items[0]).toMatchObject({ text: "partial old answer", status: "interrupted" });
+    expect(f.calls.filter(c => c.method === "turn/interrupt")).toHaveLength(1);
+    expect(f.calls.filter(c => c.method === "turn/steer")).toHaveLength(0);
+    expect(f.calls.filter(c => c.method === "turn/start")[1].params).toMatchObject({ clientUserMessageId: "correction", input: [{ type: "text", text: "Reply EMERALD now" }] });
+    f.event("item/agentMessage/delta", { turnId: "native-1", itemId: "old-text", delta: "late old content" });
+    expect(f.adapter.snapshot().items[0].text).toBe("partial old answer");
+    f.event("item/completed", { item: { id: "new-text", type: "agentMessage", text: "EMERALD" } });
+    f.event("turn/completed", { turn: { id: "native-2", status: "completed" } }); await settle();
+    expect(f.events.filter(e => e.event.type === "agent_end")).toHaveLength(1);
+    expect(f.events.filter(e => e.event.type === "message_end" && e.event.message.id === "correction")).toHaveLength(1);
+  });
+  it("ignores a delayed initial start acknowledgement after advancing the native segment", async () => {
+    const f = await fixture(); const original = f.rpc.request;
+    let release!: () => void; let first = true;
+    vi.spyOn(f.rpc, "request").mockImplementation(async (method, params) => {
+      if (method === "turn/start" && first) {
+        first = false; const result = await original(method, params);
+        await new Promise<void>(resolve => { release = resolve; }); return result;
+      }
+      if (method === "turn/start") { release(); await settle(); }
+      return original(method, params);
+    });
+    await f.adapter.start({ turnId: "host", text: "initial" }); await settle();
+    expect((await f.adapter.steer({ expectedTurnId: "host", text: "correction" })).state).toBe("accepted");
+    expect(f.adapter.snapshot().turn?.nativeTurnId).toBe("native-2");
+  });
+  it("fails the host once when interruption observes native failure", async () => {
+    const f = await fixture(); await f.adapter.start({ turnId: "host", text: "initial" }); await settle();
+    const original = f.rpc.request;
+    vi.spyOn(f.rpc, "request").mockImplementation(async (method, params) => {
+      if (method === "turn/interrupt") { f.event("turn/completed", { turn: { id: "native-1", status: "failed" } }); return {}; }
+      return original(method, params);
+    });
+    expect((await f.adapter.steer({ expectedTurnId: "host", text: "correction" })).state).toBe("failed"); await settle();
+    expect(f.adapter.snapshot().turn?.outcome).toBe("failed");
+    expect(f.events.filter(e => e.event.type === "error")).toHaveLength(1);
+    expect(f.calls.filter(c => c.method === "turn/start")).toHaveLength(1);
+  });
+  it("fails safely if the interrupt terminal arrives but its acknowledgement is lost", async () => {
+    const f = await fixture(); await f.adapter.start({ turnId: "host", text: "initial" }); await settle();
+    const original = f.rpc.request;
+    vi.spyOn(f.rpc, "request").mockImplementation(async (method, params) => {
+      if (method === "turn/interrupt") { await original(method, params); throw new Error("lost ack"); }
+      return original(method, params);
+    });
+    expect((await f.adapter.steer({ expectedTurnId: "host", text: "correction" })).state).toBe("failed"); await settle();
+    expect(f.adapter.getStatus().isRunning).toBe(false);
+    expect(f.calls.filter(c => c.method === "turn/start")).toHaveLength(1);
+  });
+  it("retains reasoning effort and accepts a correction even when its native completion races acknowledgement", async () => {
+    const f = await fixture(); f.config.provider.supportsReasoning = true; f.config.provider.supportedThinkingLevels = ["max"];
+    await f.adapter.start({ turnId: "host", text: "initial", thinkingLevel: "max" }); await settle();
+    const original = f.rpc.request;
+    vi.spyOn(f.rpc, "request").mockImplementation(async (method, params) => {
+      const result = await original(method, params);
+      if (method === "turn/start") f.event("turn/completed", { turn: { id: "native-2", status: "completed" } });
+      return result;
+    });
+    expect((await f.adapter.steer({ expectedTurnId: "host", text: "correction", messageId: "raced" })).state).toBe("accepted"); await settle();
+    expect(f.calls.filter(c => c.method === "turn/start").map(c => c.params.effort)).toEqual(["max", "max"]);
+    expect(f.events.filter(e => e.event.type === "agent_end")).toHaveLength(1);
+    expect(f.events.filter(e => e.event.type === "message_end" && e.event.message.id === "raced")).toHaveLength(1);
+  });
   it("does not stop a newer run when an older periodic save fails late", async () => {
     const f = await fixture(); await f.adapter.start({ turnId: "old-host", text: "initial" }); await settle();
     await new Promise(resolve => setTimeout(resolve, 170));
@@ -74,9 +148,41 @@ describe("Codex adapter lifecycle", () => {
       expect(JSON.stringify(errors)).not.toContain("private filesystem detail");
     } finally { save.mockRestore(); }
   });
-
+  it("serializes separate corrections without duplicate dispatch or resetting the user turn", async () => {
+    const f = await fixture(); await f.adapter.start({ turnId: "host", text: "initial" }); await settle();
+    const first = f.adapter.steer({ expectedTurnId: "host", text: "first", messageId: "one" });
+    const second = f.adapter.steer({ expectedTurnId: "host", text: "second", messageId: "two" });
+    expect((await first).state).toBe("accepted"); expect((await second).state).toBe("accepted");
+    expect(f.calls.filter(c => c.method === "turn/start").map(c => c.params.input[0].text)).toEqual(["initial", "first", "second"]);
+    expect(f.adapter.snapshot().turn?.nativeSegments).toHaveLength(2);
+    expect(f.events.some(e => e.event.type === "agent_end")).toBe(false);
+  });
+  it("does not resubmit an instruction when native interruption is uncertain", async () => {
+    const f = await fixture(); await f.adapter.start({ turnId: "host", text: "initial" }); await settle();
+    const original = f.rpc.request;
+    vi.spyOn(f.rpc, "request").mockImplementation((method, params) => method === "turn/interrupt" ? Promise.reject(new Error("lost interrupt acknowledgement")) : original(method, params));
+    expect((await f.adapter.steer({ expectedTurnId: "host", text: "correction", messageId: "uncertain" })).state).toBe("failed");
+    expect(f.calls.filter(c => c.method === "turn/start")).toHaveLength(1);
+    expect(f.adapter.getStatus().isRunning).toBe(true);
+  });
+  it("requires the native interruption terminal before sending the correction", async () => {
+    const f = await fixture(undefined, [], { steeringTimeoutMs: 20 }); await f.adapter.start({ turnId: "host", text: "initial" }); await settle();
+    const original = f.rpc.request;
+    vi.spyOn(f.rpc, "request").mockImplementation((method, params) => method === "turn/interrupt" ? Promise.resolve({}) : original(method, params));
+    expect((await f.adapter.steer({ expectedTurnId: "host", text: "correction" })).state).toBe("failed");
+    expect(f.calls.filter(c => c.method === "turn/start")).toHaveLength(1);
+  });
+  it("cancels during steering interruption without starting another native segment", async () => {
+    const f = await fixture(); await f.adapter.start({ turnId: "host", text: "initial" }); await settle();
+    const original = f.rpc.request;
+    vi.spyOn(f.rpc, "request").mockImplementation((method, params) => method === "turn/interrupt" ? Promise.resolve({}) : original(method, params));
+    const pending = f.adapter.steer({ expectedTurnId: "host", text: "correction" }); await settle();
+    await f.adapter.interrupt(); expect((await pending).state).toBe("failed");
+    expect(f.calls.filter(c => c.method === "turn/start")).toHaveLength(1);
+    expect(f.adapter.snapshot().turn?.outcome).toBe("interrupted");
+  });
   it("steers the guarded native turn without restarting execution and persists one user message", async () => {
-    const f = await fixture(); await f.adapter.start({ turnId: "host-turn", text: "initial" }); await settle();
+    const f = await fixture(); await f.adapter.start({ turnId: "host-turn", text: "initial" }); await settle(); runningTool(f);
     expect(f.adapter.steeringContext("host-turn")).toMatchObject({ projectPath: f.config.workspace, supportsVision: false });
     const input = { expectedTurnId: "host-turn", text: "Use emerald instead", messageId: "steer-message" };
     const first = f.adapter.steer(input); const duplicate = f.adapter.steer(input);
@@ -88,7 +194,7 @@ describe("Codex adapter lifecycle", () => {
     expect(f.adapter.getStatus().isRunning).toBe(true);
   });
   it("flushes an accepted steering instruction before a racing terminal event", async () => {
-    const f = await fixture(); await f.adapter.start({ turnId: "current", text: "initial" }); await settle();
+    const f = await fixture(); await f.adapter.start({ turnId: "current", text: "initial" }); await settle(); runningTool(f);
     let acknowledge!: (value: any) => void;
     const original = f.rpc.request;
     vi.spyOn(f.rpc, "request").mockImplementation((method, params) => method === "turn/steer"
@@ -106,7 +212,7 @@ describe("Codex adapter lifecycle", () => {
   });
 
   it("cancels while completion waits for an uncertain steering acknowledgement", async () => {
-    const f = await fixture(); await f.adapter.start({ turnId: "current", text: "initial" }); await settle();
+    const f = await fixture(); await f.adapter.start({ turnId: "current", text: "initial" }); await settle(); runningTool(f);
     let rejectSteer!: (error: Error) => void;
     const original = f.rpc.request;
     vi.spyOn(f.rpc, "request").mockImplementation((method, params) => method === "turn/steer"
@@ -121,7 +227,7 @@ describe("Codex adapter lifecycle", () => {
   });
 
   it("does not falsely accept a late steering acknowledgement after interruption", async () => {
-    const f = await fixture(); await f.adapter.start({ turnId: "current", text: "initial" }); await settle();
+    const f = await fixture(); await f.adapter.start({ turnId: "current", text: "initial" }); await settle(); runningTool(f);
     let acknowledge!: (value: any) => void;
     const original = f.rpc.request;
     vi.spyOn(f.rpc, "request").mockImplementation((method, params) => method === "turn/steer"
@@ -142,7 +248,7 @@ describe("Codex adapter lifecycle", () => {
     expect(f.calls.some(c => c.method === "turn/steer")).toBe(false);
   });
   it("retains uncertain steering failure without replay or a falsely accepted message", async () => {
-    const f = await fixture(); await f.adapter.start({ turnId: "current", text: "initial" }); await settle();
+    const f = await fixture(); await f.adapter.start({ turnId: "current", text: "initial" }); await settle(); runningTool(f);
     const original = f.rpc.request; const request = vi.spyOn(f.rpc, "request").mockImplementation(async (method, params) => {
       if (method === "turn/steer") throw new Error("connection lost after dispatch"); return original(method, params);
     });

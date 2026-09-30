@@ -51,15 +51,17 @@ recovery/config/argv, unsupported capabilities and version mismatch. Steering
 checks cover native turn guards, duplicate IDs, uncertain acknowledgements,
 completion ordering and cancellation while completion drains steering.
 
-56 targeted runtime checks in eight files, 12 permission checks, and eight
-desktop outbox/steering-persistence checks passed (76 total). Shared/runtime builds and desktop typecheck passed. Local E2E
+The earlier checkpoint passed 76 targeted checks. After the response-sampling
+steering correction, 67 runtime checks in seven Codex files and 59 desktop
+checks across steering, transcript hydration, composer queueing, permissions
+and persistence passed (126 total). Shared/runtime builds and desktop typecheck passed. Local E2E
 suites were not run. Theme CSS, composer geometry, icons and layout were not edited. Permission
 cards preserve their presentation and disable only unsupported session grants
 for native Codex requests.
 
 ## Manual acceptance
 
-Use the opened fresh-profile Nexus window or launch from the request checkout:
+After freeing disk space or restarting, launch from the request checkout:
 
 ~~~powershell
 $env:PI_DESKTOP_HOST_BIN = "C:\jcode projects\PI-Desktop-Nexus\target\debug\pi-desktop-host-core.exe"
@@ -102,7 +104,7 @@ Deterministic checks also verify an acknowledgement racing completion is
 persisted before the terminal signal and that cancellation closes an unresolved
 request without false completion. Steering currently accepts text only. The
 running app must be quit normally and relaunched to load the updated sidecar;
-the user subsequently verified the composer path with the earlier correction.
+the later user text-generation test failed: that command-boundary trial did not prove interruption during answer sampling.
 
 ## Composer-path steering and persistence
 
@@ -142,3 +144,44 @@ browser/viewports/preview and complete coding-service parity. Plan/Goal,
 regenerate and legacy plugin tools are deliberately not claimed as
 working in this Phase 2 adapter. Native reasoning is shown only if emitted.
 Keep the default runtime unchanged until user acceptance.
+
+## Actual response-sampling steering correction
+
+The user rejected steering because the original answer kept generating and the
+correction appeared only afterward. Pinned Codex 0.157.1 checks queued input
+after the sampling request finishes (core/src/session/turn.rs). Paseo's local
+adapter validates native boundary-steer acknowledgements; that path cannot
+establish immediate sampling interruption. Nexus now interrupts sampling,
+observes the native terminal, and starts a corrected segment on the same
+thread under the original Nexus turn. Active native tools/approvals retain
+boundary steering. This amends the earlier one-native-turn expectation.
+
+| Check | Result | Private evidence |
+|---|---|---|
+| Real native stream with deterministic local Responses fixture | Old connection closed 33 ms after steering; old partial answer preserved; corrected EMERALD; one instruction, one host terminal, same host run/start time; recovery emitted no replay events | %USERPROFILE%/.nexus-codex-phase2/stream-segments-check/report.json |
+| Free OpenRouter Space Bunny during actual answer text | Correction accepted in 131 ms; 132 characters of partial original text; no old deltas after acceptance; EMERALD; no tools; one host terminal | %USERPROFILE%/.nexus-codex-phase2/cloud-stream-report.json |
+| Isolated live Electron renderer | Accepted instruction visible once live, after chat switch and after renderer reload; partial original and final EMERALD persisted; main app target explicitly selected after bootstrap | %USERPROFILE%/.nexus-codex-phase2/gui-steering-report.json |
+
+The cloud pricing was rechecked as zero before that trial. These are single
+samples, not engine/provider speed comparisons. The first GUI attempts targeted
+the early hidden plugin picker or raced app bootstrap; those harness failures
+were diagnosed and are not counted as passes. The final check waited for the
+main window and completed bootstrap. Screenshots/history remain private.
+
+Read-only review of the user's test profile found database-or-disk-full failures
+and zero-byte temporary engine snapshots. The latest wait/stop steering rows
+were already indexed and canonical; not every disappearing row was a missed
+append. The renderer had an additional ownership bug: later queue cleanup could
+retract an admitted optimistic row. That error no longer changes admission.
+Host persistence and engine recovery remain separate owners; storage errors
+now describe unconfirmed saving/reload recovery instead of promising retention.
+Injected ENOSPC/EDQUOT/write/rename tests preserve the prior snapshot, remove
+only the failed operation's own temporary file and allow later queued saves.
+No existing user caches, profile data or trial evidence were deleted.
+
+Manual acceptance remains pending. Ask for a long answer, steer after actual
+text starts, confirm the old answer stops, then switch away/back and reload.
+Repeat steering during a long command and cancel during generation. Do not
+merge or advance to Phase 3 until the user accepts. Whole-response timer and
+timeline rendering remain Phase 3 even though host turn/start identity is
+stable here. No local E2E suite or packaged build was run for this correction.

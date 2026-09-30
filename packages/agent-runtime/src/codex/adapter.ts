@@ -9,6 +9,7 @@ import { needsOpenRouterBridge, startOpenRouterBridge, type ProviderBridge } fro
 import { AppServerTransport, type CodexRpc, type NativeEvent, type NativeRequest } from "./transport.js";
 export const CODEX_APPROVAL_TIMEOUT_MS = 120_000;
 type Dependencies = {
+  steeringTimeoutMs?: number;
   launch?: (config: CodexConfig, directory: string) => Promise<CodexLaunch>;
   transport?: (launch: CodexLaunch, callbacks: { event: (event: NativeEvent) => void; request: (request: NativeRequest) => void; exit: () => void }) => CodexRpc;
 };
@@ -32,6 +33,9 @@ export class CodexAdapter implements EngineAdapter {
   private checkpointTimer?: NodeJS.Timeout;
   private approvals = new Map<string, Approval>();
   private steeringMessages = new Map<string, Promise<SteerOutcome>>();
+  private steeringQueue: Promise<void> = Promise.resolve();
+  private turnEffort?: string;
+  private steeringTransition?: { nativeTurnId: string; resolve: (status: string) => void; reject: (error: Error) => void };
   private rawCalls = new Map<string, { name: string; args: unknown }>();
   private restored = false;
   private reconstructing = false;
@@ -168,7 +172,7 @@ export class CodexAdapter implements EngineAdapter {
     const previous = this.snapshot().turn?.nativeTurnId;
     if (previous) this.retiredTurns.add(previous);
     const turn = this.contract.accept(input.turnId, acceptedAt);
-    this.sequence = 0; this.cancelled = false; this.ending = undefined; this.turnGeneration = turn.runId; this.rawCalls.clear(); this.steeringMessages.clear();
+    this.sequence = 0; this.cancelled = false; this.ending = undefined; this.turnGeneration = turn.runId; this.rawCalls.clear(); this.steeringMessages.clear(); this.steeringQueue = Promise.resolve();
     await this.checkpoint();
     this.event({ type: "agent_start" }); this.event({ type: "turn_start" }); this.status();
     this.starting = this.begin(input).finally(() => { this.starting = undefined; });
@@ -180,6 +184,7 @@ export class CodexAdapter implements EngineAdapter {
     await this.connect();
     if (this.cancelled || run !== this.turnGeneration) return;
     const effort = nativeEffort(this.config.provider, input.thinkingLevel);
+    this.turnEffort = effort;
     const images = input.images ?? [];
     if (images.length && !this.snapshot().session.capabilities.imageInput) throw new Error("CODEX_IMAGE_UNSUPPORTED: selected model is not configured for image input");
     this.apply({ type: "phase", phase: "waiting-model" }); this.status();
@@ -189,7 +194,7 @@ export class CodexAdapter implements EngineAdapter {
       input: [{ type: "text", text: input.text }, ...images.map(image => ({ type: "image", url: "data:" + image.mimeType + ";base64," + image.data }))],
     });
     if (run !== this.turnGeneration || this.snapshot().turn?.outcome) return;
-    if (result.turn?.id && !this.snapshot().turn?.nativeTurnId) this.apply({ type: "phase", phase: "waiting-model", nativeTurnId: result.turn.id });
+    if (result.turn?.id && !this.retiredTurns.has(result.turn.id) && !this.snapshot().turn?.nativeTurnId) this.apply({ type: "phase", phase: "waiting-model", nativeTurnId: result.turn.id });
     if (this.cancelled) await this.interrupt();
   }
   steeringContext(expectedTurnId: string): { projectPath: string; supportsVision: boolean } {
@@ -205,8 +210,13 @@ export class CodexAdapter implements EngineAdapter {
     const messageId = input.messageId ?? randomUUID();
     const key = input.expectedTurnId + ":" + messageId;
     const existing = this.steeringMessages.get(key); if (existing) return existing;
+    const state = this.snapshot();
+    if (this.disposed) return Promise.resolve({ state: "unavailable", reason: "missing_session" });
+    if (state.turn?.id !== input.expectedTurnId) return Promise.resolve({ state: "rejected", reason: "stale_turn" });
+    if (this.cancelled || this.ending || state.turn.outcome || !this.rpc) return Promise.resolve({ state: "rejected", reason: "not_running" });
     // Register before dispatch so terminal events can drain every admitted request.
-    const pending = Promise.resolve().then(() => this.sendSteer(input, messageId));
+    const pending = this.steeringQueue.then(() => this.sendSteer(input, messageId));
+    this.steeringQueue = pending.then(() => undefined, () => undefined);
     this.steeringMessages.set(key, pending);
     return pending;
   }
@@ -217,8 +227,12 @@ export class CodexAdapter implements EngineAdapter {
     const createdAt = new Date().toISOString();
     this.event({ type: "lifecycle", lifecycle: { id: randomUUID(), kind: "steering_requested", ts: Date.now(), turnId: turn.id } });
     try {
-      await this.rpc!.request("turn/steer", { threadId: this.snapshot().session.nativeHandle, expectedTurnId: turn.nativeTurnId,
-        clientUserMessageId: messageId, input: [{ type: "text", text: input.text }] });
+      const runningTool = this.snapshot().items.some(item => ["tool", "approval"].includes(item.kind) && item.status === "running");
+      if (runningTool) {
+        const result = await this.rpc!.request("turn/steer", { threadId: this.snapshot().session.nativeHandle, expectedTurnId: turn.nativeTurnId,
+          clientUserMessageId: messageId, input: [{ type: "text", text: input.text }] });
+        if (result.turnId !== turn.nativeTurnId) throw new Error("CODEX_STEERING_ACK_INVALID");
+      } else await this.steerGeneration(input.text, messageId);
       if (this.snapshot().turn?.runId !== turn.runId) return { state: "rejected", reason: "stale_turn" };
       if (this.cancelled || this.snapshot().turn?.outcome) return { state: "failed", reason: "The turn ended before steering was recorded. No steering request was replayed." };
       const message: UiMessage = { id: messageId, role: "user", content: input.text, createdAt, status: "complete", steering: true };
@@ -227,7 +241,52 @@ export class CodexAdapter implements EngineAdapter {
       return { state: "accepted", sessionId: this.config.sessionId, expectedTurnId: turn.id };
     } catch (error: any) {
       this.event({ type: "lifecycle", lifecycle: { id: randomUUID(), kind: "steering_failed", ts: Date.now(), turnId: turn.id, reason: "Native steering failed; no request replayed." } });
-      return { state: "failed", reason: "Native steering was not confirmed. The original turn may still be running; no steering request was replayed." };
+      return { state: "failed", reason: this.getStatus().isRunning && !this.ending
+        ? "Native steering was not confirmed. The current response may still be running; no request was replayed."
+        : "Native steering was not confirmed. This response has stopped; no request was replayed." };
+    }
+  }
+  /** Interrupt sampling only; native tools retain boundary steering above. */
+  private async steerGeneration(text: string, messageId: string): Promise<void> {
+    const turn = this.snapshot().turn!;
+    const rpc = this.rpc!;
+    let timer: NodeJS.Timeout | undefined;
+    let transition!: NonNullable<CodexAdapter["steeringTransition"]>;
+    let ended = false;
+    let terminalStatus: string | undefined;
+    const terminal = new Promise<string>((resolve, reject) => {
+      transition = { nativeTurnId: turn.nativeTurnId!, resolve: status => { terminalStatus = status; resolve(status); }, reject };
+      timer = setTimeout(() => reject(new Error("CODEX_STEERING_INTERRUPT_TIMEOUT")), this.dependencies.steeringTimeoutMs ?? 30_000);
+    });
+    // A failed interrupt acknowledgement must not leave an unhandled waiter.
+    void terminal.catch(() => undefined);
+    this.steeringTransition = transition;
+    try {
+      await rpc.request("turn/interrupt", { threadId: this.snapshot().session.nativeHandle, turnId: turn.nativeTurnId });
+      const status = await terminal;
+      ended = true;
+      if (!["interrupted", "completed"].includes(status)) throw new Error("CODEX_STEERING_NATIVE_TURN_FAILED");
+      if (this.cancelled || this.disposed || this.snapshot().turn?.runId !== turn.runId) throw new Error("CODEX_STEERING_CANCELLED");
+      // Preserve partial output and any tool that raced interruption. Never replay it.
+      for (const item of this.snapshot().items) if (item.status === "running") this.update({ ...item, status: "interrupted", completedAt: Date.now() });
+      this.retiredTurns.add(turn.nativeTurnId!);
+      if (!this.apply({ type: "native-segment", expectedNativeTurnId: turn.nativeTurnId, outcome: status })) throw new Error("CODEX_STEERING_STALE_SEGMENT");
+      await this.checkpoint();
+      this.steeringTransition = undefined;
+      this.status();
+      const result = await rpc.request("turn/start", { threadId: this.snapshot().session.nativeHandle,
+        ...(this.turnEffort !== undefined ? { effort: this.turnEffort } : {}),
+        clientUserMessageId: messageId, input: [{ type: "text", text }] });
+      if (this.cancelled || this.disposed || this.snapshot().turn?.runId !== turn.runId) throw new Error("CODEX_STEERING_CANCELLED");
+      if (!result.turn?.id) throw new Error("CODEX_STEERING_START_ACK_INVALID");
+      if (!this.snapshot().turn?.nativeTurnId) this.apply({ type: "phase", phase: "waiting-model", nativeTurnId: result.turn.id });
+      if (this.snapshot().turn?.nativeTurnId !== result.turn.id) throw new Error("CODEX_STEERING_START_ACK_INVALID");
+    } catch (error: any) {
+      if ((ended || terminalStatus) && !this.cancelled) void this.end("failed", "Steering could not start the corrected response; no instruction or tool was replayed.");
+      throw error;
+    } finally {
+      clearTimeout(timer);
+      if (this.steeringTransition === transition) this.steeringTransition = undefined;
     }
   }
   private belongs(params: any): boolean {
@@ -239,7 +298,11 @@ export class CodexAdapter implements EngineAdapter {
   private nativeEvent({ method, params: p }: NativeEvent): void {
     if (!this.belongs(p)) return;
     if (method === "turn/started") { this.apply({ type: "phase", phase: "waiting-model", nativeTurnId: p.turn.id }); this.status(); }
-    else if (method === "turn/completed") void this.end(p.turn.status === "completed" ? "completed" : p.turn.status === "interrupted" ? "interrupted" : "failed", p.turn.error?.message);
+    else if (method === "turn/completed") {
+      const transition = this.steeringTransition;
+      if (transition && transition.nativeTurnId === p.turn.id) transition.resolve(p.turn.status);
+      else void this.end(p.turn.status === "completed" ? "completed" : p.turn.status === "interrupted" ? "interrupted" : "failed", p.turn.error?.message);
+    }
     else if (method === "error") {
       if (p.willRetry) { this.event({ type: "lifecycle", lifecycle: { id: randomUUID(), kind: "retry_started", ts: Date.now(), turnId: this.snapshot().turn?.id, reason: p.error?.message } }); }
       else void this.end("failed", p.error?.message ?? "CODEX_PROVIDER_FAILED");
@@ -378,6 +441,7 @@ export class CodexAdapter implements EngineAdapter {
     await this.closeProcess();
   }
   private async closeProcess(): Promise<void> {
+    this.steeringTransition?.reject(new Error("CODEX_STEERING_TRANSPORT_CLOSED"));
     ++this.processGeneration; const rpc = this.rpc; const bridge = this.providerBridge; this.rpc = undefined; this.providerBridge = undefined;
     try { if (rpc) await rpc.close(); } finally { await bridge?.close(); }
   }

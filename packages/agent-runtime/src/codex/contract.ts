@@ -25,6 +25,11 @@ export class ExecutionContract {
       if (event.nativeTurnId && turn.nativeTurnId && event.nativeTurnId !== turn.nativeTurnId) return false;
       turn.phase = event.phase;
       if (event.nativeTurnId) turn.nativeTurnId = event.nativeTurnId;
+    } else if (event.type === "native-segment") {
+      if (turn.nativeTurnId !== event.expectedNativeTurnId) return false;
+      (turn.nativeSegments ??= []).push({ nativeTurnId: event.expectedNativeTurnId, outcome: event.outcome, completedAt: event.ts });
+      turn.nativeTurnId = undefined;
+      turn.phase = "waiting-model";
     } else if (event.type === "item") {
       const index = this.state.items.findIndex(item => item.id === event.item.id);
       const old = this.state.items[index];

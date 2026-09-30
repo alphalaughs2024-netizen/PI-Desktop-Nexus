@@ -34,6 +34,8 @@ export type EngineTurn = {
   id: string;
   runId: string;
   nativeTurnId?: string;
+  /** Earlier native segments within this same host run; start time never resets. */
+  nativeSegments?: Array<{ nativeTurnId: string; outcome: "completed" | "interrupted"; completedAt: number }>;
   startedAt: number;
   completedAt?: number;
   outcome?: EngineOutcome;
@@ -55,6 +57,7 @@ export type EngineEvent = {
   ts: number;
 } & (
   | { type: "phase"; phase: EngineTurn["phase"]; nativeTurnId?: string }
+  | { type: "native-segment"; expectedNativeTurnId: string; outcome: "completed" | "interrupted" }
   | { type: "item"; item: EngineItem }
   | { type: "terminal"; outcome: EngineOutcome; error?: string }
 );
