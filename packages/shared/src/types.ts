@@ -834,6 +834,10 @@ export type AgentEvent =
       result: unknown;
       isError?: boolean;
       toolUsage?: ToolTokenUsage;
+      /** Self-contained metadata for a settled delegation updating its Task row. */
+      toolName?: string;
+      args?: unknown;
+      startedAt?: number;
     }
   | ({ type: "planning_state" } & Omit<PlanningStateEvent, "sessionId">)
   | { type: "tool_permission_request"; request: ToolPermissionRequest }

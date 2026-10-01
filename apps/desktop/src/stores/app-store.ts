@@ -4396,12 +4396,12 @@ export const useAppStore = create<AppState>((set, get) => ({
               typeof event.result === "string"
                 ? event.result
                 : JSON.stringify(event.result, null, 2),
-            createdAt: toolStart?.createdAt ?? completedAt,
+            createdAt: toolStart?.createdAt ?? (event.startedAt !== undefined ? new Date(event.startedAt).toISOString() : completedAt),
             toolCallId: event.toolCallId,
-            ...(toolStart?.toolName
-              ? { toolName: toolStart.toolName }
+            ...(toolStart?.toolName || event.toolName
+              ? { toolName: toolStart?.toolName ?? event.toolName }
               : {}),
-            ...(toolStart ? { toolArgs: toolStart.args } : {}),
+            ...(toolStart ? { toolArgs: toolStart.args } : event.args !== undefined ? { toolArgs: event.args } : {}),
             ...(toolStart?.parentToolCallId
               ? { parentToolCallId: toolStart.parentToolCallId }
               : {}),
@@ -4409,7 +4409,7 @@ export const useAppStore = create<AppState>((set, get) => ({
             toolCompletedAt: completedAt,
             toolDurationMs: toolStart
               ? Math.max(0, envelope.ts - Date.parse(toolStart.createdAt))
-              : 0,
+              : event.startedAt !== undefined ? Math.max(0, envelope.ts - event.startedAt) : 0,
             toolStatus: event.isError ? ("error" as const) : ("success" as const),
             toolResult: event.result,
             ...(event.toolUsage ? { toolUsage: event.toolUsage } : {}),

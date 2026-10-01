@@ -10,7 +10,7 @@ import type { CodexRpc } from "./transport.js";
 const directories: string[] = [];
 const adapters: CodexAdapter[] = [];
 afterEach(async () => { vi.useRealTimers(); await Promise.all(adapters.splice(0).map(a => a.shutdown())); await Promise.all(directories.splice(0).map(p => rm(p, { recursive: true, force: true }))); });
-async function fixture(dataDir?: string, nativeTurns: any[] = [], options: { steeringTimeoutMs?: number } = {}, overrides: Partial<CodexConfig> = {}) {
+async function fixture(dataDir?: string, nativeTurns: any[] = [], options: { steeringTimeoutMs?: number; beforeComplete?: (signal: AbortSignal) => Promise<string | undefined>; stopOwnedWork?: () => Promise<void> } = {}, overrides: Partial<CodexConfig> = {}) {
   const dir = dataDir ?? await mkdtemp(join(tmpdir(), "nexus-contract-")); if (!dataDir) directories.push(dir);
   const config: CodexConfig = { sessionId: "s", dataDir: dir, workspace: join(dir, "workspace"), permissionMode: "ask", provider: { id: "p", name: "test", modelId: "m", apiKey: "transient-only", baseUrl: "http://127.0.0.1/v1", supportsReasoning: false, supportedThinkingLevels: [], modelConfig: { source: "generic", name: "m", baseUrl: "", reasoning: false, contextWindow: 32768, maxTokens: 8192, input: ["text", "image"] } } };
   Object.assign(config, overrides);
@@ -36,6 +36,35 @@ async function fixture(dataDir?: string, nativeTurns: any[] = [], options: { ste
 const settle = async () => { await new Promise(resolve => setTimeout(resolve, 30)); };
 const runningTool = (f: Awaited<ReturnType<typeof fixture>>) => f.event("item/started", { item: { id: "running-command", type: "commandExecution", command: "long-running fixture" } });
 describe("Codex adapter lifecycle", () => {
+  it("integrates child reports in the original host turn before emitting one terminal outcome", async () => {
+    let delivery = 0;
+    const f = await fixture(undefined, [], { beforeComplete: async () => ++delivery === 1 ? "Integrate verified child report" : undefined });
+    await f.adapter.start({ turnId: "host", text: "Delegate" }); await settle();
+    f.event("turn/completed", { turn: { id: "native-1", status: "completed" } }); await settle();
+    expect(f.events.filter(event => event.event.type === "agent_end")).toHaveLength(0);
+    expect(f.calls.filter(call => call.method === "turn/start")).toHaveLength(2);
+    expect(f.adapter.snapshot().turn).toMatchObject({ id: "host", nativeTurnId: "native-2", nativeSegments: [{ nativeTurnId: "native-1", outcome: "completed" }] });
+    f.event("turn/completed", { turn: { id: "native-2", status: "completed" } }); await settle();
+    expect(f.events.filter(event => event.event.type === "agent_end")).toHaveLength(1);
+  });
+  it("cancels while the idle parent waits for children without starting a continuation", async () => {
+    const stop = vi.fn(async () => {});
+    const f = await fixture(undefined, [], { beforeComplete: signal => new Promise(resolve => signal.addEventListener("abort", () => resolve(undefined), { once: true })), stopOwnedWork: stop });
+    await f.adapter.start({ turnId: "host", text: "Delegate" }); await settle();
+    f.event("turn/completed", { turn: { id: "native-1", status: "completed" } }); await settle();
+    await f.adapter.interrupt();
+    expect(f.adapter.snapshot().turn?.outcome).toBe("interrupted");
+    expect(f.calls.filter(call => call.method === "turn/start")).toHaveLength(1);
+    expect(stop).toHaveBeenCalled(); expect(f.events.filter(event => event.event.type === "agent_end")).toHaveLength(0);
+  });
+  it("claims each native Task row once even when matching arguments have different key order", async () => {
+    const f = await fixture(); await f.adapter.start({ turnId: "host", text: "Delegate" }); await settle();
+    f.event("item/started", { item: { id: "task-1", type: "mcpToolCall", tool: "Task", arguments: { task: "Review", agent: "reviewer" } } });
+    f.event("item/started", { item: { id: "task-2", type: "mcpToolCall", tool: "Task", arguments: { agent: "reviewer", task: "Review" } } });
+    const first = f.adapter.claimToolItem("Task", { agent: "reviewer", task: "Review" });
+    expect(f.adapter.claimToolItem("Task", { task: "Review", agent: "reviewer" })).not.toBe(first);
+    expect(() => f.adapter.claimToolItem("Task", { task: "Review", agent: "reviewer" })).toThrow("CODEX_TOOL_ITEM_UNBOUND");
+  });
   it("switches model and provider between turns while resuming the same native history", async () => {
     const first = await fixture(); await first.adapter.start({ turnId: "first", text: "Remember emerald" }); await settle();
     first.event("item/completed", { item: { id: "old-answer", type: "agentMessage", text: "Remembered" } });

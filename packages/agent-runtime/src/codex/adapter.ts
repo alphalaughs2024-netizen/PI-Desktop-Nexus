@@ -5,7 +5,7 @@ import type { AgentEvent, AgentEventEnvelope, AgentStatus, AskToolResolution, St
 import { ExecutionContract } from "./contract.js";
 import { CodexSessionStore, recoveryWriteError } from "./store.js";
 import { nativeEffort, nativePolicy, prepareLaunch, sessionDescriptor, type CodexConfig, type CodexLaunch } from "./config.js";
-import { needsOpenRouterBridge, startOpenRouterBridge, type ProviderBridge } from "./openrouter-bridge.js";
+import { needsOpenRouterBridge, startOpenRouterBridge, startProviderBridge, type ProviderBridge } from "./openrouter-bridge.js";
 import { nexusToolDiagnostics, type NexusToolBridge } from "./nexus-tools.js";
 import { AppServerTransport, type CodexRpc, type NativeEvent, type NativeRequest } from "./transport.js";
 export const CODEX_APPROVAL_TIMEOUT_MS = 120_000;
@@ -14,6 +14,8 @@ export type CodexDependencies = {
   steeringTimeoutMs?: number;
   launch?: (config: CodexConfig, directory: string) => Promise<CodexLaunch>;
   transport?: (launch: CodexLaunch, callbacks: { event: (event: NativeEvent) => void; request: (request: NativeRequest) => void; exit: () => void }) => CodexRpc;
+  beforeComplete?: (signal: AbortSignal) => Promise<string | undefined>;
+  stopOwnedWork?: () => Promise<void>;
 };
 type Approval = { nativeId: string | number; itemId: string; timer?: NodeJS.Timeout; questions?: any[] };
 const stableId = (id: string) => {
@@ -45,11 +47,32 @@ export class CodexAdapter implements EngineAdapter {
   private retiredTurns = new Set<string>();
   private disposed = false;
   private admission?: { id: string; startedAt: number };
+  private turnLifetime = new AbortController();
+  private claimedTools = new Set<string>();
+  private delegationActivity?: { phase: "waiting-subagents"; since: number; subagentCount: number };
   constructor(readonly config: CodexConfig, private emit: (event: AgentEventEnvelope) => void, private dependencies: CodexDependencies = {}) {
     this.contract = new ExecutionContract(sessionDescriptor(config));
     this.store = new CodexSessionStore(config.dataDir, config.sessionId);
   }
   snapshot(): EngineSnapshot { return this.contract.snapshot(); }
+  activeTurnId(): string | undefined { const turn = this.snapshot().turn; return this.cancelled || this.disposed || turn?.outcome ? undefined : turn?.id; }
+  setDelegationActivity(count: number): void {
+    this.delegationActivity = count ? { phase: "waiting-subagents", since: this.delegationActivity?.since ?? Date.now(), subagentCount: count } : undefined;
+    this.status();
+  }
+  completeTask(itemId: string, result: unknown, failed: boolean): void {
+    const item = this.snapshot().items.find(item => item.id === itemId && item.label === "Task");
+    if (item) this.update({ ...item, result: { details: result }, status: failed ? "failed" : "completed", completedAt: Date.now() });
+  }
+  claimToolItem(name: string, args: unknown): string {
+    const normalized = (value: any): any => Array.isArray(value) ? value.map(normalized) : value && typeof value === "object"
+      ? Object.fromEntries(Object.keys(value).sort().map(key => [key, normalized(value[key])])) : value;
+    const canonical = (value: any): string => JSON.stringify(normalized(value));
+    const item = this.snapshot().items.find(item => item.kind === "tool" && item.label === name && !this.claimedTools.has(item.id) &&
+      canonical(typeof item.args === "string" ? JSON.parse(item.args) : item.args) === canonical(args));
+    if (!item) throw new Error("CODEX_TOOL_ITEM_UNBOUND");
+    this.claimedTools.add(item.id); return item.id;
+  }
   getStatus(): AgentStatus {
     const state = this.snapshot();
     const turn = state.turn;
@@ -57,7 +80,7 @@ export class CodexAdapter implements EngineAdapter {
     return { execution: { session: state.session, turn: state.turn, sequence: state.sequence }, sessionId: this.config.sessionId, modelId: this.config.provider.modelId,
       isRunning: !!turn && !turn.outcome, currentTurnId: turn && !turn.outcome ? turn.id : undefined,
       pendingToolConfirmations: this.approvals.size,
-      activity: turn && !turn.outcome && ["preparing", "recovering", "waiting-model"].includes(turn.phase) ? { phase: turn.phase as "preparing" | "recovering" | "waiting-model", since: turn.startedAt } : undefined,
+      activity: this.delegationActivity ?? (turn && !turn.outcome && ["preparing", "recovering", "waiting-model"].includes(turn.phase) ? { phase: turn.phase as "preparing" | "recovering" | "waiting-model", since: turn.startedAt } : undefined),
     };
   }
   private event(event: AgentEvent): void {
@@ -135,7 +158,13 @@ export class CodexAdapter implements EngineAdapter {
       toolBridge = await this.dependencies.tools?.(() => this.snapshot());
       this.nexusToolBridge = toolBridge;
       checkPreparation();
-      bridge = !this.dependencies.launch && needsOpenRouterBridge(this.config.provider) ? await startOpenRouterBridge(this.config.provider) : undefined;
+      bridge = this.config.restrictedTools
+        ? await startProviderBridge(this.config.provider, {
+          allowedTools: new Set(this.config.restrictedTools.map(name => "mcp__nexus__" + name)), maxRequests: this.config.maxModelRequests,
+          maxOutputTokens: this.config.provider.modelConfig?.maxTokens,
+          onPolicyFailure: code => { void this.end("failed", code).finally(() => this.closeProcess()); },
+        })
+        : !this.dependencies.launch && needsOpenRouterBridge(this.config.provider) ? await startOpenRouterBridge(this.config.provider) : undefined;
       this.providerBridge = bridge;
       checkPreparation();
       const launchConfig = { ...this.config, ...(toolBridge ? { toolBridge } : {}), ...(bridge ? { provider: { ...this.config.provider, baseUrl: bridge.url, apiKey: bridge.token, headers: undefined } } : {}) };
@@ -190,6 +219,7 @@ export class CodexAdapter implements EngineAdapter {
     if (previous) this.retiredTurns.add(previous);
     const turn = this.contract.accept(input.turnId, acceptedAt);
     this.sequence = 0; this.cancelled = false; this.ending = undefined; this.turnGeneration = turn.runId; this.rawCalls.clear(); this.steeringMessages.clear(); this.steeringQueue = Promise.resolve();
+    this.turnLifetime = new AbortController(); this.claimedTools.clear();
     await this.checkpoint();
     this.event({ type: "agent_start" }); this.event({ type: "turn_start" }); this.status();
     this.starting = this.begin(input).finally(() => { this.starting = undefined; });
@@ -344,8 +374,15 @@ export class CodexAdapter implements EngineAdapter {
     const base = old ?? this.newItem(native.id, kind, label);
     const text = kind === "reasoning" ? [...(native.summary ?? []), ...(native.content ?? [])].map((x: any) => typeof x === "string" ? x : x.text ?? "").join("\n") : native.text ?? native.aggregatedOutput ?? base.text;
     const failed = native.status === "failed" || native.status === "declined" || native.error || native.result?.isError === true || (typeof native.exitCode === "number" && native.exitCode !== 0);
+    let toolResult = native.result;
+    if (["Task", "TaskWait", "TaskList", "TaskStop"].includes(label) && toolResult?.content?.[0]?.type === "text") {
+      try {
+        const details = JSON.parse(toolResult.content[0].text);
+        if (details && typeof details === "object" && (details.delegationId || Array.isArray(details.delegations) || Array.isArray(details.stopped))) toolResult = { ...toolResult, details };
+      } catch { /* Failed tool text is not a delegation payload. */ }
+    }
     this.update({ ...base, text, args: native.command ? { command: native.command, cwd: native.cwd } : native.changes ?? native.arguments ?? base.args,
-      result: nexusToolDiagnostics(native.aggregatedOutput ?? native.error ?? native.result ?? native.changes ?? text),
+      result: nexusToolDiagnostics(native.aggregatedOutput ?? native.error ?? toolResult ?? native.changes ?? text),
       status: completed ? failed ? "failed" : "completed" : "running", ...(completed ? { completedAt: Date.now() } : {}) });
   }
   private raw(native: any): void {
@@ -375,7 +412,7 @@ export class CodexAdapter implements EngineAdapter {
     } else if (item.kind === "tool" || item.kind === "approval") {
       if (!old) this.event({ type: "tool_start", toolCallId: item.id, toolName: item.label, args: item.args });
       if (item.status === "running") this.event({ type: "tool_update", toolCallId: item.id, partialResult: item.text });
-      else this.event({ type: "tool_end", toolCallId: item.id, result: item.result ?? item.text, isError: item.status !== "completed" });
+      else this.event({ type: "tool_end", toolCallId: item.id, toolName: item.label, args: item.args, startedAt: item.startedAt, result: item.result ?? item.text, isError: item.status !== "completed" });
     }
   }
   private nativeRequest(request: NativeRequest): void {
@@ -428,11 +465,30 @@ export class CodexAdapter implements EngineAdapter {
       // Keep the host turn owned until accepted steering messages are persisted.
       // Cancellation must remain prompt; transport shutdown rejects pending RPCs.
       if (outcome === "completed") await Promise.allSettled([...this.steeringMessages.values()]);
+      if (outcome === "completed" && !this.cancelled && this.dependencies.beforeComplete) {
+        try {
+          const continuation = await this.dependencies.beforeComplete(this.turnLifetime.signal);
+          if (continuation && !this.cancelled && !this.disposed) {
+            const turn = this.snapshot().turn!;
+            for (const item of this.snapshot().items) if (item.status === "running") this.update({ ...item, status: "failed", completedAt: Date.now() });
+            this.retiredTurns.add(turn.nativeTurnId!);
+            if (!this.apply({ type: "native-segment", expectedNativeTurnId: turn.nativeTurnId, outcome: "completed" })) throw new Error("CODEX_DELEGATION_STALE_SEGMENT");
+            await this.checkpoint();
+            if (this.cancelled || this.disposed) throw new Error("CODEX_DELEGATION_CANCELLED");
+            this.ending = undefined; this.status();
+            const result = await this.rpc!.request("turn/start", { threadId: this.snapshot().session.nativeHandle, model: this.config.provider.modelId,
+              ...(this.turnEffort !== undefined ? { effort: this.turnEffort } : {}), input: [{ type: "text", text: continuation }] });
+            if (!this.snapshot().turn?.outcome && !this.snapshot().turn?.nativeTurnId && result.turn?.id && !this.retiredTurns.has(result.turn.id)) this.apply({ type: "phase", phase: "waiting-model", nativeTurnId: result.turn.id });
+            return;
+          }
+        } catch (cause) { outcome = this.cancelled ? "interrupted" : "failed"; error = cause instanceof Error ? cause.message : "CODEX_DELEGATION_FAILED"; }
+      }
       if (outcome === "completed" && this.cancelled) { outcome = "interrupted"; error = "Turn interrupted by user"; }
+      if (outcome !== "completed") { this.turnLifetime.abort(); await this.dependencies.stopOwnedWork?.(); }
       for (const id of [...this.approvals.keys()]) this.resolveApproval(id, "deny");
       // Emit final partial item states before the terminal signal.
       for (const item of this.snapshot().items) if (item.status === "running" && item.kind !== "approval") this.update({ ...item, status: outcome === "completed" ? "failed" : outcome, completedAt: Date.now() });
-      this.apply({ type: "terminal", outcome, error });
+      if (!this.apply({ type: "terminal", outcome, error })) return;
       let persistenceError = recoveryFailure;
       try { await this.checkpoint(); } catch (cause) { persistenceError = recoveryWriteError(cause); }
       this.status();
@@ -443,6 +499,8 @@ export class CodexAdapter implements EngineAdapter {
   }
   async interrupt(): Promise<void> {
     this.cancelled = true;
+    this.turnLifetime.abort();
+    await this.dependencies.stopOwnedWork?.();
     if (this.admission) { await this.closeProcess(); return; }
     for (const id of [...this.approvals.keys()]) this.resolveApproval(id, "deny");
     const state = this.snapshot();

@@ -3,6 +3,7 @@ import { createServer, type IncomingMessage } from "node:http";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import type { RuntimeProviderConfig } from "../provider-binding.js";
+import { CodexToolPolicy } from "./tool-policy.js";
 
 const MAX_BODY_BYTES = 32 * 1024 * 1024;
 const MAX_FRAME_BYTES = 8 * 1024 * 1024;
@@ -46,11 +47,14 @@ export function bridgeResponse(response: any): any {
 export class PatchStreamMapper {
   private patchIds = new Set<string>();
   private patchIndices = new Set<number>();
+  constructor(private policy?: CodexToolPolicy, private patchCompatibility = true) {}
   frame(frame: string): string | undefined {
     const lines = frame.split(/\r?\n/);
     const data = lines.filter(line => line.startsWith("data:")).map(line => line.slice(5).trimStart()).join("\n");
     if (!data || data === "[DONE]") return frame;
     const event = JSON.parse(data);
+    this.policy?.event(event);
+    if (!this.patchCompatibility) return frame;
     if (event.type === "response.output_item.added" && event.item?.type === "function_call" && event.item.name === "apply_patch") {
       this.patchIds.add(event.item.id); this.patchIndices.add(event.output_index); event.item = nativePatch(event.item);
     } else if (event.type?.startsWith("response.function_call_arguments.") && (this.patchIds.has(event.item_id) || this.patchIndices.has(event.output_index))) {
@@ -61,8 +65,8 @@ export class PatchStreamMapper {
     return lines.filter(line => !line.startsWith("data:") && !line.startsWith("event:")).concat("event: " + event.type, "data: " + JSON.stringify(event)).join("\n");
   }
 }
-async function* mappedStream(body: AsyncIterable<Uint8Array>) {
-  const decoder = new TextDecoder(); const mapper = new PatchStreamMapper(); let buffer = "";
+async function* mappedStream(body: AsyncIterable<Uint8Array>, policy?: CodexToolPolicy, patchCompatibility = true) {
+  const decoder = new TextDecoder(); const mapper = new PatchStreamMapper(policy, patchCompatibility); let buffer = "";
   for await (const chunk of body) {
     buffer += decoder.decode(chunk, { stream: true });
     if (Buffer.byteLength(buffer) > MAX_FRAME_BYTES) throw new Error("CODEX_BRIDGE_FRAME_LIMIT");
@@ -83,7 +87,13 @@ async function bodyJson(request: IncomingMessage) {
 export type ProviderBridge = { url: string; token: string; close(): Promise<void> };
 export async function startOpenRouterBridge(provider: RuntimeProviderConfig, fetcher: typeof fetch = fetch): Promise<ProviderBridge> {
   if (!needsOpenRouterBridge(provider)) throw new Error("CODEX_BRIDGE_ENDPOINT_UNSUPPORTED");
+  return startProviderBridge(provider, { patchCompatibility: true }, fetcher);
+}
+export async function startProviderBridge(provider: RuntimeProviderConfig, options: { patchCompatibility?: boolean; allowedTools?: ReadonlySet<string>; maxRequests?: number; maxOutputTokens?: number; onPolicyFailure?: (code: string) => void }, fetcher: typeof fetch = fetch): Promise<ProviderBridge> {
+  const endpoint = new URL(provider.baseUrl ?? "");
+  if (!["http:", "https:"].includes(endpoint.protocol) || endpoint.username || endpoint.password || endpoint.search || endpoint.hash) throw new Error("CODEX_ENDPOINT_INVALID");
   const token = randomBytes(32).toString("hex"); const expected = Buffer.from("Bearer " + token); const active = new Set<AbortController>();
+  let requests = 0;
   const server = createServer(async (request, response) => {
     const received = Buffer.from(request.headers.authorization ?? "");
     if (received.length !== expected.length || !timingSafeEqual(received, expected)) { response.writeHead(401); response.end(); return; }
@@ -93,15 +103,24 @@ export async function startOpenRouterBridge(provider: RuntimeProviderConfig, fet
     try {
       const requestData = await bodyJson(request);
       if (requestData.model !== provider.modelId) throw new Error("CODEX_BRIDGE_MODEL_MISMATCH");
+      if (request.url === "/responses" && options.maxRequests !== undefined && ++requests > options.maxRequests) throw new Error("CODEX_DELEGATION_LIMIT");
+      const policy = options.allowedTools ? new CodexToolPolicy(options.allowedTools) : undefined;
+      const permitted = policy ? policy.request(requestData) : requestData;
+      if (options.maxOutputTokens !== undefined) permitted.max_output_tokens = Math.min(options.maxOutputTokens, Number(permitted.max_output_tokens) || options.maxOutputTokens);
       const upstream = await fetcher(provider.baseUrl!.replace(/\/$/, "") + request.url, {
         method: "POST", headers: { "Content-Type": "application/json", ...provider.headers, Authorization: "Bearer " + provider.apiKey },
-        body: JSON.stringify(bridgeRequest(requestData)), signal: abort.signal,
+        body: JSON.stringify(options.patchCompatibility ? bridgeRequest(permitted) : permitted), signal: abort.signal,
       });
       response.writeHead(upstream.status, { "Content-Type": upstream.headers.get("content-type") ?? "application/json" });
       if (!upstream.ok) { await pipeline(Readable.fromWeb(upstream.body as any), response); return; }
-      if (requestData.stream) await pipeline(Readable.from(mappedStream(upstream.body! as any)), response);
-      else response.end(JSON.stringify(bridgeResponse(await upstream.json())));
-    } catch {
+      if (requestData.stream) await pipeline(Readable.from(mappedStream(upstream.body! as any, policy, options.patchCompatibility === true)), response);
+      else {
+        const result = await upstream.json();
+        policy?.response(result);
+        response.end(JSON.stringify(options.patchCompatibility ? bridgeResponse(result) : result));
+      }
+    } catch (error) {
+      if (error instanceof Error && ["CODEX_TOOL_POLICY_DENIED", "CODEX_DELEGATION_LIMIT", "CODEX_BRIDGE_MODEL_MISMATCH"].includes(error.message)) options.onPolicyFailure?.(error.message);
       // No provider request bodies or credentials in transport errors.
       if (!response.headersSent) { response.writeHead(502, { "Content-Type": "application/json" }); response.end(JSON.stringify({ error: { message: "CODEX_PROVIDER_BRIDGE_FAILED" } })); }
       else response.destroy();

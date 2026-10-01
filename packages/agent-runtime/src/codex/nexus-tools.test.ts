@@ -30,6 +30,16 @@ it("binds host identity and reuses an identical MCP request without duplicate mu
  const call = () => fetch(bridge.url, { method: "POST", headers: { Authorization: "Bearer " + bridge.token }, body: JSON.stringify({ jsonrpc: "2.0", id: 7, method: "tools/call", params: { name: "plugin_test_write", arguments: { sessionId: "forged" } } }) });
  await Promise.all([call(), call()]); expect(executions).toHaveLength(1); expect(executions[0]).toMatchObject({ sessionId: "bound-session", turnId: "bound-turn", mode: "agent" });
 });
+it("exposes only declared child tools and binds permission, shell and parent execution identity", async () => {
+ const executions: any[] = [];
+ const host = { call: async <T>(method: string, params?: any) => method === "tools.list" ? { tools: [definition("Read"), definition("Write"), definition("Bash")] } as T : (executions.push(params), { ok: true, content: "read" } as T) };
+ const bridge = await startNexusToolBridge({ host, sessionId: "parent", scratchDir: tmpdir(), mode: "agent", imageInput: false, snapshot: () => ({ turn: { id: "child", runId: "run" } } as any),
+  includeNative: true, allowedTools: ["Read"], permissionScope: "ask", commandShell: { id: "powershell", dialect: "powershell" }, executionContext: () => ({ turnId: "parent-turn", mode: "agent" }) }); bridges.push(bridge);
+ const call = async (method: string, params?: any) => (await (await fetch(bridge.url, { method: "POST", headers: { Authorization: "Bearer " + bridge.token }, body: JSON.stringify({ jsonrpc: "2.0", id: method, method, params }) })).json()) as any;
+ expect((await call("tools/list")).result.tools.map((tool: any) => tool.name)).toEqual(["Read"]);
+ await call("tools/call", { name: "Read", arguments: { sessionId: "forged", permissionScope: "auto" } });
+ expect(executions[0]).toMatchObject({ sessionId: "parent", turnId: "parent-turn", permissionScope: "ask", expectedCommandShellId: "powershell", expectedCommandShellDialect: "powershell" });
+});
 it("retains in-flight identity across completed-cache eviction and refuses expired replays", async () => {
  let finish!: (value: any) => void;
  let started!: () => void;

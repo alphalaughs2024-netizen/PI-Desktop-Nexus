@@ -11702,3 +11702,30 @@ or delete caches, profiles or earlier recovery files to hide this condition.
   bridge shutdown settles within its bounded cleanup wait.
 - **Validation**: Targeted lifecycle/bridge fixtures and a recorded native smoke
   check. Full local E2E suites remain unrun unless explicitly requested.
+
+### E2E-Codex-Configured-Subagents: Exact bindings and owned child work (ADR 0256)
+
+- **Preconditions**: Opt-in fresh Codex profile, a pinned alternate provider/model
+  for a read-only preset, an unpinned preset, a mutation preset and local Responses
+  fixtures for deterministic failures. Keep the existing appearance.
+- **Steps**: 1) Start a configured review and independently work in the parent.
+  2) Inspect both provider routes and offered tools. Try an undeclared native
+  patch and an override of the saved pin. 3) Let the parent idle before the child.
+  4) Inspect final Task status/model/timing, then reload the transcript.
+  5) Use TaskWait/List/Stop, including timeout, large reports and unknown IDs.
+  6) Start two mutation delegates with disjoint labels. 7) Stop the parent and
+  inject child failure, parent failure and recovery-storage failure.
+  8) Reload with unresolved child work and inspect partial results.
+- **Expected**: Pins select the exact provider/model; unpinned workers inherit
+  the selected chat model. No fallback or model override. Only declared tools
+  reach the child; an undeclared/native call fails before execution. Host calls
+  retain parent identity, permission scope and shell pin. Child events stay under
+  their Task and never finish the host turn. Parent idle waits truthfully and
+  integrates reports once on the same host turn with one terminal outcome.
+  The final Task row retains structured status/timing/model after reload. Read-only
+  workers can overlap; concurrent mutation workers are refused. Reports and waits
+  are bounded, truncation is explicit, and timeout keeps workers running. Stop
+  preserves partial work. Cold recovery does not launch or replay tools; cleanup
+  or saving failures do not claim confirmed termination/durability.
+- **Validation**: Targeted lifecycle tests and native Windows fixture probes.
+  Full local E2E suites remain unrun unless explicitly requested.

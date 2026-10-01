@@ -114,8 +114,37 @@ active navigation stops its owned guest, and an active mutation reports
 `BROWSER_POSSIBLY_APPLIED`. Later workflow, Git and plugin mutation boundaries
 check cancellation. Already-started native Git/devkit changes are not rolled
 back or claimed undone. MCP shutdown aborts active calls and bounds its cleanup
-wait to one second. Configured subagents, Plan/Goal and legacy extension
+wait to one second. Plan/Goal and legacy extension
 commands remain pending integration, not capabilities established by this bridge.
+
+## Configured subagents (ADR 0256)
+
+Task uses separate native Codex sessions. The preset's exact provider/model pin
+is authoritative; unpinned workers inherit the chat selection. Model-selected
+overrides and unavailable pins/tools fail without fallback. Native delegation
+is disabled. Tool catalogs and returned provider calls are enforced before
+execution, including streamed/namespaced functions; a hidden native tool cannot
+bypass the preset. Children use host Read/Glob/Grep/Write/Edit/Bash rather than
+native file/shell handlers, preserving saved permissions and shell identity.
+This is tool enforcement, not additional containment of an allowed shell.
+
+Message/tool rows remain under the original Task and parent turn. Child status,
+error and terminal signals do not end the parent. Final Task results carry
+structured provider/model, timing and outcome metadata; self-contained tool_end
+metadata updates the same persisted row after the original call has returned.
+Read-only work may overlap; simultaneous mutation workers sharing one workspace
+are refused. Ten workers may run per session; private records retain at most 100
+delegations, with admission refusing undelivered overflow. Preset maxTurns bounds
+provider attempts and maxTokens caps each model response.
+
+TaskWait returns bounded reports with explicit truncation/omitted IDs; a timeout
+does not stop children. TaskList returns the roster; TaskStop retains partial
+results. If the parent idles with undelivered work, show waiting-subagents,
+retain its host turn/start time, and integrate settled reports through a normal
+new native segment. Emit one terminal outcome after convergence. Stop, disposal
+and parent failure stop owned children. Recovery reads partial child snapshots
+and marks unresolved work interrupted without tool replay or automatic relaunch.
+No credentials enter records. The exact-model settings picker is follow-up work.
 
 ## Acceptance boundaries
 

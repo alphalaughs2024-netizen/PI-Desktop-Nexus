@@ -4,6 +4,7 @@ import { readFile, realpath } from "node:fs/promises";
 import { relative, isAbsolute } from "node:path";
 import type { RuntimeHost } from "../host-client.js";
 import type { EngineSnapshot } from "@pi-desktop/shared";
+import type { SubagentPermission } from "@pi-desktop/shared";
 export type NexusTool = { name: string; description?: string; parameters?: unknown; risk?: unknown; planSafeActions?: readonly string[] };
 export type NexusToolResult = { ok: boolean; content: unknown; isError?: boolean; errorCode?: string; denied?: boolean; details?: unknown };
 export type NexusToolBridge = { url: string; token: string; close(): Promise<void> };
@@ -11,12 +12,17 @@ export type NexusToolOptions = {
  host: RuntimeHost; sessionId: string; scratchDir: string; mode: "agent" | "plan" | "goal";
  snapshot(): EngineSnapshot; tools?: NexusTool[]; imageInput: boolean;
  executeLocal?: (name: string, args: any, toolCallId: string) => Promise<NexusToolResult | undefined>;
+ allowedTools?: readonly string[];
+ includeNative?: boolean;
+ executionContext?: () => { turnId: string; mode: "agent" | "plan" | "goal" };
+ permissionScope?: SubagentPermission;
+ commandShell?: { id: string; dialect: string };
 };
 const nativeTools = new Set(["Read", "Write", "Edit", "Bash"]);
-export function nexusToolCatalog(tools: NexusTool[]): NexusTool[] {
+export function nexusToolCatalog(tools: NexusTool[], includeNative = false): NexusTool[] {
  const unique = new Map<string, NexusTool>();
  for (const tool of tools) {
-  if (!/^[A-Za-z][A-Za-z0-9_.-]{0,127}$/.test(tool.name) || nativeTools.has(tool.name) || /^context_|prompt.*inspector/i.test(tool.name)) continue;
+  if (!/^[A-Za-z][A-Za-z0-9_.-]{0,127}$/.test(tool.name) || (!includeNative && nativeTools.has(tool.name)) || /^context_|prompt.*inspector/i.test(tool.name)) continue;
   if (!tool.parameters || typeof tool.parameters !== "object") continue;
   if (!unique.has(tool.name)) unique.set(tool.name, tool);
  }
@@ -54,7 +60,8 @@ export async function nexusToolContent(result: NexusToolResult, name: string, sc
 /** Private streamable-HTTP MCP endpoint; Nexus remains the tool/permission owner. */
 export async function startNexusToolBridge(options: NexusToolOptions): Promise<NexusToolBridge> {
  const listed = await options.host.call<{ tools: NexusTool[] }>("tools.list", { sessionId: options.sessionId });
- const tools = nexusToolCatalog([...(listed.tools ?? []), ...(options.tools ?? [])]);
+ const tools = nexusToolCatalog([...(listed.tools ?? []), ...(options.tools ?? [])], options.includeNative)
+  .filter(tool => !options.allowedTools || options.allowedTools.includes(tool.name));
  const catalog = new Map(tools.map(tool => [tool.name, tool]));
  const token = randomUUID(); let closed = false;
  const active = new Set<string>();
@@ -84,7 +91,9 @@ export async function startNexusToolBridge(options: NexusToolOptions): Promise<N
    if (message.id === undefined) { res.writeHead(202).end(); return; }
    if (typeof message.id !== "string" && typeof message.id !== "number") throw new Error("NEXUS_TOOL_REQUEST_INVALID");
    let result: unknown;
-   if (message.method === "initialize") result = { protocolVersion: message.params?.protocolVersion ?? "2025-03-26", capabilities: { tools: {} }, serverInfo: { name: "nexus", version: "1.0.0" }, instructions: "Use these tools for Nexus Browser, previews, skills, workflows, plugins and delegated work. Native Codex tools handle files and shell. Tool success must be verified from results." };
+   if (message.method === "initialize") result = { protocolVersion: message.params?.protocolVersion ?? "2025-03-26", capabilities: { tools: {} }, serverInfo: { name: "nexus", version: "1.0.0" }, instructions: options.includeNative
+    ? "Use only the listed Nexus tools, including file and shell services. Preset restrictions and host permissions apply to every call. Verify success from results."
+    : "Use these tools for Nexus Browser, previews, skills, workflows, plugins and delegated work. Native Codex tools handle files and shell. Tool success must be verified from results." };
    else if (message.method === "ping") result = {};
    else if (message.method === "tools/list") result = { tools: tools.map(tool => ({ name: tool.name, description: tool.description ?? tool.name, inputSchema: tool.parameters })) };
    else if (message.method === "tools/call") {
@@ -110,9 +119,13 @@ export async function startNexusToolBridge(options: NexusToolOptions): Promise<N
      const owned = entry;
      entry.promise = (async () => {
       try {
+       const context = options.executionContext?.() ?? { turnId: state.turn!.id, mode: options.mode };
        const args = message.params.arguments ?? {};
        const local = await options.executeLocal?.(name, args, toolCallId);
-       const value = local ?? await options.host.call<NexusToolResult>("tools.execute", { sessionId: options.sessionId, turnId: state.turn!.id, toolCallId, toolName: name, args, mode: options.mode, ...(tool.risk ? { declaredRisk: tool.risk } : {}), ...(tool.planSafeActions ? { planSafeActions: tool.planSafeActions } : {}) });
+       const value = local ?? await options.host.call<NexusToolResult>("tools.execute", { sessionId: options.sessionId, turnId: context.turnId, toolCallId, toolName: name, args, mode: context.mode,
+        ...(options.permissionScope ? { permissionScope: options.permissionScope } : {}),
+        ...(options.commandShell ? { expectedCommandShellId: options.commandShell.id, expectedCommandShellDialect: options.commandShell.dialect } : {}),
+        ...(tool.risk ? { declaredRisk: tool.risk } : {}), ...(tool.planSafeActions ? { planSafeActions: tool.planSafeActions } : {}) });
        return await nexusToolContent(value, name, options.scratchDir, options.imageInput);
       } catch (error) { return { content: [{ type: "text", text: error instanceof Error ? error.message : "Nexus tool failed" }], isError: true }; }
       finally { active.delete(toolCallId); }

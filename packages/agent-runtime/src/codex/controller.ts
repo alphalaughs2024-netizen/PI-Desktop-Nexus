@@ -1,5 +1,6 @@
 import { resolve } from "node:path";
 import { homedir } from "node:os";
+import { createHash } from "node:crypto";
 import type { AgentEventEnvelope, AskToolResolution } from "@pi-desktop/shared";
 import { CodexAdapter } from "./adapter.js";
 import { codexPermissionMode, type CodexConfig } from "./config.js";
@@ -8,8 +9,10 @@ import { projectInstructionsPrompt } from "../project-instructions-prompt.js";
 import { instructionCatalogPrompt } from "../plugin-skills-prompt.js";
 import { startNexusToolBridge } from "./nexus-tools.js";
 import { CodexSessionStore } from "./store.js";
+import { CodexSubagents } from "./subagents.js";
 export class CodexController {
   private sessions = new Map<string, CodexAdapter>();
+  private delegates = new Map<string, CodexSubagents>();
   private admitting = new Set<string>();
   private dataDir?: string;
   constructor(private emit: (event: AgentEventEnvelope) => void, private host?: RuntimeHost) {}
@@ -31,8 +34,10 @@ export class CodexController {
         try {
           const config: CodexConfig = { sessionId, dataDir: this.dataDir, workspace: params.projectPath || params.scratchDir, provider: params.provider,
             permissionMode, scratchDir: params.scratchDir, nexusToolsAvailable: !!this.host,
+            serviceCatalogKey: createHash("sha256").update(JSON.stringify({ subagents: params.subagents ?? [], tools: params.pluginTools ?? [] })).digest("hex"),
             developerInstructions: [
               "Nexus is the graphical host. Use Nexus MCP tools for browser/preview, skills, workflows and plugins; use native Codex tools for file changes, local images and shell. Every tool is bound to this chat. Preserve user work, inspect failures and never automatically replay an ambiguously applied mutation.",
+              "Delegate through Nexus Task presets only. Each configured preset uses its saved provider/model and declared tools; unpinned presets inherit this chat's selected model. Converge with TaskWait or TaskStop. Do not invent model overrides.",
               params.scratchDir ? "Session scratch directory: " + params.scratchDir + ". Keep temporary files there; workspace deliverables belong in the workspace." : "",
               projectInstructionsPrompt(params.projectInstructions), instructionCatalogPrompt(params.instructionCatalog ?? []),
               params.activeWorkflow?.body,
@@ -40,14 +45,23 @@ export class CodexController {
           if (!config.workspace || !params.turnId) throw new Error("CODEX_SESSION_IDENTITY_REQUIRED");
           let runtime = adapter;
           if (runtime && JSON.stringify(runtime.config) !== JSON.stringify(config)) {
-            await runtime.shutdown(); this.sessions.delete(sessionId); runtime = undefined;
+            await runtime.shutdown(); this.sessions.delete(sessionId); this.delegates.delete(sessionId); runtime = undefined;
           }
+          let delegates = this.delegates.get(sessionId);
           if (!runtime) {
             runtime = new CodexAdapter(config, this.emit, this.host ? { tools: snapshot => startNexusToolBridge({
               host: this.host!, sessionId, scratchDir: config.scratchDir ?? config.workspace, mode: "agent", snapshot,
-              tools: params.pluginTools ?? [], imageInput: config.provider.modelConfig?.input.includes("image") === true,
-            }) } : {});
+              tools: [...(params.pluginTools ?? []), ...(delegates?.catalog() ?? [])], imageInput: config.provider.modelConfig?.input.includes("image") === true,
+              executeLocal: (name, args, internalId) => delegates?.execute(name, args, name === "Task" ? runtime!.claimToolItem(name, args) : internalId) ?? Promise.resolve(undefined),
+            }), beforeComplete: signal => delegates?.beforeComplete(signal) ?? Promise.resolve(undefined), stopOwnedWork: () => delegates?.stopAll() ?? Promise.resolve() } : {});
             this.sessions.set(sessionId, runtime);
+          }
+          if (this.host) {
+            const options = { parent: config, host: this.host, definitions: params.subagents ?? [], providers: params.subagentProviders ?? {}, thinkingLevel: params.thinkingLevel,
+              commandShell: params.commandShell, tools: params.pluginTools ?? [], currentTurn: () => runtime!.activeTurnId(), emit: this.emit, activity: (count: number) => runtime!.setDelegationActivity(count),
+              settled: (id: string, value: { status: string }) => runtime!.completeTask(id, value, value.status === "failed") };
+            if (delegates) delegates.update(options);
+            else { delegates = new CodexSubagents(options); this.delegates.set(sessionId, delegates); }
           }
           return await runtime.start({ turnId: params.turnId, text: params.content ?? "", thinkingLevel: params.thinkingLevel, images: (params.attachments ?? []).filter((a: any) => a.kind === "image" && a.data).map((a: any) => ({ mimeType: a.mimeType ?? "image/png", data: a.data })) });
         } finally { this.admitting.delete(sessionId); }
@@ -81,7 +95,7 @@ export class CodexController {
         throw new Error("CODEX_APPROVAL_STALE");
       }
       case "asktool.resolve": if (!adapter?.resolveQuestion(params as AskToolResolution)) throw new Error("CODEX_QUESTION_STALE"); return { ok: true };
-      case "agent.disposeSession": await adapter?.shutdown(); this.sessions.delete(sessionId); return { ok: true };
+      case "agent.disposeSession": await adapter?.shutdown(); this.sessions.delete(sessionId); this.delegates.delete(sessionId); return { ok: true };
       default: throw new Error("CODEX_CAPABILITY_UNAVAILABLE: " + method);
     }
   }
@@ -103,5 +117,5 @@ export class CodexController {
     }
     return snapshot;
   }
-  async shutdown(): Promise<void> { await Promise.all([...this.sessions.values()].map(runtime => runtime.shutdown())); this.sessions.clear(); }
+  async shutdown(): Promise<void> { await Promise.all([...this.sessions.values()].map(runtime => runtime.shutdown())); this.sessions.clear(); this.delegates.clear(); }
 }

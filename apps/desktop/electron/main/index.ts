@@ -6236,17 +6236,17 @@ function persistAgentEvent(envelope: AgentEventEnvelope): UiMessage | undefined 
         typeof event.result === "string"
           ? event.result
           : JSON.stringify(event.result),
-      createdAt: started?.createdAt ?? new Date(envelope.ts).toISOString(),
+      createdAt: started?.createdAt ?? new Date(event.startedAt ?? envelope.ts).toISOString(),
       toolCallId: event.toolCallId,
-      toolName: started?.toolName,
-      toolArgs: started?.args,
+      toolName: started?.toolName ?? event.toolName,
+      toolArgs: started?.args ?? event.args,
       toolStatus: event.isError ? "error" : "success",
       toolResult: event.result,
       ...(event.toolUsage ? { toolUsage: event.toolUsage } : {}),
       toolCompletedAt: new Date(envelope.ts).toISOString(),
       toolDurationMs: started
         ? Math.max(0, envelope.ts - Date.parse(started.createdAt))
-        : undefined,
+        : event.startedAt !== undefined ? Math.max(0, envelope.ts - event.startedAt) : undefined,
       isError: event.isError,
       status: "complete",
       ...(started?.parentToolCallId

@@ -16,10 +16,13 @@ export type CodexConfig = {
   developerInstructions?: string;
   nexusToolsAvailable?: boolean;
   toolBridge?: { url: string; token: string };
+  restrictedTools?: string[];
+  maxModelRequests?: number;
+  serviceCatalogKey?: string;
 };
 export function sessionDescriptor(config: CodexConfig): EngineSession {
   return { sessionId: config.sessionId, engine: "codex", version: CODEX_VERSION, workspace: resolve(config.workspace), providerId: config.provider.id, modelId: config.provider.modelId,
-    capabilities: { imageInput: config.provider.modelConfig?.input.includes("image") === true, nativeTools: true, recovery: true, steering: true, browser: config.nexusToolsAvailable === true, managedPreview: false } };
+    capabilities: { imageInput: config.provider.modelConfig?.input.includes("image") === true, nativeTools: !config.restrictedTools, recovery: true, steering: true, browser: config.nexusToolsAvailable === true, managedPreview: false } };
 }
 /** Preserve the selected endpoint effort; never silently spend at a higher level. */
 export function nativeEffort(provider: RuntimeProviderConfig, level?: ThinkingLevel): string | undefined {
@@ -112,6 +115,7 @@ export async function prepareLaunch(config: CodexConfig, directory: string): Pro
     ...setting("model_context_window", contextWindow),
     ...setting("model_max_output_tokens", config.provider.modelConfig?.maxTokens ?? 8192),
     ...setting("features.enable_request_compression", false),
+    ...setting("features.multi_agent", false),
     ...setting("shell_environment_policy.exclude", ["NEXUS_CODEX_*", "*_API_KEY", "*_AUTH_TOKEN"]),
     ...setting("model_providers.nexus.name", "Nexus provider"),
     ...setting("model_providers.nexus.base_url", endpoint.toString().replace(/\/$/, "")),
@@ -128,6 +132,7 @@ export async function prepareLaunch(config: CodexConfig, directory: string): Pro
       ...setting("mcp_servers.nexus.required", true),
       ...setting("mcp_servers.nexus.default_tools_approval_mode", "approve"));
   }
+  if (config.restrictedTools) args.push(...setting("features.shell_tool", false));
   // Additional headers are private inherited environment values, never config values.
   const envHeaders: Record<string, string> = {};
   let headerIndex = 0;

@@ -53,11 +53,12 @@ interrupts owned navigation and reports possibly-applied active mutations.
 An already-started Git/devkit mutation cannot be undone by cancellation.
 Bridge shutdown aborts active host calls with a bounded one-second cleanup wait.
 
-This is opt-in integration. Plan/Goal, legacy extension command dispatch
-and configured subagent execution remain pending
-Phase 2 work. The bridge does not implement a session-owned preview process
+This is opt-in integration. Plan/Goal and legacy extension command dispatch
+remain pending Phase 2 work. The bridge does not implement a session-owned preview process
 supervisor; `managedPreview` remains false. Existing file preview is a separate
 capability. The current production runtime and appearance remain unchanged.
+ADR 0256 supplies configured native child sessions with enforced tool catalogs,
+exact saved model/provider bindings and parent-owned completion/cancellation.
 
 ## Validation
 
