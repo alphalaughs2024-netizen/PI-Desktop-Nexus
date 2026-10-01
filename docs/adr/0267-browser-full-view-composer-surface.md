@@ -52,6 +52,17 @@ transformed-panel containing blocks. Existing New tab controls remain available;
 final visual redesign is deferred to user review after functionality. External browser profiles,
 agent permissions and browser capability contracts are unchanged.
 
+## Material Chrome Acceptance
+
+The user selected Material chrome from the separate browser study. The
+presentation uses separated tabs and visible viewport, Capture and Inspect
+controls with Nexus semantic theme tokens. At wider widths the existing guest's
+measured rectangle excludes the inspector; narrow inspectors hide it. There is
+still one guest and one chat controller. Global overlays and browser controls
+independently block the native input surface, so closing one cannot uncover
+another. Viewport selection remains owned by the existing Electron browser
+service and is shared between the toolbar and drawer.
+
 ## Validation
 
 Targeted lifecycle, sender, stale-action, draft handoff and compositor checks

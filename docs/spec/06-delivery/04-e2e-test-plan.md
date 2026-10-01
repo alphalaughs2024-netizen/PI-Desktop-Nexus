@@ -11993,6 +11993,10 @@ or delete caches, profiles or earlier recovery files to hide this condition.
   test dictation/voice in the floating input, switch presentation while recording,
   trigger a tool permission, Plan/Ask decision and reload/crash the input view.
   Inspect docked and Full view in dark/light/scenic themes and reduced motion.
+  Open Inspect and Capture in Full view, open a tab menu and Search together,
+  and close them in either order. Resize across 760px. Select Panel, Desktop
+  and Mobile; have an agent set a custom viewport and switch tabs while a
+  viewport request is pending. Test the Material toolbar in a 244px dock.
 - **Expected**: One editable composer, no duplicate execution, correct model/
   session, retained draft/attachment/page input and guest identity. Floating
   input is above the page and its menus fit. Other page regions remain
@@ -12002,6 +12006,11 @@ or delete caches, profiles or earlier recovery files to hide this condition.
   timeouts never replay. Search and approvals are accessible. Returning restores
   the dock width and chat. Renderer failures preserve available draft data and
   return to Chat. Controls/text do not overlap or leave the viewport.
+  Separated tabs and controls retain Nexus theme materials. Toolbar and Page
+  tools show the same actual emulation, including custom agent dimensions.
+  Wide inspectors preserve the page in its remaining measured rectangle;
+  narrow inspectors hide it. Inspectors and menus cannot be covered by the
+  floating composer, and closing one cannot bypass another active overlay.
 - **Validation**: Focused contract tests, desktop typecheck/build and a native
   Electron probe. Full local E2E suites remain unrun unless requested.
 

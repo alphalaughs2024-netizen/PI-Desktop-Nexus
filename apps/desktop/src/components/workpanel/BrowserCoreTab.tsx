@@ -3,6 +3,9 @@ import { useTranslation } from "react-i18next";
 import type { WorkPanelPresentation } from "../../lib/work-panel-presentation";
 import { api } from "../../lib/api";
 import { BrowserToolbar } from "./BrowserToolbar";
+import { BrowserInspectionToolbar } from "./BrowserInspectionToolbar";
+import { BROWSER_VIEWPORTS, type BrowserViewport, type BrowserViewportMode } from "../../lib/browser-viewport";
+import { setBrowserComposerBlocked } from "../../lib/browser-composer-bridge";
 import { BrowserReadinessStrip, type BrowserPanelState } from "./BrowserReadinessStrip";
 import { BrowserGuestSurface } from "./BrowserGuestSurface";
 import { BrowserOperationStatus } from "./BrowserOperationStatus";
@@ -73,7 +76,24 @@ export function BrowserCoreTab({ sessionId, location, active = true, blocked = f
   const [controlOwner, setControlOwner] = useState<"user" | "agent">("agent");
   const [toolbarMenuOpen, setToolbarMenuOpen] = useState(false);
   const [tabMenuOpen, setTabMenuOpen] = useState(false);
+  const [viewport, setViewport] = useState<BrowserViewport | null>(null);
+  const [viewportPending, setViewportPending] = useState(false);
+  const viewportRequestRef = useRef(0);
+  const viewportBusyRef = useRef(false);
+  const coreRef = useRef<HTMLDivElement>(null);
+  const [inspectorBesidePage, setInspectorBesidePage] = useState(false);
   const diagnosticsTriggerRef = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    const element = coreRef.current;
+    if (!element) return;
+    const observer = new ResizeObserver(() => setInspectorBesidePage(element.clientWidth >= 760));
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+  useEffect(() => {
+    setBrowserComposerBlocked("browser-controls", active && (diagnosticsOpen || toolbarMenuOpen || tabMenuOpen));
+  }, [active, diagnosticsOpen, toolbarMenuOpen, tabMenuOpen]);
+  useEffect(() => () => setBrowserComposerBlocked("browser-controls", false), []);
   useEffect(() => {
     let disposed = false;
     let hadHostTabs = false;
@@ -143,6 +163,40 @@ export function BrowserCoreTab({ sessionId, location, active = true, blocked = f
   const activeTab = browserTabs.find((tab) => tab.browserId === activeBrowserId);
   const isNewTab = !activeTab?.url || activeTab.url === "about:blank";
   const browserState = isNewTab ? null : viewState.navigation;
+  const pageReady = !isNewTab && (state === "ready" || state === "loading");
+  useEffect(() => {
+    let disposed = false;
+    let reading = false;
+    viewportRequestRef.current++;
+    viewportBusyRef.current = false;
+    setViewport(null); setViewportPending(false);
+    if (!active || !pageReady) return;
+    const refresh = async () => {
+      if (reading || viewportBusyRef.current) return;
+      reading = true;
+      const request = viewportRequestRef.current;
+      try {
+        const result = await api.browserControl(sessionId, activeBrowserId, "service", "viewport", {});
+        if (!disposed && request === viewportRequestRef.current) setViewport(result);
+      } catch { /* A failed read leaves the last known viewport visible. */ }
+      finally { reading = false; }
+    };
+    void refresh();
+    // Also reflect viewport changes made by agents without rebuilding the page.
+    const timer = setInterval(() => void refresh(), 2000);
+    return () => { disposed = true; clearInterval(timer); viewportRequestRef.current++; };
+  }, [active, pageReady, sessionId, activeBrowserId]);
+  const changeViewport = async (mode: BrowserViewportMode) => {
+    if (viewportBusyRef.current) return;
+    const { browserId, epoch } = targetRef.current;
+    const request = ++viewportRequestRef.current;
+    viewportBusyRef.current = true; setViewportPending(true); setError("");
+    try {
+      const result = await api.browserControl(sessionId, browserId, "viewport", undefined, BROWSER_VIEWPORTS[mode]);
+      if (isCurrentTarget(epoch) && request === viewportRequestRef.current) setViewport(result);
+    } catch (caught) { if (isCurrentTarget(epoch)) setError(safeBrowserError(caught)); }
+    finally { if (isCurrentTarget(epoch) && request === viewportRequestRef.current) { viewportBusyRef.current = false; setViewportPending(false); } }
+  };
   const operationLabel = operation || (state === "starting" ? "Starting Browser…" : state === "loading" ? "Loading page…" : "");
   const errorMessage = error || (state === "unavailable" ? "The page loaded, but its Browser surface could not be displayed." : state === "policy-blocked" ? "The current capability policy does not allow this action." : "");
   const performBrowserAction = async (action: import("@pi-desktop/shared").BrowserAction) => { setOperation(action === "back" ? "Going back…" : action === "forward" ? "Going forward…" : action === "reload" ? "Reloading…" : "Stopping…"); setError(""); try { await api.browserAction(action, sessionId, activeBrowserIdRef.current); } catch (caught) { setError(safeBrowserError(caught)); } finally { setOperation(""); } };
@@ -196,18 +250,19 @@ export function BrowserCoreTab({ sessionId, location, active = true, blocked = f
   }, 0);
   useEffect(() => { if (isNewTab) focusAddress(true); }, [isNewTab]);
   const openDiagnostics = () => { diagnosticsTriggerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null; setDiagnosticsOpen(true); };
-  return <div className={`browser-core-view browser-core-view--${state}${isNewTab ? " browser-core-view--new-tab" : ""}`} data-browser-presentation={presentation} data-browser-readiness={state} data-browser-location={location ?? ""}>
+  return <div ref={coreRef} className={`browser-core-view browser-core-view--${state}${isNewTab ? " browser-core-view--new-tab" : ""}${diagnosticsOpen ? " browser-core-view--inspecting" : ""}`} data-browser-presentation={presentation} data-browser-readiness={state} data-browser-location={location ?? ""}>
     <BrowserTabStrip enabled={active} tabs={visibleTabs} activeId={activeBrowserId} onActivate={activateBrowserTab} onClose={closeBrowserTab} onNew={newBrowserTab} onReload={reloadBrowserTab} onDuplicate={duplicateBrowserTab} onCloseOthers={closeOtherBrowserTabs} onContextMenuOpenChange={setTabMenuOpen} />
     <BrowserToolbar key={activeBrowserId} presentation={presentation} browserState={browserState} panelState={state} busy={Boolean(operation)} disabled={blocked || transitioning} sessionId={sessionId} committedLocation={activeTab?.url} controlOwner={controlOwner} onControl={changeControl} onNavigate={navigateToAddress} onAction={performBrowserAction} onScreenshot={runScreenshot} onOpenExternal={runExternal} onCopyLocation={copyLocation} onOpenDiagnostics={() => { diagnosticsTriggerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null; setDiagnosticsOpen(true); }} onMenuOpenChange={setToolbarMenuOpen} />
+    <BrowserInspectionToolbar viewport={viewport} disabled={!pageReady || blocked || transitioning} busy={Boolean(operation) || viewportPending} inspecting={diagnosticsOpen} onViewport={changeViewport} onCapture={runScreenshot} onInspect={() => diagnosticsOpen ? setDiagnosticsOpen(false) : openDiagnostics()} />
     <div className="browser-content-viewport" data-browser-content-state={isNewTab ? "no-page" : state}>
       <BrowserReadinessStrip state={state} />
       <BrowserOperationStatus operation={operationLabel} />
       <BrowserErrorNotice message={errorMessage} />
       <div className="browser-page-surface">
         {/* Guest guard remains explicit for no-page and recovery states: !isNewTab && !["unavailable", "policy-blocked", "debugger-unavailable", "closed"] */}
-        {isNewTab ? <BrowserNewTabSurface onFocusAddress={() => focusAddress(true)} onSearchWeb={() => void navigateToAddress("https://www.google.com/")} onNewTab={newBrowserTab} /> : isBrowserGuestSurfaceVisible(state, isNewTab) ? <BrowserGuestSurface key={activeBrowserId} sessionId={sessionId} browserId={activeBrowserId} blocked={!active || blocked || diagnosticsOpen || toolbarMenuOpen || tabMenuOpen} transitioning={transitioning} /> : isBrowserRecoveryState(state) && <BrowserEmptyState state={state} onRetry={viewState.recoverable ? recover : undefined} onOpenDiagnostics={openDiagnostics} onReopen={recover} />}
+        {isNewTab ? <BrowserNewTabSurface onFocusAddress={() => focusAddress(true)} onSearchWeb={() => void navigateToAddress("https://www.google.com/")} onNewTab={newBrowserTab} /> : isBrowserGuestSurfaceVisible(state, isNewTab) ? <BrowserGuestSurface key={activeBrowserId} sessionId={sessionId} browserId={activeBrowserId} blocked={!active || blocked || (diagnosticsOpen && !inspectorBesidePage) || toolbarMenuOpen || tabMenuOpen} transitioning={transitioning} /> : isBrowserRecoveryState(state) && <BrowserEmptyState state={state} onRetry={viewState.recoverable ? recover : undefined} onOpenDiagnostics={openDiagnostics} onReopen={recover} />}
       </div>
     </div>
-    <BrowserDiagnosticsDrawer open={diagnosticsOpen} panelState={state} presentation={presentation} sessionId={sessionId} browserId={activeBrowserId} screenshot={screenshot} onAnnotate={annotate} onClose={() => { setDiagnosticsOpen(false); diagnosticsTriggerRef.current?.focus(); }} onRetry={viewState.recoverable ? recover : undefined} suggestedAction={viewState.safeSuggestedAction} onOperation={showNotice} onError={setError} />
+    <BrowserDiagnosticsDrawer open={diagnosticsOpen} panelState={state} presentation={presentation} sessionId={sessionId} browserId={activeBrowserId} screenshot={screenshot} viewport={viewport} viewportPending={viewportPending} onViewport={changeViewport} onAnnotate={annotate} onClose={() => { setDiagnosticsOpen(false); diagnosticsTriggerRef.current?.focus(); }} onRetry={viewState.recoverable ? recover : undefined} suggestedAction={viewState.safeSuggestedAction} onOperation={showNotice} onError={setError} />
   </div>;
 }

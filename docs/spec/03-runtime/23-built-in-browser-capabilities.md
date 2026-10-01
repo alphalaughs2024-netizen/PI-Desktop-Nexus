@@ -85,8 +85,20 @@ Main advertises and executes matching schemas.
 The existing GUI drawer offers Overview, Page, Downloads and Developer views.
 Screenshot results display actual images and saving controls. Viewport controls
 show current emulation, including agent-set dimensions, and restore panel sizing.
-Arrow/Home/End keys select drawer tabs. The native page is hidden beneath the
-drawer and menus. Existing theme tokens and reduced-motion behavior apply.
+Arrow/Home/End keys select drawer tabs. Material chrome uses a 48px tab band
+with separated 32px tabs, a 54px navigation row and a 38px inspection toolbar.
+Panel/Desktop/Mobile select actual host emulation; Capture opens the real image
+in Page tools, and Inspect toggles the existing tools. Narrow panels retain all
+controls as labelled icon buttons. A single viewport read updates at most every
+two seconds while the browser is active and ready or loading, reflecting
+agent-set/custom dimensions without guessing the device mode. Pending changes
+and old-tab results cannot select another tab's viewport.
+
+At widths of at least 760px the inspector reserves 380px beside the native page.
+Narrower inspectors cover only page content and hide the guest. Browser menus
+hide the guest. All these controls hide the native floating composer while open;
+closing one overlay cannot override another overlay's blocking state. Existing
+theme tokens and reduced-motion behavior apply.
 Pending screenshot/control/annotation results cannot update a different tab or
 chat after target changes. Control requests are admitted once; copy confirmations
 expire without leaving controls busy.

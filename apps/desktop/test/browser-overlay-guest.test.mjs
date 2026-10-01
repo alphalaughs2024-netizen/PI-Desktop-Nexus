@@ -6,8 +6,8 @@ const core = await readFile(new URL("../src/components/workpanel/BrowserCoreTab.
 const toolbar = await readFile(new URL("../src/components/workpanel/BrowserToolbar.tsx", import.meta.url), "utf8");
 const tabs = await readFile(new URL("../src/components/workpanel/BrowserTabStrip.tsx", import.meta.url), "utf8");
 
-test("Browser overlays detach the native guest while renderer controls are open", () => {
-  assert.match(core, /blocked=\{!active \|\| blocked \|\| diagnosticsOpen \|\| toolbarMenuOpen \|\| tabMenuOpen\}/);
+test("Browser menus and covering inspectors detach the guest; beside-page inspectors retain it", () => {
+  assert.match(core, /blocked=\{!active \|\| blocked \|\| \(diagnosticsOpen && !inspectorBesidePage\) \|\| toolbarMenuOpen \|\| tabMenuOpen\}/);
   assert.match(core, /onMenuOpenChange=\{setToolbarMenuOpen\}/);
   assert.match(core, /onContextMenuOpenChange=\{setTabMenuOpen\}/);
   assert.match(toolbar, /onMenuOpenChange\?\.\(menuOpen\)/);

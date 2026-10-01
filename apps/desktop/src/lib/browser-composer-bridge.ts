@@ -27,10 +27,18 @@ const fields = [
   "draftConfiguration", "latestTurnResults", "pendingPermissions",
 ] as const;
 
+const composerBlockers = new Set<"global" | "browser-controls">();
+export function setBrowserComposerBlocked(source: "global" | "browser-controls", blocked: boolean): void {
+  if (blocked) composerBlockers.add(source);
+  else composerBlockers.delete(source);
+  void browserComposerRequest({ kind: "blocked", blocked: composerBlockers.size > 0 }).catch(() => {});
+}
+
 export function useBrowserComposerBridge(blocked: boolean): void {
   useEffect(() => {
-    void browserComposerRequest({ kind: "blocked", blocked }).catch(() => {});
+    setBrowserComposerBlocked("global", blocked);
   }, [blocked]);
+  useEffect(() => () => setBrowserComposerBlocked("global", false), []);
   useEffect(() => {
     if (!window.piDesktop) return;
     let generation = 0;

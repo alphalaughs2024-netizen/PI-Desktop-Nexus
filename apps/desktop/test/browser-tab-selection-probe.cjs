@@ -11,7 +11,9 @@ if (!process.env.NEXUS_BROWSER_PROBE_PROFILE || !process.env.PI_DESKTOP_HOST_BIN
 }
 
 (async () => {
-  const server = createServer((_request, response) => {
+  const server = createServer((request, response) => {
+    if (request.url === "/slow-resource") { setTimeout(() => { response.writeHead(200, { "Content-Type": "image/svg+xml" }); response.end('<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>'); }, 3000); return; }
+    if (request.url === "/slow-document") { response.setHeader("Content-Type", "text/html"); response.end('<!doctype html><h1>DOM ready before image</h1><img src="/slow-resource">'); return; }
     response.setHeader("Content-Type", "text/html");
     response.end('<!doctype html><title>Tab regression website</title><h1>Retained website</h1><label>Draft <input id="draft"></label><a href="/popup" target="_blank">Popup</a>');
   });
@@ -48,6 +50,8 @@ if (!process.env.NEXUS_BROWSER_PROBE_PROFILE || !process.env.PI_DESKTOP_HOST_BIN
       if (!session) throw new Error("The test profile needs a chat");
       await window.__PI_DESKTOP__.selectSession(session.id);
       window.__PI_CAPTURE__ = 1;
+      window.__probeToggles = [];
+      window.piDesktop.on(window.piDesktop.channels.event.browserComposer, input => { if (input.kind === "toggle-full-view") window.__probeToggles.push({ at: Date.now(), full: document.querySelector('.app-shell')?.classList.contains('browser-full-view') }); });
       await window.__PI_DESKTOP__.openWorkPanelArtifact("browser");
       return session.id;
     });
@@ -55,6 +59,18 @@ if (!process.env.NEXUS_BROWSER_PROBE_PROFILE || !process.env.PI_DESKTOP_HOST_BIN
     await address.fill(url);
     await address.press("Enter");
     await page.waitForFunction(() => document.querySelector(".browser-core-view")?.dataset.browserReadiness === "ready");
+    if (process.env.NEXUS_BROWSER_PROBE_MATERIAL === "1") {
+      const early = await page.evaluate(async ({ sessionId, url }) => {
+        const browserId = document.querySelector('[data-browser-tab][aria-selected="true"]').dataset.browserTab;
+        const result = await window.piDesktop.invoke(window.piDesktop.channels.invoke.browserNavigate, { sessionId, browserId, url: `${url}slow-document` });
+        return { ok: result.ok, loading: result.data?.isLoading };
+      }, { sessionId, url });
+      assert.equal(early.ok, true);
+      assert.equal(early.loading, true, "Navigation returns while a slow resource is still loading");
+      await address.fill(url); await address.press("Enter");
+      await page.waitForFunction(() => document.querySelector(".browser-core-view")?.dataset.browserReadiness === "ready");
+      console.log("DOM_READY_NAVIGATION_PASS", early);
+    }
     const initial = await page.evaluate(async sessionId => {
       const result = await window.piDesktop.invoke(window.piDesktop.channels.invoke.browserTabs, { sessionId });
       const state = result.data;
@@ -146,10 +162,20 @@ if (!process.env.NEXUS_BROWSER_PROBE_PROFILE || !process.env.PI_DESKTOP_HOST_BIN
       await page.waitForFunction(() => !document.querySelector(".app-shell")?.classList.contains("browser-full-view"));
       assert.equal(await page.locator('.composer-input[contenteditable="true"]').innerText(), "Draft edited over the page", "Native draft returns to Chat");
       await page.getByRole("button", { name: "Enter full view", exact: true }).click();
+      await page.waitForFunction(() => document.querySelector(".app-shell")?.classList.contains("browser-full-view"));
       const guestPage = app.context().pages().find(p => p.url() === url);
       assert.ok(guestPage, "Native webpage remains inspectable");
-      await guestPage.locator("#draft").press("Control+Shift+F");
+      await page.waitForFunction(async sessionId => (await window.piDesktop.invoke(window.piDesktop.channels.invoke.browserGetViewState, { sessionId })).data?.surface?.attachment === 'attached', sessionId);
+      await app.evaluate(({ webContents }, guestId) => {
+        const guest = webContents.fromId(guestId);
+        guest.focus();
+        guest.sendInputEvent({ type: "keyDown", keyCode: "F", modifiers: ["control", "shift"] });
+        guest.sendInputEvent({ type: "keyUp", keyCode: "F", modifiers: ["control", "shift"] });
+      }, guestId);
       await page.waitForFunction(() => !document.querySelector(".app-shell")?.classList.contains("browser-full-view"));
+      await page.waitForTimeout(400);
+      assert.equal(await page.locator('.app-shell').evaluate(element => element.classList.contains('browser-full-view')), false, "Native page shortcut stays docked after transition settling");
+      assert.equal(await page.evaluate(() => window.__probeToggles.length), 1, "Native shortcut dispatches exactly one toggle");
       await page.locator(`[data-browser-tab="${websiteId}"]`).click({ button: "right" });
       const menuBounds = await page.getByRole("menu", { name: /Actions for/ }).boundingBox();
       const viewport = await page.evaluate(() => ({ width: innerWidth, height: innerHeight }));
@@ -161,6 +187,82 @@ if (!process.env.NEXUS_BROWSER_PROBE_PROFILE || !process.env.PI_DESKTOP_HOST_BIN
       await page.waitForFunction(() => document.querySelectorAll("[data-browser-tab]").length === 1);
       await page.evaluate(() => { window.__tabProbe.changes = []; });
       console.log("BROWSER_FULL_VIEW_PASS", JSON.stringify({ draftHandoff: true, nativeOverlap: true, topmostAcrossTabs: true, menuInViewport: true, modelMenuExpansion: true, themeMatch: true, pageShortcut: true, colors: overlay.colors }));
+    }
+
+    if (process.env.NEXUS_BROWSER_PROBE_MATERIAL === "1") {
+      const mobile = page.getByRole("button", { name: "Mobile viewport, 390 by 844", exact: true });
+      const desktop = page.getByRole("button", { name: "Desktop viewport, 1440 by 900", exact: true });
+      const panel = page.getByRole("button", { name: "Use panel size", exact: true });
+      const viewport = () => page.evaluate(async ({ sessionId, browserId }) => (await window.piDesktop.invoke(window.piDesktop.channels.invoke.browserControl, { sessionId, browserId, action: "service", service: "viewport", args: {} })).data, { sessionId, browserId: websiteId });
+      await mobile.click();
+      await page.waitForFunction(() => document.querySelector('.browser-viewport-options button:last-child')?.getAttribute("aria-pressed") === "true");
+      assert.deepEqual(await viewport(), { width: 390, height: 844, mobile: true, reset: false });
+      await desktop.click();
+      await page.waitForFunction(() => document.querySelector('.browser-viewport-options button:nth-child(2)')?.getAttribute("aria-pressed") === "true");
+      assert.equal((await viewport()).width, 1440);
+      await page.evaluate(async ({ sessionId, browserId }) => window.piDesktop.invoke(window.piDesktop.channels.invoke.browserControl, { sessionId, browserId, action: "viewport", args: { width: 820, height: 900 } }), { sessionId, browserId: websiteId });
+      await page.getByText("820 x 900", { exact: true }).waitFor();
+      assert.equal(await mobile.getAttribute("aria-pressed"), "false", "Custom dimensions never claim mobile mode");
+      await panel.click();
+      await page.waitForFunction(() => document.querySelector('.browser-viewport-options button:first-child')?.getAttribute("aria-pressed") === "true");
+      assert.deepEqual(await viewport(), { reset: true });
+
+      await page.getByRole("button", { name: "Enter full view", exact: true }).click();
+      await page.waitForFunction(() => document.querySelector(".app-shell")?.classList.contains("browser-full-view"));
+      const nativeComposerVisible = () => app.evaluate(({ BrowserWindow }) => {
+        const window = BrowserWindow.getAllWindows().find(w => /renderer\/index\.html/.test(w.webContents.getURL()) && !w.webContents.getURL().includes("surface="));
+        return window.contentView.children.find(view => view.webContents?.getURL().includes("surface=browser-composer"))?.getVisible();
+      });
+      await page.getByRole("button", { name: "Inspect page", exact: true }).click();
+      await page.getByRole("region", { name: "Browser tools", exact: true }).waitFor();
+      await page.waitForTimeout(300);
+      assert.equal(await nativeComposerVisible(), false, "Inspector cannot be covered by the native composer");
+      const geometry = await page.evaluate(() => ({ page: document.querySelector('.browser-guest-surface').getBoundingClientRect().toJSON(), drawer: document.querySelector('.browser-tools-drawer').getBoundingClientRect().toJSON() }));
+      assert.ok(geometry.page.right <= geometry.drawer.left + 1, "The native page has its own inspector-free rectangle");
+      assert.equal(Math.round(geometry.drawer.width), 380);
+      await page.getByRole("button", { name: "Close Browser diagnostics", exact: true }).click();
+      await page.waitForTimeout(200);
+      assert.equal(await nativeComposerVisible(), true, "Closing the inspector restores the retained input");
+
+      await page.getByRole("button", { name: "Capture screenshot", exact: true }).click();
+      await page.getByRole("img", { name: "Captured browser page" }).waitFor();
+      assert.ok(await page.getByRole("img", { name: "Captured browser page" }).evaluate(image => image.naturalWidth > 0), "Capture shows actual image pixels");
+      if (process.env.NEXUS_BROWSER_PROBE_SCREENSHOT) await page.screenshot({ path: process.env.NEXUS_BROWSER_PROBE_SCREENSHOT.replace(/\.png$/, "-inspector.png") });
+      await page.getByRole("button", { name: "Close Browser diagnostics", exact: true }).click();
+
+      for (const [theme, scenicTheme] of [["dark", ""], ["light", ""], ["dark", "twilight-mountains"], ["dark", "obsidian-horizon"]]) {
+        await page.evaluate(({ theme, scenicTheme }) => { document.documentElement.dataset.theme = theme; if (scenicTheme) document.documentElement.dataset.scenicTheme = scenicTheme; else delete document.documentElement.dataset.scenicTheme; }, { theme, scenicTheme });
+        await page.waitForTimeout(100);
+        if (process.env.NEXUS_BROWSER_PROBE_SCREENSHOT) await page.screenshot({ path: process.env.NEXUS_BROWSER_PROBE_SCREENSHOT.replace(/\.png$/, `-${scenicTheme || theme}.png`) });
+      }
+      await page.evaluate(() => { document.documentElement.dataset.theme = "dark"; delete document.documentElement.dataset.scenicTheme; });
+      await page.emulateMedia({ reducedMotion: "reduce" });
+      assert.equal(await mobile.evaluate(button => getComputedStyle(button).transitionDuration), "0s", "Reduced motion disables new control transitions");
+      await page.emulateMedia({ reducedMotion: "no-preference" });
+
+      await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().find(w => /renderer\/index\.html/.test(w.webContents.getURL()) && !w.webContents.getURL().includes("surface=")).setSize(600, 802));
+      await page.waitForTimeout(300);
+      const narrow = await page.locator('.browser-inspection-toolbar').evaluate(element => {
+        const rect = element.getBoundingClientRect();
+        return { fits: Array.from(element.querySelectorAll('button')).every(button => { const box = button.getBoundingClientRect(); return box.left >= rect.left && box.right <= rect.right; }), overflow: element.scrollWidth > element.clientWidth };
+      });
+      assert.equal(narrow.fits, true, "All tools fit a narrow browser");
+      assert.equal(narrow.overflow, false);
+      await page.getByRole("button", { name: "Inspect page", exact: true }).click();
+      await page.waitForTimeout(300);
+      await page.getByRole("region", { name: "Browser tools", exact: true }).waitFor();
+      if (process.env.NEXUS_BROWSER_PROBE_SCREENSHOT) await page.screenshot({ path: process.env.NEXUS_BROWSER_PROBE_SCREENSHOT.replace(/\.png$/, "-narrow.png") });
+      await page.getByRole("button", { name: "Close Browser diagnostics", exact: true }).click();
+      await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().find(w => /renderer\/index\.html/.test(w.webContents.getURL()) && !w.webContents.getURL().includes("surface=")).setSize(1202, 802));
+      await page.getByRole("button", { name: "Exit full view", exact: true }).click();
+      await page.waitForFunction(() => !document.querySelector(".app-shell")?.classList.contains("browser-full-view"));
+      await page.locator('.work-panel--browser').evaluate(element => { element.style.flex = "0 0 244px"; element.style.width = "244px"; });
+      await page.waitForTimeout(150);
+      assert.equal(await page.locator('.browser-inspection-toolbar').evaluate(element => element.scrollWidth <= element.clientWidth && Array.from(element.querySelectorAll('button')).every(button => { const box = button.getBoundingClientRect(); const rect = element.getBoundingClientRect(); return box.left >= rect.left && box.right <= rect.right; })), true, "All inspection tools fit a 244px dock");
+      if (process.env.NEXUS_BROWSER_PROBE_SCREENSHOT) await page.screenshot({ path: process.env.NEXUS_BROWSER_PROBE_SCREENSHOT.replace(/\.png$/, "-244px.png") });
+      await page.locator('.work-panel--browser').evaluate(element => { element.style.flex = ""; element.style.width = ""; });
+      await page.evaluate(() => { window.__tabProbe.changes = []; });
+      console.log("BROWSER_MATERIAL_PASS", { realViewport: true, customViewport: true, realCapture: true, inspectorGeometry: true, composerNotObscuringControls: true, themes: 4, narrowToolsFit: true, reducedMotion: true });
     }
 
     await page.getByRole("button", { name: "New Browser tab", exact: true }).click();
@@ -246,6 +348,10 @@ if (!process.env.NEXUS_BROWSER_PROBE_PROFILE || !process.env.PI_DESKTOP_HOST_BIN
       writeFileSync(process.env.NEXUS_BROWSER_PROBE_SCREENSHOT.replace(/\.png$/, "-guest.png"), Buffer.from(nativeSurface.guestPng, "base64"));
     }
     console.log("BROWSER_TAB_PROBE_PASS", JSON.stringify({ newTabSelections: blank.changes, rapidSelections: 12, staleUpdatesIgnored: true, draftPreserved: true, duplicateAndClose: true, nativePopupSelection: true, errors }));
+  } catch (error) {
+    const mainPage = app?.windows().find(window => /renderer\/index\.html/.test(window.url()) && !window.url().includes("surface="));
+    if (mainPage && process.env.NEXUS_BROWSER_PROBE_SCREENSHOT) await mainPage.screenshot({ path: process.env.NEXUS_BROWSER_PROBE_SCREENSHOT.replace(/\.png$/, "-failure.png") }).catch(() => {});
+    throw error;
   } finally {
     clearTimeout(deadline);
     if (app) {

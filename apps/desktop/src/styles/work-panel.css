@@ -74,7 +74,7 @@
 .work-panel-frame-button:focus-visible { outline: 2px solid var(--ds-focus); outline-offset: -2px; }
 .work-panel-frame-content { display: flex; min-width: 0; min-height: 0; flex: 1; flex-direction: column; }
 
-.browser-core-view { display: flex; min-width: 0; min-height: 0; flex: 1; flex-direction: column; position: relative; overflow: hidden; background: var(--browser-panel-surface, var(--ds-bg-secondary)); color: var(--browser-text, var(--ds-text-primary)); }
+.browser-core-view { display: flex; min-width: 0; min-height: 0; flex: 1; flex-direction: column; position: relative; overflow: hidden; container-type: inline-size; background: var(--browser-panel-surface, var(--ds-bg-secondary)); color: var(--browser-text, var(--ds-text-primary)); }
 .browser-header { display: flex; min-height: 40px; flex: 0 0 40px; align-items: center; gap: 8px; padding: 0 12px; border-bottom: 1px solid var(--browser-border, var(--ds-border-subtle)); background: var(--browser-panel-surface, var(--ds-bg-secondary)); }
 .browser-header-identity { display: flex; min-width: 0; align-items: center; gap: 7px; }
 .browser-header-identity h1 { margin: 0; color: var(--browser-text, var(--ds-text-primary)); font-size: var(--text-sm); font-weight: var(--font-weight-semibold); letter-spacing: .01em; }
@@ -96,32 +96,35 @@
 .browser-source-external { display: inline-flex; width: 22px; height: 22px; align-items: center; justify-content: center; margin-left: auto; border: 0; border-radius: var(--radius-sm); background: transparent; color: var(--browser-text-muted, var(--ds-text-muted)); }
 .browser-source-external:hover:not(:disabled) { background: var(--browser-tab-hover, var(--ds-bg-hover)); color: var(--browser-text, var(--ds-text-primary)); }
 .browser-source-external:focus-visible { outline: 2px solid var(--browser-focus, var(--ds-focus)); outline-offset: -2px; }
-.browser-tab-strip { display: flex; min-height: 44px; flex: 0 0 44px; align-items: stretch; gap: 4px; overflow-x: auto; padding: 6px 10px 0; border-bottom: 1px solid var(--browser-border, var(--ds-border-subtle)); background: var(--browser-panel-surface, var(--ds-bg-secondary)); scrollbar-width: thin; }
-.browser-tab { display: inline-flex; min-width: 132px; max-width: 220px; flex: 0 1 190px; align-items: center; gap: 8px; padding: 0 10px; border: 1px solid transparent; border-bottom: 0; border-radius: 9px 9px 0 0; color: var(--browser-text-muted, var(--ds-text-muted)); cursor: pointer; font-size: var(--text-sm); }
+.browser-tab-band { display: flex; min-height: 48px; flex: 0 0 48px; align-items: center; gap: 8px; padding: 4px 10px; border-bottom: 1px solid var(--browser-border); background: var(--ds-bg-sidebar, var(--browser-panel-surface)); }
+.browser-tab-strip { display: flex; height: 38px; min-width: 0; flex: 1 1 auto; align-items: center; gap: 8px; overflow-x: auto; scrollbar-width: thin; }
+.browser-tab { display: inline-flex; min-width: 112px; max-width: 170px; height: 32px; flex: 0 1 150px; align-items: center; gap: 7px; padding: 0 9px; border: 1px solid transparent; border-radius: 5px; color: var(--ds-text-secondary); cursor: pointer; font-size: var(--text-sm); transition: background-color 120ms var(--motion-ease-out), border-color 120ms var(--motion-ease-out), color 120ms var(--motion-ease-out); }
 .browser-tab:hover { background: var(--browser-tab-hover, var(--ds-bg-hover)); color: var(--browser-text, var(--ds-text-primary)); }
-.browser-tab.is-active { border-color: color-mix(in oklab, var(--browser-focus) 42%, var(--browser-border)); border-bottom-color: var(--browser-tab-active, var(--ds-bg-primary)); background: var(--browser-tab-active, var(--ds-bg-primary)); color: var(--browser-text, var(--ds-text-primary)); box-shadow: 0 -2px 0 var(--browser-focus), 0 4px 12px color-mix(in oklab, var(--browser-focus) 12%, transparent); }
+.browser-tab.is-active { border-color: var(--ds-border-default); background: var(--ds-bg-elevated, var(--browser-tab-active)); color: var(--browser-text, var(--ds-text-primary)); box-shadow: 0 2px 6px color-mix(in oklab, var(--ds-bg-under) 20%, transparent); }
 .browser-tab:focus-visible { outline: 2px solid var(--browser-focus, var(--ds-focus)); outline-offset: -2px; }
 .browser-tab-icon { display: inline-flex; align-items: center; color: var(--browser-text-muted, var(--ds-text-muted)); }
 .browser-tab-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .browser-tab-close, .browser-tab-new { display: inline-flex; width: 22px; height: 22px; flex: 0 0 22px; align-items: center; justify-content: center; border: 0; border-radius: 5px; background: transparent; color: inherit; }
-.browser-tab-close { margin-left: auto; opacity: 0; }
+.browser-tab-close { margin-left: auto; opacity: .65; }
 .browser-tab:hover .browser-tab-close, .browser-tab:focus-within .browser-tab-close, .browser-tab-close:focus-visible { opacity: 1; }
 .browser-tab-close:hover, .browser-tab-new:hover { background: var(--browser-tab-hover, var(--ds-bg-hover)); opacity: 1; }
 .browser-tab-new { margin-left: 2px; align-self: center; }
+.browser-tab-new:focus-visible { outline: 2px solid var(--browser-focus); outline-offset: 2px; }
+@container (max-width: 440px) { .browser-tab-band { min-height: 88px; flex-basis: 88px; padding: 48px 10px 4px !important; } .browser-tools-drawer { top: 180px !important; } }
 .browser-tab-new:active, .browser-tab-close:active { transform: translateY(1px); }
 .browser-tab-context-menu { position: fixed; z-index: 12; display: grid; min-width: 208px; max-height: min(300px, calc(100vh - 16px)); gap: 2px; overflow-y: auto; padding: 4px; border: 1px solid var(--browser-border, var(--ds-border-subtle)); border-radius: var(--radius-md); background: var(--browser-panel-surface-raised, var(--ds-bg-secondary)); box-shadow: var(--shadow-lg); }
 .browser-tab-context-menu button { min-height: 30px; padding: 0 9px; border: 0; border-radius: var(--radius-sm); background: transparent; color: var(--browser-text, var(--ds-text-primary)); text-align: left; font: inherit; font-size: var(--text-xs); }
 .browser-tab-context-menu button:hover:not(:disabled), .browser-tab-context-menu button:focus-visible { background: var(--browser-tab-hover, var(--ds-bg-hover)); outline: 2px solid var(--browser-focus, var(--ds-focus)); outline-offset: -2px; }
 .browser-tab-context-menu button:disabled { color: var(--browser-text-muted, var(--ds-text-muted)); opacity: .5; }
-.browser-toolbar { display: flex; min-height: 50px; flex: 0 0 50px; align-items: center; gap: 8px; padding: 0 14px; border-bottom: 1px solid var(--browser-border, var(--ds-border-subtle)); background: var(--browser-toolbar-surface, var(--ds-bg-secondary)); transition: background-color 160ms var(--motion-ease-out), border-color 160ms var(--motion-ease-out); }
+.browser-toolbar { display: flex; min-height: 54px; flex: 0 0 54px; align-items: center; gap: 6px; padding: 0 12px; border-bottom: 1px solid var(--browser-border, var(--ds-border-subtle)); background: var(--ds-bg-sidebar, var(--browser-toolbar-surface)); transition: background-color 160ms var(--motion-ease-out), border-color 160ms var(--motion-ease-out); }
 .browser-toolbar--maximized { padding-inline: 16px; }
-.browser-toolbar button { display: inline-flex; width: 32px; height: 32px; flex: 0 0 32px; align-items: center; justify-content: center; border: 0; border-radius: 9px; background: transparent; color: var(--browser-text-muted, var(--ds-text-muted)); transition: background-color 120ms var(--motion-ease-out), color 120ms var(--motion-ease-out), transform 120ms var(--motion-ease-out); }
+.browser-toolbar button { display: inline-flex; width: 30px; height: 30px; flex: 0 0 30px; align-items: center; justify-content: center; border: 0; border-radius: 4px; background: transparent; color: var(--ds-text-secondary); transition: background-color 120ms var(--motion-ease-out), color 120ms var(--motion-ease-out), transform 120ms var(--motion-ease-out); }
 .browser-toolbar button:hover:not(:disabled) { background: var(--browser-tab-hover, var(--ds-bg-hover)); color: var(--browser-text, var(--ds-text-primary)); }
 .browser-toolbar button:active:not(:disabled) { transform: translateY(1px); }
 .browser-toolbar button:focus-visible { outline: 2px solid var(--browser-focus, var(--ds-focus)); outline-offset: 2px; }
 .browser-toolbar button:disabled { opacity: .45; cursor: default; }
 .browser-toolbar-actions { display: flex; flex: 0 0 auto; gap: 1px; }
-.browser-toolbar-address { display: flex; min-width: 108px; min-height: 40px; flex: 1 1 auto; align-items: center; border: 1px solid var(--browser-border, var(--ds-border-subtle)); border-radius: 20px; background: var(--browser-address-surface, var(--ds-bg-primary)); box-shadow: inset 0 1px 0 color-mix(in oklab, var(--browser-text) 8%, transparent), 0 2px 8px color-mix(in oklab, var(--ds-bg-primary) 25%, transparent); transition: border-color 140ms var(--motion-ease-out), box-shadow 140ms var(--motion-ease-out), background-color 140ms var(--motion-ease-out); }
+.browser-toolbar-address { display: flex; min-width: 0; min-height: 34px; flex: 1 1 auto; align-items: center; border: 1px solid var(--ds-border-default); border-radius: 5px; background: var(--browser-address-surface, var(--ds-bg-primary)); box-shadow: inset 0 1px 0 color-mix(in oklab, var(--browser-text) 5%, transparent); transition: border-color 140ms var(--motion-ease-out), box-shadow 140ms var(--motion-ease-out), background-color 140ms var(--motion-ease-out); }
 .browser-toolbar-address:focus-within { border-color: color-mix(in oklab, var(--browser-focus) 72%, var(--browser-border)); background: color-mix(in oklab, var(--browser-address-surface) 92%, var(--browser-focus)); box-shadow: 0 0 0 2px color-mix(in oklab, var(--browser-focus) 12%, transparent), inset 0 1px 0 color-mix(in oklab, var(--browser-text) 8%, transparent); }
 .browser-address-site { display: inline-flex; width: 26px; flex: 0 0 26px; align-items: center; justify-content: center; color: var(--browser-focus, var(--ds-focus)); font-size: var(--text-xs); }
 .browser-toolbar-address input { width: 100%; height: 32px; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--browser-text, var(--ds-text-primary)); padding: 0 12px 0 0; font: inherit; font-size: var(--text-sm); text-overflow: ellipsis; }
@@ -130,6 +133,17 @@
 .browser-toolbar-menu { position: absolute; z-index: 5; top: calc(100% + 4px); right: 0; display: grid; min-width: 176px; padding: 4px; border: 1px solid var(--browser-border, var(--ds-border-subtle)); border-radius: var(--radius-md); background: var(--browser-panel-surface-raised, var(--ds-bg-secondary)); box-shadow: var(--shadow-lg); }
 .browser-toolbar-menu button { width: auto; justify-content: flex-start; padding: 0 8px; white-space: nowrap; }
 @media (max-width: 420px) { .browser-toolbar--docked > .browser-toolbar-overflow { margin-left: auto; } .browser-toolbar--docked > .browser-toolbar-address { min-width: 96px; } }
+.browser-inspection-toolbar { display: flex; align-items: center; flex: 0 0 38px; height: 38px; min-width: 0; gap: 8px; padding: 0 12px; border-bottom: 1px solid var(--browser-border); background: var(--ds-bg-elevated-opaque, var(--browser-toolbar-surface)); }
+.browser-viewport-options, .browser-inspection-actions { display: flex; align-items: center; gap: 2px; }
+.browser-inspection-actions { margin-left: auto; }
+.browser-inspection-toolbar button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 28px; padding: 0 8px; border: 0; border-radius: 4px; background: transparent; color: var(--ds-text-secondary); font: inherit; font-size: 11px; white-space: nowrap; transition: background-color 120ms var(--motion-ease-out), color 120ms var(--motion-ease-out); }
+.browser-inspection-toolbar button:hover:not(:disabled) { background: var(--ds-bg-hover); color: var(--browser-text); }
+.browser-inspection-toolbar button[aria-pressed="true"], .browser-inspection-toolbar button[aria-expanded="true"] { background: var(--ds-bg-active); color: var(--browser-text); }
+.browser-inspection-toolbar button:focus-visible { outline: 2px solid var(--browser-focus); outline-offset: -2px; }
+.browser-inspection-toolbar button:disabled { opacity: .45; }
+.browser-viewport-custom { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--browser-text-muted); font-size: 11px; }
+@container (max-width: 440px) { .browser-inspection-toolbar { gap: 3px; padding-inline: 8px; } .browser-inspection-toolbar button { width: 30px; padding: 0; } .browser-inspection-toolbar button span { display: none; } }
+@container (max-width: 300px) { .browser-toolbar { gap: 2px; padding-inline: 6px; } .browser-toolbar button { width: 26px; flex-basis: 26px; } .browser-toolbar-address { min-width: 0 !important; } }
 .browser-readiness-strip { display: flex; min-height: 24px; flex: 0 0 24px; align-items: center; gap: 6px; padding: 0 10px; color: var(--browser-text-muted, var(--ds-text-muted)); font-size: var(--text-xs); }
 .browser-readiness-dot { width: 6px; height: 6px; flex: 0 0 auto; border-radius: var(--radius-full); background: var(--browser-text-muted, var(--ds-text-muted)); }
 .browser-readiness-source { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -184,7 +198,9 @@
 .browser-diagnostics-row dt { color: var(--browser-text-muted, var(--ds-text-muted)); }
 .browser-diagnostics-row dd { margin: 0; color: var(--browser-text, var(--ds-text-primary)); text-align: right; }
 .browser-diagnostics-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
-.browser-tools-drawer { align-items: stretch; justify-content: flex-start; color: var(--browser-text); min-width: 0; overflow: hidden; }
+.browser-tools-drawer { inset: 140px 0 0; align-items: stretch; justify-content: flex-start; color: var(--browser-text); min-width: 0; overflow: hidden; padding: 16px; background: var(--ds-bg-elevated-opaque, var(--browser-panel-surface-raised)); backdrop-filter: none; border-left: 1px solid var(--browser-border); }
+.browser-core-view--inspecting .browser-content-viewport { margin-right: 0; }
+@container (min-width: 760px) { .browser-tools-drawer { left: auto; width: 380px; box-shadow: var(--shadow-lg); } .browser-core-view--inspecting .browser-content-viewport { margin-right: 380px; } }
 .browser-tools-drawer > * { max-width: none; align-self: stretch; }
 .browser-tools-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex: 0 0 auto; }
 .browser-tools-heading h2 { margin: 0; font-size: var(--text-md); }
@@ -192,8 +208,8 @@
 .browser-tools-drawer button:focus-visible, .browser-tools-drawer select:focus-visible, .browser-tools-drawer input:focus-visible, .browser-tools-screenshot a:focus-visible { outline: 2px solid var(--browser-focus); outline-offset: 2px; }
 .browser-tools-drawer button:disabled { opacity: .5; }
 .browser-tools-tabs { display: flex; flex: 0 0 auto; gap: 4px; border-bottom: 1px solid var(--browser-border); padding-bottom: 8px; }
-.browser-tools-tabs button { flex: 1 1 0; padding: 6px 2px; min-width: 0; font-size: var(--text-sm); }
-.browser-tools-tabs button[aria-selected="true"] { background: var(--browser-tab-hover); border-color: var(--browser-focus); }
+.browser-tools-tabs button { flex: 1 1 0; padding: 8px 2px; min-width: 0; border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: transparent; color: var(--ds-text-secondary); font-size: var(--text-sm); }
+.browser-tools-tabs button[aria-selected="true"] { background: transparent; color: var(--browser-text); border-bottom-color: var(--browser-focus); }
 .browser-tools-content { flex: 1 1 auto; min-height: 0; overflow: auto; padding: 4px 3px; scrollbar-gutter: stable; }
 .browser-tools-field { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-block: 8px; font-size: var(--text-sm); }
 .browser-tools-field select, .browser-tools-field input:not([type="checkbox"]) { min-width: 0; max-width: 65%; padding: 6px; border: 1px solid var(--browser-border); border-radius: 4px; background: var(--browser-address-surface); color: var(--browser-text); }
@@ -1638,12 +1654,14 @@
 /* Browser chrome shares one tab band; native content and input retain separate ownership. */
 .work-panel--browser { animation-fill-mode: backwards; }
 .work-panel--browser .work-panel-main { position: relative; }
-.work-panel--browser .work-panel-header { position: absolute; inset: 0 0 auto; z-index: 5; height: 44px; min-height: 44px; padding: 0 8px; background: transparent !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; pointer-events: none; -webkit-app-region: no-drag; }
+.work-panel--browser .work-panel-header { position: absolute; inset: 0 0 auto; z-index: 5; height: 48px; min-height: 48px; padding: 0 48px 0 8px; background: transparent !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; pointer-events: none; -webkit-app-region: no-drag; }
 .work-panel--browser .work-panel-header::before { display: none; }
 .work-panel--browser .work-panel-context, .work-panel--browser .work-panel-actions, .browser-return-chat { pointer-events: auto; }
 .work-panel--browser .work-panel-switcher-trigger { width: 32px; min-width: 32px; height: 30px; padding: 0; justify-content: center; }
 .work-panel--browser .work-panel-current-label, .work-panel--browser .work-panel-switcher-chevron { display: none; }
-.work-panel--browser .browser-tab-strip { padding-left: 48px; padding-right: 72px; }
+.work-panel--browser .browser-tab-band { padding-left: 48px; padding-right: 112px; }
+:root[data-platform="win32"] .work-panel--browser .browser-tab-band,
+:root[data-platform="linux"] .work-panel--browser .browser-tab-band { padding-right: calc(var(--ds-window-controls-width) + 112px); }
 .work-panel--browser .work-panel-body { padding: 0; }
 .browser-tab-spinner { animation: browser-tab-spin 1s linear infinite; }
 @keyframes browser-tab-spin { to { transform: rotate(360deg); } }
@@ -1657,10 +1675,12 @@
 .work-panel--browser-full { position: fixed; inset: 0; width: auto; height: auto; animation: none; transform: none; z-index: 40; background: var(--ds-bg-primary); }
 .work-panel--browser-full > .work-panel-resize { display: none; }
 .work-panel--browser-full .work-panel-frame.is-maximized { position: relative; inset: auto; width: 100%; height: 100%; border: 0; border-radius: 0; box-shadow: none; animation: none; }
-.work-panel--browser-full .work-panel-header { padding-right: calc(var(--ds-window-controls-width, 0px) + 8px); }
-.work-panel--browser-full .browser-tab-strip { padding-left: 120px; padding-right: calc(var(--ds-window-controls-width, 0px) + 72px); }
+.work-panel--browser-full .work-panel-header { padding-right: 8px; }
+.work-panel--browser-full .browser-tab-band { padding-left: 120px; padding-right: 72px; }
+:root[data-platform="win32"] .work-panel--browser-full .browser-tab-band,
+:root[data-platform="linux"] .work-panel--browser-full .browser-tab-band { padding-right: calc(var(--ds-window-controls-width) + 72px); }
 :root[data-platform="darwin"] .work-panel--browser-full .browser-return-chat { margin-left: 76px; }
-:root[data-platform="darwin"] .work-panel--browser-full .browser-tab-strip { padding-left: 196px; }
+:root[data-platform="darwin"] .work-panel--browser-full .browser-tab-band { padding-left: 196px; }
 html[data-surface="browser-composer"], html[data-surface="browser-composer"] body, html[data-surface="browser-composer"] #root { background: transparent !important; }
 html[data-surface="browser-composer"] .composer-dock { position: absolute; inset-inline: 0; bottom: 0; padding: 8px; }
 html[data-surface="browser-composer"] .composer-stack { width: 100%; max-height: calc(100vh - 16px); overflow: visible; }
@@ -1668,4 +1688,4 @@ html[data-surface="browser-composer"] .composer-shell { background: var(--ds-bg-
 html[data-surface="browser-composer"] .composer-input { max-height: 160px; }
 html[data-surface="browser-composer"] :is(.composer-model-menu, .composer-permission-menu, .composer-plus-menu, .composer-autocomplete) { max-height: min(440px, calc(var(--browser-composer-window-height, 700px) - 180px)); }
 html[data-surface="browser-composer"] .composer-queued-prompts { max-height: 110px; overflow: auto; }
-@media (prefers-reduced-motion: reduce) { .browser-tab-spinner { animation: none; } .browser-tab, .browser-toolbar button { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .browser-tab-spinner { animation: none; } .browser-tab, .browser-toolbar button, .browser-inspection-toolbar button { transition: none; } }
