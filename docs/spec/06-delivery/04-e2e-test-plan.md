@@ -11897,3 +11897,20 @@ or delete caches, profiles or earlier recovery files to hide this condition.
   the growing full snapshot for every chunk. The accepted visual design stays.
 - **Validation**: Focused adapter/contract/wait/broker regression checks. Full
   local E2E suites remain unrun unless explicitly requested.
+
+### E2E-User-Selected-Files: View explicit external references (ADR 0264)
+
+- **Steps**: Click AGENTS.md in a subfolder-rooted chat, then repeat with a local
+  instruction file. Open an explicitly linked external Markdown file and a
+  Windows file URL with spaces. Follow a relative link from the external file.
+  Open an external image explicitly, reveal it, and switch files/chats while a
+  read is pending. Open an absolute file in a temporary chat. Try a missing
+  generic basename and an automatic external markdown image.
+- **Expected**: AGENTS.md resolves locally or to the nearest inherited file.
+  The actual canonical path is displayed. Explicit selected files preview with
+  existing limits; no directory or agent permission is granted. Reveal works
+  for the selected file. Stale reads cannot replace a newer selection. Missing
+  generic names do not search arbitrary parents. Automatic images and contained
+  file/tree/agent APIs keep their original policy. Appearance remains unchanged.
+- **Validation**: Focused filesystem/path checks and desktop typecheck. Local
+  E2E suites remain unrun unless explicitly requested; user acceptance pending.

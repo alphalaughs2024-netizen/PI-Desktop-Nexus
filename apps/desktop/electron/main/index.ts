@@ -259,6 +259,7 @@ import {
   isAttachmentBlobRef,
   listDir,
   readOpenableFile,
+  readUserSelectedFile,
   readOpenableImage,
   resolveOpenablePath,
   resolveRealOpenablePath,
@@ -8403,6 +8404,7 @@ function registerIpc() {
     join(dataDir, "scratch"),
     join(dataDir, "attachments"),
   ];
+  const userPreviewFiles = new Set<string>();
 
   const optionalWorkspaceRoot = async (): Promise<string | null> => {
     try {
@@ -8433,6 +8435,20 @@ function registerIpc() {
     },
   );
 
+  handle(IPC.invoke.fsReadUserFile, async (input: { path?: string; mimeType?: string; sessionId?: string } = {}) => {
+    let root = await optionalWorkspaceRoot();
+    if (input.sessionId) {
+      const result = await host?.call("session.get", { id: input.sessionId }) as { session?: { projectPath?: string } } | undefined;
+      if (!result?.session) throw new Error("The file's chat is unavailable");
+      root = result?.session?.projectPath ?? join(dataDir, "scratch", input.sessionId);
+    }
+    const selected = await readUserSelectedFile(String(input.path ?? ""), root, fsExtraRoots(), input.mimeType);
+    userPreviewFiles.delete(selected.path);
+    userPreviewFiles.add(selected.path);
+    if (userPreviewFiles.size > 100) userPreviewFiles.delete(userPreviewFiles.values().next().value!);
+    return selected;
+  });
+
   handle(
     IPC.invoke.fsReadImageDataUrl,
     async (input: { ref?: string; mimeType?: string } = {}) => {
@@ -8448,6 +8464,10 @@ function registerIpc() {
 
   handle(IPC.invoke.fsReveal, async (input: { path?: string } = {}) => {
     const requested = String(input.path ?? "").trim();
+    if (userPreviewFiles.has(requested)) {
+      shell.showItemInFolder(stripWinLongPrefix(requested));
+      return { ok: true };
+    }
     let workspaceRoot: string | null = null;
     try {
       workspaceRoot = await requireWorkspaceRoot();

@@ -1508,11 +1508,19 @@ Renderer IPC kept for the Plan-safe preview facade and URL fallback:
   wins over `mimeType`; extension-less blobs accept only the image MIME
   allowlist. Traversal, `~`, and other escapes are rejected
   (`INVALID_ARGUMENT`).
+- `fs/readUserFile({path, mimeType?, sessionId?})` → `{path, file}` with a
+  canonical absolute location and the same bounded FsReadResult. Renderer
+  explicit-click previews may read the selected regular file outside the
+  workspace (ADR 0264); no directory or agent-tool permission is granted.
+  Relative refs use the originating chat root. A missing bare AGENTS.md checks
+  nearest ancestors for inherited instructions; other basenames do not search.
 - `fs/readImageDataUrl({ref, mimeType?})` → `FsImageDataUrlResult`
   (`image` with `dataUrl`, or `missing` / `notImage` / `tooLarge`). Same
   containment as `fs/read`. Never returns non-image bytes. Renderer-only;
   not a plugin host API.
-- `fs/reveal({path})` → reveal in Finder. Same containment as `fs/read`.
+- `fs/reveal({path})` → reveal in the system file manager. Same containment as
+  `fs/read`, plus exact canonical paths successfully selected through
+  `fs/readUserFile` (bounded in-memory set of 100; no directory grant).
 - `fs/open({path})` → open with the OS default application. Same lexical
   containment as `fs/read` (without the extra realpath step used by reads).
 - `fs/list` stays workspace-only; traversal outside is rejected

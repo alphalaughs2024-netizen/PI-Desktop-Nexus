@@ -149,6 +149,7 @@ export function FilesTab() {
   const { t } = useTranslation();
   const workspace = useAppStore((s) => s.workspace);
   const fileRequest = useAppStore((s) => s.workPanelFileRequest);
+  const sessionId = useAppStore((s) => s.activeSessionId);
   const root = workspace?.path ?? null;
 
   const [dirs, setDirs] = useState<Record<string, DirState>>({});
@@ -162,9 +163,12 @@ export function FilesTab() {
   // StrictMode remount, wiping the selection a chat file request just made
   // (first click landed on the tree instead of the file).
   const prevRoot = useRef(root);
+  const readGeneration = useRef(0);
   useEffect(() => {
     if (prevRoot.current === root) return;
     prevRoot.current = root;
+    readGeneration.current++;
+    handledFileRequestSeq = 0;
     setDirs({});
     setExpanded(new Set());
     setSelected(null);
@@ -205,22 +209,36 @@ export function FilesTab() {
     [dirs, loadDir],
   );
 
-  const openFile = useCallback(async (rel: string, mimeType?: string) => {
+  const mounted = useRef(true);
+  const selectedSession = useRef(sessionId);
+  selectedSession.current = sessionId;
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
+  const openFile = useCallback(async (rel: string, mimeType?: string, userSelected = false) => {
+    const generation = ++readGeneration.current;
+    const isCurrent = () => mounted.current && generation === readGeneration.current && selectedSession.current === sessionId;
     setSelected(rel);
     setFile(null);
     setFileError(false);
     try {
-      setFile(await api.fsRead(rel, mimeType));
+      if (userSelected) {
+        const selected = await api.fsReadUserFile(rel, mimeType, sessionId);
+        if (!isCurrent()) return;
+        setSelected(selected.path);
+        setFile(selected.file);
+      } else {
+        const result = await api.fsRead(rel, mimeType);
+        if (isCurrent()) setFile(result);
+      }
     } catch {
-      setFileError(true);
+      if (isCurrent()) setFileError(true);
     }
-  }, []);
+  }, [sessionId]);
 
   // Chat-initiated previews: open the file and expand its ancestor folders
   // so "back" lands on a tree that reveals it. Attachment blobs and absolute
   // scratch paths live outside the workspace tree.
   useEffect(() => {
-    if (!fileRequest || !root) return;
+    if (!fileRequest) return;
     if (fileRequest.seq === handledFileRequestSeq) return;
     handledFileRequestSeq = fileRequest.seq;
     const path = fileRequest.path;
@@ -240,7 +258,7 @@ export function FilesTab() {
       setExpanded((prev) => new Set([...prev, ...ancestors]));
       for (const dir of ancestors) void loadDir(dir);
     }
-    void openFile(path, fileRequest.mimeType);
+    void openFile(path, fileRequest.mimeType, true);
   }, [fileRequest, root, loadDir, openFile]);
 
   const renderDir = (rel: string, depth: number): React.ReactNode => {
@@ -305,7 +323,7 @@ export function FilesTab() {
     });
   };
 
-  if (!root) {
+  if (!root && selected === null) {
     return (
       <WorkTabEmpty
         icon={IconFolder}
@@ -325,6 +343,7 @@ export function FilesTab() {
             tooltip={t("panel.files.back")}
             ariaLabel={t("panel.files.back")}
             onClick={() => {
+              readGeneration.current++;
               setSelected(null);
               setFile(null);
             }}

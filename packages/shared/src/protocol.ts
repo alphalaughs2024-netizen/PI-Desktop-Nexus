@@ -273,6 +273,7 @@ export const IPC = {
     browserGetViewState: "pi-desktop/browser/getViewState",
     fsList: "pi-desktop/fs/list",
     fsRead: "pi-desktop/fs/read",
+    fsReadUserFile: "pi-desktop/fs/readUserFile",
     fsReadImageDataUrl: "pi-desktop/fs/readImageDataUrl",
     statsGetTokenUsageHistory: "pi-desktop/stats/getTokenUsageHistory",
     providerAccountGet: "pi-desktop/provider-account/get",

@@ -32,9 +32,11 @@ export function useOpenChatFileRef() {
   const workspacePath = useAppStore((s) => s.workspace?.path ?? null);
   const openUrl = useAppStore((s) => s.openUrlInWorkPanel);
   const showToast = useAppStore((s) => s.showToast);
+  const openFile = useAppStore((s) => s.openFileInWorkPanel);
   return useCallback(
     (path: string) => {
       const rel = toWorkspaceRel(path, workspacePath);
+      if (!rel) { openFile(path); return; }
       if (rel && isHtmlFilePath(rel)) {
         openUrl(rel);
         return;
@@ -45,6 +47,6 @@ export function useOpenChatFileRef() {
         });
       });
     },
-    [openUrl, showToast, workspacePath],
+    [openFile, openUrl, showToast, workspacePath],
   );
 }

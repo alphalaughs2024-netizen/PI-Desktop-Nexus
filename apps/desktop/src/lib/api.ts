@@ -997,6 +997,8 @@ export const api = {
       path,
       ...(mimeType ? { mimeType } : {}),
     }),
+  fsReadUserFile: (path: string, mimeType?: string, sessionId?: string) =>
+    invoke<{ path: string; file: FsReadResult }>(IPC.invoke.fsReadUserFile, { path, mimeType, sessionId }),
   fsReadImageDataUrl: (ref: string, mimeType?: string) =>
     invoke<FsImageDataUrlResult>(IPC.invoke.fsReadImageDataUrl, {
       ref,

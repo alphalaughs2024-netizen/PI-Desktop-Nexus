@@ -277,7 +277,7 @@ export function imageMimeFor(displayPath: string, mimeType?: string): string | u
 }
 
 /**
- * Classify one already-contained regular file for in-app preview.
+ * Classify one already-authorized regular file for in-app preview.
  * Used by the host Files tab and by `pi.fs.readPreview` so the two
  * surfaces cannot drift on size caps or image detection.
  */
@@ -344,6 +344,40 @@ export async function readOpenableFile(
   const info = await stat(target);
   if (!info.isFile()) throw new Error("not a file");
   return previewFile(target, path, mimeType);
+}
+
+/** Renderer click only: preview one selected file, without granting a directory to tools. */
+export async function readUserSelectedFile(
+  path: string,
+  workspaceRoot: string | null | undefined,
+  extraRoots: readonly string[],
+  mimeType?: string,
+): Promise<{ path: string; file: FsReadResult }> {
+  const raw = String(path ?? "").trim();
+  if (!raw || raw.startsWith("~")) throw new Error("Choose an explicit file path");
+  let target: string;
+  if (isAttachmentBlobRef(raw)) {
+    const contained = await resolveRealOpenablePath(raw, workspaceRoot, extraRoots);
+    if (!contained) throw new Error("Attachment is unavailable");
+    target = contained;
+  } else {
+    if (!isAbsolute(raw) && !workspaceRoot) throw new Error("A workspace or absolute file path is required");
+    const requested = isAbsolute(raw) ? resolve(raw) : resolve(workspaceRoot!, raw);
+    try { target = await realpath(requested); }
+    catch (error: any) {
+      // Codex inherits AGENTS.md from parent directories, even for a subfolder workspace.
+      if (raw !== "AGENTS.md" || error.code !== "ENOENT" || !workspaceRoot) throw error;
+      let cursor = dirname(resolve(workspaceRoot));
+      for (;;) {
+        try { target = await realpath(join(cursor, "AGENTS.md")); break; }
+        catch (parentError: any) { if (parentError.code !== "ENOENT") throw parentError; }
+        const parent = dirname(cursor);
+        if (parent === cursor) throw error;
+        cursor = parent;
+      }
+    }
+  }
+  return { path: target, file: await previewFile(target, target, mimeType) };
 }
 
 /**

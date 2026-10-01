@@ -10,10 +10,9 @@
  *
  * Path tokens recognize Unicode letters and digits, so non-ASCII filenames
  * (CJK above all) link exactly like ASCII ones. Absolute and `~/` tokens are
- * captured whole and then resolved by the same workspace rules: a path under
- * the root resolves normally, and one outside it — or any home path — stays
- * plain text instead of rendering a chip that could never open. Links still
- * cannot escape the workspace (D322).
+ * captured whole: paths under the root resolve normally, external absolute
+ * paths remain clickable, and unresolved home paths stay literal. Automatic reads and agent tools retain
+ * their own containment policies (ADR 0264).
  *
  * Relative paths are workspace-rooted unless they start with `./` or `../`,
  * in which case they resolve against an optional markdown-file directory and
@@ -38,7 +37,7 @@ const KNOWN_BARE_NAMES = new Set([
 ]);
 
 const FILE_TOKEN_RE =
-  /^(?:~\/|\/)?(?:\.{1,2}\/)?[\p{L}\p{N}_@+.-]+(?:\/[\p{L}\p{N}_@+.-]+)*(?::\d+(?::\d+)?)?$/u;
+  /^(?:[A-Za-z]:\/|~\/|\/)?(?:\.{1,2}\/)?[\p{L}\p{N}_@+.-]+(?:\/[\p{L}\p{N}_@+.-]+)*(?::\d+(?::\d+)?)?$/u;
 
 const AT_QUOTED_RE = /^@"([^"\n]+)"$/;
 const AT_UNQUOTED_RE = /^@(\/?[^\s]+)$/;
@@ -80,7 +79,7 @@ function isLikelyFilePath(path: string): boolean {
  * `@src/a.ts` previews like `src/a.ts`.
  */
 export function parseFileRef(text: string): string | null {
-  let raw = text.trim();
+  let raw = text.trim().replaceAll("\\", "/");
   if (!raw || raw.length > 512) return null;
   if (raw.startsWith("@")) raw = raw.slice(1);
   if (!raw || !FILE_TOKEN_RE.test(raw)) return null;
@@ -163,6 +162,13 @@ export function toWorkspaceRel(
 ): string | null {
   if (!path) return null;
   if (path.startsWith("~")) return null;
+  path = path.replaceAll("\\", "/");
+  root = root?.replaceAll("\\", "/");
+  if (/^[A-Za-z]:\//.test(path)) {
+    const cleanRoot = root?.replace(/\/+$/, "");
+    if (!cleanRoot || !path.toLowerCase().startsWith(cleanRoot.toLowerCase() + "/")) return null;
+    return normalizeWorkspaceRel(path.slice(cleanRoot.length + 1));
+  }
 
   let rel: string;
   if (path.startsWith("/")) {
@@ -181,6 +187,26 @@ export function toWorkspaceRel(
   return normalizeWorkspaceRel(rel);
 }
 
+/** A clickable file target is not permission for an automatic read or an agent tool. */
+export function toUserFilePath(path: string, root?: string | null, baseDir?: string | null): string | null {
+  let clean = stripLineRef(path.trim()).replaceAll("\\", "/");
+  if (/^file:\/\//i.test(clean)) {
+    try {
+      const url = new URL(clean);
+      clean = decodeURIComponent(url.pathname);
+      if (url.hostname && url.hostname !== "localhost") clean = `//${url.hostname}${clean}`;
+      else if (/^\/[A-Za-z]:\//.test(clean)) clean = clean.slice(1);
+    } catch { return null; }
+  }
+  if (!clean || clean.startsWith("~")) return null;
+  if (clean.startsWith("/") || /^[A-Za-z]:\//.test(clean)) return toWorkspaceRel(clean, root) ?? clean;
+  if (/^[A-Za-z][A-Za-z0-9+.-]*:/.test(clean)) return null;
+  if (baseDir && (baseDir.startsWith("/") || /^[A-Za-z]:[\\/]/.test(baseDir))) {
+    return `${baseDir.replaceAll("\\", "/")}/${clean}`;
+  }
+  return toWorkspaceRel(clean, root, baseDir);
+}
+
 export type ChatPreviewTarget =
   | { kind: "file"; path: string }
   | { kind: "url"; url: string };
@@ -197,12 +223,12 @@ export function resolvePreviewTarget(
   if (at) {
     // Scratch/attachment @refs stay absolute so fs/open can contain them.
     if (at.startsWith("/")) return { kind: "file", path: at };
-    const rel = toWorkspaceRel(at, root, baseDir);
+    const rel = toUserFilePath(at, root, baseDir);
     return rel ? { kind: "file", path: rel } : null;
   }
   const file = parseFileRef(trimmed);
   if (!file) return null;
-  const rel = toWorkspaceRel(file, root, baseDir);
+  const rel = toUserFilePath(file, root, baseDir);
   return rel ? { kind: "file", path: rel } : null;
 }
 
@@ -216,7 +242,7 @@ export function getToolPreviewTarget(
   for (const key of ["path", "file_path", "filePath"]) {
     const value = record[key];
     if (typeof value === "string" && value.trim()) {
-      const rel = toWorkspaceRel(value.trim(), root);
+      const rel = toUserFilePath(value.trim(), root);
       if (rel) return { kind: "file", path: rel };
       return null;
     }
@@ -240,12 +266,12 @@ export type ChatTextSegment =
 
 // Unicode-aware scan (#235). `~`- and `/`-prefixed paths are captured whole
 // so the resolver sees the real anchor: under-root absolutes resolve, while
-// outside absolutes and home paths fail resolution and stay plain text
-// instead of chipping a suffix that could never open. The extension tail
+// absolute references retain their real anchor for an explicit user click;
+// unresolved home paths stay plain text. The extension tail
 // uses `(?![A-Za-z0-9_])` rather than `\b`: in unicode mode `\b` treats CJK
 // letters as word characters, which would stop `App.tsx文件` from linking.
 const SCAN_RE =
-  /@"[^"\n]+"|@[^\s]+|https?:\/\/[^\s<>"'()[\]{}]+|(?:~\/)?\/?\.{1,2}\/(?:[\p{L}\p{N}_@+.-]+\/)*[\p{L}\p{N}_@+.-]+(?::\d+(?::\d+)?)?|(?:~\/)?\/?(?:[\p{L}\p{N}_@+.-]+\/)+[\p{L}\p{N}_@+.-]+(?::\d+(?::\d+)?)?|[\p{L}\p{N}_@+-][\p{L}\p{N}_@+.-]*\.[A-Za-z0-9]{1,8}(?![A-Za-z0-9_])/gu;
+  /@"[^"\n]+"|@[^\s]+|https?:\/\/[^\s<>"'()[\]{}]+|[A-Za-z]:[\\/](?:[\p{L}\p{N}_@+.-]+[\\/])*[\p{L}\p{N}_@+.-]+(?::\d+(?::\d+)?)?|(?:~\/)?\/?\.{1,2}\/(?:[\p{L}\p{N}_@+.-]+\/)*[\p{L}\p{N}_@+.-]+(?::\d+(?::\d+)?)?|(?:~\/)?\/?(?:[\p{L}\p{N}_@+.-]+\/)+[\p{L}\p{N}_@+.-]+(?::\d+(?::\d+)?)?|[\p{L}\p{N}_@+-][\p{L}\p{N}_@+.-]*\.[A-Za-z0-9]{1,8}(?![A-Za-z0-9_])/gu;
 
 /**
  * Split plain chat text (user messages) into literal runs and previewable

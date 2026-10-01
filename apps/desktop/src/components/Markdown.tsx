@@ -16,7 +16,7 @@ import {
   type RefObject,
   type ReactNode,
 } from "react";
-import ReactMarkdown, { type Components, type Options } from "react-markdown";
+import ReactMarkdown, { defaultUrlTransform, type Components, type Options } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
@@ -47,6 +47,7 @@ import {
   resolvePreviewTarget,
   safeDecodeUri,
   toWorkspaceRel,
+  toUserFilePath,
 } from "../lib/chat-links";
 import {
   isClosedFencedCodeBlock,
@@ -586,7 +587,7 @@ function Anchor({
       }
       return;
     }
-    const rel = toWorkspaceRel(safeDecodeUri(href), root, baseDir);
+    const rel = toUserFilePath(safeDecodeUri(href), root, baseDir);
     if (rel) {
       e.preventDefault();
       openFile(rel);
@@ -777,9 +778,13 @@ const markdownComponents: Components = {
 
 const staticRemarkPlugins = [remarkGfm, remarkMath];
 
-// Extend the default schema only for the media elements rendered above.
+// File/drive prefixes apply only to clicked links; automatic media stays restricted.
 const sanitizeSchema = {
   ...defaultSchema,
+  protocols: {
+    ...defaultSchema.protocols,
+    href: [...(defaultSchema.protocols?.href ?? []), "file", ..."abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"],
+  },
   attributes: {
     ...defaultSchema.attributes,
     img: [...(defaultSchema.attributes?.img || []), "src", "alt", "title", "className"],
@@ -870,6 +875,7 @@ const Block = memo(function MarkdownBlock({
   return (
     <MarkdownBlockContext.Provider value={context}>
       <ReactMarkdown
+        urlTransform={(url, key) => key === "href" && (/^[A-Za-z]:[\\/]/.test(url) || /^file:\/\//i.test(url)) ? url : defaultUrlTransform(url)}
         remarkPlugins={remarkPlugins}
         rehypePlugins={rehypePlugins}
         components={markdownComponents}

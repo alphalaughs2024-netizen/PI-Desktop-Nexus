@@ -10,6 +10,7 @@ import {
   listDir,
   previewFile,
   readOpenableFile,
+  readUserSelectedFile,
   readOpenableImage,
   readWorkspaceFile,
   resolveOpenablePath,
@@ -19,6 +20,34 @@ import {
 } from "../electron/main/fs-panel.ts";
 
 const ROOT = resolve("virtual-workspace");
+
+test("explicit user preview opens only the selected external file and leaves contained reads restricted", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "nexus-user-preview-"));
+  try {
+    const workspace = join(dir, "workspace"); await mkdir(workspace);
+    const outside = join(dir, "selected.md"); await writeFile(outside, "Selected content");
+    const selected = await readUserSelectedFile(outside, workspace, []);
+    assert.deepEqual(selected.file, { kind: "text", content: "Selected content", size: 16 });
+    await assert.rejects(readOpenableFile(outside, workspace, []), /outside allowed roots/);
+    await assert.rejects(readUserSelectedFile(dir, workspace, []), /not a file/);
+    const noWorkspace = await readUserSelectedFile(outside, null, []);
+    assert.equal(noWorkspace.path, selected.path);
+    await assert.rejects(readUserSelectedFile("selected.md", null, []), /workspace or absolute/);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test("bare AGENTS.md resolves the nearest inherited instruction file after an explicit click", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "nexus-agents-preview-"));
+  try {
+    const workspace = join(dir, "repo", "apps"); await mkdir(workspace, { recursive: true });
+    await writeFile(join(dir, "AGENTS.md"), "Outer");
+    await writeFile(join(dir, "repo", "AGENTS.md"), "Nearest");
+    assert.equal((await readUserSelectedFile("AGENTS.md", workspace, [])).file.content, "Nearest");
+    await writeFile(join(workspace, "AGENTS.md"), "Local");
+    assert.equal((await readUserSelectedFile("AGENTS.md", workspace, [])).file.content, "Local");
+    await assert.rejects(readUserSelectedFile("README.md", workspace, []), { code: "ENOENT" });
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
 
 test("resolves relative paths inside the workspace root", () => {
   assert.equal(resolveWithinRoot(ROOT, ""), ROOT);

@@ -1428,12 +1428,15 @@ Single message render — either user (plaintext) or assistant (markdown streami
   `fs/readImageDataUrl`); unresolved loads keep the chip. Bare path tokens in
   message text recognize Unicode letters and digits, so non-ASCII filenames
   chip exactly like ASCII ones; absolute and `~/` tokens are matched whole,
-  and one outside the workspace (or any home path) stays plain text rather
-  than rendering a chip that could never open — containment is unchanged
-  (D322). Clicking a
+  and outside absolute references retain their identity for an explicit user
+  preview (ADR 0264); unresolved home paths stay literal. Automatic reads and
+  agent permissions keep their own containment. Clicking a
   workspace HTML chip previews it in the side browser; clicking a resolved
   image thumbnail opens the host files viewer on that ref; clicking any other
-  allowed file opens it with the OS default application for that suffix.
+  allowed workspace file opens it with the OS default application for that
+  suffix. An external file chip opens the bounded work-panel viewer. Explicit
+  file links show the actual canonical location; a bare AGENTS.md can resolve
+  to the nearest inherited instruction file above a subfolder workspace.
   HTTP(S) URLs remain inline text links. Plain clicks follow the persisted
   Link open destination setting (Work panel browser by default, or the system
   default browser). Right-clicking a link opens a body-level context menu with

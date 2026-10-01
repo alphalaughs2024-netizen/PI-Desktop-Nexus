@@ -255,3 +255,4 @@ Each ADR includes:
 | 0255 | Connect Codex to Nexus-owned tools | Phase 2 manual acceptance pending |
 | 0260 | Exact model selection for every subagent | Manual acceptance pending |
 | 0263 | Codex command observations and bounded waits | Manual acceptance pending |
+| 0264 | User-selected file previews outside the workspace | Manual acceptance pending |

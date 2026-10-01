@@ -10,6 +10,7 @@ import {
   resolvePreviewTarget,
   splitChatText,
   toWorkspaceRel,
+  toUserFilePath,
 } from "../src/lib/chat-links.ts";
 
 const ROOT = "/Users/dev/project";
@@ -101,7 +102,7 @@ test("resolvePreviewTarget classifies urls and workspace files", () => {
     kind: "file",
     path: "src/a.ts",
   });
-  assert.equal(resolvePreviewTarget("/outside/root.ts", ROOT), null);
+  assert.deepEqual(resolvePreviewTarget("/outside/root.ts", ROOT), { kind: "file", path: "/outside/root.ts" });
   assert.equal(isHttpUrl("ftp://example.com"), false);
 });
 
@@ -114,7 +115,7 @@ test("getToolPreviewTarget reads path-like args and fetch urls", () => {
     getToolPreviewTarget({ file_path: "src/b.ts" }, ROOT),
     { kind: "file", path: "src/b.ts" },
   );
-  assert.equal(getToolPreviewTarget({ path: "/outside/a.ts" }, ROOT), null);
+  assert.deepEqual(getToolPreviewTarget({ path: "/outside/a.ts" }, ROOT), { kind: "file", path: "/outside/a.ts" });
   assert.deepEqual(
     getToolPreviewTarget({ url: "https://example.com" }, ROOT),
     { kind: "url", url: "https://example.com" },
@@ -146,7 +147,7 @@ test("splitChatText linkifies embedded refs and keeps literals", () => {
   ]);
 });
 
-test("splitChatText handles Unicode filenames without mislinking outside paths", () => {
+test("splitChatText preserves Unicode and explicit outside file references", () => {
   const segments = splitChatText(
     `see src/组件.ts, App.tsx文件, ${ROOT}/src/inside.ts, and /outside/root.ts`,
     ROOT,
@@ -156,11 +157,11 @@ test("splitChatText handles Unicode filenames without mislinking outside paths",
   );
   assert.deepEqual(
     files.map((segment) => segment.target.path),
-    ["src/组件.ts", "App.tsx", "src/inside.ts"],
+    ["src/组件.ts", "App.tsx", "src/inside.ts", "/outside/root.ts"],
   );
   assert.equal(
     segments.some((segment) => segment.kind === "target" && segment.text.includes("outside")),
-    false,
+    true,
   );
 });
 
@@ -266,7 +267,7 @@ test("splitChatText resolves a unicode absolute path under the root", () => {
   );
 });
 
-test("splitChatText leaves outside absolute and home paths as plain text", () => {
+test("splitChatText keeps the outside absolute anchor and unresolved home path literal", () => {
   // #235: the scanner used to drop the leading "/" (or "~") and chip the
   // suffix as a workspace-relative path that could never open.
   const outside = splitChatText(
@@ -274,8 +275,21 @@ test("splitChatText leaves outside absolute and home paths as plain text", () =>
     ROOT,
   );
   assert.deepEqual(outside, [
-    { kind: "text", text: "see /elsewhere/a.ts and ~/Downloads/x.png here" },
+    { kind: "text", text: "see " },
+    { kind: "target", text: "/elsewhere/a.ts", label: "a.ts", target: { kind: "file", path: "/elsewhere/a.ts" } },
+    { kind: "text", text: " and ~/Downloads/x.png here" },
   ]);
+});
+
+test("user-click paths preserve Windows drives and file URLs without broadening workspace resolution", () => {
+  assert.equal(toWorkspaceRel("C:\\Repo\\docs\\guide.md", "c:/repo"), "docs/guide.md");
+  assert.equal(toWorkspaceRel("C:/Other/AGENTS.md", "C:/Repo"), null);
+  assert.equal(toUserFilePath("C:/Other/AGENTS.md:12", "C:/Repo"), "C:/Other/AGENTS.md");
+  assert.equal(toUserFilePath("file:///C:/Other/My%20File.md", "C:/Repo"), "C:/Other/My File.md");
+  assert.equal(toUserFilePath("./next.md", "C:/Repo", "C:/Other/docs"), "C:/Other/docs/./next.md");
+  assert.equal(toUserFilePath("javascript:alert(1)", "C:/Repo"), null);
+  const files = splitChatText("see C:\\Other\\AGENTS.md:12", "C:/Repo").filter(s => s.kind === "target");
+  assert.deepEqual(files.map(s => s.target.path), ["C:/Other/AGENTS.md"]);
 });
 
 test("splitChatText keeps unknown extensions literal", () => {
