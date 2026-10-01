@@ -1,5 +1,6 @@
 import type {
   ContextCompactionMark,
+  EngineTurn,
   MessageUsage,
   UiMessage,
 } from "@pi-desktop/shared";
@@ -46,6 +47,8 @@ export type AssistantTurnEntry = {
   kind: "assistant-turn";
   id: string;
   anchorId?: string;
+  turnId?: string;
+  execution?: EngineTurn;
   parts: AssistantTurnPart[];
 };
 
@@ -64,7 +67,8 @@ function isVisibleMessage(message: UiMessage): boolean {
     message.role === "assistant" &&
     !(message.content || "").trim() &&
     !messageThinking(message) &&
-    !message.error
+    !message.error &&
+    !message.execution
   );
 }
 
@@ -134,12 +138,16 @@ export function buildTranscriptEntries(
   }
   const entries: TranscriptEntry[] = [];
   let turn: AssistantTurnEntry | undefined;
+  const executions = new Map(visible.filter(message => message.execution && !message.parentToolCallId).map(message => [message.execution!.id, message.execution!]));
+  const representedTurns = new Set(visible.filter(message => message.turnId && !message.execution && message.role !== "user").map(message => message.turnId));
 
   const ensureTurn = (message: UiMessage) => {
     if (turn) return turn;
     turn = {
       kind: "assistant-turn",
       id: message.id,
+      turnId: message.turnId,
+      execution: message.turnId ? executions.get(message.turnId) : undefined,
       parts: [],
     };
     entries.push(turn);
@@ -163,6 +171,15 @@ export function buildTranscriptEntries(
   };
 
   const appendMessage = (message: UiMessage) => {
+    if (message.execution) {
+      if (representedTurns.has(message.execution.id)) return;
+      ensureTurn(message).execution = message.execution;
+      return;
+    }
+    if (message.role === "user" && message.steering && turn && message.turnId === turn.turnId) {
+      turn.parts.push({ kind: "message", message });
+      return;
+    }
     if (message.role === "user" || message.role === "system") {
       turn = undefined;
       entries.push({ kind: "message", message });
@@ -250,7 +267,7 @@ export function assistantTurnMessages(
   entry: AssistantTurnEntry,
 ): UiMessage[] {
   return entry.parts.flatMap((part) =>
-    part.kind === "message" ? [part.message] : [],
+    part.kind === "message" && part.message.role === "assistant" ? [part.message] : [],
   );
 }
 
@@ -268,7 +285,7 @@ export function transcriptEntryMessages(
 ): UiMessage[] {
   return entries.flatMap((entry) => {
     if (entry.kind === "message") return [entry.message];
-    if (entry.kind === "assistant-turn") return assistantTurnMessages(entry);
+    if (entry.kind === "assistant-turn") return entry.parts.flatMap(part => part.kind === "message" ? [part.message] : []);
     return [];
   });
 }

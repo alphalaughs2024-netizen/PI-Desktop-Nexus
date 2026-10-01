@@ -6070,7 +6070,7 @@ function persistAgentEvent(envelope: AgentEventEnvelope): UiMessage | undefined 
     // Checkpoint only the session's own reply (D299). Delegate rows stream in
     // parallel with the parent's and would thrash a per-session checkpoint;
     // their loss on a crash is bounded to the Task call's activity.
-    if (!envelope.parentToolCallId) {
+    if (!envelope.parentToolCallId && !event.message.execution) {
       inflightCheckpointer.observe({
         sessionId: envelope.sessionId,
         turnId: envelope.turnId ?? turnId,
@@ -6187,7 +6187,7 @@ function persistAgentEvent(envelope: AgentEventEnvelope): UiMessage | undefined 
     // Checkpoint the finished snapshot before the outbox append (D327).
     // Settling first dropped the last interval of text, and endTurn used to
     // delete the host file while the final row was still queued.
-    if (!envelope.parentToolCallId) {
+    if (!envelope.parentToolCallId && !event.message.execution) {
       const sessionId = envelope.sessionId;
       const finalId = event.message.id;
       inflightCheckpointer.observe({
@@ -6207,7 +6207,7 @@ function persistAgentEvent(envelope: AgentEventEnvelope): UiMessage | undefined 
     const empty =
       !(event.message.content || "").trim() &&
       !(event.message.thinking || "").trim();
-    if (failed && empty && !event.message.error) return;
+    if (failed && empty && !event.message.error && !event.message.execution) return;
     void persistenceOutbox
       .enqueue(
         {
@@ -6232,6 +6232,7 @@ function persistAgentEvent(envelope: AgentEventEnvelope): UiMessage | undefined 
     const message: UiMessage = {
       id: event.toolCallId,
       role: "tool",
+      turnId: started?.turnId ?? envelope.turnId ?? turnId,
       content:
         typeof event.result === "string"
           ? event.result
@@ -8963,6 +8964,7 @@ function registerIpc() {
 
   handle(IPC.invoke.agentPrompt, async (req: AgentPromptRequest) => {
     if (!host || !sidecar) throw new Error("backend unavailable");
+    const acceptedAt = Date.now();
     // Install the renderer's prompt-time snapshot before any asynchronous
     // setup. This closes the gap where a fast completion could beat the
     // effect that reports the active chat session. Missing or mismatched
@@ -9210,6 +9212,7 @@ function registerIpc() {
           // The host-created durable turn is the approval identity used by
           // Rust. The runtime must not replace it with a provider-local UUID.
           turnId: durableTurnId,
+          acceptedAt,
           content: modelContent,
           attachments: preparedAttachments
             .filter((attachment) => attachment.inlineData)

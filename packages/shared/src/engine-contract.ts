@@ -18,6 +18,13 @@ export type EngineSession = {
   capabilities: EngineCapabilities;
 };
 export type EngineOutcome = "completed" | "interrupted" | "failed";
+export type EngineProgressPhase = "preparing" | "recovering" | "waiting-model" | "reasoning" | "answering" | "tool" | "waiting-approval" | "waiting-input" | "waiting-subagents" | "retrying" | "compacting";
+export type EnginePhaseSpan = {
+  phase: EngineProgressPhase;
+  startedAt: number;
+  completedAt?: number;
+  detail?: string;
+};
 export type EngineItem = {
   id: string;
   nativeId: string;
@@ -40,6 +47,10 @@ export type EngineTurn = {
   completedAt?: number;
   outcome?: EngineOutcome;
   error?: string;
+  /** Product timing metadata, bounded independently of streamed output. */
+  progressPhase?: EngineProgressPhase;
+  timeline?: EnginePhaseSpan[];
+  omittedSpans?: number;
   phase: "preparing" | "recovering" | "waiting-model" | "running" | "waiting-approval" | "terminal";
 };
 export type EngineSnapshot = {
@@ -56,13 +67,13 @@ export type EngineEvent = {
   sequence: number;
   ts: number;
 } & (
-  | { type: "phase"; phase: EngineTurn["phase"]; nativeTurnId?: string }
+  | { type: "phase"; phase: EngineTurn["phase"]; nativeTurnId?: string; progressPhase?: EngineProgressPhase; detail?: string }
   | { type: "native-segment"; expectedNativeTurnId: string; outcome: "completed" | "interrupted" }
   | { type: "item"; item: EngineItem }
   | { type: "terminal"; outcome: EngineOutcome; error?: string }
 );
 export interface EngineAdapter {
-  start(input: { turnId: string; text: string; thinkingLevel?: import("./types.js").ThinkingLevel; images?: Array<{ mimeType: string; data: string }> }): Promise<{ accepted: boolean; turnId: string }>;
+  start(input: { turnId: string; text: string; acceptedAt?: number; thinkingLevel?: import("./types.js").ThinkingLevel; images?: Array<{ mimeType: string; data: string }> }): Promise<{ accepted: boolean; turnId: string }>;
   interrupt(): Promise<void>;
   steer(input: { expectedTurnId: string; text: string; messageId?: string }): Promise<import("./types.js").SteerOutcome>;
   snapshot(): EngineSnapshot;

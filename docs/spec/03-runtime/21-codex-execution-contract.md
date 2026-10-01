@@ -231,7 +231,8 @@ Agent/Plan/Goal, new user turns, native file/shell tools and configured image in
 are supported. Legacy regenerate, manual
 compaction and graceful stop do not silently fall back to pi. Existing features
 remain available in the default runtime. Full response timeline/timer rendering
-is Phase 3; full coding services are Phase 4. Existing chat migration is not
+follows [Phase 3 progress and streaming](22-turn-progress-and-streaming.md);
+full coding services are Phase 4. Existing chat migration is not
 required. Responses support alone does not establish custom-tool compatibility.
 The original OpenRouter Space Bunny route did not expose the custom patch tool.
 [ADR 0253](../../adr/0253-openrouter-codex-patch-compatibility.md) adds an exact

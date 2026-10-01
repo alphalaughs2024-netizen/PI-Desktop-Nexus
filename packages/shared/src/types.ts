@@ -377,6 +377,10 @@ export type ToolTokenUsage = {
 
 export type UiMessage = {
   id: string;
+  /** Accepted user-turn identity, shared across commentary, tools and steering. */
+  turnId?: string;
+  /** Empty assistant record carrying whole-turn progress, never model reasoning. */
+  execution?: import("./engine-contract.js").EngineTurn;
   role: UiMessageRole;
   content: string;
   /** Files or images associated with a user turn, kept separate from text. */

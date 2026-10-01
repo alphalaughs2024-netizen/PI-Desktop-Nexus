@@ -93,7 +93,7 @@ export class CodexController {
             }
             this.extensions.get(sessionId)?.setThinkingLevel(params.thinkingLevel ?? "off");
           }
-          return await runtime.start({ turnId: params.turnId, text: content, thinkingLevel: params.thinkingLevel, images: (params.attachments ?? []).filter((a: any) => a.kind === "image" && a.data).map((a: any) => ({ mimeType: a.mimeType ?? "image/png", data: a.data })) });
+          return await runtime.start({ turnId: params.turnId, text: content, acceptedAt: params.acceptedAt, thinkingLevel: params.thinkingLevel, images: (params.attachments ?? []).filter((a: any) => a.kind === "image" && a.data).map((a: any) => ({ mimeType: a.mimeType ?? "image/png", data: a.data })) });
         } finally { this.admitting.delete(sessionId); }
       }
       case "agent.abort": await adapter?.interrupt(); await this.host?.call("plans.abort", { sessionId }); return { ok: true };
@@ -140,6 +140,8 @@ export class CodexController {
       snapshot.turn.outcome = "interrupted";
       snapshot.turn.phase = "terminal";
       snapshot.turn.completedAt = Date.now();
+      const last = snapshot.turn.timeline?.at(-1);
+      if (last && last.completedAt === undefined) last.completedAt = snapshot.turn.completedAt;
       snapshot.turn.error = "Previous engine process is unavailable; no actions replayed.";
       for (const item of snapshot.items) if (item.status === "running") {
         item.status = "interrupted"; item.completedAt = snapshot.turn.completedAt;

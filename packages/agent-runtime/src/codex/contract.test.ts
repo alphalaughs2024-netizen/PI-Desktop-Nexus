@@ -1,9 +1,36 @@
 import { describe, expect, it } from "vitest";
-import { ExecutionContract } from "./contract.js";
+import { ExecutionContract, MAX_TURN_PHASE_SPANS, recordProgressPhase } from "./contract.js";
 import type { EngineEvent, EngineSession } from "@pi-desktop/shared";
 const session: EngineSession = { sessionId: "s", engine: "codex", version: "0.157.1", workspace: "C:/workspace", providerId: "p", modelId: "m", capabilities: { imageInput: true, nativeTools: true, recovery: true, steering: false, browser: false, managedPreview: false } };
 const fixture = () => { const contract = new ExecutionContract(session); const turn = contract.accept("t", 100); const event = (sequence: number, payload: any, runId = turn.runId): EngineEvent => ({ sessionId: "s", runId, sequence, ts: 200, ...payload }); return { contract, turn, event }; };
 describe("execution contract", () => {
+  it("records truthful waits without inventing reasoning and closes whole-turn timing", () => {
+    const { contract, event } = fixture();
+    const item = { id: "reason", nativeId: "reason", kind: "reasoning", label: "reasoning", text: "", startedAt: 110, status: "running" };
+    contract.apply(event(1, { type: "item", item }));
+    expect(contract.snapshot().turn?.progressPhase).toBe("waiting-model");
+    contract.apply(event(2, { type: "item", item: { ...item, text: "Inspecting" } }));
+    expect(contract.snapshot().turn?.progressPhase).toBe("reasoning");
+    contract.apply(event(3, { type: "item", item: { ...item, text: "Inspecting", status: "completed" } }));
+    expect(contract.snapshot().turn?.progressPhase).toBe("waiting-model");
+    contract.apply(event(4, { type: "terminal", outcome: "interrupted", ts: 800 }));
+    const turn = contract.snapshot().turn!;
+    expect(turn.startedAt).toBe(100);
+    expect(turn.completedAt).toBe(800);
+    expect(turn.timeline?.at(-1)?.completedAt).toBe(800);
+  });
+  it("bounds metadata, retains the beginning and deduplicates sustained phases", () => {
+    const { turn } = fixture();
+    for (let i = 0; i < 600; i++) recordProgressPhase(turn, i % 2 ? "tool" : "waiting-model", 101 + i);
+    expect(turn.timeline).toHaveLength(MAX_TURN_PHASE_SPANS);
+    expect(turn.timeline?.[0]).toMatchObject({ phase: "preparing", startedAt: 100 });
+    expect(turn.omittedSpans).toBe(601 - MAX_TURN_PHASE_SPANS);
+    recordProgressPhase(turn, "retrying", 800, "x".repeat(1000));
+    const length = turn.timeline!.length;
+    recordProgressPhase(turn, "retrying", 900, "x".repeat(1000));
+    expect(turn.timeline).toHaveLength(length);
+    expect(turn.timeline!.at(-1)?.detail).toHaveLength(300);
+  });
   it("admits exactly one running turn", () => { const { contract } = fixture(); expect(() => contract.accept("other")).toThrow("AGENT_BUSY"); });
   it("rejects stale generations, sessions and repeated or delayed sequence numbers", () => {
     const { contract, event } = fixture();

@@ -104,6 +104,7 @@ import {
   type SessionSort,
 } from "../lib/sidebar-preferences";
 import { createFrameBatcher } from "../lib/frame-batcher";
+import { reconcileExecutionMessages } from "../lib/execution-projection";
 import { settleStoppedAssistantMetrics } from "../lib/context-usage";
 import { formatToolValue } from "../lib/tool-display";
 import { withReviewChangeState } from "../lib/workspace-review";
@@ -597,7 +598,7 @@ function cacheBackgroundTranscriptEvent(envelope: AgentEventEnvelope): void {
         !(event.message.content || "").trim() &&
         !(event.message.thinking || "").trim();
       next =
-        failed && empty && !event.message.error
+        failed && empty && !event.message.error && !event.message.execution
           ? removeLiveSessionMessage(current, event.message.id)
           : upsertLiveSessionMessage(current, event.message);
       break;
@@ -606,6 +607,7 @@ function cacheBackgroundTranscriptEvent(envelope: AgentEventEnvelope): void {
       next = upsertLiveSessionMessage(current, {
         id: event.toolCallId,
         role: "tool",
+        turnId: envelope.turnId,
         content: "",
         createdAt: new Date(envelope.ts).toISOString(),
         toolCallId: event.toolCallId,
@@ -643,6 +645,7 @@ function cacheBackgroundTranscriptEvent(envelope: AgentEventEnvelope): void {
       const completed: UiMessage = {
         id: event.toolCallId,
         role: "tool",
+        turnId: envelope.turnId,
         content:
           typeof event.result === "string"
             ? event.result
@@ -1341,7 +1344,7 @@ const streamUpdates = createFrameBatcher<AgentEventEnvelope>((envelopes) => {
   } finally {
     flushingStreamUpdates = false;
   }
-});
+}, { leading: true, maxWaitMs: 60 });
 
 export const useAppStore = create<AppState>((set, get) => ({
   ready: false,
@@ -1917,6 +1920,21 @@ export const useAppStore = create<AppState>((set, get) => ({
         cacheSessionTranscript(id, selectedMessages, historyWindow);
       }
       commitSelection(selectedMessages, false, historyWindow);
+      const snapshotUserIds = new Set(get().messages.filter(message => message.role === "user").map(message => message.id));
+      void api.getExecutionSnapshot(id).then(({ snapshot }) => {
+        if (!snapshot?.turn || get().activeSessionId !== id || !navigationIntentIsCurrent(intent)) return;
+        if (get().messages.some(message => message.role === "user" && !snapshotUserIds.has(message.id))) return;
+        const activeId = get().activeTurnIds[id];
+        if (activeId && activeId !== snapshot.turn.id && get().runningSessions[id]) return;
+        const latest = get().agentStatuses[id]?.execution;
+        if (latest?.turn && (latest.turn.runId !== snapshot.turn.runId || latest.sequence > snapshot.sequence)) return;
+        const current = get().messages;
+        const known = current.find(message => message.execution?.id === snapshot.turn!.id)?.execution;
+        if (known?.outcome && !snapshot.turn.outcome) return;
+        const restored = reconcileExecutionMessages(current, snapshot);
+        set(s => ({ messages: restored, runningSessions: { ...s.runningSessions, [id]: !snapshot.turn!.outcome },
+          isRunning: !snapshot.turn!.outcome, activeTurnIds: snapshot.turn!.outcome ? withoutRecordKey(s.activeTurnIds, id) : { ...s.activeTurnIds, [id]: snapshot.turn!.id } }));
+      }).catch(() => undefined);
       if (
         currentState.runningSessions[id] !== true &&
         durableCoversLiveSessionMessages(
@@ -4323,7 +4341,7 @@ export const useAppStore = create<AppState>((set, get) => ({
               event.message.status === "aborted") &&
             !event.message.content.trim() &&
             !(event.message.thinking || "").trim() &&
-            !event.message.error
+            !event.message.error && !event.message.execution
           ) {
             return {
               messages: s.messages.filter((m) => m.id !== event.message.id),
@@ -4346,6 +4364,7 @@ export const useAppStore = create<AppState>((set, get) => ({
             {
               id: event.toolCallId,
               role: "tool",
+              turnId: envelope.turnId,
               content: "",
               createdAt: new Date(envelope.ts).toISOString(),
               toolCallId: event.toolCallId,
@@ -4392,6 +4411,7 @@ export const useAppStore = create<AppState>((set, get) => ({
           const completed = {
             id: event.toolCallId,
             role: "tool" as const,
+            turnId: envelope.turnId,
             content:
               typeof event.result === "string"
                 ? event.result

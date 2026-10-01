@@ -11817,3 +11817,30 @@ or delete caches, profiles or earlier recovery files to hide this condition.
   commands and existing appearance remains unchanged.
 - **Validation**: Targeted runner/bridge fixtures. Full local E2E suites and
   packaged checks remain unrun unless explicitly requested.
+
+### E2E-Codex-Progress-Streaming: Whole-response progress (ADR 0261)
+
+- **Preconditions**: Opt-in Codex foundation profile, model with optional reasoning,
+  existing Nexus themes/icons and browser tools.
+- **Steps**: Send a request with a quiet startup, commentary, streamed command
+  output, reasoning when available, parallel workers and a final answer. Expand
+  the single status disclosure. Steer during generation and tool execution.
+  Pause on an approval and a user question. Inject a retry/compaction notification.
+  Scroll upward during sustained output, switch chats, reload while active and
+  after completion, then interrupt another response before its final output.
+  Repeat narrow/wide views and reduced motion. Suspend animation frames while
+  deltas arrive, then deliver a terminal/control event.
+- **Expected**: One turn identity and total timer survive all steps; no reset on
+  native segments. Quiet waits have truthful labels and no fabricated reasoning.
+  Commentary/final output never hide progress. Supplied thinking, tools, approvals,
+  retries, compaction and worker topology remain inspectable in one disclosure.
+  Steering appears once, remains after reload and is excluded from assistant copy.
+  Completion freezes total time; interruption/failure preserve partial work.
+  First output is immediate, pending latest snapshots drain within the fallback
+  scheduling window, and control/terminal events flush them before settlement.
+  User scrolling remains owned by the user; existing theme materials and geometry
+  stay intact. Snapshot restoration cannot overwrite a newer generation or replay
+  commands. Unowned prior execution is interrupted. Span omissions are explicit.
+- **Validation**: Targeted runtime lifecycle, Rust canonical metadata roundtrip,
+  renderer projection/batching checks and manual Phase 3 acceptance. Local E2E
+  suites remain unrun unless explicitly requested.

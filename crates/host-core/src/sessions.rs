@@ -152,6 +152,12 @@ pub struct UiMessage {
     pub role: String,
     pub content: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub turn_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub steering: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub execution: Option<Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub attachments: Option<Vec<MessageAttachment>>,
     pub created_at: String,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -267,6 +273,15 @@ fn is_default_title(title: &str) -> bool {
 /// the search index row (None for tool rows, matching the FTS triggers).
 pub(crate) fn ui_to_record(message: &UiMessage) -> (MessageRecord, Option<String>) {
     let mut meta_obj = serde_json::Map::new();
+    if let Some(turn_id) = &message.turn_id {
+        meta_obj.insert("turnId".into(), json!(turn_id));
+    }
+    if let Some(steering) = message.steering {
+        meta_obj.insert("steering".into(), json!(steering));
+    }
+    if let Some(execution) = &message.execution {
+        meta_obj.insert("execution".into(), execution.clone());
+    }
     if let Some(status) = &message.status {
         meta_obj.insert("status".into(), json!(status));
     }
@@ -397,6 +412,9 @@ pub(crate) fn record_to_ui(record: MessageRecord) -> UiMessage {
         _ => Vec::new(),
     };
     let meta = record.meta.unwrap_or(Value::Null);
+    let turn_id = meta.get("turnId").and_then(Value::as_str).map(str::to_string);
+    let steering = meta.get("steering").and_then(Value::as_bool);
+    let execution = meta.get("execution").cloned();
     let status = meta
         .get("status")
         .and_then(|v| v.as_str())
@@ -486,6 +504,9 @@ pub(crate) fn record_to_ui(record: MessageRecord) -> UiMessage {
             .unwrap_or_default();
         UiMessage {
             id: record.id,
+            turn_id,
+            steering,
+            execution,
             role: record.role,
             content: text,
             attachments: None,
@@ -532,6 +553,9 @@ pub(crate) fn record_to_ui(record: MessageRecord) -> UiMessage {
             .join("");
         UiMessage {
             id: record.id,
+            turn_id,
+            steering,
+            execution,
             role: record.role,
             content,
             attachments,
@@ -3195,6 +3219,9 @@ mod tests {
             provider_id: None,
             usage: None,
             response_duration_ms: None,
+            turn_id: None,
+            steering: None,
+            execution: None,
             response_output_tokens: None,
             error: None,
             revision_root_id: None,
@@ -3669,6 +3696,9 @@ mod tests {
             provider_id: None,
             usage: None,
             response_duration_ms: None,
+            turn_id: None,
+            steering: None,
+            execution: None,
             response_output_tokens: None,
             error: None,
             revision_root_id: None,
@@ -4003,6 +4033,9 @@ mod tests {
                 cost: None,
             }),
             response_duration_ms: Some(2_000),
+            turn_id: None,
+            steering: None,
+            execution: None,
             response_output_tokens: Some(34),
             error: None,
             revision_root_id: None,
@@ -4058,6 +4091,26 @@ mod tests {
         assert_eq!(usage.total_tokens, 48);
         assert_eq!(detail.messages[0].response_duration_ms, Some(2_000));
         assert_eq!(detail.messages[0].response_output_tokens, Some(34));
+    }
+
+    #[test]
+    fn execution_summary_roundtrips_without_becoming_reasoning() {
+        let db = test_db();
+        let session = create_session(&db, None, None, None, None, None).unwrap();
+        let mut message = user_msg("turn:execution", "", "2026-10-01T00:00:00Z");
+        message.role = "assistant".into();
+        message.turn_id = Some("turn".into());
+        message.execution = Some(json!({
+            "id": "turn", "runId": "run", "startedAt": 100,
+            "completedAt": 2100, "outcome": "interrupted", "phase": "terminal",
+            "timeline": [{"phase": "waiting-model", "startedAt": 100, "completedAt": 2100}]
+        }));
+        append_message(&db, &session.id, &message, None).unwrap();
+        let restored = get_session(&db, &session.id).unwrap().unwrap().messages.remove(0);
+        assert_eq!(restored.turn_id, message.turn_id);
+        assert_eq!(restored.execution, message.execution);
+        assert!(restored.content.is_empty());
+        assert!(restored.thinking.is_none());
     }
 
     #[test]

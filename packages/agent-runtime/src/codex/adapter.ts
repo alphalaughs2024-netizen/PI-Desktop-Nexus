@@ -73,6 +73,7 @@ export class CodexAdapter implements EngineAdapter {
   activeTurnId(): string | undefined { const turn = this.snapshot().turn; return this.cancelled || this.disposed || turn?.outcome ? undefined : turn?.id; }
   setDelegationActivity(count: number): void {
     this.delegationActivity = count ? { phase: "waiting-subagents", since: this.delegationActivity?.since ?? Date.now(), subagentCount: count } : undefined;
+    this.apply({ type: "phase", phase: "running", progressPhase: count ? "waiting-subagents" : this.contract.currentProgress() });
     this.status();
   }
   completeTask(itemId: string, result: unknown, failed: boolean): void {
@@ -144,7 +145,8 @@ export class CodexAdapter implements EngineAdapter {
   getStatus(): AgentStatus {
     const state = this.snapshot();
     const turn = state.turn;
-    if (this.admission) return { sessionId: this.config.sessionId, modelId: this.config.provider.modelId, isRunning: true, currentTurnId: this.admission.id, pendingToolConfirmations: this.approvals.size, activity: { phase: "recovering", since: this.admission.startedAt }, execution: { session: state.session, sequence: state.sequence } };
+    if (this.admission) return { sessionId: this.config.sessionId, modelId: this.config.provider.modelId, isRunning: true, currentTurnId: this.admission.id, pendingToolConfirmations: this.approvals.size, activity: { phase: "recovering", since: this.admission.startedAt }, execution: { session: state.session, sequence: 0,
+      turn: { id: this.admission.id, runId: `${this.admission.id}:admission`, startedAt: this.admission.startedAt, phase: "recovering", progressPhase: "recovering" } } };
     return { execution: { session: state.session, turn: state.turn, sequence: state.sequence }, sessionId: this.config.sessionId, modelId: this.config.provider.modelId,
       isRunning: !!turn && !turn.outcome, currentTurnId: turn && !turn.outcome ? turn.id : undefined,
       pendingToolConfirmations: this.approvals.size,
@@ -155,7 +157,14 @@ export class CodexAdapter implements EngineAdapter {
     const turn = this.snapshot().turn;
     this.emit({ sessionId: this.config.sessionId, turnId: this.admission?.id ?? turn?.id, ts: Date.now(), event });
   }
-  private status(): void { this.event({ type: "status", status: this.getStatus() }); }
+  private status(): void {
+    this.event({ type: "status", status: this.getStatus() });
+    const turn = this.getStatus().execution?.turn;
+    if (!turn) return;
+    const message: UiMessage = { id: `${turn.id}:execution`, turnId: turn.id, role: "assistant", content: "",
+      createdAt: new Date().toISOString(), status: "complete", execution: turn };
+    this.event({ type: turn.outcome ? "message_end" : "message_update", message });
+  }
   private apply(payload: any): boolean {
     const turn = this.snapshot().turn;
     if (!turn || turn.outcome) return false;
@@ -273,19 +282,27 @@ export class CodexAdapter implements EngineAdapter {
       throw error;
     }
   }
-  async start(input: { turnId: string; text: string; thinkingLevel?: ThinkingLevel; images?: Array<{ mimeType: string; data: string }> }): Promise<{ accepted: boolean; turnId: string }> {
+  async start(input: { turnId: string; text: string; acceptedAt?: number; thinkingLevel?: ThinkingLevel; images?: Array<{ mimeType: string; data: string }> }): Promise<{ accepted: boolean; turnId: string }> {
     if (this.disposed || this.starting || this.getStatus().isRunning) throw new Error("AGENT_BUSY");
-    this.admission = { id: input.turnId, startedAt: Date.now() };
+    this.admission = { id: input.turnId, startedAt: input.acceptedAt ?? Date.now() };
+    const recoveringAt = Date.now();
     this.cancelled = false;
     this.status();
-    try { await this.recover(); }
-    catch (error) { this.admission = undefined; throw error; }
+    try {
+      await this.recover();
+      if (this.cancelled || this.disposed) throw Object.assign(new Error("Turn interrupted during preparation"), { errorCode: "TURN_ABORTED" });
+    }
+    catch (error) {
+      const turn = this.getStatus().execution?.turn;
+      if (turn) this.event({ type: "message_end", message: { id: `${turn.id}:execution`, turnId: turn.id, role: "assistant", content: "", status: "complete",
+        createdAt: new Date().toISOString(), execution: { ...turn, phase: "terminal", outcome: this.cancelled ? "interrupted" : "failed", completedAt: Date.now() } } });
+      this.admission = undefined; throw error;
+    }
     const acceptedAt = this.admission.startedAt;
     this.admission = undefined;
-    if (this.cancelled || this.disposed) throw Object.assign(new Error("Turn interrupted during preparation"), { errorCode: "TURN_ABORTED" });
     const previous = this.snapshot().turn?.nativeTurnId;
     if (previous) this.retiredTurns.add(previous);
-    const turn = this.contract.accept(input.turnId, acceptedAt);
+    const turn = this.contract.accept(input.turnId, acceptedAt, recoveringAt);
     this.sequence = 0; this.cancelled = false; this.ending = undefined; this.turnGeneration = turn.runId; this.rawCalls.clear(); this.steeringMessages.clear(); this.steeringQueue = Promise.resolve();
     this.turnLifetime = new AbortController(); this.claimedTools.clear();
     await this.checkpoint();
@@ -350,7 +367,7 @@ export class CodexAdapter implements EngineAdapter {
       } else await this.steerGeneration(input.text, messageId);
       if (this.snapshot().turn?.runId !== turn.runId) return { state: "rejected", reason: "stale_turn" };
       if (this.cancelled || this.snapshot().turn?.outcome) return { state: "failed", reason: "The turn ended before steering was recorded. No steering request was replayed." };
-      const message: UiMessage = { id: messageId, role: "user", content: input.text, createdAt, status: "complete", steering: true };
+      const message: UiMessage = { id: messageId, turnId: turn.id, role: "user", content: input.text, createdAt, status: "complete", steering: true };
       this.event({ type: "message_start", message }); this.event({ type: "message_end", message });
       this.event({ type: "lifecycle", lifecycle: { id: randomUUID(), kind: "steering_accepted", ts: Date.now(), turnId: turn.id } });
       return { state: "accepted", sessionId: this.config.sessionId, expectedTurnId: turn.id };
@@ -419,7 +436,7 @@ export class CodexAdapter implements EngineAdapter {
       else void this.end(p.turn.status === "completed" ? "completed" : p.turn.status === "interrupted" ? "interrupted" : "failed", p.turn.error?.message);
     }
     else if (method === "error") {
-      if (p.willRetry) { this.event({ type: "lifecycle", lifecycle: { id: randomUUID(), kind: "retry_started", ts: Date.now(), turnId: this.snapshot().turn?.id, reason: p.error?.message } }); }
+      if (p.willRetry) { this.apply({ type: "phase", phase: "waiting-model", progressPhase: "retrying" }); this.status(); this.event({ type: "lifecycle", lifecycle: { id: randomUUID(), kind: "retry_started", ts: Date.now(), turnId: this.snapshot().turn?.id, reason: p.error?.message } }); }
       else void this.end("failed", p.error?.message ?? "CODEX_PROVIDER_FAILED");
     } else if (method === "item/started" || method === "item/completed") this.nativeItem(p.item, method === "item/completed");
     else if (method === "item/agentMessage/delta" || /reasoning\/.*Delta$/.test(method) || method === "item/commandExecution/outputDelta") {
@@ -434,7 +451,10 @@ export class CodexAdapter implements EngineAdapter {
     return { id: stableId(this.snapshot().turn!.id + ":" + nativeId), nativeId, kind, label, text: "", status: "running", startedAt: Date.now() };
   }
   private nativeItem(native: any, completed: boolean): void {
-    if (!native?.id || ["userMessage", "contextCompaction"].includes(native.type)) return;
+    if (!native?.id || native.type === "userMessage") return;
+    if (native.type === "contextCompaction") {
+      this.apply({ type: "phase", phase: "running", progressPhase: completed ? "waiting-model" : "compacting" }); this.status(); return;
+    }
     const kind: EngineItem["kind"] = native.type === "agentMessage" ? "assistant" : native.type === "reasoning" ? "reasoning" : "tool";
     const label = native.type === "commandExecution" ? "exec_command" : native.type === "fileChange" ? "apply_patch" : native.tool ?? native.type;
     const old = this.contract.item(native.id);
@@ -470,10 +490,12 @@ export class CodexAdapter implements EngineAdapter {
   }
   private update(item: EngineItem): void {
     const old = this.contract.item(item.nativeId);
+    const phase = this.contract.progressPhase;
     if (!this.apply({ type: "item", item }) || this.reconstructing) return;
+    if (phase !== this.contract.progressPhase) this.status();
     if (item.kind === "assistant" || item.kind === "reasoning") {
       const message: UiMessage = { id: item.id, role: "assistant", content: item.kind === "assistant" ? item.text : "", thinking: item.kind === "reasoning" ? item.text : undefined,
-        createdAt: new Date(item.startedAt).toISOString(), status: item.status === "running" ? "streaming" : item.status === "interrupted" ? "aborted" : item.status === "failed" ? "error" : "complete", modelId: this.config.provider.modelId, providerId: this.config.provider.id };
+        turnId: this.contract.turnId, createdAt: new Date(item.startedAt).toISOString(), status: item.status === "running" ? "streaming" : item.status === "interrupted" ? "aborted" : item.status === "failed" ? "error" : "complete", modelId: this.config.provider.modelId, providerId: this.config.provider.id };
       if (!old) this.event({ type: "message_start", message });
       if (item.status === "running") this.event({ type: "message_update", message, ...(item.kind === "reasoning" ? { deltaThinking: item.text.slice(old?.text.length ?? 0) } : { deltaText: item.text.slice(old?.text.length ?? 0) }) });
       else this.event({ type: "message_end", message });

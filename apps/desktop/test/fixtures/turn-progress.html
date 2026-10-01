@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en" data-theme="dark"><head><meta charset="utf-8"><title>Turn progress probe</title></head>
+<body><div id="root" style="height:100vh;max-width:1000px;margin:auto"></div>
+<script type="module">
+  import React from "react";
+  import ReactDOM from "react-dom/client";
+  import i18n from "i18next";
+  import { initReactI18next } from "react-i18next";
+  import { en, flattenCatalog } from "@pi-desktop/i18n";
+  import { ChatTranscript } from "../../src/components/ChatTranscript.tsx";
+  import { useAppStore } from "../../src/stores/app-store.ts";
+  import "../../src/styles/globals.css";
+  await i18n.use(initReactI18next).init({ lng: "en", resources: { en: { translation: flattenCatalog(en) } }, interpolation: { escapeValue: false } });
+  const root = ReactDOM.createRoot(document.getElementById("root"));
+  window.__renderProgressProbe = () => {
+    const state = useAppStore.getState();
+    root.render(React.createElement(ChatTranscript, { sessionId: state.activeSessionId, messages: state.messages, isRunning: state.isRunning }));
+  };
+  useAppStore.subscribe(window.__renderProgressProbe);
+  window.__phase3Store = useAppStore;
+</script></body></html>

@@ -9,12 +9,17 @@ type FrameHandle = number;
  */
 export function createFrameBatcher<T>(
   flush: (values: readonly T[]) => void,
+  options: { leading?: boolean; maxWaitMs?: number } = {},
 ) {
   const pending = new Map<string, T>();
   let handle: FrameHandle | null = null;
   let usesAnimationFrame = false;
+  let deadline: ReturnType<typeof setTimeout> | null = null;
+  let cooling = false;
 
   const cancelScheduledFlush = () => {
+    if (deadline !== null) clearTimeout(deadline);
+    deadline = null;
     if (handle === null) return;
     if (
       usesAnimationFrame &&
@@ -28,7 +33,8 @@ export function createFrameBatcher<T>(
   };
 
   const run = () => {
-    handle = null;
+    cancelScheduledFlush();
+    cooling = false;
     if (pending.size === 0) return;
     const values = [...pending.values()];
     pending.clear();
@@ -37,6 +43,7 @@ export function createFrameBatcher<T>(
 
   const schedule = () => {
     if (handle !== null) return;
+    deadline = setTimeout(run, options.maxWaitMs ?? 60);
     if (typeof globalThis.requestAnimationFrame === "function") {
       usesAnimationFrame = true;
       handle = globalThis.requestAnimationFrame(run);
@@ -49,6 +56,13 @@ export function createFrameBatcher<T>(
   return {
     enqueue(key: string, value: T) {
       pending.set(key, value);
+      if (options.leading && !cooling && handle === null) {
+        cooling = true;
+        const values = [...pending.values()]; pending.clear();
+        schedule();
+        flush(values);
+        return;
+      }
       schedule();
     },
     flushNow() {

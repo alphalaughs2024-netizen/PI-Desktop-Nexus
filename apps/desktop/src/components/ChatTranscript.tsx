@@ -15,6 +15,7 @@ import type {
   AgentActivity,
   AgentActivityAgent,
   ContextCompactionMark,
+  EngineTurn,
   MessageAttachment,
   MessageUsage,
   PlanningState,
@@ -2325,6 +2326,7 @@ function assistantTurnPropsEqual(
     previous.isActive !== next.isActive ||
     previous.runtimeActivity !== next.runtimeActivity ||
     previous.entry.anchorId !== next.entry.anchorId ||
+    previous.entry.execution !== next.entry.execution ||
     previous.entry.parts.length !== next.entry.parts.length
   ) {
     return false;
@@ -2478,6 +2480,71 @@ const TranscriptTail = memo(function TranscriptTail({
   transcriptEntryEqual(previous.entry, next.entry)
 );
 
+function TurnProgress({ execution, items, active }: { execution: EngineTurn; items: AssistantActivityItem[]; active: boolean }) {
+  const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
+  const [now, setNow] = useState(Date.now);
+  const detailsId = useId();
+  const live = active && !execution.outcome;
+  useEffect(() => {
+    if (!live) return;
+    setNow(Date.now());
+    const timer = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, [live]);
+  const elapsed = formatToolDuration(Math.max(0, ((execution.completedAt ?? now) - execution.startedAt) / 1000));
+  const phase = execution.outcome ?? (live ? execution.progressPhase ?? execution.phase : "unavailable");
+  const delegates = items.filter(isDelegationActivityItem);
+  const statuses = collectDelegationStatuses(items, { turnLive: live });
+  const timings = collectDelegationTimings(items);
+  const rows = [
+    ...(execution.timeline ?? []).map((span, index) => ({ at: span.startedAt, key: `phase-${index}`, span })),
+    ...items.map(item => ({ at: Date.parse(item.message.createdAt), key: item.message.id, item })),
+  ].sort((a, b) => a.at - b.at);
+  let renderedDelegates = false;
+  return <div className={`tool-activity-group turn-progress ${open ? "open" : ""} ${live ? "active" : ""}`} data-turn-id={execution.id}>
+    <button className="tool-activity-header" aria-expanded={open} aria-controls={detailsId} onClick={() => setOpen(value => !value)}>
+      <span className="tool-activity-icon" aria-hidden>{execution.outcome === "completed" ? <IconCheck size={14} /> : <IconSparkles size={14} />}</span>
+      <span className={`tool-activity-label ${live ? "running" : ""}`} role="status">{t(`chat.execution.${phase}`)}</span>
+      <span className="turn-progress-time" aria-label={t("chat.execution.totalTime")}>{elapsed}</span>
+      <span className="tool-activity-caret" aria-hidden><IconChevronRight size={12} /></span>
+    </button>
+    {open ? <div className="tool-activity-body turn-timeline" id={detailsId}>
+      {rows.map(row => {
+        if ("span" in row) return <div className="turn-timeline-event" key={row.key}>
+          <span className="turn-timeline-offset">{formatToolDuration(Math.max(0, (row.at - execution.startedAt) / 1000))}</span>
+          <span>{t(`chat.execution.${row.span.phase}`)}</span>
+        </div>;
+        const item = row.item;
+        if (item.kind === "tool") {
+          if (Boolean(isDelegationActivityItem(item))) {
+            if (renderedDelegates) return null;
+            renderedDelegates = true;
+            return <SubagentTopology key="delegates" items={delegates} delegationStatuses={statuses} delegationTimings={timings} />;
+          }
+          return <Fragment key={row.key}>
+            <ToolRow message={item.message} {...(item.delegate ? { delegate: item.delegate } : {})} />
+            <ReviewChangeCard message={item.message} />
+          </Fragment>;
+        }
+        return <ThinkingRow key={row.key} message={item.message} streaming={live && item.message.status === "streaming"} />;
+      })}
+      {execution.omittedSpans ? <div className="turn-timeline-event">{t("chat.execution.omitted", { count: execution.omittedSpans })}</div> : null}
+    </div> : null}
+  </div>;
+}
+
+const AssistantFragment = memo(function AssistantFragment({ message, active, sessionId }: { message: UiMessage; active: boolean; sessionId: string }) {
+  const streaming = active && message.status === "streaming";
+  const displayed = useSmoothText(message.content || "", streaming);
+  if (message.role === "user") return <MessageRow message={message} isRunning={active} />;
+  return <div className={`message-bubble assistant-turn-fragment${streaming ? " streaming" : ""}`}>
+    {displayed ? <div className="prose-chat"><Markdown source={displayed} /></div> : null}
+    {message.error ? <AssistantErrorMessage message={message} /> : null}
+    <RendererSlotMount slot="entryExtra" props={{ message, messageId: message.id, sessionId }} />
+  </div>;
+});
+
 const AssistantTurn = memo(function AssistantTurn({
   entry,
   isActive,
@@ -2543,6 +2610,7 @@ const AssistantTurn = memo(function AssistantTurn({
       <div className="message-col">
         {entry.parts.map((part, index) =>
           part.kind === "activity" ? (
+            entry.execution ? null :
             <ActivityGroup
               key={`activity-${part.items[0].message.id}`}
               items={part.items}
@@ -2553,26 +2621,10 @@ const AssistantTurn = memo(function AssistantTurn({
               turnDelegationTimings={turnDelegationTimings}
             />
           ) : (
-            <div
-              className={`message-bubble assistant-turn-fragment${
-                isActive && part.message.status === "streaming"
-                  ? " streaming"
-                  : ""
-              }`}
-              key={part.message.id}
-            >
-              {part.message.content ? (
-                <div className="prose-chat">
-                  <Markdown source={part.message.content} />
-                </div>
-              ) : null}
-              {part.message.error ? (
-                <AssistantErrorMessage message={part.message} />
-              ) : null}
-              <RendererSlotMount slot="entryExtra" props={{ message: part.message, messageId: part.message.id, sessionId: slotSessionId }} />
-            </div>
+            <AssistantFragment key={part.message.id} message={part.message} active={isActive} sessionId={slotSessionId} />
           ),
         )}
+        {entry.execution ? <TurnProgress execution={entry.execution} items={turnAllActivityItems} active={isActive} /> : null}
         {!isActive && metaMessage ? (
           <MessageMeta
             modelId={modelId}
@@ -3011,10 +3063,11 @@ export const ChatTranscript = memo(function ChatTranscript({
   const paneRevealed = paneVisible && !wasPaneVisibleRef.current;
   const deferredMessages = useDeferredValue(messages);
   const deferredCompactions = useDeferredValue(compactions);
+  const urgentUpdate = !isRunning || Boolean(pendingPermission || askPending || approvalPending);
   const renderedMessages =
-    firstCommit || paneRevealed ? messages : deferredMessages;
+    firstCommit || paneRevealed || urgentUpdate ? messages : deferredMessages;
   const renderedCompactions =
-    firstCommit || paneRevealed ? compactions : deferredCompactions;
+    firstCommit || paneRevealed || urgentUpdate ? compactions : deferredCompactions;
   const { entries, visible } = useMemo(
     () => buildTranscriptEntries(renderedMessages, renderedCompactions),
     [renderedMessages, renderedCompactions],
@@ -3270,6 +3323,7 @@ export const ChatTranscript = memo(function ChatTranscript({
   const hasSpecializedActivity = specializedActivity !== undefined;
   const showRunActivity =
     isRunning &&
+    !(lastEntry?.kind === "assistant-turn" && lastEntry.execution) &&
     !pendingPermission &&
     !askPending &&
     !approvalPending &&
@@ -3279,6 +3333,7 @@ export const ChatTranscript = memo(function ChatTranscript({
   // (thinking/tool/answer) take over so the transcript never duplicates state.
   const showWorking =
     isRunning &&
+    !(lastEntry?.kind === "assistant-turn" && lastEntry.execution) &&
     !pendingPermission &&
     !askPending &&
     !approvalPending &&
@@ -3291,6 +3346,7 @@ export const ChatTranscript = memo(function ChatTranscript({
   // the composer. The Composer mode chip keeps pulsing for the turn.
   const showPlanning =
     isRunning &&
+    !(lastEntry?.kind === "assistant-turn" && lastEntry.execution) &&
     planningState === "planning" &&
     !approvalPending &&
     !pendingPermission &&

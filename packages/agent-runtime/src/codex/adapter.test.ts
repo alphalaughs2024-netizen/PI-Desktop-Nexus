@@ -36,6 +36,36 @@ async function fixture(dataDir?: string, nativeTurns: any[] = [], options: { ste
 const settle = async () => { await new Promise(resolve => setTimeout(resolve, 30)); };
 const runningTool = (f: Awaited<ReturnType<typeof fixture>>) => f.event("item/started", { item: { id: "running-command", type: "commandExecution", command: "long-running fixture" } });
 describe("Codex adapter lifecycle", () => {
+  it("finalizes the admission summary when cancelled just after recovery", async () => {
+    const f = await fixture();
+    vi.spyOn(f.adapter, "recover").mockImplementation(async () => {
+      await f.adapter.interrupt();
+      return f.adapter.snapshot();
+    });
+    await expect(f.adapter.start({ turnId: "cancelled-admission", text: "Inspect" })).rejects.toMatchObject({ errorCode: "TURN_ABORTED" });
+    const summaries = f.events.filter(e => e.event.type === "message_end" && e.event.message.execution);
+    expect(summaries).toHaveLength(1);
+    expect((summaries[0].event as any).message.execution).toMatchObject({ id: "cancelled-admission", phase: "terminal", outcome: "interrupted" });
+    expect(f.adapter.getStatus().isRunning).toBe(false);
+    expect(f.calls).toHaveLength(0);
+  });
+  it("publishes one durable whole-response summary across quiet waits, tools and completion", async () => {
+    const f = await fixture(); const acceptedAt = Date.now() - 1000;
+    await f.adapter.start({ turnId: "timed", text: "Inspect", acceptedAt }); await settle();
+    expect(f.adapter.snapshot().turn?.startedAt).toBe(acceptedAt);
+    expect(f.adapter.snapshot().turn?.progressPhase).toBe("waiting-model");
+    runningTool(f);
+    f.event("item/commandExecution/outputDelta", { itemId: "running-command", delta: "partial" });
+    f.event("item/completed", { item: { id: "running-command", type: "commandExecution", aggregatedOutput: "done", exitCode: 0 } });
+    f.event("turn/completed", { turn: { id: "native-1", status: "completed" } }); await settle();
+    const summaries = f.events.filter(e => e.event.type === "message_end" && e.event.message.execution);
+    expect(summaries).toHaveLength(1);
+    const message = (summaries[0].event as any).message;
+    expect(message).toMatchObject({ id: "timed:execution", turnId: "timed", content: "", execution: { startedAt: acceptedAt, outcome: "completed" } });
+    expect(message.execution.completedAt - acceptedAt).toBeGreaterThanOrEqual(1000);
+    expect(message.execution.timeline.map((span: any) => span.phase)).toContain("tool");
+    expect(f.events.findIndex(e => e === summaries[0])).toBeLessThan(f.events.findIndex(e => e.event.type === "agent_end"));
+  });
   it("kills the old execution before a host planning transition and keeps one host turn", async () => {
     const f = await fixture(); await f.adapter.start({ turnId: "host", text: "Plan" }); await settle();
     const before = f.adapter.snapshot().turn!;

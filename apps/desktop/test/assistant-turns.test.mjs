@@ -25,6 +25,24 @@ function message(id, role, content, extra = {}) {
   };
 }
 
+test("one execution row covers commentary, tools, steering and final text after reload", () => {
+  const execution = { id: "turn", runId: "run", startedAt: 100, completedAt: 900, phase: "terminal", outcome: "completed" };
+  const rows = [
+    message("user", "user", "Build"),
+    message("intro", "assistant", "Inspecting", { turnId: "turn" }),
+    message("tool", "tool", "done", { turnId: "turn", toolName: "Read" }),
+    message("steer", "user", "Change direction", { turnId: "turn", steering: true }),
+    message("answer", "assistant", "Finished", { turnId: "turn" }),
+    message("summary", "assistant", "", { turnId: "turn", execution }),
+  ];
+  const { entries } = buildTranscriptEntries(rows);
+  assert.equal(entries.length, 2);
+  const turn = entries[1];
+  assert.equal(turn.execution, execution);
+  assert.equal(turn.parts.filter(p => p.kind === "message" && p.message.id === "steer").length, 1);
+  assert.equal(assistantTurnContent(turn), "Inspecting\n\nFinished");
+});
+
 test("groups assistant fragments and tools into one conversational turn", () => {
   const { entries } = buildTranscriptEntries([
     message("user", "user", "Fix the issue"),

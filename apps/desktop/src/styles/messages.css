@@ -42,7 +42,7 @@
   max-width: 240px;
 }
 
-.message-row.assistant .message-col,
+.message-row.assistant > .message-col,
 .message-row.system .message-col,
 .message-row.tool .message-col {
   width: min(100%, 720px);
@@ -1469,7 +1469,7 @@
   border-radius: var(--radius-sm);
 }
 
-.message-row.assistant .message-bubble,
+.message-row.assistant > .message-col > .message-bubble,
 .message-row.system .message-bubble,
 .message-row.tool .message-bubble {
   width: 100%;
@@ -2747,4 +2747,45 @@
   to {
     transform: rotate(360deg);
   }
+}
+
+.turn-progress-time {
+  margin-left: auto;
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+  color: var(--ds-text-muted);
+  font-size: var(--text-xs);
+}
+
+.turn-progress .tool-activity-label {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.turn-timeline {
+  padding-top: 8px;
+}
+
+.turn-timeline .tool-row-header,
+.turn-timeline .tool-row-head.is-run {
+  margin-inline: 0;
+}
+
+.assistant-turn > .message-col > .message-row.user {
+  width: 100%;
+}
+
+.turn-timeline-event {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 5px 0;
+  font-size: var(--text-xs);
+  color: var(--ds-text-muted);
+}
+
+.turn-timeline-offset {
+  min-width: 48px;
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
 }
