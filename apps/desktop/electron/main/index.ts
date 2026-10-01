@@ -21,6 +21,7 @@ import * as fs from "node:fs";
 import { existsSync, mkdirSync, statSync, writeFileSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
 import { listInstalledFonts } from "./system-fonts";
+import { rendererPermissionAllowed } from "./renderer-permissions";
 import {
   applyNetworkProxyFromAppSettings,
   currentNetworkProxy,
@@ -3206,14 +3207,10 @@ async function createWindow() {
   window.webContents.on("did-start-loading", () => speechService?.close());
   window.webContents.once("destroyed", () => speechService?.close());
   window.webContents.session.setPermissionRequestHandler((contents, permission, callback, details) => {
-    const audioOnly = permission === "media" &&
-      "mediaTypes" in details &&
-      Array.isArray(details.mediaTypes) &&
-      details.mediaTypes.length === 1 && details.mediaTypes[0] === "audio";
-    callback(audioOnly && contents.id === window.webContents.id);
+    callback(rendererPermissionAllowed(window.webContents.id, contents.id, permission, details, "request"));
   });
   window.webContents.session.setPermissionCheckHandler((contents, permission, _origin, details) =>
-    permission === "media" && contents?.id === window.webContents.id && details.mediaType === "audio",
+    rendererPermissionAllowed(window.webContents.id, contents?.id, permission, details, "check"),
   );
   const initialBounds = window.getBounds();
   workPanelBaseBounds = savedState ? { ...savedState } : { ...initialBounds };

@@ -11672,6 +11672,19 @@ or delete caches, profiles or earlier recovery files to hide this condition.
 - **Validation**: Targeted lifecycle tests and isolated native Windows Plan/Goal
   fixtures. Full local E2E suites remain unrun unless explicitly requested.
 
+### E2E-Renderer-Copy-Permissions: Copy remains available with speech permissions
+
+- **Preconditions**: Nexus contains an older conversation with user prompts.
+- **Steps**: Reopen that conversation, copy an older prompt and paste into the
+  composer without sending. Repeat for an assistant response and a code block.
+  Start dictation and confirm audio capture still works. Exercise clipboard-read,
+  camera and guest WebContents permission requests in an isolated fixture.
+- **Expected**: Each Copy action writes the exact displayed text and shows its
+  success state. Main renderer sanitized clipboard writes and audio-only capture
+  are allowed. Clipboard reads, camera and guest permissions remain denied.
+- **Validation**: Targeted renderer permission tests; manual Copy acceptance.
+  Full local E2E suites remain unrun unless explicitly requested.
+
 ### E2E-Browser-Session-Execution: Guest initialization and independent tool execution (ADR 0254)
 
 - **Preconditions**: A fresh chat and a local page with a labelled field, button,

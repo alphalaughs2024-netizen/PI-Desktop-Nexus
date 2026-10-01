@@ -60,5 +60,9 @@
   permission allows audio for the main window only, independently of plugin
   grants. Quiet speech above the peak silence threshold still reaches the
   selected model. HTTPS is required for hosted endpoints except loopback HTTP.
+- The main window's Chromium permission handlers also permit sanitized clipboard
+  writes, preserving prompt, response, and code Copy actions. Clipboard reads,
+  camera access, and clipboard/microphone requests from other WebContents remain
+  denied. Speech permissions do not replace the existing copy capability.
 
 See [ADR 0244](../../adr/0244-local-first-speech-input.md).
