@@ -36,6 +36,52 @@ async function fixture(dataDir?: string, nativeTurns: any[] = [], options: { ste
 const settle = async () => { await new Promise(resolve => setTimeout(resolve, 30)); };
 const runningTool = (f: Awaited<ReturnType<typeof fixture>>) => f.event("item/started", { item: { id: "running-command", type: "commandExecution", command: "long-running fixture" } });
 describe("Codex adapter lifecycle", () => {
+  it("streams sustained output without cloning the growing full snapshot for envelope metadata", async () => {
+    const f = await fixture(); await f.adapter.start({ turnId: "stream", text: "Inspect" }); await settle();
+    runningTool(f);
+    const snapshots = vi.spyOn(f.adapter, "snapshot");
+    for (let i = 0; i < 100; i++) f.event("item/commandExecution/outputDelta", { turnId: "native-1", itemId: "running-command", delta: "x".repeat(1000) });
+    // The fixture's event helper reads the snapshot once; the adapter must not.
+    expect(snapshots).toHaveBeenCalledTimes(100);
+    snapshots.mockRestore();
+    expect(f.adapter.snapshot().items[0].text).toHaveLength(100_000);
+    expect(f.events.filter(e => e.event.type === "tool_update").at(-1)).toMatchObject({ turnId: "stream", event: { partialResult: "x".repeat(100_000) } });
+  });
+  it("keeps yielded commands inspectable without masking later work or inventing an exit", async () => {
+    const f = await fixture(); await f.adapter.start({ turnId: "server", text: "Preview" }); await settle();
+    runningTool(f);
+    f.event("rawResponseItem/completed", { item: { type: "function_call", name: "exec_command", call_id: "running-command", arguments: "{}" } });
+    f.event("rawResponseItem/completed", { item: { type: "function_call_output", call_id: "running-command", output: "Chunk ID: abc\nWall time: 10.0074 seconds\nProcess running with session ID 67834\nOriginal token count: 44\nOutput:\nserving" } });
+    expect(f.adapter.snapshot().turn?.progressPhase).toBe("waiting-model");
+    expect(f.adapter.snapshot().items[0]).toMatchObject({ status: "running", command: { processId: "67834", yieldedAt: expect.any(Number) } });
+    f.event("item/started", { item: { id: "reason", type: "reasoning", summary: ["Inspecting the browser"] } });
+    expect(f.adapter.snapshot().turn?.progressPhase).toBe("reasoning");
+    f.event("item/started", { item: { id: "browser", type: "mcpToolCall", tool: "browser_snapshot" } });
+    expect(f.adapter.snapshot().turn?.progressPhase).toBe("tool");
+    f.event("item/completed", { item: { id: "browser", type: "mcpToolCall", tool: "browser_snapshot", result: { content: [] } } });
+    expect(f.adapter.snapshot().turn?.progressPhase).toBe("reasoning");
+    f.event("turn/completed", { turn: { id: "native-1", status: "completed" } }); await settle();
+    const command = f.adapter.snapshot().items[0];
+    expect(command.status).toBe("completed");
+    expect(command.completedAt).toBe(command.command?.yieldedAt);
+    expect(command.command?.exitedAt).toBeUndefined();
+    expect(command.result).toContain("Process running with session ID 67834");
+    expect(f.events.filter(e => e.event.type === "tool_end" && e.event.toolCallId === command.id)).toHaveLength(1);
+    expect(f.events.find(e => e.event.type === "tool_end" && e.event.toolCallId === command.id)?.event).toMatchObject({ isError: false });
+  });
+  it("requires an engine return header and preserves authoritative failure after yielding", async () => {
+    const f = await fixture(); await f.adapter.start({ turnId: "server", text: "Preview" }); await settle();
+    runningTool(f);
+    const raw = (output: string) => f.event("rawResponseItem/completed", { item: { type: "function_call_output", call_id: "running-command", output } });
+    f.event("rawResponseItem/completed", { item: { type: "function_call", name: "exec_command", call_id: "running-command" } });
+    raw("Chunk ID: a\nWall time: 1 seconds\nProcess exited with code 0\nOutput:\nProcess running with session ID 123\n");
+    expect(f.adapter.snapshot().turn?.progressPhase).toBe("tool");
+    raw("Chunk ID: a\nWall time: 1 seconds\nProcess running with session ID 123\nOutput:\n");
+    f.event("item/commandExecution/outputDelta", { itemId: "running-command", delta: "later output" });
+    expect(f.adapter.snapshot().turn?.progressPhase).toBe("waiting-model");
+    f.event("item/completed", { item: { id: "running-command", type: "commandExecution", processId: "123", status: "failed", exitCode: 1, aggregatedOutput: "later failure" } });
+    expect(f.adapter.snapshot().items[0]).toMatchObject({ status: "failed", command: { processId: "123", exitCode: 1, exitedAt: expect.any(Number) }, text: "later failure" });
+  });
   it("finalizes the admission summary when cancelled just after recovery", async () => {
     const f = await fixture();
     vi.spyOn(f.adapter, "recover").mockImplementation(async () => {

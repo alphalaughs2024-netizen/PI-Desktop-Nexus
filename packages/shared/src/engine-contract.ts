@@ -34,6 +34,8 @@ export type EngineItem = {
   text: string;
   args?: unknown;
   result?: unknown;
+  /** Native handle and observations only; a yielded command is not an exited process. */
+  command?: { processId: string; yieldedAt?: number; exitedAt?: number; exitCode?: number };
   startedAt: number;
   completedAt?: number;
 };

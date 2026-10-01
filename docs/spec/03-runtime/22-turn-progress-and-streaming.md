@@ -63,6 +63,14 @@ Phase spans describe wall-clock state and may include simultaneous activities;
 they are not additive provider/CPU measurements. Metadata is bounded to 256 spans,
 retains the first/latest spans and reports omissions. Per-span detail is bounded.
 
+Native commands with a canonical yielded process handle stay inspectable but do
+not take foreground priority over later work (ADR 0263). EngineItem command
+metadata records processId/yieldedAt and any authoritative exit observation.
+Successful turn settlement closes the returned invocation without implying that
+its process exited. Unreturned foreground commands still fail on unexpected
+completion. Recovery does not turn native in-progress state into an exit.
+Existing cancellation and process ownership remain in force.
+
 ## Delivery and Recovery
 
 Text/command updates use immediate leading delivery and latest-snapshot frame
@@ -70,6 +78,10 @@ coalescing. A 60ms fallback drains queues when frames are suspended. Control and
 terminal events synchronously flush pending snapshots before settling state.
 Existing scroll position, historical row memoization and bounded mounting remain.
 Completed text bypasses reveal pacing so no final output is hidden after finish.
+
+Native event routing, run identity and envelope metadata avoid full execution
+snapshot clones on sustained deltas. Explicit snapshots and checkpoints remain
+defensive copies; first-update and batching behavior is unchanged.
 
 Execution summaries have stable IDs and no textual/reasoning body. Rust persists
 the final summary plus turn identity and steering metadata. Active snapshots are

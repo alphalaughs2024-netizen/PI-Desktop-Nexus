@@ -154,8 +154,7 @@ export class CodexAdapter implements EngineAdapter {
     };
   }
   private event(event: AgentEvent): void {
-    const turn = this.snapshot().turn;
-    this.emit({ sessionId: this.config.sessionId, turnId: this.admission?.id ?? turn?.id, ts: Date.now(), event });
+    this.emit({ sessionId: this.config.sessionId, turnId: this.admission?.id ?? this.contract.turnId, ts: Date.now(), event });
   }
   private status(): void {
     this.event({ type: "status", status: this.getStatus() });
@@ -166,9 +165,9 @@ export class CodexAdapter implements EngineAdapter {
     this.event({ type: turn.outcome ? "message_end" : "message_update", message });
   }
   private apply(payload: any): boolean {
-    const turn = this.snapshot().turn;
-    if (!turn || turn.outcome) return false;
-    const event: EngineEvent = { ...payload, sessionId: this.config.sessionId, runId: turn.runId, sequence: ++this.sequence, ts: Date.now() };
+    const runId = this.contract.activeRunId;
+    if (!runId) return false;
+    const event: EngineEvent = { ...payload, sessionId: this.config.sessionId, runId, sequence: ++this.sequence, ts: Date.now() };
     const applied = this.contract.apply(event);
     if (applied && !this.checkpointTimer) this.checkpointTimer = setTimeout(() => {
       this.checkpointTimer = undefined;
@@ -422,10 +421,8 @@ export class CodexAdapter implements EngineAdapter {
     }
   }
   private belongs(params: any): boolean {
-    const state = this.snapshot();
-    if (!state.turn || state.turn.outcome || (params.threadId && params.threadId !== state.session.nativeHandle)) return false;
     const nativeTurn = params.turnId ?? params.turn?.id;
-    return !nativeTurn || (!this.retiredTurns.has(nativeTurn) && (!state.turn.nativeTurnId || nativeTurn === state.turn.nativeTurnId));
+    return (!nativeTurn || !this.retiredTurns.has(nativeTurn)) && this.contract.ownsNativeEvent(params.threadId, nativeTurn);
   }
   private nativeEvent({ method, params: p }: NativeEvent): void {
     if (!this.belongs(p)) return;
@@ -448,7 +445,7 @@ export class CodexAdapter implements EngineAdapter {
     } else if (method === "rawResponseItem/completed") this.raw(p.item ?? p.responseItem);
   }
   private newItem(nativeId: string, kind: EngineItem["kind"], label: string): EngineItem {
-    return { id: stableId(this.snapshot().turn!.id + ":" + nativeId), nativeId, kind, label, text: "", status: "running", startedAt: Date.now() };
+    return { id: stableId(this.contract.turnId! + ":" + nativeId), nativeId, kind, label, text: "", status: "running", startedAt: Date.now() };
   }
   private nativeItem(native: any, completed: boolean): void {
     if (!native?.id || native.type === "userMessage") return;
@@ -469,7 +466,10 @@ export class CodexAdapter implements EngineAdapter {
         if (details && typeof details === "object" && (details.delegationId || Array.isArray(details.delegations) || Array.isArray(details.stopped))) toolResult = { ...toolResult, details };
       } catch { /* Failed tool text is not a delegation payload. */ }
     }
-    this.update({ ...base, text, args: native.command ? { command: native.command, cwd: native.cwd } : native.changes ?? native.arguments ?? base.args,
+    // A reconstructed in-progress command is not evidence of process exit.
+    if (native.type === "commandExecution" && native.status === "inProgress") completed = false;
+    const processId = native.processId ?? base.command?.processId;
+    this.update({ ...base, text, ...(processId ? { command: { ...base.command, processId: String(processId), ...(completed ? { exitedAt: Date.now(), ...(typeof native.exitCode === "number" ? { exitCode: native.exitCode } : {}) } : {}) } } : {}), args: native.command ? { command: native.command, cwd: native.cwd } : native.changes ?? native.arguments ?? base.args,
       result: nexusToolDiagnostics(native.aggregatedOutput ?? native.error ?? toolResult ?? native.changes ?? text),
       status: completed ? failed ? "failed" : "completed" : "running", ...(completed ? { completedAt: Date.now() } : {}) });
   }
@@ -477,13 +477,21 @@ export class CodexAdapter implements EngineAdapter {
     if (!native) return;
     if (["custom_tool_call", "function_call"].includes(native.type)) {
       const name = native.name;
-      if (!["apply_patch", "write_stdin"].includes(name)) return;
+      if (!["apply_patch", "write_stdin", "exec_command"].includes(name)) return;
       this.rawCalls.set(native.call_id, { name, args: native.input ?? native.arguments });
-      if (!this.contract.item(native.call_id)) this.update({ ...this.newItem(native.call_id, "tool", name), args: native.input ?? native.arguments });
+      // Native commandExecution owns command starts; raw exec events only identify returns.
+      if (name !== "exec_command" && !this.contract.item(native.call_id)) this.update({ ...this.newItem(native.call_id, "tool", name), args: native.input ?? native.arguments });
     } else if (["custom_tool_call_output", "function_call_output"].includes(native.type)) {
       const call = this.rawCalls.get(native.call_id); if (!call) return;
       const old = this.contract.item(native.call_id); if (!old || old.status !== "running") return;
       const text = typeof native.output === "string" ? native.output : JSON.stringify(native.output);
+      if (call.name === "exec_command") {
+        // Match the engine's header, never process-looking text in command stdout.
+        const header = text.split(/\r?\nOutput:\r?\n/, 1)[0];
+        const yielded = /^Chunk ID: [^\r\n]+\r?\nWall time: [\d.]+ seconds\r?\nProcess running with session ID (\d+)(?:\r?\n|$)/.exec(header);
+        if (yielded) this.update({ ...old, command: { processId: yielded[1], yieldedAt: Date.now() }, result: native.output });
+        return;
+      }
       const failed = /apply_patch verification failed|Failed to|Error:|exited with code [1-9]|exit code: [1-9]/i.test(text);
       this.update({ ...old, text, result: native.output, status: failed ? "failed" : "completed", completedAt: Date.now() });
     }
@@ -566,7 +574,7 @@ export class CodexAdapter implements EngineAdapter {
           const continuation = await this.dependencies.beforeComplete(this.turnLifetime.signal);
           if (continuation && !this.cancelled && !this.disposed) {
             const turn = this.snapshot().turn!;
-            for (const item of this.snapshot().items) if (item.status === "running") this.update({ ...item, status: "failed", completedAt: Date.now() });
+            for (const item of this.snapshot().items) if (item.status === "running") this.update({ ...item, status: item.command?.yieldedAt !== undefined ? "completed" : "failed", completedAt: item.command?.yieldedAt ?? Date.now() });
             this.retiredTurns.add(turn.nativeTurnId!);
             if (!this.apply({ type: "native-segment", expectedNativeTurnId: turn.nativeTurnId, outcome: "completed" })) throw new Error("CODEX_DELEGATION_STALE_SEGMENT");
             await this.checkpoint();
@@ -583,7 +591,7 @@ export class CodexAdapter implements EngineAdapter {
       if (outcome !== "completed") { this.turnLifetime.abort(); await this.dependencies.stopOwnedWork?.(); }
       for (const id of [...this.approvals.keys()]) this.resolveApproval(id, "deny");
       // Emit final partial item states before the terminal signal.
-      for (const item of this.snapshot().items) if (item.status === "running" && item.kind !== "approval") this.update({ ...item, status: outcome === "completed" ? "failed" : outcome, completedAt: Date.now() });
+      for (const item of this.snapshot().items) if (item.status === "running" && item.kind !== "approval") this.update({ ...item, status: outcome === "completed" ? item.command?.yieldedAt !== undefined ? "completed" : "failed" : outcome, completedAt: item.command?.yieldedAt ?? Date.now() });
       if (!this.apply({ type: "terminal", outcome, error })) return;
       let persistenceError = recoveryFailure;
       try { await this.checkpoint(); } catch (cause) { persistenceError = recoveryWriteError(cause); }

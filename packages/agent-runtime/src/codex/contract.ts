@@ -7,7 +7,7 @@ function progressPhase(items: readonly EngineItem[]): EngineProgressPhase {
   const running = items.filter(item => item.status === "running");
   if (running.some(item => item.kind === "approval" && (item.label === "asktool" || item.label.endsWith("requestUserInput")))) return "waiting-input";
   if (running.some(item => item.kind === "approval")) return "waiting-approval";
-  if (running.some(item => item.kind === "tool")) return "tool";
+  if (running.some(item => item.kind === "tool" && item.command?.yieldedAt === undefined)) return "tool";
   if (running.some(item => item.kind === "assistant")) return "answering";
   if (running.some(item => item.kind === "reasoning" && item.text.trim())) return "reasoning";
   return "waiting-model";
@@ -38,6 +38,12 @@ export class ExecutionContract {
   snapshot(): EngineSnapshot { return structuredClone(this.state); }
   get progressPhase(): EngineProgressPhase | undefined { return this.state.turn?.progressPhase; }
   get turnId(): string | undefined { return this.state.turn?.id; }
+  get activeRunId(): string | undefined { return this.state.turn?.outcome ? undefined : this.state.turn?.runId; }
+  ownsNativeEvent(threadId?: string, turnId?: string): boolean {
+    const turn = this.state.turn;
+    return !!turn && !turn.outcome && (!threadId || threadId === this.state.session.nativeHandle)
+      && (!turnId || !turn.nativeTurnId || turnId === turn.nativeTurnId);
+  }
   currentProgress(): EngineProgressPhase { return progressPhase(this.state.items); }
   bind(handle: string): void { this.state.session.nativeHandle = handle; }
   accept(id: string, now = Date.now(), recoveringAt?: number): EngineTurn {
@@ -83,8 +89,8 @@ export class ExecutionContract {
       if (event.error) turn.error = event.error;
       for (const item of this.state.items) {
         if (item.status === "running") {
-          item.status = event.outcome === "completed" ? "failed" : event.outcome;
-          item.completedAt = event.ts;
+          item.status = event.outcome === "completed" ? item.command?.yieldedAt !== undefined ? "completed" : "failed" : event.outcome;
+          item.completedAt = item.command?.yieldedAt ?? event.ts;
         }
       }
     }

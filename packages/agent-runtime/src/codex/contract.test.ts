@@ -4,6 +4,17 @@ import type { EngineEvent, EngineSession } from "@pi-desktop/shared";
 const session: EngineSession = { sessionId: "s", engine: "codex", version: "0.157.1", workspace: "C:/workspace", providerId: "p", modelId: "m", capabilities: { imageInput: true, nativeTools: true, recovery: true, steering: false, browser: false, managedPreview: false } };
 const fixture = () => { const contract = new ExecutionContract(session); const turn = contract.accept("t", 100); const event = (sequence: number, payload: any, runId = turn.runId): EngineEvent => ({ sessionId: "s", runId, sequence, ts: 200, ...payload }); return { contract, turn, event }; };
 describe("execution contract", () => {
+  it("restores yielded command observations and lets foreground activity own progress", () => {
+    const { contract, event } = fixture();
+    contract.apply(event(1, { type: "item", item: { id: "server", nativeId: "server", kind: "tool", label: "exec_command", status: "running", text: "server output", startedAt: 101, command: { processId: "123", yieldedAt: 150 } } }));
+    const restored = new ExecutionContract(session, contract.snapshot());
+    expect(restored.currentProgress()).toBe("waiting-model");
+    restored.apply(event(2, { type: "item", item: { id: "answer", nativeId: "answer", kind: "assistant", label: "assistant", status: "running", text: "Checking", startedAt: 160 } }));
+    expect(restored.currentProgress()).toBe("answering");
+    restored.apply(event(3, { type: "terminal", outcome: "completed" }));
+    expect(restored.snapshot().items[0]).toMatchObject({ status: "completed", completedAt: 150, command: { processId: "123", yieldedAt: 150 } });
+    expect(restored.snapshot().items[0].command?.exitedAt).toBeUndefined();
+  });
   it("records truthful waits without inventing reasoning and closes whole-turn timing", () => {
     const { contract, event } = fixture();
     const item = { id: "reason", nativeId: "reason", kind: "reasoning", label: "reasoning", text: "", startedAt: 110, status: "running" };
