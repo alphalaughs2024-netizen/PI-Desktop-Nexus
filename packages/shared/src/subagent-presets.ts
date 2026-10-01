@@ -10,7 +10,7 @@
  * starter values and is exercised by `subagent-presets.test.ts`.
  */
 
-import { DEFAULT_SUBAGENT_TOOLS, SUBAGENT_BROWSER_TOOLS, type SubagentDefinition } from "./subagent-definition.js";
+import { DEFAULT_SUBAGENT_TOOLS, SUBAGENT_BROWSER_TOOLS, SUBAGENT_BROWSER_INSPECTION_TOOLS, type SubagentDefinition } from "./subagent-definition.js";
 
 /**
  * One built-in subagent surfaced as a "start from template" entry in the
@@ -44,7 +44,7 @@ export const SUBAGENT_PRESETS: readonly SubagentPreset[] = [
     name: "Explorer",
     description:
       "Fast codebase search and pattern matching — find files, locate implementations and answer \"where is X?\" / \"how does Y work?\". Shell-enabled; inspection intent does not enforce read-only access.",
-    tools: ["Read", "Glob", "Grep", "Bash"],
+    tools: ["Read", "Glob", "Grep", "Bash", ...SUBAGENT_BROWSER_INSPECTION_TOOLS],
     maxTurns: 60,
     body:
       `You are Explorer — a fast codebase navigation specialist.\n` +
@@ -72,7 +72,7 @@ export const SUBAGENT_PRESETS: readonly SubagentPreset[] = [
     name: "Code reviewer",
     description:
       "Review specific code or a specific change for defects. Use for a second opinion on correctness, edge cases and missing tests before you commit.",
-    tools: ["Read", "Glob", "Grep"],
+    tools: ["Read", "Glob", "Grep", ...SUBAGENT_BROWSER_INSPECTION_TOOLS],
     maxTurns: 50,
     body:
       `Review only what the task names, and read enough surrounding code to judge it.\n` +
@@ -92,7 +92,7 @@ export const SUBAGENT_PRESETS: readonly SubagentPreset[] = [
     name: "Test runner",
     description:
       "Run a specific test or build command and report what failed and why. Use when a command's output is long and only the failures matter.",
-    tools: ["Read", "Glob", "Grep", "Bash"],
+    tools: ["Read", "Glob", "Grep", "Bash", ...SUBAGENT_BROWSER_TOOLS],
     maxTurns: 40,
     body:
       `Run the command the task names. Do not invent a different one, and do not fix\n` +
@@ -112,7 +112,7 @@ export const SUBAGENT_PRESETS: readonly SubagentPreset[] = [
     name: "Fixer",
     description:
       "Implement a complete multi-file change from a spec. Use when a feature or fix spans several files and the work is separable — it can write files inside the workspace while you keep working.",
-    tools: ["Read", "Glob", "Grep", "Edit", "Write", "Bash"],
+    tools: ["Read", "Glob", "Grep", "Edit", "Write", "Bash", "BrowserPreview", ...SUBAGENT_BROWSER_TOOLS],
     maxTurns: 80,
     body:
       `You are Fixer — a fast, focused implementation specialist. The main agent\n` +

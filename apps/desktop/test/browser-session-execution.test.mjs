@@ -1,9 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { BrowserHost } from "../electron/main/browser-host.ts";
-import { BrowserTabsPane } from "../electron/main/browser-tabs-pane.ts";
-import { BrowserBroker } from "../electron/main/browser-broker.ts";
-import { createBrowserTypedTools } from "../electron/main/browser-typed-tools.ts";
+import "./browser-test-loader.mjs";
+const { BrowserHost } = await import("../electron/main/browser-host.ts");
+const { BrowserTabsPane } = await import("../electron/main/browser-tabs-pane.ts");
+const { BrowserBroker } = await import("../electron/main/browser-broker.ts");
+const { createBrowserTypedTools } = await import("../electron/main/browser-typed-tools.ts");
 
 function fixture() {
   const panes = [];
@@ -72,7 +73,7 @@ test("inspection works on an explicit retained tab without GUI selection", async
   let received;
   const broker = new BrowserBroker({ activeBrowserId: () => "visible", snapshot: async (target) => { received = target; return { tree: "page", url: "https://hidden.example", title: "Hidden" }; } });
   const result = await broker.snapshot({ sessionId: "a", browserId: "hidden" });
-  assert.equal(result.ok, true); assert.deepEqual(received, { sessionId: "a", browserId: "hidden" });
+  assert.equal(result.ok, true); assert.deepEqual({ ...received, signal: undefined }, { sessionId: "a", browserId: "hidden", signal: undefined }); assert.ok(received.signal instanceof AbortSignal);
 });
 
 test("snapshot refs are scoped to session as well as browser ID", async () => {
@@ -82,7 +83,7 @@ test("snapshot refs are scoped to session as well as browser ID", async () => {
   await broker.snapshot({ sessionId: "b", browserId: "same" });
   assert.equal((await broker.click("e1", { sessionId: "a", browserId: "same", snapshotId: "snapshot-1" })).ok, true);
   assert.equal((await broker.click("e1", { sessionId: "c", browserId: "same", snapshotId: "snapshot-1" })).code, "BROWSER_STALE_REF");
-  assert.deepEqual(calls, [{ sessionId: "a", browserId: "same" }]);
+  assert.deepEqual(calls.map(({ signal, ...target }) => target), [{ sessionId: "a", browserId: "same" }]); assert.ok(calls[0].signal instanceof AbortSignal);
 });
 
 test("navigation invalidates refs only for the target tab", async () => {
@@ -98,7 +99,7 @@ test("wait reads the calling tab even if another page is visible", async () => {
   let received;
   const broker = new BrowserBroker({ getState: (target) => { received = target; return { url: "https://a.example", isLoading: false }; }, snapshot: async () => ({ tree: "", url: "https://a.example", title: "A" }) });
   const result = await broker.wait({ kind: "url", match: "equals", value: "https://a.example" }, { sessionId: "a", browserId: "tab-a" }, 500);
-  assert.equal(result.ok, true); assert.deepEqual(received, { sessionId: "a", browserId: "tab-a" });
+  assert.equal(result.ok, true); assert.deepEqual({ ...received, signal: undefined }, { sessionId: "a", browserId: "tab-a", signal: undefined }); assert.ok(received.signal instanceof AbortSignal);
 });
 
 test("tab listing returns only the requesting session's retained tabs", async () => {

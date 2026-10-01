@@ -184,6 +184,33 @@
 .browser-diagnostics-row dt { color: var(--browser-text-muted, var(--ds-text-muted)); }
 .browser-diagnostics-row dd { margin: 0; color: var(--browser-text, var(--ds-text-primary)); text-align: right; }
 .browser-diagnostics-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+.browser-tools-drawer { align-items: stretch; justify-content: flex-start; color: var(--browser-text); min-width: 0; overflow: hidden; }
+.browser-tools-drawer > * { max-width: none; align-self: stretch; }
+.browser-tools-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex: 0 0 auto; }
+.browser-tools-heading h2 { margin: 0; font-size: var(--text-md); }
+.browser-tools-heading button, .browser-tools-commands button, .browser-tools-results button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 30px; }
+.browser-tools-drawer button:focus-visible, .browser-tools-drawer select:focus-visible, .browser-tools-drawer input:focus-visible, .browser-tools-screenshot a:focus-visible { outline: 2px solid var(--browser-focus); outline-offset: 2px; }
+.browser-tools-drawer button:disabled { opacity: .5; }
+.browser-tools-tabs { display: flex; flex: 0 0 auto; gap: 4px; border-bottom: 1px solid var(--browser-border); padding-bottom: 8px; }
+.browser-tools-tabs button { flex: 1 1 0; padding: 6px 2px; min-width: 0; font-size: var(--text-sm); }
+.browser-tools-tabs button[aria-selected="true"] { background: var(--browser-tab-hover); border-color: var(--browser-focus); }
+.browser-tools-content { flex: 1 1 auto; min-height: 0; overflow: auto; padding: 4px 3px; scrollbar-gutter: stable; }
+.browser-tools-field { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-block: 8px; font-size: var(--text-sm); }
+.browser-tools-field select, .browser-tools-field input:not([type="checkbox"]) { min-width: 0; max-width: 65%; padding: 6px; border: 1px solid var(--browser-border); border-radius: 4px; background: var(--browser-address-surface); color: var(--browser-text); }
+.browser-tools-field input[type="checkbox"] { accent-color: var(--browser-focus); }
+.browser-tools-commands { display: flex; flex-wrap: wrap; gap: 6px; margin-block: 10px; }
+.browser-tools-screenshot { margin: 12px 0; }
+.browser-tools-screenshot img { width: 100%; height: auto; display: block; border: 1px solid var(--browser-border); }
+.browser-tools-screenshot figcaption { display: flex; align-items: center; justify-content: space-between; padding-top: 6px; font-size: var(--text-sm); color: var(--browser-text-muted); }
+.browser-tools-screenshot a { color: var(--browser-text); padding: 4px; }
+.browser-tools-results { margin: 10px 0; padding: 0; list-style: none; }
+.browser-tools-results li { display: flex; align-items: center; justify-content: space-between; gap: 8px; border-bottom: 1px solid var(--browser-border); padding-block: 8px; font-size: var(--text-sm); }
+.browser-tools-results li > span, .browser-tools-results li > div { min-width: 0; overflow-wrap: anywhere; }
+.browser-tools-results small { display: block; color: var(--browser-text-muted); margin-top: 4px; }
+.browser-tools-log { display: flex; gap: 8px; font-size: var(--text-sm); border-bottom: 1px solid var(--browser-border); padding-block: 6px; overflow-wrap: anywhere; }
+.browser-tools-log strong { flex: 0 0 auto; }
+.browser-tools-json { white-space: pre-wrap; overflow-wrap: anywhere; font-size: var(--text-xs); max-width: 100%; }
+.browser-tools-pending { flex: 0 0 auto; font-size: var(--text-sm); color: var(--browser-text-muted); }
 @media (prefers-reduced-motion: reduce) { .browser-readiness-strip--starting .browser-readiness-dot, .browser-readiness-strip--loading .browser-readiness-dot { animation: none; } }
 @media (prefers-reduced-motion: reduce) { .browser-diagnostics-drawer--open { animation: none; } .browser-toolbar, .browser-readiness-strip, .browser-state-surface { transition: none; } }
 @media (prefers-reduced-motion: reduce) { .browser-tab-context-menu { animation: none; } }

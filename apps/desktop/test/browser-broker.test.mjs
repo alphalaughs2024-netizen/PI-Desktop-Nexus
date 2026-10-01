@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { BrowserBroker } from "../electron/main/browser-broker.ts";
+import "./browser-test-loader.mjs";
+const { BrowserBroker } = await import("../electron/main/browser-broker.ts");
 
 function host(overrides = {}) {
   const calls = [];

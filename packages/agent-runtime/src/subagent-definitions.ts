@@ -23,6 +23,7 @@ import {
   subagentPinnedProviders,
   OAUTH_AUTH_KIND,
   SUBAGENT_BROWSER_TOOLS,
+  SUBAGENT_BROWSER_INSPECTION_TOOLS,
   type SubagentDefinition,
 } from "@pi-desktop/shared";
 import {
@@ -61,7 +62,7 @@ export const BUILTIN_SUBAGENT_DOCUMENTS: readonly string[] = [
   `---
 name: explorer
 description: Fast codebase search and pattern matching — find files, locate implementations and answer "where is X?" / "how does Y work?". Shell-enabled; inspection intent does not enforce read-only access.
-tools: [Read, Glob, Grep, Bash]
+tools: [Read, Glob, Grep, Bash, ${SUBAGENT_BROWSER_INSPECTION_TOOLS.join(", ")}]
 maxTurns: 60
 ---
 
@@ -87,7 +88,7 @@ than a guess.
   `---
 name: code-reviewer
 description: Review specific code or a specific change for defects. Use for a second opinion on correctness, edge cases and missing tests before you commit.
-tools: [Read, Glob, Grep]
+tools: [Read, Glob, Grep, ${SUBAGENT_BROWSER_INSPECTION_TOOLS.join(", ")}]
 maxTurns: 50
 ---
 
@@ -105,7 +106,7 @@ the cases you checked — an empty review with no evidence is not a review.`,
   `---
 name: test-runner
 description: Run a specific test or build command and report what failed and why. Use when a command's output is long and only the failures matter.
-tools: [Read, Glob, Grep, Bash]
+tools: [Read, Glob, Grep, Bash, ${SUBAGENT_BROWSER_TOOLS.join(", ")}]
 maxTurns: 40
 ---
 
@@ -123,7 +124,7 @@ raw output out of the report except for the lines that carry the failure.`,
   `---
 name: fixer
 description: Implement a complete multi-file change from a spec. Use when a feature or fix spans several files and the work is separable — it can write files inside the workspace while you keep working.
-tools: [Read, Glob, Grep, Edit, Write, Bash]
+tools: [Read, Glob, Grep, Edit, Write, Bash, BrowserPreview, ${SUBAGENT_BROWSER_TOOLS.join(", ")}]
 maxTurns: 80
 ---
 

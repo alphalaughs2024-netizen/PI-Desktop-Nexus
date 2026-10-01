@@ -26,3 +26,4 @@
 
 - [20. Agent foundation evaluation](20-agent-foundation-evaluation.md)
 - [21. Codex execution contract](21-codex-execution-contract.md)
+- [23. Built-in Browser capabilities](23-built-in-browser-capabilities.md)

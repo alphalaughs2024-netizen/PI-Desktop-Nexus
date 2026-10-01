@@ -11928,3 +11928,41 @@ or delete caches, profiles or earlier recovery files to hide this condition.
   file/tree/agent APIs keep their original policy. Appearance remains unchanged.
 - **Validation**: Focused filesystem/path checks and desktop typecheck. Local
   E2E suites remain unrun unless explicitly requested; user acceptance pending.
+
+### E2E-Browser-Capabilities: Agent and user share the complete built-in browser (ADR 0265)
+
+- **Preconditions**: Codex test profile, image-capable model, built-in UI designer
+  with Current or an exact saved model. Controlled local website with iframe,
+  form, JavaScript dialog, popup, upload and download fixtures.
+- **Steps**: Start with Browser panel closed. Have the parent and UI designer
+  independently list/create/select their chat-owned tabs. Inspect, fill/check/
+  select, hover, drag, press keys and click using semantic locators, including
+  nested frames. Capture desktop/mobile, cropped and long-page PNG/JPEG images.
+  Read console repeats and filters. Download/pause/resume/cancel; export page
+  HTML/text/PDF and a listed asset. Select files through the upload picker.
+  Open and immediately close a popup, verify its opener remains and can still be
+  controlled without a native error dialog. Check a self-closing popup, background
+  popup selection and the 20-tab limit. Annotate elements and preview CSS.
+  Take control during an active wait, then resume; verify annotation handlers
+  are cleared. Cancel an uncertain mutation and inspect before retrying.
+  Deny/approve Developer mode,
+  read event cursors and performance, navigate to another site and back.
+  Deny/approve notification, microphone, camera and location requests; navigate
+  while approval is pending. Inspect a supported/unsupported WebMCP document.
+  Repeat Plan inspection and attempt forbidden mutation. Test a custom restricted
+  preset and closing the final tab. Open all drawer views with mouse and keyboard
+  at narrow/docked and maximized widths in light/dark/scenic themes.
+- **Expected**: Real input and screenshot images, exact tab identity, retained
+  opener, explicit truncation and managed scratch artifacts. No guest mounting
+  workaround or hidden command window. Takeover cancels pending work and blocks
+  new agent mutation until resumed; uncertain results are never automatically
+  replayed. Developer and device approvals remain separate, site/document scoped
+  and deny after 120 seconds. Cross-site navigation revokes Developer access;
+  document navigation clears device grants. Unsupported permissions/API features
+  are explicit. Revocation resets Developer emulation. Custom restrictions/models
+  are preserved. Rapid controls dispatch once, and screenshots clear when changing
+  tabs. Drawer controls work,
+  current viewport is truthful, theme colors remain legible and nothing overlaps.
+- **Validation**: Targeted unit/integration tests and a real Electron production-
+  host probe. Local E2E suites and packaged Windows verification remain unrun
+  unless explicitly requested. Manual acceptance remains a separate gate.

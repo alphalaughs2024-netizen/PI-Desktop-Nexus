@@ -13,6 +13,7 @@ import { randomUUID } from "node:crypto";
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { homedir } from "node:os";
 import { AsyncLocalStorage } from "node:async_hooks";
+import { isReservedBrowserTool } from "./browser-core";
 import {
   busTopicAllowed,
   isDeniedFsPath,
@@ -1718,7 +1719,7 @@ export class PluginRuntime {
         };
         const name = String(descriptor.name ?? "");
         if (!name) throw apiError("INVALID_ARGUMENT", "tool.name is required");
-        if (["Browser", "browser_list_tabs", "browser_open", "browser_navigate", "browser_snapshot", "browser_screenshot", "browser_click", "browser_fill", "browser_type", "browser_keypress", "browser_wait", "browser_console", "browser_evaluate", "browser_cdp"].includes(name)) throw apiError("PERMISSION_DENIED", "Browser is a built-in core capability; duplicate plugin registration is not allowed");
+        if (isReservedBrowserTool(name)) throw apiError("PERMISSION_DENIED", "Browser is a built-in core capability; duplicate plugin registration is not allowed");
         const fullName = pluginToolName(pluginId, name);
         const planSafeActions = normalizePlanSafeActions(
           descriptor.planSafeActions,

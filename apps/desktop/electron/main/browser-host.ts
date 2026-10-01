@@ -1,4 +1,4 @@
-import type { BrowserState } from "@pi-desktop/shared";
+import type { BrowserState, BrowserInteraction, BrowserLocator, BrowserScreenshotOptions } from "@pi-desktop/shared";
 import type { SnapshotResult } from "./browser-cdp";
 import type { BrowserTabsPane } from "./browser-tabs-pane";
 import { BrowserCdp } from "./browser-cdp";
@@ -6,6 +6,11 @@ import { BrowserRenderHost } from "./browser-render-host";
 import { convertBrowserSurfaceMeasurement, type BrowserSurfaceMeasurement } from "./browser-surface-geometry";
 import { writeFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
+import { BrowserAutomation } from "./browser-automation";
+import { BrowserDeveloper } from "./browser-developer";
+import { BrowserPageServices } from "./browser-page";
+import { BROWSER_CDP_ALLOWLIST } from "./browser-cdp";
+import { BrowserSitePermissions } from "./browser-permissions";
 
 export const BROWSER_VIEW_ID = "browser";
 
@@ -63,6 +68,8 @@ export type BrowserHostDeps = {
   getFileRoot: (sessionId?: string) => Promise<string | null>;
   getScratchDir?: (sessionId?: string) => string | null;
   onState: (state: BrowserState) => void;
+  approveSite?: (origin: string, capability: string, signal?: AbortSignal) => Promise<boolean>;
+  selectUploadFiles?: () => Promise<string[]>;
 };
 
 type ChromeSurface = {
@@ -76,7 +83,8 @@ type ChromeSurface = {
  */
 export class BrowserHost {
   private readonly pane: BrowserTabsPane;
-  private readonly clients = new Map<number, { cdp: BrowserCdp; wc: NonNullable<ReturnType<BrowserTabsPane["getWebContents"]>> }>();
+  private readonly clients = new Map<number, { cdp: BrowserCdp; automation: BrowserAutomation; developer: BrowserDeveloper; services: BrowserPageServices; permissions: BrowserSitePermissions; wc: NonNullable<ReturnType<BrowserTabsPane["getWebContents"]>> }>();
+  private readonly paused = new Set<string>();
   private renderHost = new BrowserRenderHost();
   private readonly preparations = new WeakMap<object, Promise<void>>();
   private readonly deps: BrowserHostDeps;
@@ -90,6 +98,9 @@ export class BrowserHost {
   constructor(deps: BrowserHostDeps) {
     this.deps = deps;
     this.pane = deps.pane;
+    this.pane.onGuestCreated = (sessionId, wc) => {
+      if (this.deps.getScratchDir?.(sessionId)) this.ensureClient(wc, sessionId);
+    };
   }
 
   setChromeSurface(surface: ChromeSurface | null): void {
@@ -126,6 +137,7 @@ export class BrowserHost {
   }
 
   closeTab(sessionId: string, browserId: string): void {
+    this.paused.delete(JSON.stringify([sessionId, browserId]));
     this.pane.close(sessionId, browserId);
     if (!this.pane.listTabs().some((tab) => tab.sessionId === sessionId)) this.locations.delete(sessionId);
     this.applyGuest();
@@ -139,6 +151,32 @@ export class BrowserHost {
   }
   hasTab(sessionId: string, browserId: string): boolean { return this.pane.hasTab(sessionId, browserId); }
   listTabs() { return this.pane.listTabs(); }
+  tabsState(sessionId: string) { return { sessionId, activeBrowserId: this.pane.activeBrowserId(sessionId), tabs: this.listTabs().filter(tab => tab.sessionId === sessionId) }; }
+  tabOperation(operation: string, target: BrowserTarget, input: { disposition?: "temporary" | "deliverable" | "handoff" } = {}) {
+    if (operation === "create") return { browserId: this.pane.createTab(target.sessionId, input) };
+    if (operation === "select") this.pane.selectTab(target.sessionId, target.browserId);
+    else if (operation === "close") this.closeTab(target.sessionId, target.browserId);
+    else if (operation === "mark" && input.disposition) this.pane.markTab(target.sessionId, target.browserId, input.disposition);
+    else throw Object.assign(new Error("Unknown tab operation"), { code: "BROWSER_INVALID_INPUT" });
+    this.applyGuest();
+    return this.tabsState(target.sessionId);
+  }
+  isPaused(target: BrowserTarget) { return this.paused.has(JSON.stringify([target.sessionId, target.browserId])); }
+  async setControl(target: BrowserTarget, owner: "user" | "agent") {
+    this.targetTab(target);
+    const key = JSON.stringify([target.sessionId, target.browserId]);
+    if (owner === "user") {
+      this.paused.add(key);
+      const wc = this.targetTab(target).pane.getWebContents();
+      if (wc) this.clients.get(wc.id)?.automation.dispose();
+    } else {
+      const wc = this.targetTab(target).pane.getWebContents();
+      if (wc) await this.clients.get(wc.id)?.services.annotations("clear");
+      this.targetTab(target);
+      this.paused.delete(key);
+    }
+    return { owner, browserId: target.browserId };
+  }
   stateForSession(sessionId: string): BrowserState | null {
     const selectedId = this.activeBrowserId(sessionId);
     return this.listTabs().find((tab) => tab.sessionId === sessionId && tab.browserId === selectedId)?.state ?? null;
@@ -216,19 +254,19 @@ export class BrowserHost {
     return cdp.snapshot(wc);
   }
 
-  async screenshot(input: { fullPage?: boolean } = {}, sessionId?: string, target?: BrowserTarget): Promise<{ mimeType: string; data: string; path?: string }> {
+  async screenshot(input: BrowserScreenshotOptions = {}, sessionId?: string, target?: BrowserTarget): Promise<{ mimeType: string; data: string; path?: string }> {
     const { wc, cdp } = await this.client(target);
     const pane = this.targetTab(target).pane;
     const shot = await this.renderHost.run(pane, () => cdp.withRenderViewport(wc, () => {
       target?.signal?.throwIfAborted();
       return cdp.screenshot(wc, input);
-    }));
+    }, true));
     target?.signal?.throwIfAborted();
     const scratch = this.deps.getScratchDir?.(target?.sessionId ?? sessionId ?? this.chromeSessionId ?? undefined);
     if (!scratch) throw new Error("Browser screenshot requires a session scratch directory");
     try {
       mkdirSync(scratch, { recursive: true });
-      const path = join(scratch, `browser-screenshot-${wc.id}-${Date.now()}.jpg`);
+      const path = join(scratch, `browser-screenshot-${wc.id}-${Date.now()}.${shot.mimeType === "image/png" ? "png" : "jpg"}`);
       writeFileSync(path, Buffer.from(shot.data, "base64"));
       return { ...shot, path };
     } catch {
@@ -236,15 +274,15 @@ export class BrowserHost {
     }
   }
 
-  async click(uid: string, target?: BrowserTarget): Promise<void> {
+  async click(uid: string, target?: BrowserTarget, button: "left" | "right" | "middle" = "left"): Promise<void> {
     const { wc, cdp } = await this.client(target);
     await this.renderHost.run(this.targetTab(target).pane, () => cdp.withRenderViewport(wc, async () => {
       target?.signal?.throwIfAborted();
       // Capture commits a compositor frame so reparented guests have hit-test data.
       await cdp.screenshot(wc);
       target?.signal?.throwIfAborted();
-      await cdp.click(wc, uid);
-    }));
+      await cdp.click(wc, uid, button);
+    }, true));
   }
 
   async fill(uid: string, text: string, target?: BrowserTarget): Promise<void> {
@@ -280,16 +318,82 @@ export class BrowserHost {
     return cdp.evaluate(wc, expression);
   }
 
-  async console(limit?: number, target?: BrowserTarget): Promise<{ messages: ReturnType<BrowserCdp["console"]> }> {
+  async console(limit?: number, target?: BrowserTarget, options?: { types?: string[]; contains?: string; since?: number; clear?: boolean }): Promise<{ messages: ReturnType<BrowserCdp["console"]> }> {
     const { wc, cdp } = await this.client(target);
     await cdp.attach(wc);
-    return { messages: cdp.console(limit) };
+    return { messages: cdp.console(limit, options) };
   }
 
   async cdpCommand(method: string, params?: unknown, target?: BrowserTarget): Promise<unknown> {
-    const { wc, cdp } = await this.client(target);
+    const { wc, cdp, developer } = await this.client(target);
     target?.signal?.throwIfAborted();
-    return cdp.send(wc, method, params);
+    if (BROWSER_CDP_ALLOWLIST.has(method)) return cdp.send(wc, method, params);
+    return developer.send(method, params as Record<string, unknown>);
+  }
+
+  async interact(input: BrowserInteraction, target: BrowserTarget) {
+    const { wc, cdp, automation } = await this.client(target);
+    return this.renderHost.run(this.targetTab(target).pane, () => cdp.withRenderViewport(wc, async () => {
+      target.signal?.throwIfAborted();
+      return automation.interact(input, target.signal);
+    }));
+  }
+
+  async service(name: string, input: any, target: BrowserTarget): Promise<unknown> {
+    if (!input || typeof input !== "object" || Array.isArray(input) || JSON.stringify(input).length > 96 * 1024) throw Object.assign(new Error("Invalid or oversized Browser service input"), { code: "BROWSER_INVALID_INPUT" });
+    const operations: Record<string, string[]> = { developer: ["enable", "disable", "status"], dialog: ["status", "accept", "dismiss"], downloads: ["list", "pause", "resume", "cancel"], page: ["content", "assets", "save_asset", "export"], annotations: ["start", "read", "clear"], styles: ["apply", "clear"], webmcp: ["list", "call"] };
+    if (input.operation !== undefined && operations[name] && !operations[name].includes(input.operation)) throw Object.assign(new Error("Unknown Browser service operation"), { code: "BROWSER_INVALID_INPUT" });
+    if (name === "page" && input.operation === "export" && !["pdf", "html", "text"].includes(input.format)) throw Object.assign(new Error("Export requires pdf, html or text format"), { code: "BROWSER_INVALID_INPUT" });
+    const { wc, cdp, automation, developer, services } = await this.client(target);
+    await cdp.attach(wc);
+    target.signal?.throwIfAborted();
+    switch (name) {
+      case "developer": {
+        if (input.operation === "disable") { await developer.revoke(); return developer.status(); }
+        if (input.operation !== "enable") return developer.status();
+        if (developer.allowed()) return developer.status();
+        const origin = BrowserDeveloper.origin(wc.getURL());
+        const documentGeneration = cdp.generation();
+        if (!origin) throw Object.assign(new Error("Developer approval requires an HTTP(S) site"), { code: "BROWSER_INVALID_INPUT" });
+        if (!await this.deps.approveSite?.(origin, "Developer diagnostics", target.signal)) throw Object.assign(new Error("Developer access was not approved"), { code: "PERMISSION_DENIED" });
+        target.signal?.throwIfAborted();
+        if (cdp.generation() !== documentGeneration) throw Object.assign(new Error("Document changed during Developer approval"), { code: "BROWSER_STALE_REF" });
+        return developer.grant(origin);
+      }
+      case "events": return developer.read(input.cursor, input.methods, input.limit);
+      case "metrics": return developer.send("Performance.getMetrics");
+      case "console": return { messages: cdp.console(input.limit, input) };
+      case "viewport": return cdp.viewportStatus();
+      case "dialog": return cdp.dialog(wc, input.operation ?? "status", input.text);
+      case "downloads": return services.downloadAction(input.operation, input.id);
+      case "page": return services.page(input.operation ?? "content", input, target.signal);
+      case "annotations": return services.annotations(input.operation ?? "read");
+      case "styles": return services.styles(input.operation, input.selector, input.properties);
+      case "webmcp": {
+        if (input.operation === "call") {
+          const documentUrl = wc.getURL();
+          const origin = BrowserDeveloper.origin(documentUrl);
+          const documentGeneration = cdp.generation();
+          if (!origin || input.documentUrl !== documentUrl || input.documentGeneration !== documentGeneration) throw Object.assign(new Error("Use the current documentUrl and documentGeneration returned by browser_webmcp list"), { code: "BROWSER_STALE_REF" });
+          if (!await this.deps.approveSite?.(origin, `WebMCP tool: ${String(input.name).slice(0, 128)}`, target.signal)) throw Object.assign(new Error("WebMCP call was not approved"), { code: "PERMISSION_DENIED" });
+          target.signal?.throwIfAborted();
+          if (wc.getURL() !== documentUrl || cdp.generation() !== documentGeneration) throw Object.assign(new Error("Document changed during approval"), { code: "BROWSER_STALE_REF" });
+        }
+        const result = await services.webmcp(input.operation ?? "list", input.name, input.args);
+        const json = JSON.stringify(result);
+        return Buffer.byteLength(json ?? "") > 96 * 1024 ? { truncated: true, message: "WebMCP result exceeds 96 KiB" } : { result, documentUrl: wc.getURL(), documentGeneration: cdp.generation() };
+      }
+      case "upload": {
+        const url = wc.getURL();
+        const documentGeneration = cdp.generation();
+        const files = await this.deps.selectUploadFiles?.() ?? [];
+        target.signal?.throwIfAborted();
+        if (!files.length) throw Object.assign(new Error("No upload files were selected"), { code: "PERMISSION_DENIED" });
+        if (wc.getURL() !== url || cdp.generation() !== documentGeneration) throw Object.assign(new Error("Page changed while selecting upload files"), { code: "BROWSER_STALE_REF" });
+        return this.renderHost.run(this.targetTab(target).pane, () => cdp.withRenderViewport(wc, () => automation.upload(input.locator as BrowserLocator, files, target.signal)));
+      }
+      default: throw Object.assign(new Error("Unsupported Browser service"), { code: "BROWSER_INVALID_INPUT" });
+    }
   }
 
   /** Preview execution uses the session's retained guest, even while hidden. */
@@ -312,8 +416,9 @@ export class BrowserHost {
   }
 
   disposeGuest(): void {
-    for (const { cdp, wc } of this.clients.values()) cdp.detach(wc);
+    for (const { cdp, automation, developer, services, permissions, wc } of this.clients.values()) { automation.dispose(); developer.dispose(); services.dispose(); permissions.dispose(); cdp.detach(wc); }
     this.clients.clear();
+    this.paused.clear();
     this.pane.dispose();
     this.renderHost.dispose();
     this.renderHost = new BrowserRenderHost();
@@ -379,12 +484,21 @@ export class BrowserHost {
     }
     const wc = resolved.pane.getWebContents();
     if (!wc || wc.isDestroyed()) throw Object.assign(new Error("browser guest is not available"), { code: "UNAVAILABLE" });
+    return this.ensureClient(wc, resolved.sessionId);
+  }
+
+  private ensureClient(wc: NonNullable<ReturnType<BrowserTabsPane["getWebContents"]>>, sessionId: string) {
     let client = this.clients.get(wc.id);
     if (!client) {
-      client = { cdp: new BrowserCdp(), wc };
+      const scratch = this.deps.getScratchDir?.(sessionId);
+      if (!scratch) throw new Error("Browser services require a session scratch directory");
+      mkdirSync(scratch, { recursive: true });
+      const automation = new BrowserAutomation(wc, scratch);
+      client = { cdp: new BrowserCdp(), automation, developer: new BrowserDeveloper(wc, () => automation.dispose()), services: new BrowserPageServices(wc, scratch), permissions: new BrowserSitePermissions(wc, async (origin, capability, signal) => await this.deps.approveSite?.(origin, capability, signal) ?? false, this.deps.isCapabilityEnabled), wc };
       this.clients.set(wc.id, client);
       const owned = client;
-      wc.once("destroyed", () => { owned.cdp.detach(wc); this.clients.delete(wc.id); });
+      const contentsId = wc.id;
+      wc.once("destroyed", () => { owned.automation.dispose(); owned.developer.dispose(); owned.services.dispose(); owned.permissions.dispose(); owned.cdp.detach(wc); this.clients.delete(contentsId); });
     }
     return client;
   }

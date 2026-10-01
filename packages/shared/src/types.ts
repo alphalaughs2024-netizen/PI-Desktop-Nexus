@@ -2302,6 +2302,8 @@ export type WorkspaceDiff = {
 };
 
 export type BrowserAction = "back" | "forward" | "reload" | "stop";
+export type BrowserLocator = { role?: string; name?: string; label?: string; text?: string; placeholder?: string; testId?: string; css?: string; exact?: boolean; index?: number; frames?: string[] };
+export type BrowserInteraction = { action: "click" | "hover" | "fill" | "type" | "press" | "check" | "select" | "drag" | "scroll" | "mouse" | "wait" | "inspect"; locator?: BrowserLocator; destination?: BrowserLocator; text?: string; key?: string; checked?: boolean; values?: string[]; button?: "left" | "right" | "middle"; clickCount?: number; deltaX?: number; deltaY?: number; x?: number; y?: number; state?: "attached" | "detached" | "visible" | "hidden"; timeoutMs?: number };
 
 /** Phase 0 contract types; runtime migration is intentionally deferred. */
 export type BrowserId = string & { readonly __browserId: unique symbol };
@@ -2309,10 +2311,13 @@ export type BrowserRequestId = string & { readonly __browserRequestId: unique sy
 export type BrowserSnapshotId = string & { readonly __browserSnapshotId: unique symbol };
 export type BrowserElementRef = string & { readonly __browserElementRef: unique symbol };
 export type BrowserErrorCode = "BROWSER_UNAVAILABLE" | "BROWSER_POLICY_BLOCKED" | "BROWSER_TAB_NOT_FOUND" | "BROWSER_STALE_REF" | "BROWSER_TIMEOUT" | "BROWSER_CANCELLED" | "BROWSER_POSSIBLY_APPLIED" | "BROWSER_UNSUPPORTED" | "BROWSER_INVALID_INPUT" | "BROWSER_UNKNOWN_ERROR";
-export type BrowserRequestContext = { requestId: BrowserRequestId; sessionId: string; turnId?: string; effectiveAgentId?: string; mode: "plan" | "agent"; permissionEpoch: number; browserId: BrowserId };
+export type BrowserRequestContext = { requestId: BrowserRequestId; sessionId: string; turnId?: string; effectiveAgentId?: string; mode: "plan" | "agent"; permissionEpoch: number; browserId: BrowserId; actor?: "agent" | "user" };
+export type BrowserTabRecord = { sessionId: string; browserId: string; state: BrowserState | null; generation: number; incarnation: number; createdAt: number; openerBrowserId?: string; disposition?: "temporary" | "deliverable" | "handoff" };
+export type BrowserTabsState = { sessionId: string; activeBrowserId: string; tabs: BrowserTabRecord[] };
 export type BrowserResult<T = unknown> = { requestId: BrowserRequestId; browserId?: BrowserId; availableBrowserIds?: BrowserId[]; ok: boolean; code?: BrowserErrorCode; retryable?: boolean; possiblyApplied?: boolean; message?: string; result?: T };
 export type BrowserWaitCondition = { kind: "url"; match: "equals" | "contains"; value: string } | { kind: "text"; value: string } | { kind: "page_load" };
-export type BrowserToolName = "browser_list_tabs" | "browser_open" | "browser_navigate" | "browser_snapshot" | "browser_screenshot" | "browser_click" | "browser_fill" | "browser_type" | "browser_keypress" | "browser_wait" | "browser_console" | "browser_set_viewport" | "browser_evaluate" | "browser_cdp";
+export const BROWSER_TOOL_NAMES = ["browser_capabilities", "browser_list_tabs", "browser_tabs", "browser_open", "browser_navigate", "browser_snapshot", "browser_screenshot", "browser_click", "browser_fill", "browser_type", "browser_keypress", "browser_wait", "browser_console", "browser_set_viewport", "browser_evaluate", "browser_cdp", "browser_interact", "browser_dialog", "browser_developer", "browser_events", "browser_downloads", "browser_upload", "browser_page", "browser_annotations", "browser_styles", "browser_webmcp"] as const;
+export type BrowserToolName = typeof BROWSER_TOOL_NAMES[number];
 export type BrowserReadiness = "uninitialized" | "starting" | "ready" | "loading" | "unavailable" | "blocked" | "closed";
 export type BrowserSource = "user" | "agent" | "workspace-preview" | "unknown";
 export type BrowserActivationRequest = { requestId: string; sessionId: string; location?: string; source: BrowserSource; focus: "panel" | "address" | "toolbar"; background: boolean; createTab?: boolean };
@@ -2343,7 +2348,7 @@ export type BrowserState = {
   canGoForward: boolean;
 };
 
-export type BrowserScreenshotOptions = { fullPage?: boolean; maxWidth?: number; maxHeight?: number; maxBytes?: number; format?: "jpeg" | "png"; quality?: number };
+export type BrowserScreenshotOptions = { fullPage?: boolean; clip?: BrowserRect; maxWidth?: number; maxHeight?: number; maxBytes?: number; format?: "jpeg" | "png"; quality?: number };
 export type BrowserScreenshotResult = { mimeType: "image/jpeg" | "image/png"; data: string; width: number; height: number; viewportWidth: number; viewportHeight: number; deviceScaleFactor?: number; coordinateSpace: "css-pixels"; byteLength: number; truncated?: boolean };
 export type BrowserRect = { x: number; y: number; width: number; height: number };
 export type BrowserSurfaceMeasurement = { coordinateSpace: "renderer-viewport-css"; rect: BrowserRect; viewport: { width: number; height: number; devicePixelRatio: number }; sessionId?: string; visible: boolean };

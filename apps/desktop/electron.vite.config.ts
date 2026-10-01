@@ -51,7 +51,7 @@ export default defineConfig({
         // jiti is loaded lazily by the sidecar's trusted-extension loader
         // (D387); Electron main never calls it, and its transpiled dist
         // breaks the main bundle's esbuild transform.
-        external: ["electron-updater", "@huggingface/transformers", "sherpa-onnx-node", "jiti", "jiti/static"],
+        external: ["electron-updater", "@huggingface/transformers", "sherpa-onnx-node", "playwright-core", "jiti", "jiti/static"],
         input: {
           index: resolve(__dirname, "electron/main/index.ts"),
           "speech-local-worker": resolve(__dirname, "electron/main/speech-local-worker.ts"),

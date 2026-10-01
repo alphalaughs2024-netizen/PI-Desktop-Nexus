@@ -83,7 +83,11 @@ export const SUBAGENT_BROWSER_TOOLS = [
   "browser_screenshot", "browser_set_viewport", "browser_click", "browser_fill",
   "browser_type", "browser_keypress", "browser_wait", "browser_console",
   "browser_evaluate",
+  "browser_capabilities", "browser_tabs", "browser_interact", "browser_dialog",
+  "browser_page", "browser_downloads", "browser_annotations", "browser_styles",
+  "browser_developer", "browser_events", "browser_upload", "browser_webmcp", "browser_cdp",
 ] as const;
+export const SUBAGENT_BROWSER_INSPECTION_TOOLS = ["browser_capabilities", "browser_list_tabs", "browser_open", "browser_navigate", "browser_snapshot", "browser_screenshot", "browser_wait", "browser_console", "browser_page", "browser_set_viewport"] as const;
 
 /** Tools a definition may declare. Plugin, skill, mode and delegation control
  * tools stay out of reach. Browser tools retain the originating session policy. */

@@ -12,7 +12,9 @@ const typed = readFileSync(resolve("electron/main/browser-typed-tools.ts"), "utf
 const runtime = readFileSync(resolve("../../packages/agent-runtime/src/runtime.ts"), "utf8");
 
 test("listing tabs reveals the Browser panel for the active conversation", () => {
-  assert.match(main, /\["browser_open", "browser_navigate", "browser_list_tabs", "browser_snapshot"/);
+  const activationTools = main.match(/if \((\[[^\n]*\])\.includes\(descriptor\.name\)\)/)?.[1];
+  assert.ok(activationTools);
+  for (const name of ["browser_open", "browser_navigate", "browser_list_tabs", "browser_snapshot"]) assert.ok(JSON.parse(activationTools).includes(name));
   assert.match(main, /browserActivationRequested[\s\S]*focus: "panel"/);
 });
 
@@ -32,8 +34,11 @@ test("screenshot results give the agent a saved path without image base64", () =
   assert.match(main, /\(\(\{ data: _data, \.\.\.metadata \}\) => metadata\)/);
 });
 
-test("wait and page links use live guest state", () => {
+test("wait uses live state and page popups create independent guests", () => {
   assert.match(broker, /condition\.kind === "page_load" && state\?\.url && !state\.isLoading/);
   assert.match(broker, /code === "TIMEOUT"/);
-  assert.match(view, /setWindowOpenHandler[\s\S]*wc\.loadURL\(allowed\)/);
+  assert.match(view, /setWindowOpenHandler[\s\S]*isAllowedHttpUrl\(url\)/);
+  assert.match(view, /createWindow: \(popupOptions\) => this\.popupHandler/);
+  assert.match(view, /options\?\.webContents \? \{ webContents: options\.webContents \}/);
+  assert.doesNotMatch(view, /wc\.loadURL\(allowed\)/);
 });

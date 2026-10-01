@@ -1,6 +1,7 @@
 import type { BrowserWindow } from "electron";
-import type { BrowserState } from "@pi-desktop/shared";
+import type { BrowserState, BrowserTabRecord } from "@pi-desktop/shared";
 import type { BrowserPane } from "./browser-view";
+import { randomUUID } from "node:crypto";
 
 const DEFAULT_TAB_ID = "browser-core-1";
 
@@ -13,7 +14,9 @@ export class BrowserTabsPane {
   private readonly onState: (state: BrowserState) => void;
   private readonly createPane: (onState: (state: BrowserState) => void) => BrowserPane;
   private readonly tabs = new Map<string, BrowserPane>();
-  private readonly identities = new Map<string, { sessionId: string; browserId: string; incarnation: number }>();
+  private readonly identities = new Map<string, { sessionId: string; browserId: string; incarnation: number; createdAt: number; openerBrowserId?: string; disposition?: "temporary" | "deliverable" | "handoff" }>();
+  onChanged?: (sessionId: string) => void;
+  onGuestCreated?: (sessionId: string, wc: NonNullable<ReturnType<BrowserPane["getWebContents"]>>) => void;
   private nextIncarnation = 0;
   private readonly activeBySession = new Map<string, string>();
   private activeKey: string | null = null;
@@ -53,17 +56,56 @@ export class BrowserTabsPane {
     const key = tabKey(sessionId, browserId);
     let pane = this.tabs.get(key);
     if (!pane) {
+      if (!this.canCreateTab(sessionId)) throw Object.assign(new Error("This chat has reached its 20-tab limit"), { code: "BROWSER_INVALID_INPUT" });
       pane = this.createPane((state) => {
         if (this.activeKey === key) this.onState(state);
+        this.onChanged?.(sessionId);
       });
       pane.setWindow(this.window);
+      pane.onGuestCreated = wc => this.onGuestCreated?.(sessionId, wc);
+      pane.onGuestDestroyed = () => { if (this.tabs.get(key) === pane) this.close(sessionId, browserId); };
       this.tabs.set(key, pane);
-      this.identities.set(key, { sessionId, browserId, incarnation: ++this.nextIncarnation });
+      this.identities.set(key, { sessionId, browserId, incarnation: ++this.nextIncarnation, createdAt: Date.now() });
+      pane.setPopupHandler?.((options) => {
+        const popupId = this.createTab(sessionId, { openerBrowserId: browserId });
+        const popup = this.tabs.get(tabKey(sessionId, popupId))!;
+        const wc = popup.createPopup(options);
+        setImmediate(() => {
+          if (!this.hasTab(sessionId, popupId)) return;
+          if (!options.background && sessionId === this.activeSessionId) this.activate(sessionId, popupId);
+          this.onChanged?.(sessionId);
+        });
+        return wc;
+      }, () => this.canCreateTab(sessionId));
+      this.onChanged?.(sessionId);
     }
     return pane;
   }
 
   hasTab(sessionId: string, browserId: string): boolean { return this.tabs.has(tabKey(sessionId, browserId)); }
+  private canCreateTab(sessionId: string): boolean { return [...this.identities.values()].filter(tab => tab.sessionId === sessionId).length < 20; }
+
+  createTab(sessionId: string, options: { openerBrowserId?: string; disposition?: "temporary" | "deliverable" | "handoff" } = {}): string {
+    const browserId = `browser-core-${randomUUID()}`;
+    this.ensureTab(sessionId, browserId);
+    Object.assign(this.identities.get(tabKey(sessionId, browserId))!, options);
+    if (!this.activeBySession.has(sessionId)) this.activeBySession.set(sessionId, browserId);
+    this.onChanged?.(sessionId);
+    return browserId;
+  }
+
+  selectTab(sessionId: string, browserId: string): void {
+    this.resolveTab(sessionId, browserId);
+    if (this.activeSessionId === sessionId) this.activate(sessionId, browserId);
+    else this.activeBySession.set(sessionId, browserId);
+    this.onChanged?.(sessionId);
+  }
+
+  markTab(sessionId: string, browserId: string, disposition: "temporary" | "deliverable" | "handoff") {
+    this.resolveTab(sessionId, browserId);
+    this.identities.get(tabKey(sessionId, browserId))!.disposition = disposition;
+    this.onChanged?.(sessionId);
+  }
 
   activateSession(sessionId: string): void {
     this.activate(sessionId, this.activeBySession.get(sessionId) ?? DEFAULT_TAB_ID);
@@ -73,13 +115,14 @@ export class BrowserTabsPane {
     const id = browserId.trim() || DEFAULT_TAB_ID;
     const key = tabKey(sessionId, id);
     if (this.activeKey === key) return;
+    const pane = this.ensureTab(sessionId, id);
     this.activePane()?.setVisible(false);
     this.activeKey = key;
     this.activeSessionId = sessionId;
     this.activeBySession.set(sessionId, id);
-    const pane = this.ensureTab(sessionId, id);
     pane.setBounds(this.bounds);
     pane.setVisible(this.visible);
+    this.onChanged?.(sessionId);
   }
 
   close(sessionId: string, browserId: string): void {
@@ -93,10 +136,14 @@ export class BrowserTabsPane {
     }
     this.tabs.delete(key);
     this.identities.delete(key);
+    if (this.activeBySession.get(sessionId) === browserId) this.activeBySession.delete(sessionId);
     pane.dispose();
+    const next = this.listTabs().find(tab => tab.sessionId === sessionId);
+    if (!this.activeBySession.has(sessionId) && next) this.selectTab(sessionId, next.browserId);
+    this.onChanged?.(sessionId);
   }
 
-  listTabs(): Array<{ sessionId: string; browserId: string; state: BrowserState | null; generation: number }> {
+  listTabs(): BrowserTabRecord[] {
     return [...this.tabs].map(([key, pane]) => ({
       ...this.identities.get(key)!, state: pane.getState(), generation: pane.surfaceStatus().generation,
     }));

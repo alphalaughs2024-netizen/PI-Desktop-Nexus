@@ -975,6 +975,8 @@ export const api = {
     invoke<BrowserViewState>(IPC.invoke.browserTabActivate, { sessionId, browserId }),
   browserTabClose: (sessionId: string | undefined, browserId: string) =>
     invoke<{ ok: true }>(IPC.invoke.browserTabClose, { sessionId, browserId }),
+  browserTabs: (sessionId?: string) => invoke<import("@pi-desktop/shared").BrowserTabsState>(IPC.invoke.browserTabs, { sessionId }),
+  browserControl: (sessionId: string | undefined, browserId: string, action: "status" | "takeover" | "resume" | "viewport" | "service", service?: string, args?: unknown) => invoke<any>(IPC.invoke.browserControl, { sessionId, browserId, action, service, args }),
   browserSetBounds: (bounds: {
     x: number;
     y: number;
@@ -985,8 +987,8 @@ export const api = {
     invoke(IPC.invoke.browserSetVisible, { visible }),
   browserOpenExternal: (url?: string) =>
     invoke(IPC.invoke.browserOpenExternal, url ? { url } : {}),
-  browserScreenshot: (options: BrowserScreenshotOptions = {}, sessionId?: string) =>
-    invoke<BrowserScreenshotResult>(IPC.invoke.browserScreenshot, { ...options, sessionId }),
+  browserScreenshot: (options: BrowserScreenshotOptions = {}, sessionId?: string, browserId?: string) =>
+    invoke<BrowserScreenshotResult>(IPC.invoke.browserScreenshot, { ...options, sessionId, browserId }),
   browserGetState: () =>
     invoke<BrowserState | null>(IPC.invoke.browserGetState),
   browserGetViewState: (sessionId?: string) => invoke<BrowserViewState>(IPC.invoke.browserGetViewState, { sessionId }),
@@ -1097,6 +1099,10 @@ export const api = {
     return window.piDesktop.on(IPC.event.browserPreview, (payload) =>
       listener(payload as { sessionId: string; path?: string; url?: string }),
     );
+  },
+  onBrowserTabs: (listener: (event: import("@pi-desktop/shared").BrowserTabsState) => void) => {
+    if (!window.piDesktop?.on) return () => undefined;
+    return window.piDesktop.on(IPC.event.browserTabs, payload => listener(payload as import("@pi-desktop/shared").BrowserTabsState));
   },
   onBrowserActivationRequested: (listener: (event: import("@pi-desktop/shared").BrowserActivationRequest) => void) => {
     if (!window.piDesktop?.on) return () => undefined;

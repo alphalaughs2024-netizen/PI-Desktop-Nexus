@@ -13,6 +13,7 @@ import { BrowserTabStrip } from "./BrowserTabStrip";
 import { BrowserNewTabSurface } from "./BrowserNewTabSurface";
 import { isBrowserGuestSurfaceVisible, isBrowserRecoveryState, type BrowserPresentationState } from "./browser-presentation-state";
 import type { BrowserTab } from "../../lib/browser-tabs";
+import type { BrowserScreenshotResult } from "@pi-desktop/shared";
 
 export type BrowserCoreTabProps = { sessionId?: string; location?: string; active?: boolean; blocked?: boolean; presentation: WorkPanelPresentation; transitioning?: boolean; onCloseLast: () => void };
 const tabsBySession = new Map<string, { tabs: BrowserTab[]; activeId: string }>();
@@ -49,6 +50,13 @@ export function BrowserCoreTab({ sessionId, location, active = true, blocked = f
   const [activeBrowserId, setActiveBrowserId] = useState(() => tabsBySession.get(sessionId ?? "")?.activeId ?? "browser-core-1");
   const activeBrowserIdRef = useRef(activeBrowserId);
   activeBrowserIdRef.current = activeBrowserId;
+  const targetRef = useRef({ sessionId, browserId: activeBrowserId, epoch: 0 });
+  if (targetRef.current.sessionId !== sessionId || targetRef.current.browserId !== activeBrowserId) {
+    targetRef.current = { sessionId, browserId: activeBrowserId, epoch: targetRef.current.epoch + 1 };
+  }
+  const isCurrentTarget = (epoch: number) => targetRef.current.epoch === epoch;
+  const noticeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { targetRef.current.epoch++; if (noticeTimerRef.current) clearTimeout(noticeTimerRef.current); }, []);
   useEffect(() => { tabsBySession.set(sessionId ?? "", { tabs: browserTabs, activeId: activeBrowserId }); }, [activeBrowserId, browserTabs, sessionId]);
   const lastLocationRef = useRef(location);
   useEffect(() => { if (!location || location === lastLocationRef.current) return; lastLocationRef.current = location; setBrowserTabs((tabs) => tabs.map((tab) => tab.browserId === activeBrowserIdRef.current ? { ...tab, url: location } : tab)); }, [location]);
@@ -57,9 +65,37 @@ export function BrowserCoreTab({ sessionId, location, active = true, blocked = f
   const [operation, setOperation] = useState("");
   const [error, setError] = useState("");
   const [diagnosticsOpen, setDiagnosticsOpen] = useState(false);
+  const [screenshot, setScreenshot] = useState<BrowserScreenshotResult | null>(null);
+  const [controlOwner, setControlOwner] = useState<"user" | "agent">("agent");
   const [toolbarMenuOpen, setToolbarMenuOpen] = useState(false);
   const [tabMenuOpen, setTabMenuOpen] = useState(false);
   const diagnosticsTriggerRef = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    let disposed = false;
+    let hadHostTabs = false;
+    const sync = (event: import("@pi-desktop/shared").BrowserTabsState) => {
+      if (disposed || event.sessionId !== (sessionId ?? "")) return;
+      if (!event.tabs.length) { if (hadHostTabs) { setBrowserTabs([]); tabsBySession.delete(sessionId ?? ""); onCloseLast(); } return; }
+      hadHostTabs = true;
+      setBrowserTabs(event.tabs.map(tab => ({ id: tab.browserId, browserId: tab.browserId, sessionId: tab.sessionId, title: tab.state?.title || "New tab", url: tab.state?.url ?? "", loading: tab.state?.isLoading ?? false, canGoBack: tab.state?.canGoBack ?? false, canGoForward: tab.state?.canGoForward ?? false, guestGeneration: tab.generation, createdAt: tab.createdAt, lastActivatedAt: Date.now() })));
+      const selected = event.tabs.some(tab => tab.browserId === event.activeBrowserId) ? event.activeBrowserId : event.tabs[0].browserId;
+      if (selected !== activeBrowserIdRef.current) {
+        activeBrowserIdRef.current = selected;
+        setActiveBrowserId(selected);
+        void api.browserTabActivate(sessionId, selected).then(state => { if (!disposed && activeBrowserIdRef.current === selected) setViewStateEntry({ browserId: selected, state }); }).catch(() => undefined);
+      }
+    };
+    const unsubscribe = api.onBrowserTabs(sync);
+    void api.browserTabs(sessionId).then(sync).catch(() => undefined);
+    return () => { disposed = true; unsubscribe(); };
+  }, [sessionId]);
+  useEffect(() => {
+    let disposed = false;
+    setScreenshot(null);
+    setOperation(""); setError(""); setControlOwner("agent");
+    void api.browserControl(sessionId, activeBrowserId, "status").then(result => { if (!disposed) setControlOwner(result.owner); }).catch(() => undefined);
+    return () => { disposed = true; };
+  }, [sessionId, activeBrowserId]);
   useEffect(() => {
     if (!active) return;
     const unsubscribe = api.onBrowserViewState((event) => { if (event.sessionId === sessionId && (!event.browserId || event.browserId === activeBrowserIdRef.current)) setViewStateEntry({ browserId: activeBrowserIdRef.current, state: event.state }); });
@@ -93,9 +129,12 @@ export function BrowserCoreTab({ sessionId, location, active = true, blocked = f
   const errorMessage = error || (state === "unavailable" ? "The page loaded, but its Browser surface could not be displayed." : state === "policy-blocked" ? "The current capability policy does not allow this action." : "");
   const performBrowserAction = async (action: import("@pi-desktop/shared").BrowserAction) => { setOperation(action === "back" ? "Going back…" : action === "forward" ? "Going forward…" : action === "reload" ? "Reloading…" : "Stopping…"); setError(""); try { await api.browserAction(action, sessionId, activeBrowserIdRef.current); } catch (caught) { setError(safeBrowserError(caught)); } finally { setOperation(""); } };
   const navigateToAddress = async (url: string, browserId = activeBrowserIdRef.current, ensureActive = true) => { const value = url.trim(); if (!value) return; setBrowserTabs((tabs) => tabs.map((tab) => tab.browserId === browserId ? { ...tab, url: value, title: value.replace(/^https?:\/\//, "").split("/")[0] || "New tab", loading: true } : tab)); setError(""); try { if (ensureActive) await api.browserTabActivate(sessionId, browserId); await api.browserNavigate(value, sessionId, browserId); } catch (caught) { if (activeBrowserIdRef.current === browserId) setError(safeBrowserError(caught)); } finally { setBrowserTabs((tabs) => tabs.map((tab) => tab.browserId === browserId ? { ...tab, loading: false } : tab)); } };
-  const runScreenshot = async () => { setOperation("Capturing screenshot…"); setError(""); try { await api.browserScreenshot({ format: "png" }, sessionId); } catch (caught) { setError(safeBrowserError(caught)); } finally { setOperation(""); } };
+  const runScreenshot = async () => { const { browserId, epoch } = targetRef.current; setOperation("Capturing screenshot…"); setError(""); try { const result = await api.browserScreenshot({ format: "png" }, sessionId, browserId); if (isCurrentTarget(epoch)) { setScreenshot(result); setDiagnosticsOpen(true); } } catch (caught) { if (isCurrentTarget(epoch)) setError(safeBrowserError(caught)); } finally { if (isCurrentTarget(epoch)) setOperation(""); } };
+  const changeControl = async () => { const { browserId, epoch } = targetRef.current; setError(""); try { const result = await api.browserControl(sessionId, browserId, controlOwner === "agent" ? "takeover" : "resume"); if (isCurrentTarget(epoch)) setControlOwner(result.owner); } catch (caught) { if (isCurrentTarget(epoch)) setError(safeBrowserError(caught)); } };
+  const annotate = async () => { const { browserId, epoch } = targetRef.current; setError(""); try { await api.browserControl(sessionId, browserId, "takeover"); if (!isCurrentTarget(epoch)) return; setControlOwner("user"); await api.browserControl(sessionId, browserId, "service", "annotations", { operation: "start" }); if (isCurrentTarget(epoch)) setDiagnosticsOpen(false); } catch (caught) { if (isCurrentTarget(epoch)) setError(safeBrowserError(caught)); } };
+  const showNotice = (message: string) => { if (noticeTimerRef.current) clearTimeout(noticeTimerRef.current); const { epoch } = targetRef.current; setOperation(message); noticeTimerRef.current = setTimeout(() => { if (isCurrentTarget(epoch)) setOperation(current => current === message ? "" : current); }, 1800); };
   const runExternal = async () => { setOperation("Opening external browser…"); setError(""); try { await api.browserOpenExternal(viewState.safeLocation); } catch (caught) { setError(safeBrowserError(caught)); } finally { setOperation(""); } };
-  const copyLocation = async () => { if (viewState.safeLocation) { await navigator.clipboard?.writeText(viewState.safeLocation); setOperation(t("panel.browser.copied")); } };
+  const copyLocation = async () => { const { epoch } = targetRef.current; if (viewState.safeLocation) { try { await navigator.clipboard.writeText(viewState.safeLocation); if (isCurrentTarget(epoch)) showNotice(t("panel.browser.copied")); } catch { if (isCurrentTarget(epoch)) setError("Unable to copy the Browser address."); } } };
   const recover = async () => { setOperation("Retrying Browser…"); setError(""); try { const result = await api.browserRecover(); if (!(result as { ok?: boolean }).ok) setError(browserErrorCopy.BROWSER_POLICY_BLOCKED); } catch (caught) { setError(safeBrowserError(caught)); } finally { setOperation(""); } };
   const visibleTabs = browserTabs.map((tab) => tab.browserId === activeBrowserId ? { ...tab, loading: tab.loading || state === "loading" } : tab);
   const activateBrowserTab = async (id: string) => {
@@ -120,7 +159,7 @@ export function BrowserCoreTab({ sessionId, location, active = true, blocked = f
   const openDiagnostics = () => { diagnosticsTriggerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null; setDiagnosticsOpen(true); };
   return <div className={`browser-core-view browser-core-view--${state}${isNewTab ? " browser-core-view--new-tab" : ""}`} data-browser-presentation={presentation} data-browser-readiness={state} data-browser-location={location ?? ""}>
     <BrowserTabStrip tabs={visibleTabs} activeId={activeBrowserId} onActivate={activateBrowserTab} onClose={closeBrowserTab} onNew={newBrowserTab} onReload={reloadBrowserTab} onDuplicate={duplicateBrowserTab} onCloseOthers={closeOtherBrowserTabs} onContextMenuOpenChange={setTabMenuOpen} />
-    <BrowserToolbar key={activeBrowserId} presentation={presentation} browserState={browserState} panelState={state} busy={Boolean(operation)} disabled={blocked || transitioning} sessionId={sessionId} committedLocation={activeTab?.url} onNavigate={navigateToAddress} onAction={performBrowserAction} onScreenshot={runScreenshot} onOpenExternal={runExternal} onCopyLocation={copyLocation} onOpenDiagnostics={() => { diagnosticsTriggerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null; setDiagnosticsOpen(true); }} onMenuOpenChange={setToolbarMenuOpen} />
+    <BrowserToolbar key={activeBrowserId} presentation={presentation} browserState={browserState} panelState={state} busy={Boolean(operation)} disabled={blocked || transitioning} sessionId={sessionId} committedLocation={activeTab?.url} controlOwner={controlOwner} onControl={changeControl} onNavigate={navigateToAddress} onAction={performBrowserAction} onScreenshot={runScreenshot} onOpenExternal={runExternal} onCopyLocation={copyLocation} onOpenDiagnostics={() => { diagnosticsTriggerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null; setDiagnosticsOpen(true); }} onMenuOpenChange={setToolbarMenuOpen} />
     <div className="browser-content-viewport" data-browser-content-state={isNewTab ? "no-page" : state}>
       <BrowserReadinessStrip state={state} />
       <BrowserOperationStatus operation={operationLabel} />
@@ -130,6 +169,6 @@ export function BrowserCoreTab({ sessionId, location, active = true, blocked = f
         {isNewTab ? <BrowserNewTabSurface onFocusAddress={() => focusAddress(true)} onSearchWeb={() => void navigateToAddress("https://www.google.com/")} onNewTab={newBrowserTab} /> : isBrowserGuestSurfaceVisible(state, isNewTab) ? <BrowserGuestSurface key={activeBrowserId} sessionId={sessionId} browserId={activeBrowserId} blocked={!active || blocked || diagnosticsOpen || toolbarMenuOpen || tabMenuOpen} transitioning={transitioning} /> : isBrowserRecoveryState(state) && <BrowserEmptyState state={state} onRetry={viewState.recoverable ? recover : undefined} onOpenDiagnostics={openDiagnostics} onReopen={recover} />}
       </div>
     </div>
-    <BrowserDiagnosticsDrawer open={diagnosticsOpen} panelState={state} presentation={presentation} sessionId={sessionId} onClose={() => { setDiagnosticsOpen(false); diagnosticsTriggerRef.current?.focus(); }} onRetry={viewState.recoverable ? recover : undefined} suggestedAction={viewState.safeSuggestedAction} onOperation={setOperation} onError={setError} />
+    <BrowserDiagnosticsDrawer open={diagnosticsOpen} panelState={state} presentation={presentation} sessionId={sessionId} browserId={activeBrowserId} screenshot={screenshot} onAnnotate={annotate} onClose={() => { setDiagnosticsOpen(false); diagnosticsTriggerRef.current?.focus(); }} onRetry={viewState.recoverable ? recover : undefined} suggestedAction={viewState.safeSuggestedAction} onOperation={showNotice} onError={setError} />
   </div>;
 }

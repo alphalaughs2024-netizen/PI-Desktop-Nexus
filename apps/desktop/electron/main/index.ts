@@ -1042,9 +1042,22 @@ const browserHost = new BrowserHost({
     return join(root, "scratch", sessionId);
   },
   onState: emitBrowserState,
+  approveSite: async (origin, capability, signal) => {
+    const expiry = AbortSignal.timeout(120_000);
+    const approvalSignal = signal ? AbortSignal.any([signal, expiry]) : expiry;
+    const options: Electron.MessageBoxOptions = { type: "question", title: "Nexus Browser approval", message: `Allow ${capability}?`, detail: `Site: ${origin}\nAccess is limited to this tab and site. Navigation to another site requires new approval.`, buttons: ["Deny", "Allow"], defaultId: 0, cancelId: 0, noLink: true, signal: approvalSignal };
+    const result = mainWindow ? await dialog.showMessageBox(mainWindow, options) : await dialog.showMessageBox(options);
+    return !approvalSignal.aborted && result.response === 1;
+  },
+  selectUploadFiles: async () => {
+    const options: Electron.OpenDialogOptions = { title: "Select files to upload to this browser page", properties: ["openFile", "multiSelections"] };
+    const result = mainWindow ? await dialog.showOpenDialog(mainWindow, options) : await dialog.showOpenDialog(options);
+    return result.canceled ? [] : result.filePaths;
+  },
 });
 const browserBroker = new BrowserBroker(browserHost, isBrowserCapabilityEnabled);
 const browserTypedTools = createBrowserTypedTools(browserBroker);
+browserPane.onChanged = (sessionId) => sendToRenderer(IPC.event.browserTabs, browserHost.tabsState(sessionId));
 const browserTelemetry = new BrowserTelemetry((event, fields) => logger.app("diagnostics", "info", event, { data: fields }));
 pluginViews.onSurface = () => undefined;
 plugins.setServices({
@@ -5468,7 +5481,10 @@ async function startSidecar(): Promise<void> {
       if (result && typeof result === "object" && "ok" in result && !(result as { ok: boolean }).ok) {
         return { ...(result as object), ok: false, isError: true, content: (result as { message?: string }).message ?? "Browser operation failed", details: result };
       }
-      if (["browser_open", "browser_navigate", "browser_list_tabs", "browser_snapshot", "browser_wait", "browser_screenshot"].includes(descriptor.name)) {
+      if (["browser_open", "browser_navigate", "browser_tabs", "browser_list_tabs", "browser_snapshot", "browser_wait", "browser_screenshot", "browser_interact", "browser_annotations"].includes(descriptor.name)) {
+        if (descriptor.name === "browser_navigate" && result && typeof result === "object" && "browserId" in result && typeof result.browserId === "string") {
+          browserHost.tabOperation("select", browserHost.resolveTarget(sessionId, result.browserId));
+        }
         const requestId = `activation-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
         // Inspection has no URL argument. Preserve the selected retained page
         // instead of replacing its GUI projection with an empty New Tab.
@@ -8290,6 +8306,22 @@ function registerIpc() {
     return browserPresentationFor(input.sessionId);
   });
 
+  handleWithEvent(IPC.invoke.browserTabs, async (event, input: { sessionId?: string } = {}) => {
+    assertMainWindowSender(event);
+    return browserHost.tabsState(input.sessionId ?? visibleBrowserSessionId ?? "");
+  });
+  handleWithEvent(IPC.invoke.browserControl, async (event, input: { sessionId?: string; browserId?: string; action?: string; service?: string; args?: any } = {}) => {
+    assertMainWindowSender(event);
+    if (!isBrowserCapabilityEnabled()) throw Object.assign(new Error("Browser disabled"), { errorCode: "BROWSER_POLICY_BLOCKED" });
+    const context = { sessionId: input.sessionId ?? visibleBrowserSessionId, browserId: input.browserId, mode: "agent" as const, actor: "user" as const };
+    if (input.action === "takeover" || input.action === "resume") return browserBroker.control(input.action === "takeover" ? "user" : "agent", context);
+    if (input.action === "status") return { owner: browserHost.isPaused(browserHost.resolveTarget(context.sessionId, context.browserId)) ? "user" : "agent" };
+    const result = input.action === "viewport" ? await browserBroker.viewport(input.args ?? {}, context)
+      : input.action === "service" && ["developer", "events", "downloads", "page", "annotations", "styles", "dialog", "metrics", "console", "viewport"].includes(input.service ?? "") ? await browserBroker.service(input.service!, input.args ?? {}, context) : null;
+    if (!result) throw Object.assign(new Error("Invalid Browser control"), { errorCode: "BROWSER_INVALID_INPUT" });
+    if (!result.ok) throw Object.assign(new Error(result.message ?? "Browser action failed"), { errorCode: result.code });
+    return result.result;
+  });
   handle(IPC.invoke.browserTabClose, async (input: { sessionId?: string; browserId?: string } = {}) => {
     const browserId = input.browserId?.trim();
     if (!browserId || browserId.length > 128) throw Object.assign(new Error("invalid Browser tab"), { errorCode: "BROWSER_INVALID_INPUT" });
@@ -8304,7 +8336,7 @@ function registerIpc() {
       if (!isBrowserCapabilityEnabled()) throw Object.assign(new Error("Browser is disabled by the core capability setting"), { errorCode: "BROWSER_POLICY_BLOCKED" });
       if (input.browserId && !browserHost.hasTab(input.sessionId ?? "", input.browserId)) throw Object.assign(new Error("Browser tab is unavailable"), { errorCode: "BROWSER_TAB_NOT_FOUND" });
       markBrowserSource(input.sessionId, "user");
-      const result = await browserBroker.navigate({ url: String(input.url ?? "") }, input.sessionId, { sessionId: input.sessionId, browserId: input.browserId, mode: "agent" });
+      const result = await browserBroker.navigate({ url: String(input.url ?? "") }, input.sessionId, { sessionId: input.sessionId, browserId: input.browserId, mode: "agent", actor: "user" });
       if (!result.ok) throw Object.assign(new Error("Browser navigation failed"), { errorCode: result.code });
       const state = result.result ?? browserHost.getState();
       if (!input.browserId || (input.browserId === visibleBrowserId && input.sessionId === visibleBrowserSessionId)) publishBrowserViewState(input.sessionId, state, { source: "user" });
@@ -8322,7 +8354,7 @@ function registerIpc() {
       action === "reload" ||
       action === "stop"
     ) {
-      const result = await browserBroker.action(action, { sessionId: input.sessionId ?? visibleBrowserSessionId, mode: "agent" });
+      const result = await browserBroker.action(action, { sessionId: input.sessionId ?? visibleBrowserSessionId, browserId: input.browserId, mode: "agent", actor: "user" });
       if (!result.ok) throw Object.assign(new Error("Browser action failed"), { errorCode: result.code });
     }
     publishBrowserViewState(visibleBrowserSessionId, browserHost.getState());
@@ -8358,9 +8390,9 @@ function registerIpc() {
     return { ok: true };
   });
 
-  handle(IPC.invoke.browserScreenshot, async (input: BrowserScreenshotOptions & { sessionId?: string } = {}) => {
+  handle(IPC.invoke.browserScreenshot, async (input: BrowserScreenshotOptions & { sessionId?: string; browserId?: string } = {}) => {
     if (!isBrowserCapabilityEnabled()) throw Object.assign(new Error("Browser is disabled by the core capability setting"), { errorCode: "BROWSER_POLICY_BLOCKED" });
-    const result = await browserBroker.screenshot(input, input.sessionId, { sessionId: input.sessionId ?? visibleBrowserSessionId, mode: "agent" });
+    const result = await browserBroker.screenshot(input, input.sessionId, { sessionId: input.sessionId ?? visibleBrowserSessionId, browserId: input.browserId, mode: "agent", actor: "user" });
     if (!result.ok || !result.result) throw Object.assign(new Error("Browser screenshot failed"), { errorCode: result.code ?? "BROWSER_UNKNOWN_ERROR" });
     const shot = result.result as Record<string, unknown>;
     const safe: BrowserScreenshotResult = {
@@ -8372,6 +8404,7 @@ function registerIpc() {
       viewportHeight: Number(shot.viewportHeight) || 1,
       coordinateSpace: "css-pixels",
       byteLength: Number(shot.byteLength) || 0,
+      ...(shot.truncated === true ? { truncated: true } : {}),
     };
     return safe;
   });

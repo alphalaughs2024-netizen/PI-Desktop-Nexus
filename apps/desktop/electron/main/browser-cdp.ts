@@ -1,5 +1,6 @@
 import type { WebContents } from "electron";
 import { createHash } from "node:crypto";
+import type { BrowserScreenshotOptions } from "@pi-desktop/shared";
 
 /** Chrome DevTools Protocol revision attached to the work-panel guest. */
 export const BROWSER_CDP_PROTOCOL = "1.3";
@@ -46,6 +47,8 @@ export type BrowserConsoleMessage = {
   type: string;
   text: string;
   timestamp: number;
+  count?: number;
+  firstTimestamp?: number;
 };
 
 export type AxNode = {
@@ -53,6 +56,8 @@ export type AxNode = {
   ignored?: boolean;
   role?: { value?: string };
   name?: { value?: string };
+  value?: { value?: unknown };
+  properties?: Array<{ name: string; value?: { value?: unknown } }>;
   backendDOMNodeId?: number;
   childIds?: string[];
 };
@@ -84,6 +89,8 @@ export function isAllowedCdpMethod(method: string): boolean {
 export function flattenAxTree(nodes: AxNode[]): {
   tree: string;
   uids: Map<string, number>;
+  nodeCount: number;
+  truncation: { nodes?: boolean; depth?: boolean; text?: boolean; bytes?: boolean };
 } {
   const byId = new Map<string, AxNode>();
   for (const node of nodes) {
@@ -99,27 +106,41 @@ export function flattenAxTree(nodes: AxNode[]): {
   const uids = new Map<string, number>();
   const lines: string[] = [];
   let next = 1;
+  let bytes = 0;
+  const visited = new Set<AxNode>();
+  const truncation: { nodes?: boolean; depth?: boolean; text?: boolean; bytes?: boolean } = {};
 
   const walk = (node: AxNode, depth: number) => {
-    if (depth > BROWSER_SNAPSHOT_LIMITS.maxDepth || next > BROWSER_SNAPSHOT_LIMITS.maxNodes) return;
+    if (visited.has(node)) return;
+    if (depth > BROWSER_SNAPSHOT_LIMITS.maxDepth) { truncation.depth = true; return; }
+    if (next > BROWSER_SNAPSHOT_LIMITS.maxNodes) { truncation.nodes = true; return; }
+    if (truncation.bytes) return;
+    visited.add(node);
     if (!node.ignored) {
       const role = boundedText(node.role?.value || "Generic", 128);
       const name = boundedText(node.name?.value);
+      if (String(node.name?.value ?? "").length > BROWSER_SNAPSHOT_LIMITS.maxTextLength || String(node.value?.value ?? "").length > BROWSER_SNAPSHOT_LIMITS.maxTextLength) truncation.text = true;
       const uid = `e${next}`;
       next += 1;
       if (typeof node.backendDOMNodeId === "number") {
         uids.set(uid, node.backendDOMNodeId);
       }
-      const label = name ? `${role} ${JSON.stringify(name)}` : role;
-      lines.push(`${"  ".repeat(depth)}- ${uid} ${label}`);
+      const states = (node.properties ?? []).filter(property => ["checked", "disabled", "expanded", "selected", "required", "readonly", "pressed", "level"].includes(property.name)).map(property => `${property.name}=${JSON.stringify(property.value?.value)}`);
+      if (node.value?.value !== undefined && role !== "password" && !node.properties?.some(property => property.name === "protected" && property.value?.value)) states.push(`value=${JSON.stringify(boundedText(node.value.value))}`);
+      const label = (name ? `${role} ${JSON.stringify(name)}` : role) + (states.length ? ` [${states.join(" ")}]` : "");
+      const line = `${"  ".repeat(depth)}- ${uid} ${label}`;
+      const size = Buffer.byteLength(line) + 1;
+      if (bytes + size > BROWSER_SNAPSHOT_LIMITS.maxBytes) { truncation.bytes = true; uids.delete(uid); next--; return; }
+      bytes += size;
+      lines.push(line);
     }
     for (const childId of node.childIds ?? []) {
       const child = byId.get(childId);
       if (child) walk(child, node.ignored ? depth : depth + 1);
     }
   };
-  for (const root of roots) walk(root, 0);
-  return { tree: lines.join("\n") || "(empty)", uids };
+  for (const root of roots.length ? roots : nodes.slice(0, 1)) walk(root, 0);
+  return { tree: lines.join("\n") || "(empty)", uids, nodeCount: next - 1, truncation };
 }
 
 function consoleText(args: unknown): string {
@@ -143,12 +164,14 @@ function consoleText(args: unknown): string {
  */
 export class BrowserCdp {
   private viewportOverride = false;
+  private viewport?: { width: number; height: number; mobile: boolean };
   private attachedId: number | null = null;
   private uids = new Map<string, number>();
   private messages: BrowserConsoleMessage[] = [];
   private snapshotSequence = 0;
   private documentGeneration = 0;
   private lastSnapshotHash: string | undefined;
+  private pendingDialog?: { type: string; message: string; defaultPrompt?: string };
   private onDebuggerMessage?: (
     event: unknown,
     method: string,
@@ -158,6 +181,8 @@ export class BrowserCdp {
   isAttached(wc: WebContents): boolean {
     return this.attachedId === wc.id && !wc.isDestroyed() && wc.debugger.isAttached();
   }
+  generation(): number { return this.documentGeneration; }
+  viewportStatus() { return this.viewport ? { ...this.viewport, reset: false } : { reset: true }; }
 
   async attach(wc: WebContents): Promise<void> {
     if (wc.isDestroyed()) {
@@ -170,6 +195,8 @@ export class BrowserCdp {
     }
     this.attachedId = wc.id;
     this.onDebuggerMessage = (_event, method, params) => {
+      if (method === "Page.javascriptDialogOpening") { const input = params as any; this.pendingDialog = { type: String(input.type), message: boundedText(input.message), defaultPrompt: boundedText(input.defaultPrompt) }; return; }
+      if (method === "Page.javascriptDialogClosed") { this.pendingDialog = undefined; return; }
       if (method === "Page.frameNavigated") {
         const frame = (params as { frame?: { parentId?: string } } | null)?.frame;
         if (frame && !frame.parentId) {
@@ -193,7 +220,11 @@ export class BrowserCdp {
         method === "Console.messageAdded"
           ? String((record.message as { text?: string } | undefined)?.text ?? "")
           : consoleText(record.args);
-      this.messages.push({ type, text: boundedText(text), timestamp: Date.now() });
+      const value = boundedText(text);
+      const timestamp = Date.now();
+      const existing = this.messages.find(message => message.type === type && message.text === value);
+      if (existing) { existing.count = (existing.count ?? 1) + 1; existing.timestamp = timestamp; }
+      else this.messages.push({ type, text: value, timestamp, firstTimestamp: timestamp, count: 1 });
       if (this.messages.length > MAX_CONSOLE_MESSAGES) this.messages.shift();
     };
     wc.debugger.on("message", this.onDebuggerMessage);
@@ -242,8 +273,8 @@ export class BrowserCdp {
       nodes?: AxNode[];
     };
     const flattened = flattenAxTree(Array.isArray(raw?.nodes) ? raw.nodes : []);
-    const compactTree = flattened.tree.slice(0, BROWSER_SNAPSHOT_LIMITS.maxBytes);
-    const truncation = compactTree.length < flattened.tree.length ? { bytes: true } : undefined;
+    const compactTree = flattened.tree;
+    const truncation = Object.keys(flattened.truncation).length ? flattened.truncation : undefined;
     const url = wc.getURL();
     const title = wc.getTitle();
     const contentHash = createHash("sha256").update(JSON.stringify({ tree: compactTree, url: new URL(url || "about:blank").origin + new URL(url || "about:blank").pathname, title, generation: this.documentGeneration })).digest("hex");
@@ -259,25 +290,41 @@ export class BrowserCdp {
       snapshotId,
       documentGeneration: this.documentGeneration,
       unchanged,
-      nodeCount: flattened.uids.size,
+      nodeCount: flattened.nodeCount,
       truncation,
     };
   }
 
   async setViewport(wc: WebContents, input: { width?: number; height?: number; mobile?: boolean; reset?: boolean }) {
     await this.attach(wc);
-    if (input.reset === true) { await wc.debugger.sendCommand("Emulation.clearDeviceMetricsOverride"); this.viewportOverride = false; this.uids.clear(); this.documentGeneration += 1; this.lastSnapshotHash = undefined; return { reset: true }; }
+    if (input.reset === true) { await wc.debugger.sendCommand("Emulation.clearDeviceMetricsOverride"); this.viewportOverride = false; this.viewport = undefined; this.uids.clear(); this.documentGeneration += 1; this.lastSnapshotHash = undefined; return { reset: true }; }
     const { width, height } = input;
     if (!Number.isInteger(width) || !Number.isInteger(height) || width! < 240 || width! > 3840 || height! < 240 || height! > 2160) throw Object.assign(new Error("Viewport must be 240..3840 by 240..2160 CSS pixels"), { code: "BROWSER_INVALID_INPUT" });
     await wc.debugger.sendCommand("Emulation.setDeviceMetricsOverride", { width, height, deviceScaleFactor: 1, mobile: input.mobile === true });
     this.viewportOverride = true;
+    this.viewport = { width: width!, height: height!, mobile: input.mobile === true };
     this.uids.clear(); this.documentGeneration += 1; this.lastSnapshotHash = undefined;
     return { width, height, mobile: input.mobile === true, coordinateSpace: "css-pixels" };
   }
 
   /** Native hidden views need a viewport surface; preserve explicit emulation. */
-  async withRenderViewport<T>(wc: WebContents, work: () => Promise<T>): Promise<T> {
+  async withRenderViewport<T>(wc: WebContents, work: () => Promise<T>, captureFrames = false): Promise<T> {
     await this.attach(wc);
+    await wc.debugger.sendCommand("Emulation.setFocusEmulationEnabled", { enabled: true });
+    // Hidden Windows guests need compositor requests while a full-page
+    // screenshot is captured. Ordinary locator actions do not need this loop.
+    let capturing = false;
+    const capture = () => {
+      if (capturing || wc.isDestroyed()) return;
+      capturing = true;
+      void wc.capturePage({ x: 0, y: 0, width: 1, height: 1 }).catch(() => undefined).finally(() => { capturing = false; });
+    };
+    if (captureFrames) capture();
+    const frames = captureFrames ? setInterval(capture, 100) : undefined;
+    try { return await this.renderViewport(wc, work); }
+    finally { if (frames) clearInterval(frames); if (!wc.isDestroyed() && wc.debugger.isAttached()) await wc.debugger.sendCommand("Emulation.setFocusEmulationEnabled", { enabled: false }); }
+  }
+  private async renderViewport<T>(wc: WebContents, work: () => Promise<T>): Promise<T> {
     if (this.viewportOverride) return work();
     const metrics = await wc.debugger.sendCommand("Page.getLayoutMetrics") as { cssLayoutViewport?: { clientWidth?: number; clientHeight?: number } };
     const width = Math.min(3840, Math.max(240, Math.round(metrics.cssLayoutViewport?.clientWidth || 1280)));
@@ -290,10 +337,19 @@ export class BrowserCdp {
     }
   }
 
+  async dialog(wc: WebContents, operation: "status" | "accept" | "dismiss", text?: string) {
+    await this.attach(wc);
+    if (!this.pendingDialog) return { pending: false };
+    const status = { pending: true, ...this.pendingDialog };
+    if (operation !== "status") { await wc.debugger.sendCommand("Page.handleJavaScriptDialog", { accept: operation === "accept", promptText: text }); this.pendingDialog = undefined; }
+    return { ...status, pending: operation === "status" };
+  }
+
   async screenshot(
     wc: WebContents,
-    input: { fullPage?: boolean } = {},
-  ): Promise<{ mimeType: "image/jpeg"; data: string; width: number; height: number; viewportWidth: number; viewportHeight: number; coordinateSpace: "css-pixels"; byteLength: number }> {
+    input: BrowserScreenshotOptions = {},
+  ): Promise<{ mimeType: "image/jpeg" | "image/png"; data: string; width: number; height: number; viewportWidth: number; viewportHeight: number; coordinateSpace: "css-pixels"; byteLength: number; truncated?: boolean }> {
+    if (input.format !== undefined && !["png", "jpeg"].includes(input.format) || [input.maxWidth, input.maxHeight, input.maxBytes, input.quality].some(value => value !== undefined && (!Number.isFinite(value) || value <= 0))) throw Object.assign(new Error("Invalid screenshot options"), { code: "BROWSER_INVALID_INPUT" });
     await this.attach(wc);
     let clip: { x: number; y: number; width: number; height: number; scale: number } | undefined;
     const metrics = (await wc.debugger.sendCommand("Page.getLayoutMetrics")) as {
@@ -305,26 +361,33 @@ export class BrowserCdp {
     const viewportHeight = Math.max(1, Number(metrics.cssVisualViewport?.clientHeight ?? metrics.cssContentSize?.height ?? metrics.contentSize?.height) || 1);
     let outputWidth = viewportWidth;
     let outputHeight = viewportHeight;
-    if (input.fullPage) {
+    let truncated = false;
+    if (input.fullPage || input.clip) {
       const size = metrics.cssContentSize ?? metrics.contentSize ?? { width: 0, height: 0 };
-      const width = Math.max(1, Number(size.width) || 1);
-      const height = Math.max(1, Number(size.height) || 1);
-      const scale = width > SCREENSHOT_MAX_WIDTH ? SCREENSHOT_MAX_WIDTH / width : 1;
-      clip = { x: 0, y: 0, width, height, scale };
+      const crop = input.clip;
+      if (crop && (![crop.x, crop.y, crop.width, crop.height].every(Number.isFinite) || crop.x < 0 || crop.y < 0 || crop.width <= 0 || crop.height <= 0 || crop.x + crop.width > Number(size.width) || crop.y + crop.height > Number(size.height))) throw Object.assign(new Error("Screenshot crop is outside the document"), { code: "BROWSER_INVALID_INPUT" });
+      const width = Math.max(1, crop?.width ?? (Number(size.width) || 1));
+      const documentHeight = Math.max(1, crop?.height ?? (Number(size.height) || 1));
+      const maxWidth = Math.min(3840, Math.max(240, input.maxWidth ?? SCREENSHOT_MAX_WIDTH));
+      const scale = width > maxWidth ? maxWidth / width : 1;
+      const maxHeight = Math.min(BROWSER_SNAPSHOT_LIMITS.maxScreenshotHeight, Math.max(240, input.maxHeight ?? BROWSER_SNAPSHOT_LIMITS.maxScreenshotHeight));
+      const height = Math.min(documentHeight, maxHeight / scale);
+      truncated = height < documentHeight;
+      clip = { x: crop?.x ?? 0, y: crop?.y ?? 0, width, height, scale };
       outputWidth = Math.max(1, Math.round(width * scale));
       outputHeight = Math.max(1, Math.round(height * scale));
     }
     const result = (await wc.debugger.sendCommand("Page.captureScreenshot", {
-      format: "jpeg",
-      quality: 70,
+      format: input.format === "png" ? "png" : "jpeg",
+      ...(input.format === "png" ? {} : { quality: Math.min(100, Math.max(1, input.quality ?? 70)) }),
       ...(clip ? { clip, captureBeyondViewport: true } : {}),
     })) as { data?: string };
     if (typeof result?.data !== "string" || !result.data) {
       throw new Error("screenshot produced no data");
     }
     const byteLength = Buffer.byteLength(result.data, "base64");
-    if (byteLength > BROWSER_SNAPSHOT_LIMITS.maxScreenshotBytes) throw new Error("screenshot exceeds browser payload limit");
-    return { mimeType: "image/jpeg", data: result.data, width: outputWidth, height: outputHeight, viewportWidth, viewportHeight, coordinateSpace: "css-pixels" as const, byteLength };
+    if (byteLength > Math.min(BROWSER_SNAPSHOT_LIMITS.maxScreenshotBytes, input.maxBytes ?? BROWSER_SNAPSHOT_LIMITS.maxScreenshotBytes)) throw new Error("screenshot exceeds browser payload limit");
+    return { mimeType: input.format === "png" ? "image/png" : "image/jpeg", data: result.data, width: outputWidth, height: outputHeight, viewportWidth, viewportHeight, coordinateSpace: "css-pixels" as const, byteLength, ...(truncated ? { truncated: true } : {}) };
   }
 
   async viewportScreenshot(wc: WebContents) {
@@ -338,7 +401,8 @@ export class BrowserCdp {
     return { mimeType: "image/jpeg" as const, data: bytes.toString("base64"), width: size.width, height: size.height, viewportWidth: size.width, viewportHeight: size.height, coordinateSpace: "css-pixels" as const, byteLength: bytes.byteLength };
   }
 
-  async click(wc: WebContents, uid: string): Promise<void> {
+  async click(wc: WebContents, uid: string, button: "left" | "right" | "middle" = "left"): Promise<void> {
+    if (!["left", "right", "middle"].includes(button)) throw Object.assign(new Error("Invalid mouse button"), { code: "BROWSER_INVALID_INPUT" });
     const backendNodeId = this.requireUid(uid);
     await this.attach(wc);
     await wc.debugger.sendCommand("DOM.scrollIntoViewIfNeeded", { backendNodeId });
@@ -355,14 +419,14 @@ export class BrowserCdp {
       type: "mousePressed",
       x,
       y,
-      button: "left",
+      button,
       clickCount: 1,
     });
     await wc.debugger.sendCommand("Input.dispatchMouseEvent", {
       type: "mouseReleased",
       x,
       y,
-      button: "left",
+      button,
       clickCount: 1,
     });
   }
@@ -456,9 +520,10 @@ export class BrowserCdp {
     return value;
   }
 
-  console(limit = 50): BrowserConsoleMessage[] {
+  console(limit = 50, options: { types?: string[]; contains?: string; since?: number; clear?: boolean } = {}): BrowserConsoleMessage[] {
     const cap = Math.min(MAX_CONSOLE_MESSAGES, Math.max(1, Math.floor(limit) || 50));
-    const messages = this.messages.slice(-cap);
+    const messages = this.messages.filter(message => (!options.types?.length || options.types.includes(message.type)) && (!options.contains || message.text.includes(options.contains)) && (options.since === undefined || message.timestamp >= options.since)).sort((a, b) => a.timestamp - b.timestamp).slice(-cap);
+    if (options.clear) this.messages = [];
     let bytes = 0;
     return messages.reverse().filter((message) => { const size = Buffer.byteLength(message.text, "utf8"); if (bytes + size > BROWSER_SNAPSHOT_LIMITS.maxConsoleBytes) return false; bytes += size; return true; }).reverse();
   }

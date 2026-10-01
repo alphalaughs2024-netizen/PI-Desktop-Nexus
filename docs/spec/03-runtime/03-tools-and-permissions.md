@@ -742,5 +742,7 @@ Snapshot references expire on navigation. A screenshot succeeds only when the
 image is saved under the conversation scratch directory; model-facing results
 contain its path and metadata without base64 data. Inspection and navigation
 tools, including `browser_list_tabs`, reveal the Browser panel in the active
-conversation. Allowed links requesting a new window load in the controlled
-guest so subsequent Browser tools observe their destination.
+conversation. Allowed links requesting a new window retain a separate chat-owned
+popup guest and preserve the opener (ADR 0265). Expanded services, approvals,
+artifacts, Plan action policy and built-in subagent grants are defined in
+[Built-in Browser capabilities](23-built-in-browser-capabilities.md).

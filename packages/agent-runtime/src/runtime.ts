@@ -43,6 +43,7 @@ import {
 } from "@earendil-works/pi-ai";
 import {
   DEFAULT_COMMAND_TIMEOUT_MS,
+  BROWSER_TOOL_NAMES,
   OAUTH_AUTH_KIND,
   type TrustedExtensionCommand,
   type TrustedExtensionDiagnostic,
@@ -519,19 +520,7 @@ const AGENT_CORE_TOOL_NAMES = new Set([
   ASK_TOOL_NAME,
   SKILL_TOOL_NAME,
   WORKFLOW_TOOL_NAME,
-  "browser_list_tabs",
-  "browser_open",
-  "browser_navigate",
-  "browser_snapshot",
-  "browser_screenshot",
-  "browser_click",
-  "browser_fill",
-  "browser_type",
-  "browser_keypress",
-  "browser_wait",
-  "browser_console",
-  "browser_evaluate",
-  "browser_cdp",
+  ...BROWSER_TOOL_NAMES,
 ]);
 
 const GIT_WORKTREE_HARD_FAILURE_CODES = new Set([

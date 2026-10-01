@@ -1,4 +1,5 @@
-import { shell, WebContentsView, type BrowserWindow } from "electron";
+import { shell, WebContentsView, type BrowserWindow, type BrowserWindowConstructorOptions, type WebContents } from "electron";
+import { installBrowserPermissionHandlers } from "./browser-permissions";
 import { statSync, watch, type FSWatcher } from "node:fs";
 import { dirname, isAbsolute, resolve, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -24,6 +25,9 @@ const LIVE_RELOAD_DEBOUNCE_MS = 250;
 const SURFACE_CAPTURE_TIMEOUT_MS = 5_000;
 const SURFACE_CAPTURE_ATTEMPTS = 3;
 const SURFACE_CAPTURE_RETRY_MS = 100;
+
+// Electron supplies this field to createWindow but omits it from its window type.
+export type BrowserPopupOptions = BrowserWindowConstructorOptions & { webContents?: WebContents; url: string; background: boolean };
 
 export function normalizeUrl(raw: string): string | null {
   const trimmed = raw.trim();
@@ -80,6 +84,12 @@ export function resolveLocalFile(raw: string, root: string | null): string | nul
 }
 
 export class BrowserPane {
+  private popupHandler?: (options: BrowserPopupOptions) => WebContents;
+  private canOpenPopup?: () => boolean;
+  onGuestCreated?: (wc: WebContents) => void;
+  onGuestDestroyed?: () => void;
+  setPopupHandler(handler: (options: BrowserPopupOptions) => WebContents, canOpen?: () => boolean): void { this.popupHandler = handler; this.canOpenPopup = canOpen; }
+  createPopup(options: BrowserPopupOptions) { return this.ensureView(options).webContents; }
   private view: WebContentsView | null = null;
   private window: BrowserWindow | null = null;
   private renderWindow: BrowserWindow | null = null;
@@ -276,7 +286,8 @@ export class BrowserPane {
     this.detachRenderHost();
     this.detach();
     if (this.view) {
-      this.view.webContents.close();
+      const wc = this.view.webContents;
+      if (wc && !wc.isDestroyed()) wc.close();
       this.view = null;
       this.generation += 1;
     }
@@ -423,10 +434,12 @@ export class BrowserPane {
     }
   }
 
-  private ensureView(): WebContentsView {
+  private ensureView(options?: BrowserPopupOptions): WebContentsView {
     if (this.view && !this.view.webContents.isDestroyed()) return this.view;
     const view = new WebContentsView({
+      ...(options?.webContents ? { webContents: options.webContents } : {}),
       webPreferences: {
+        ...options?.webPreferences,
         sandbox: true,
         contextIsolation: true,
         nodeIntegration: false,
@@ -437,13 +450,12 @@ export class BrowserPane {
     // Detached agent tabs need a real viewport before GUI geometry arrives.
     view.setBounds({ x: 0, y: 0, width: 1280, height: 800 });
     const wc = view.webContents;
-    wc.setWindowOpenHandler(({ url }) => {
-      const allowed = parseAllowedExternalUrl(url);
-      if (allowed) queueMicrotask(() => { if (!wc.isDestroyed()) void wc.loadURL(allowed).catch(() => undefined); });
+    installBrowserPermissionHandlers(wc.session);
+    wc.setWindowOpenHandler(({ url, disposition }) => {
+      if ((url === "about:blank" || isAllowedHttpUrl(url)) && this.popupHandler && (this.canOpenPopup?.() ?? true)) {
+        return { action: "allow", createWindow: (popupOptions) => this.popupHandler!({ ...popupOptions, url, background: disposition === "background-tab" }) };
+      }
       return { action: "deny" };
-    });
-    wc.session.setPermissionRequestHandler((_wc, _permission, callback) => {
-      callback(false);
     });
     wc.on("will-navigate", (event, url) => {
       if (url === "about:blank" || isAllowedHttpUrl(url)) return;
@@ -476,8 +488,22 @@ export class BrowserPane {
     wc.on("did-fail-load", push);
     wc.on("did-finish-load", () => { this.verifySurface(true); push(); });
     wc.on("render-process-gone", push);
-    wc.on("destroyed", () => { this.attached = false; this.painted = "blank"; this.generation += 1; push(); });
+    wc.on("destroyed", () => {
+      this.attached = false; this.painted = "blank"; this.generation += 1; push();
+      // Native window.close() is still tearing down the embedder here. Release
+      // the tab after that event finishes, without querying its dead contents.
+      setImmediate(() => { if (this.view === view) this.onGuestDestroyed?.(); });
+    });
     this.view = view;
+    if (options) {
+      // Do not query the new guest or attach its debugger within Chromium's
+      // synchronous createWindow callback: the opener is still waiting on it.
+      setImmediate(() => {
+        if (wc.isDestroyed()) return;
+        this.onGuestCreated?.(wc);
+        if (options.background && !options.webContents) void wc.loadURL(options.url).catch(() => undefined);
+      });
+    } else this.onGuestCreated?.(wc);
     return view;
   }
 }

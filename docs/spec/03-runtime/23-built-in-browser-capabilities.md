@@ -1,0 +1,93 @@
+# Built-in Browser Capabilities
+
+Normative amendment: [ADR 0265](../../adr/0265-built-in-browser-capabilities.md).
+Extends ADR 0254 retained-session execution while preserving Browser design.
+
+## Execution and Ownership
+
+Resolve each command against its originating chat and retained tab. Unknown
+explicit IDs fail. Native popups retain opener/page history and have their own
+incarnation. Tab create/select/close/mark events synchronize the GUI; each chat
+has at most 20 tabs. Closing the final tab closes the panel.
+Background link popups preserve selection; self-closing pages remove their tabs.
+Native destruction releases services using retained identities and session
+handles without accessing destroyed Electron objects.
+
+Playwright Core 1.63.0 connects through guest-only in-memory CDP. Semantic
+role/name, label, text, placeholder, test ID and CSS locators support up to
+eight nested frame selectors. Matches are strict unless indexed. Native
+actionability applies without forced-click fallback. Hidden rendering uses
+the existing retained render host; explicit viewport emulation survives until
+reset. Cancellation disconnects an operation without destroying the page.
+Uncertain mutations are reported and never replayed automatically.
+Snapshot, console and page inspection remain available while an uncertain
+mutation is pending. Later mutations retain their ordering fence.
+
+User takeover cancels admitted agent work and blocks further mutations until
+the user resumes. Inspection and user controls remain available. Plan permits
+snapshot/screenshot, URL/text/load wait, page content/asset inventory, download
+listing, annotation reading, dialog status and WebMCP discovery. It denies
+export/asset saves, console clearing, interaction, Developer enablement, upload,
+style changes, evaluation and public CDP. Resuming clears annotation click
+handlers before agent control is restored.
+
+## Tool and GUI Contract
+
+`BROWSER_TOOL_NAMES` is authoritative. Existing tools remain, with capabilities,
+tabs, locator interactions, dialogs, Developer approval, events, downloads,
+uploads, page content/assets/exports, annotations, styles and WebMCP added.
+Main advertises and executes matching schemas.
+
+The existing GUI drawer offers Overview, Page, Downloads and Developer views.
+Screenshot results display actual images and saving controls. Viewport controls
+show current emulation, including agent-set dimensions, and restore panel sizing.
+Arrow/Home/End keys select drawer tabs. The native page is hidden beneath the
+drawer and menus. Existing theme tokens and reduced-motion behavior apply.
+Pending screenshot/control/annotation results cannot update a different tab or
+chat after target changes. Control requests are admitted once; copy confirmations
+expire without leaving controls busy.
+
+Built-in UI designer/fixer/test runner receive all browser tools; explorer and
+code reviewer receive inspection tools. Custom presets retain saved restrictions.
+Configured Codex sessions retain exact models/providers. Actual screenshot input
+still depends on the model advertising image support.
+
+## Approval and Boundaries
+
+Developer access is explicitly approved for the current tab/origin, with a
+120-second deny timeout and a document recheck. Cross-origin navigation revokes
+it. Event history is bounded to 250 records/1 MiB and returns cursor, historyLost
+and hasMore. Events redact authorization/cookie headers and post data. Response
+body retrieval requires a request ID observed under the active approval.
+Revocation resets Developer emulation and disables diagnostic domains before
+a new grant; automation reconnects so its domains initialize afresh.
+Public CDP keeps global cookies/storage/targets/interception denied.
+
+Camera, microphone, notifications and location require separate per-request
+user approval. Permission checks reuse explicit live-document grants; audio
+and video are distinct. Navigation invalidates grants and pending approval.
+Unknown permissions, screen capture, filesystem access, cross-origin frames and
+requests without an owned page remain denied. OS/device availability may still
+prevent approved media or location use.
+
+Uploads accept only native-picker selections and recheck document identity.
+WebMCP calls require a fresh list's documentUrl/documentGeneration and per-call
+approval. Documents without the experimental API return supported=false.
+
+## Result Limits
+
+- AX: 2,000 visible nodes, depth 64, 4,000 characters per field, 512 KiB total;
+  cycle protection and explicit truncation. Protected values are omitted.
+  Text waits retain prior content when snapshots report unchanged.
+- Screenshots: PNG/JPEG, document-coordinate crops, maximum 4,096 output rows
+  and 4 MiB. Out-of-document crops fail; shortened images report truncated.
+  Actual images and viewport metadata reach eligible models.
+- Console: repeats aggregate counts and first/last timestamps, with type/text/time
+  filters and explicit clearing.
+- Downloads/PDFs: 32 MiB; saved assets: 8 MiB. Artifacts stay in chat scratch.
+  Downloads are managed at guest creation. Page content/links/assets and exports
+  are bounded. HTML is a snapshot, not a complete offline archive. Cancellation
+  or document changes prevent stale artifact saves.
+- Temporary CSS/annotations disappear on navigation and never edit project files.
+- Tabs share Nexus's persistent browser accounts/cookies. External browser
+  profiles and extensions are excluded from this release.
