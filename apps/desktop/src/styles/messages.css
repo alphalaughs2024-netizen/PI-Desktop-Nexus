@@ -453,34 +453,23 @@
   }
 }
 
-/* Running labels stay readable; the small marker carries the live feedback
-   so long tool names never flash between two text colours. */
+/* Theme-derived 2s sweep, matching the accepted status specimen. */
 .tool-activity-label.running,
 .tool-row-name.running {
-  color: var(--ds-text-secondary);
+  background: var(--ds-text-secondary) linear-gradient(to right,
+    transparent 0%, var(--ds-text-primary) 40%, var(--ds-text-primary) 60%, transparent 100%);
+  background-size: 50% 200%;
+  background-position: -100% 0;
+  background-repeat: no-repeat;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: activity-text-sweep 2s steps(48, end) infinite;
 }
 
-.tool-activity-label.running::after,
-.tool-row-name.running::after {
-  display: inline-block;
-  width: 4px;
-  height: 4px;
-  margin-inline-start: 6px;
-  vertical-align: middle;
-  border-radius: var(--radius-round);
-  background: var(--ds-text-secondary);
-  content: "";
-  animation: activity-marker-pulse 1s var(--motion-ease-standard) infinite;
-}
-
-@keyframes activity-marker-pulse {
-  0%,
-  100% {
-    opacity: 0.35;
-  }
-  50% {
-    opacity: 1;
-  }
+@keyframes activity-text-sweep {
+  from { background-position: -100% 0; }
+  to { background-position: 250% 0; }
 }
 
 @keyframes planning-state-in {
@@ -2758,12 +2747,149 @@
 }
 
 .turn-progress .tool-activity-label {
+  flex: 1;
   min-width: 0;
   overflow-wrap: anywhere;
 }
 
+.turn-progress > .tool-activity-header {
+  display: flex;
+  width: 100%;
+  min-height: 32px;
+  margin: 0;
+  padding: 0 6px;
+  gap: 8px;
+}
+
+.turn-progress {
+  contain-intrinsic-size: auto 46px;
+}
+
+.turn-progress .tool-activity-caret {
+  transition: transform 150ms ease;
+}
+
+.activity-disclosure {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 180ms cubic-bezier(.2, .8, .2, 1);
+}
+
+.activity-disclosure.is-open {
+  grid-template-rows: 1fr;
+}
+
+.activity-disclosure-inner {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.activity-icon {
+  display: inline-flex;
+  flex: none;
+}
+
+.activity-icon svg {
+  display: block;
+  transform-origin: center;
+  transform-box: view-box;
+}
+
+.activity-icon-terminal.is-animated svg > path:first-child {
+  animation: activity-cursor 800ms linear infinite;
+}
+
+.activity-icon-waiting.is-animated svg {
+  animation: spin 800ms linear infinite;
+}
+
+.activity-icon-search.is-animated svg {
+  animation: activity-search 1s ease-in-out;
+}
+
+.activity-icon-delegate.is-animated svg > :is(path, circle),
+.activity-icon-completed.is-animated svg > path {
+  stroke-dasharray: 1 1;
+  animation: activity-stroke 400ms ease-out both;
+}
+
+.activity-icon-delegate.is-animated svg > :is(path, circle) {
+  animation-duration: 300ms;
+}
+
+.activity-icon-delegate.is-animated svg > circle:first-of-type { animation-delay: 100ms; }
+.activity-icon-delegate.is-animated svg > path { animation-delay: 400ms; }
+.activity-icon-delegate.is-animated svg > circle:last-of-type { animation-delay: 700ms; }
+
+.activity-icon-reasoning.is-animated svg {
+  animation: activity-breathe 1.4s ease-in-out infinite alternate;
+}
+
+.activity-icon-reasoning.is-animated svg > path:nth-child(-n + 2) {
+  animation: activity-brain-stroke 1.4s ease-in-out infinite alternate;
+}
+
+.activity-icon-paused.is-animated svg > rect:first-child {
+  animation: activity-pause-right 500ms ease-in-out;
+}
+
+.activity-icon-paused.is-animated svg > rect:last-child {
+  animation: activity-pause-left 500ms ease-in-out;
+}
+
+@keyframes activity-cursor {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+@keyframes activity-search {
+  0%, 100% { transform: translate(0, 0); }
+  33% { transform: translateY(-2.7px); }
+  67% { transform: translateX(-2px); }
+}
+
+@keyframes activity-stroke {
+  from { stroke-dashoffset: 1; opacity: 0; }
+  to { stroke-dashoffset: 0; opacity: 1; }
+}
+
+@keyframes activity-breathe {
+  0%, 100% { transform: scale(1); stroke-width: 2; }
+  50% { transform: scale(1.08); stroke-width: 2.25; }
+}
+
+@keyframes activity-brain-stroke {
+  0%, 100% { stroke-dasharray: 1 0; stroke-dashoffset: 0; }
+  50% { stroke-dasharray: .5 .5; stroke-dashoffset: -.25; }
+}
+
+@keyframes activity-pause-left {
+  0%, 50%, 100% { transform: translateY(0); }
+  20% { transform: translateY(2px); }
+}
+
+@keyframes activity-pause-right {
+  0%, 20%, 100% { transform: translateY(0); }
+  50% { transform: translateY(2px); }
+}
+
+/* Terminal/recovered turns cannot keep stale child activity moving. */
+.turn-progress:not(.active) .activity-icon:not(.activity-icon-completed) :is(svg, svg *),
+.turn-progress:not(.active) .tool-spinner,
+.turn-progress:not(.active) .tool-row-state-dot,
+.turn-progress:not(.active) .running {
+  animation: none;
+  stroke-dasharray: none;
+}
+
+.turn-progress:not(.active) .running {
+  background: none;
+  -webkit-text-fill-color: currentColor;
+}
+
 .turn-timeline {
   padding-top: 8px;
+  border-left: 1px solid var(--ds-border-default);
 }
 
 .turn-timeline .tool-row-header,

@@ -29,6 +29,9 @@ import {
   type ThinkingLevel,
 } from "@pi-desktop/shared";
 import { ConversationMinimap } from "./ConversationMinimap";
+import { ActivityIcon } from "./ActivityIcon";
+import { AnimatedDisclosure } from "./AnimatedDisclosure";
+import { turnActivityIcon } from "../lib/activity-motion";
 import { TurnOutcomeCard } from "./TurnOutcomeCard";
 import { ReviewChangeCard } from "./ReviewChangeCard";
 import { Markdown, useCopy } from "./Markdown";
@@ -369,7 +372,7 @@ const TOOL_RUNNING_KEYS: Record<ToolAction, string> = {
   use: "chat.toolUsing",
 };
 
-function ToolActionIcon({ action }: { action: ToolAction }) {
+function ToolActionIcon({ action, active = false }: { action: ToolAction; active?: boolean }) {
   const props = { size: 15, "aria-hidden": true };
   switch (action) {
     case "read":
@@ -377,18 +380,18 @@ function ToolActionIcon({ action }: { action: ToolAction }) {
     case "list":
       return <IconFolder {...props} />;
     case "search":
-      return <IconSearch {...props} />;
+      return <ActivityIcon kind="search" animate={active} />;
     case "write":
     case "edit":
       return <IconPencil {...props} />;
     case "run":
-      return <IconTerminal {...props} />;
+      return <ActivityIcon kind="terminal" animate={active} />;
     case "fetch":
       return <IconGlobe {...props} />;
     case "fork":
       return <IconBranch {...props} />;
     case "delegate":
-      return <IconBot {...props} />;
+      return <ActivityIcon kind="delegate" animate={active} />;
     default:
       return <IconWrench {...props} />;
   }
@@ -745,15 +748,6 @@ const ToolRow = memo(function ToolRow({
   // The delegate's last answer row is its report, so the body must not print
   // the same text a second time.
   const nestedReport = delegate?.items.some((item) => item.kind === "answer");
-  // Streaming updates replace the message object each tick; only pay the
-  // full payload walk once the row is actually expanded.
-  const blocks =
-    variant !== "topology" && open && hasDetails
-      ? buildToolPresentation(message, {
-          hideSummaryArg: true,
-          ...(nestedReport ? { hideDelegateReport: true } : {}),
-        })
-      : null;
   const outcome =
     variant === "topology" ? subagentOutcome(message, delegationStatuses) : null;
   const runLabel =
@@ -924,7 +918,7 @@ const ToolRow = memo(function ToolRow({
             <span
               className={`tool-row-icon${lifecycle ? " is-subagent" : ""}`}
             >
-              <ToolActionIcon action={action} />
+              <ToolActionIcon action={action} active={status === "running"} />
             </span>
             <span
               className={`tool-row-name ${status === "running" ? "running" : ""}`}
@@ -1024,14 +1018,22 @@ const ToolRow = memo(function ToolRow({
           {statusLabel}
         </span>
       ) : null}
-      {blocks && blocks.length > 0 ? (
-        <div className="tool-row-body" id={detailsId}>
-          <DisclosureCollapseRail
-            label={t("chat.collapseDetails")}
-            onCollapse={collapseRow}
-          />
-          <ToolDetailBlocks blocks={blocks} plain={runHead} />
-        </div>
+      {variant !== "topology" && hasDetails ? (
+        <AnimatedDisclosure open={open} id={detailsId}>{() => {
+          const blocks = buildToolPresentation(message, {
+            hideSummaryArg: true,
+            ...(nestedReport ? { hideDelegateReport: true } : {}),
+          });
+          return blocks.length > 0 ? (
+            <div className="tool-row-body">
+              <DisclosureCollapseRail
+                label={t("chat.collapseDetails")}
+                onCollapse={collapseRow}
+              />
+              <ToolDetailBlocks blocks={blocks} plain={runHead} />
+            </div>
+          ) : null;
+        }}</AnimatedDisclosure>
       ) : null}
       {inlineOpen && delegate ? (
         <SubagentRunRows
@@ -1584,7 +1586,7 @@ function ThinkingRow({
         onClick={toggleRow}
       >
         <span className="tool-row-icon">
-          <IconSparkles size={15} aria-hidden />
+          <ActivityIcon kind="reasoning" animate={streaming} />
         </span>
         <span className={`tool-row-name ${streaming ? "running" : ""}`}>
           {t("chat.thinking", { defaultValue: "Thinking" })}
@@ -1594,8 +1596,8 @@ function ThinkingRow({
           <IconChevronRight size={12} />
         </span>
       </button>
-      {open ? (
-        <div className="tool-row-body" id={detailsId}>
+      <AnimatedDisclosure open={open} id={detailsId}>{() => (
+        <div className="tool-row-body">
           <DisclosureCollapseRail
             label={t("chat.thinkingHide")}
             onCollapse={collapseRow}
@@ -1604,7 +1606,7 @@ function ThinkingRow({
             <Markdown source={text} renderDiagrams={false} />
           </div>
         </div>
-      ) : null}
+      )}</AnimatedDisclosure>
     </div>
   );
 }
@@ -2486,6 +2488,8 @@ function TurnProgress({ execution, items, active }: { execution: EngineTurn; ite
   const [now, setNow] = useState(Date.now);
   const detailsId = useId();
   const live = active && !execution.outcome;
+  const observedLive = useRef<string | undefined>(undefined);
+  useEffect(() => { if (live) observedLive.current = execution.id; }, [live, execution.id]);
   useEffect(() => {
     if (!live) return;
     setNow(Date.now());
@@ -2494,6 +2498,8 @@ function TurnProgress({ execution, items, active }: { execution: EngineTurn; ite
   }, [live]);
   const elapsed = formatToolDuration(Math.max(0, ((execution.completedAt ?? now) - execution.startedAt) / 1000));
   const phase = execution.outcome ?? (live ? execution.progressPhase ?? execution.phase : "unavailable");
+  const runningTool = [...items].reverse().find(item => item.kind === "tool" && item.message.toolStatus === "running");
+  const iconKind = turnActivityIcon(phase, runningTool ? getToolAction(runningTool.message.toolName) : undefined);
   const delegates = items.filter(isDelegationActivityItem);
   const statuses = collectDelegationStatuses(items, { turnLive: live });
   const timings = collectDelegationTimings(items);
@@ -2501,15 +2507,16 @@ function TurnProgress({ execution, items, active }: { execution: EngineTurn; ite
     ...(execution.timeline ?? []).map((span, index) => ({ at: span.startedAt, key: `phase-${index}`, span })),
     ...items.map(item => ({ at: Date.parse(item.message.createdAt), key: item.message.id, item })),
   ].sort((a, b) => a.at - b.at);
-  let renderedDelegates = false;
   return <div className={`tool-activity-group turn-progress ${open ? "open" : ""} ${live ? "active" : ""}`} data-turn-id={execution.id}>
     <button className="tool-activity-header" aria-expanded={open} aria-controls={detailsId} onClick={() => setOpen(value => !value)}>
-      <span className="tool-activity-icon" aria-hidden>{execution.outcome === "completed" ? <IconCheck size={14} /> : <IconSparkles size={14} />}</span>
+      <span className="tool-activity-caret" aria-hidden><IconChevronRight size={12} /></span>
+      <span className="tool-activity-icon" aria-hidden><ActivityIcon key={iconKind} kind={iconKind} animate={live || (phase === "completed" && observedLive.current === execution.id)} size={14} /></span>
       <span className={`tool-activity-label ${live ? "running" : ""}`} role="status">{t(`chat.execution.${phase}`)}</span>
       <span className="turn-progress-time" aria-label={t("chat.execution.totalTime")}>{elapsed}</span>
-      <span className="tool-activity-caret" aria-hidden><IconChevronRight size={12} /></span>
     </button>
-    {open ? <div className="tool-activity-body turn-timeline" id={detailsId}>
+    <AnimatedDisclosure open={open} id={detailsId}>{() => {
+      let renderedDelegates = false;
+      return <div className="tool-activity-body turn-timeline">
       {rows.map(row => {
         if ("span" in row) return <div className="turn-timeline-event" key={row.key}>
           <span className="turn-timeline-offset">{formatToolDuration(Math.max(0, (row.at - execution.startedAt) / 1000))}</span>
@@ -2530,7 +2537,8 @@ function TurnProgress({ execution, items, active }: { execution: EngineTurn; ite
         return <ThinkingRow key={row.key} message={item.message} streaming={live && item.message.status === "streaming"} />;
       })}
       {execution.omittedSpans ? <div className="turn-timeline-event">{t("chat.execution.omitted", { count: execution.omittedSpans })}</div> : null}
-    </div> : null}
+    </div>;
+    }}</AnimatedDisclosure>
   </div>;
 }
 

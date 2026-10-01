@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Response motion inspection</title>
+<style>
+  #motion-controls { display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 16px;height:80px; }
+  #motion-controls :is(button, select) { padding:4px 8px;background:var(--ds-bg-secondary);color:var(--ds-text-primary);border-radius:4px;font-size:12px; }
+  #motion-controls label { display:flex;align-items:center;gap:5px;font-size:12px; }
+  #root { height:calc(100vh - 80px);max-width:1000px;margin:auto; }
+</style></head>
+<body>
+<nav id="motion-controls" aria-label="Renderer inspection">
+<select id="phase" aria-label="Response phase"><option value="waiting-model">Waiting for model</option><option value="tool">Running command</option><option value="search">Search</option><option value="reasoning">Reasoning</option><option value="waiting-subagents">Delegation</option><option value="waiting-approval">Approval</option><option value="completed">Completed</option><option value="interrupted">Interrupted</option></select>
+<button id="stream">Append output</button><button id="history">Load completed history</button><button id="start">Start new turn</button>
+<select id="theme" aria-label="Theme"><option value="dark">Dark</option><option value="light">Light</option><option value="twilight-mountains">Twilight</option><option value="obsidian-horizon">Obsidian</option><option value="emerald-afterglow">Emerald</option><option value="alpine-light">Alpine</option></select>
+<label><input id="reduced" type="checkbox">Reduced motion rules</label>
+</nav><div id="root"></div>
+<script type="module">
+import React from "react";
+import ReactDOM from "react-dom/client";
+import i18n from "i18next";
+import { initReactI18next } from "react-i18next";
+import { en, flattenCatalog } from "@pi-desktop/i18n";
+import { ChatTranscript } from "../../src/components/ChatTranscript.tsx";
+import { useAppStore } from "../../src/stores/app-store.ts";
+import "../../src/styles/globals.css";
+await i18n.use(initReactI18next).init({lng:"en",resources:{en:{translation:flattenCatalog(en)}},interpolation:{escapeValue:false}});
+const root=ReactDOM.createRoot(document.querySelector('#root'));
+const sessionId="motion-inspection";
+let startedAt=Date.now()-15000;
+let generation=0;
+let execution;
+const row=(id,role,content,extra={})=>({id,role,content,createdAt:new Date(startedAt+1000).toISOString(),status:"complete",turnId:execution.id,...extra});
+function seed(history=false) {
+  generation++;
+  execution={id:`motion-turn-${generation}`,runId:`motion-run-${generation}`,startedAt,phase:"waiting-model",progressPhase:"waiting-model",timeline:[{phase:"preparing",startedAt,completedAt:startedAt+1000},{phase:"tool",startedAt:startedAt+1000,completedAt:startedAt+9000},{phase:"waiting-model",startedAt:startedAt+9000}]};
+  if(history)Object.assign(execution,{phase:"terminal",outcome:"completed",completedAt:startedAt+21000});
+  const messages=[row("user","user","Check the page and verify the changes."),row("intro","assistant","I found the implementation. I'm checking the targeted tests."),row("tool","tool","All checks passed. Exit code: 0",{toolName:"exec_command",toolCallId:"motion-command",toolArgs:{command:"node --check app.js"},toolStatus:"success",toolDurationMs:8000}),row("reasoning","assistant","",{thinking:"I will compare the narrow and wide layouts before reporting.",status:"complete"}),row("answer","assistant","The command output is available in the timeline."),row("summary","assistant","",{execution})];
+  messages.find(message=>message.id==="tool").toolResult={stdout:"All checks passed. Exit code: 0",stderr:"",exitCode:0};
+  useAppStore.setState({page:"chat",activeSessionId:sessionId,messages,retainedTranscripts:{[sessionId]:messages},sessions:[{id:sessionId,title:"Response motion inspection",mode:"agent",messageCount:messages.length,createdAt:new Date(startedAt).toISOString(),updatedAt:new Date().toISOString()}],isRunning:!history,runningSessions:history?{}:{[sessionId]:true},activeTurnIds:{[sessionId]:execution.id},pendingPermissions:{},pendingAsks:{},pendingPlans:{}});
+}
+function render() {const state=useAppStore.getState();root.render(React.createElement(ChatTranscript,{key:generation,sessionId,messages:state.messages,isRunning:state.isRunning}));}
+useAppStore.subscribe(render);
+seed();render();
+document.querySelector('#phase').addEventListener('change',event=>{
+  const phase=event.target.value;
+  const terminal=phase==="completed"||phase==="interrupted";
+  execution={...execution,phase:terminal?"terminal":"running",progressPhase:phase==="search"?"tool":phase,outcome:terminal?phase:undefined,completedAt:terminal?startedAt+21000:undefined};
+  useAppStore.setState(state=>({messages:state.messages.map(message=>message.id==="summary"?{...message,execution}:message.id==="tool"?{...message,toolName:phase==="search"?"Grep":"exec_command",toolArgs:phase==="search"?{pattern:"test",path:"src"}:{command:"node --check app.js"},toolStatus:phase==="tool"||phase==="search"?"running":"success"}:message.id==="reasoning"?{...message,status:phase==="reasoning"?"streaming":"complete"}:message),isRunning:!terminal,runningSessions:terminal?{}:{[sessionId]:true}}));
+});
+document.querySelector('#stream').addEventListener('click',()=>useAppStore.setState(state=>({messages:state.messages.map(message=>message.id==="answer"?{...message,content:message.content+" Another output fragment."}:message)})));
+document.querySelector('#history').addEventListener('click',()=>{seed(true);render();});
+document.querySelector('#start').addEventListener('click',()=>{startedAt=Date.now()-15000;seed();render();document.querySelector('#phase').value="waiting-model";});
+document.querySelector('#theme').addEventListener('change',event=>{const theme=event.target.value;document.documentElement.dataset.theme=theme==="light"||theme==="alpine-light"?"light":"dark";document.documentElement.dataset.scenicTheme=theme==="dark"||theme==="light"?"":theme;});
+// Apply the actual production reduced-motion rules in this isolated fixture.
+const reducedStyle=document.createElement('style');document.head.append(reducedStyle);
+function reducedRules(rules) {return Array.from(rules).flatMap(rule=>rule.conditionText?.includes('prefers-reduced-motion: reduce')?Array.from(rule.cssRules).map(child=>child.cssText):rule.cssRules?reducedRules(rule.cssRules):[]);}
+document.querySelector('#reduced').addEventListener('change',event=>{reducedStyle.textContent=event.target.checked?Array.from(document.styleSheets).filter(sheet=>sheet.ownerNode!==reducedStyle).flatMap(sheet=>reducedRules(sheet.cssRules)).join('\n'):'';});
+</script></body></html>

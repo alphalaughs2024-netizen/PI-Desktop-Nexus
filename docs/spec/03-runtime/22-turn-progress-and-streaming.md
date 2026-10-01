@@ -20,8 +20,31 @@ model. Only supplied reasoning text is expandable. Commentary never clears the
 active status. The status sits at the response tail so pinned scrolling keeps it
 visible during long output. Expansion uses existing tool/reasoning/delegation
 controls and lifecycle spans. Steering remains visible and is excluded from
-assistant copy content. Themes, materials, typography, icons and shell geometry
+assistant copy content. Themes, materials, typography and shell geometry
 remain unchanged. Legacy records without timing retain their previous layout.
+
+## Accepted Progress Motion
+
+Response and tool status labels use the accepted theme-derived 2-second stepped
+text sweep. The response row puts the disclosure caret before the activity icon,
+keeps a fixed icon box and a tabular total duration, and lets the label wrap at
+narrow widths. Commentary never replaces the status. Supplied reasoning uses the
+brain icon; quiet model waits use the rotating arc. Commands use a blinking cursor,
+search and delegation use one-time movement/stroke draws, approval/input waits use
+the pause icon, and live completion draws its check once. Historical completions
+are static. File, editing and browser activity retain their semantic Lucide icons.
+
+The timeline, tool details and reasoning disclosures use Motion-inspired 180ms
+grid expansion and reverse collapse, with a 150ms caret rotation. Closed content
+is inert immediately; its mounted contents survive the closing transition and
+are then released. Unopened tool payloads and reasoning Markdown remain lazy.
+Rapid direction changes cancel pending release and retain the open content.
+
+Continuous icon motion stops when its activity or parent turn settles. Reduced
+motion uses readable static labels/icons and instant disclosures. Icon shapes
+come from Nexus's existing Lucide dependency. The accepted Lucide Animated
+specimen informed independent CSS timing adaptations; no proprietary Codex/Kimi
+artwork, additional animation dependency or theme palette is imported.
 
 Phase spans describe wall-clock state and may include simultaneous activities;
 they are not additive provider/CPU measurements. Metadata is bounded to 256 spans,

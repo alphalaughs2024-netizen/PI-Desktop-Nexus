@@ -11844,3 +11844,25 @@ or delete caches, profiles or earlier recovery files to hide this condition.
 - **Validation**: Targeted runtime lifecycle, Rust canonical metadata roundtrip,
   renderer projection/batching checks and manual Phase 3 acceptance. Local E2E
   suites remain unrun unless explicitly requested.
+
+### E2E-Codex-Progress-Motion: Accepted status and timeline animation
+
+- **Preconditions**: Opt-in Codex profile; dark/light and scenic themes available.
+- **Steps**: Observe quiet startup, commands, search, supplied reasoning,
+  delegation, approval/input waits and completion. Expand/collapse the response
+  timeline and nested tool/reasoning details; rapidly reverse a collapse. Repeat
+  during streamed output, after interruption, after reloading completed history,
+  at narrow/wide widths and with reduced motion. Toggle sidebar/work panel while
+  reading and while pinned to the response tail.
+- **Expected**: Status text has the selected 2s sweep. Meaningful Lucide activity
+  icons match the accepted combined specimen without restarting on each token or
+  timer tick. Completion draws once for a live turn and is static in history.
+  Stale child activity cannot animate in a terminal turn. The total duration never
+  resets. Disclosure opening and reverse closing take 180ms; its caret takes
+  150ms. Closing contents are immediately inert and released after the animation;
+  a rapid reopen retains them. Closed payloads stay lazy. No clipping/overflow,
+  unrequested scroll jumps, or theme/composer/sidebar material changes occur.
+  Reduced motion is static, legible and immediately expandable/collapsible.
+- **Validation**: Targeted phase/icon checks, transcript tests, desktop typecheck,
+  isolated renderer inspection and user visual acceptance. Local E2E suites and
+  packaged validation remain unrun unless separately requested.

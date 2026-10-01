@@ -728,8 +728,12 @@ at a bounded frame rate and flushes immediately when streaming ends.
   own nested disclosure for output and input.
 - Activating the row reveals clamped output first and raw input second.
 - Each section scrolls internally and exposes its own copy action.
-- The disclosure chevron rotates on expansion. Reduced-motion disables
-  non-essential running-marker pulse and rotation animation.
+- The disclosure chevron rotates on expansion. The accepted Codex foundation
+  presentation uses the 2s status sweep, semantic animated Lucide icons and
+  Motion-inspired 180ms opening/reverse closing for timelines and tool/reasoning
+  details. Closing content is inert immediately and released after the transition.
+  Reduced motion uses static readable labels/icons and instant disclosure changes.
+  See [whole-response progress](../03-runtime/22-turn-progress-and-streaming.md).
 
 ### 4.3 Tool result truncation
 

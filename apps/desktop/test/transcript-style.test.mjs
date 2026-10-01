@@ -57,8 +57,8 @@ test("tool rows render structured blocks instead of dumping JSON", async () => {
   assert.doesNotMatch(transcriptSource, /getToolSections|hasToolSections/);
   assert.doesNotMatch(permissionSource, /JSON\.stringify|formatToolValue/);
   assert.match(transcriptSource, /buildToolPresentation\(message, \{\n\s+hideSummaryArg: true,/);
-  // Blocks stay behind the open guard so streaming ticks stay cheap.
-  assert.match(transcriptSource, /open && hasDetails\s*\?\s*buildToolPresentation/);
+  // The lazy disclosure renders blocks only while open or finishing its close.
+  assert.match(transcriptSource, /hasDetails \? \(\s*<AnimatedDisclosure open=\{open\} id=\{detailsId\}>\{\(\) => \{\s*const blocks = buildToolPresentation/);
   assert.match(transcriptSource, /<ToolChips chips=\{chips\} \/>/);
   assert.match(transcriptSource, /<ToolDetailBlocks blocks=\{blocks\} plain=\{runHead\} \/>/);
   assert.match(permissionSource, /<ToolDetailBlocks blocks=\{argBlocks\} \/>/);

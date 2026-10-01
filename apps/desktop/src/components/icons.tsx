@@ -14,6 +14,7 @@ import {
   Bell,
   BookOpen,
   Bot,
+  Brain,
   Camera,
   Check,
   CheckCheck,
@@ -42,6 +43,7 @@ import {
   Globe2,
   GripVertical,
   GitFork,
+  GitBranch,
   GitPullRequestArrow,
   Image,
   Info,
@@ -49,6 +51,7 @@ import {
   KeyRound,
   Link,
   ListChecks,
+  LoaderCircle,
   LogOut,
   Mic,
   Minus,
@@ -62,6 +65,7 @@ import {
   PanelLeft,
   PanelRight,
   PawPrint,
+  Pause,
   PencilLine,
   Pin,
   Play,
@@ -162,6 +166,10 @@ export const IconFileText = icon(FileText);
 export const IconGlobe = icon(Globe2);
 export const IconBranch = icon(GitFork);
 export const IconTerminal = icon(Terminal);
+export const IconBrain = icon(Brain);
+export const IconGitBranch = icon(GitBranch);
+export const IconLoaderCircle = icon(LoaderCircle);
+export const IconPause = icon(Pause);
 export const IconPencil = icon(PencilLine);
 export const IconWrench = icon(Wrench);
 export const IconPullRequest = icon(GitPullRequestArrow);

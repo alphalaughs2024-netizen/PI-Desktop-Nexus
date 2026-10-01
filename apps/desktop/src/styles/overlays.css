@@ -691,9 +691,7 @@
   .provider-dialog {
     animation-duration: 0.01ms !important;
   }
-  .working-indicator-mark > span,
-  .tool-row-name.running::after,
-  .tool-activity-label.running::after {
+  .working-indicator-mark > span {
     animation: none;
     opacity: 0.7;
   }
@@ -708,6 +706,23 @@
   }
   .tool-activity-collapse {
     transition: none;
+  }
+  .activity-disclosure,
+  .turn-progress .tool-activity-caret {
+    transition: none;
+  }
+  .tool-row-name.running,
+  .tool-activity-label.running {
+    animation: none;
+    background: none;
+    -webkit-text-fill-color: currentColor;
+    color: var(--ds-text-secondary);
+  }
+  .activity-icon :is(svg, svg *) {
+    animation: none !important;
+    stroke-dasharray: none !important;
+    stroke-dashoffset: 0;
+    opacity: 1;
   }
   /* Near-zero (not none): toast removal listens for animationend. */
   .toast,
