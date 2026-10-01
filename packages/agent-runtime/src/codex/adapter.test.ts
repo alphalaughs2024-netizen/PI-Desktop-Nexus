@@ -36,6 +36,14 @@ async function fixture(dataDir?: string, nativeTurns: any[] = [], options: { ste
 const settle = async () => { await new Promise(resolve => setTimeout(resolve, 30)); };
 const runningTool = (f: Awaited<ReturnType<typeof fixture>>) => f.event("item/started", { item: { id: "running-command", type: "commandExecution", command: "long-running fixture" } });
 describe("Codex adapter lifecycle", () => {
+  it("publishes native reasoning activity before optional summary text", async () => {
+    const f = await fixture(); await f.adapter.start({ turnId: "reasoning-start", text: "Inspect" }); await settle();
+    f.event("item/started", { item: { id: "reason", type: "reasoning", summary: [], content: [] } });
+    expect(f.adapter.snapshot().turn?.progressPhase).toBe("reasoning");
+    expect(f.adapter.snapshot().items[0].text).toBe("");
+    f.event("item/completed", { item: { id: "reason", type: "reasoning", summary: [], content: [] } });
+    expect(f.adapter.snapshot().turn?.progressPhase).toBe("waiting-model");
+  });
   it("streams sustained output without cloning the growing full snapshot for envelope metadata", async () => {
     const f = await fixture(); await f.adapter.start({ turnId: "stream", text: "Inspect" }); await settle();
     runningTool(f);

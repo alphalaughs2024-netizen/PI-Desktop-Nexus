@@ -20,10 +20,11 @@ try {
     const at = Date.now() - 15000;
     const sessionId = "phase3-visual-probe";
     const execution = { id: "probe-turn", runId: "probe-run", startedAt: at, phase: "waiting-model", progressPhase: "waiting-model",
-      timeline: [{ phase: "preparing", startedAt: at, completedAt: at + 1000 }, { phase: "tool", startedAt: at + 1000, completedAt: at + 10000 }, { phase: "waiting-model", startedAt: at + 10000 }] };
+      timeline: [{ phase: "preparing", startedAt: at, completedAt: at + 1000 }, { phase: "waiting-model", startedAt: at + 1000, completedAt: at + 1050 }, { phase: "reasoning", startedAt: at + 1050, completedAt: at + 1200 }, { phase: "tool", startedAt: at + 1200, completedAt: at + 10000 }, { phase: "waiting-model", startedAt: at + 10000 }] };
     const row = (id, role, content, extra = {}) => ({ id, role, content, createdAt: new Date(at + 1000).toISOString(), status: "complete", turnId: "probe-turn", ...extra });
     const messages = [row("probe-user", "user", "Check the page and report what you find."),
       row("probe-intro", "assistant", "I checked the layout and command output."),
+      row("probe-thinking", "assistant", "", { thinking: "Checking the page layout." }),
       row("probe-tool", "tool", "All checks passed. Exit code: 0", { toolName: "exec_command", toolCallId: "probe-tool", toolArgs: { command: "node --check app.js" }, toolStatus: "success", toolDurationMs: 9000 }),
       row("probe-steer", "user", "Check the narrow layout too.", { steering: true }),
       row("probe-final", "assistant", "The narrow layout also fits. I am waiting for the next model update."),
@@ -37,6 +38,7 @@ try {
   assert.match(await page.locator(".turn-progress").innerText(), /Waiting for model/);
   await page.locator(".turn-progress > button").click();
   assert.equal(await page.locator(".turn-progress > button").getAttribute("aria-expanded"), "true");
+  assert.equal(await page.locator('.turn-timeline-event').filter({ hasText: 'Waiting for model' }).count(), 1, "Only the sustained model wait is displayed");
   assert.equal(await page.locator(".turn-timeline .tool-row").count() > 0 || await page.locator(".turn-timeline").innerText().then(text => text.includes("node")), true);
   for (const width of [1280, 430]) {
     await page.setViewportSize({ width, height: 860 });
@@ -46,6 +48,15 @@ try {
       return { left: box.left, right: box.right, viewport: innerWidth, overflow: element.scrollWidth - element.clientWidth };
     });
     assert.ok(bounds.left >= 0 && bounds.right <= bounds.viewport && bounds.overflow <= 1, JSON.stringify(bounds));
+    const geometry = await page.locator('.turn-timeline').evaluate(element => {
+      const events = Array.from(element.querySelectorAll('.turn-timeline-event')).map(row => row.getBoundingClientRect());
+      const name = element.querySelector('.thinking .tool-row-name').getBoundingClientRect();
+      const summary = element.querySelector('.thinking .tool-row-summary').getBoundingClientRect();
+      return { overflow: element.scrollWidth > element.clientWidth, spacing: events.every((rect, index) => !index || rect.top >= events[index - 1].bottom + 5), summaryGap: summary.left - name.right };
+    });
+    assert.equal(geometry.overflow, false);
+    assert.equal(geometry.spacing, true);
+    assert.ok(geometry.summaryGap >= 8, JSON.stringify(geometry));
   }
   await page.evaluate(() => {
     const { store } = window.__phase3Probe;

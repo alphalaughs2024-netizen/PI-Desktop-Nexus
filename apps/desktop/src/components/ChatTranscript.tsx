@@ -32,6 +32,7 @@ import { ConversationMinimap } from "./ConversationMinimap";
 import { ActivityIcon } from "./ActivityIcon";
 import { AnimatedDisclosure } from "./AnimatedDisclosure";
 import { toolProgressDetail, turnActivityIcon } from "../lib/activity-motion";
+import { visibleTurnTimeline } from "../lib/turn-timeline";
 import { TurnOutcomeCard } from "./TurnOutcomeCard";
 import { ReviewChangeCard } from "./ReviewChangeCard";
 import { Markdown, useCopy } from "./Markdown";
@@ -2511,7 +2512,7 @@ function TurnProgress({ execution, items, active, commentary }: { execution: Eng
   const statuses = collectDelegationStatuses(items, { turnLive: live });
   const timings = collectDelegationTimings(items);
   const rows = [
-    ...(execution.timeline ?? []).map((span, index) => ({ at: span.startedAt, key: `phase-${index}`, span })),
+    ...visibleTurnTimeline(execution, now).map(span => ({ at: span.startedAt, key: `phase-${execution.timeline!.indexOf(span)}`, span })),
     ...items.map(item => ({ at: Date.parse(item.message.createdAt), key: item.message.id, item })),
   ].sort((a, b) => a.at - b.at);
   return <div className={`tool-activity-group turn-progress ${open ? "open" : ""} ${live ? "active" : ""}`} data-turn-id={execution.id}>

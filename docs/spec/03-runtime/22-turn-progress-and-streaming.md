@@ -63,8 +63,13 @@ Expanded timeline rows use a spaced vertical stack, readable secondary labels
 and a fixed muted elapsed-time column. Tool/reasoning headers keep separate icon,
 name and summary gaps; long lifecycle labels wrap without overflowing narrow
 conversation widths. This spacing is confined to the response timeline.
+An active native reasoning item selects Reasoning immediately, even before
+optional summary text arrives; no reasoning body is fabricated. Quiet gaps keep
+the latest actual commentary below the status. The expanded timeline omits only
+model waits shorter than one second; raw spans and total timing remain intact,
+and active waits appear after that threshold. Other phases are always retained.
 `waiting-model` means the active execution has no foreground tool, approval,
-assistant output or supplied reasoning item to report. It does not distinguish
+assistant output or native reasoning item to report. It does not distinguish
 provider queuing, hidden reasoning or transport delays; short transitions between
 completed items and turn settlement can also record it.
 

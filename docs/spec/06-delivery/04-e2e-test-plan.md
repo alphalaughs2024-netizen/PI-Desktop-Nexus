@@ -11846,6 +11846,11 @@ or delete caches, profiles or earlier recovery files to hide this condition.
   touch. Check narrow/wide dark, light and scenic views with long labels and
   nested tool/reasoning disclosures. Waiting states do not imply measured
   provider queuing or unseen reasoning.
+  Deliver native reasoning-start before any text: expect Reasoning immediately
+  and no invented body. Complete that item, then pause quietly for more than a
+  second: expect the latest real commentary retained and the wait in the expanded
+  timeline. Sub-second waits disappear only from display; total time and raw
+  spans remain intact. Other short activities stay visible.
 - **Validation**: Targeted runtime lifecycle, Rust canonical metadata roundtrip,
   renderer projection/batching checks and manual Phase 3 acceptance. Local E2E
   suites remain unrun unless explicitly requested.

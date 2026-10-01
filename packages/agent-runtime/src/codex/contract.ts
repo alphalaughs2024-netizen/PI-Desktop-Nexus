@@ -9,7 +9,7 @@ function progressPhase(items: readonly EngineItem[]): EngineProgressPhase {
   if (running.some(item => item.kind === "approval")) return "waiting-approval";
   if (running.some(item => item.kind === "tool" && item.command?.yieldedAt === undefined)) return "tool";
   if (running.some(item => item.kind === "assistant")) return "answering";
-  if (running.some(item => item.kind === "reasoning" && item.text.trim())) return "reasoning";
+  if (running.some(item => item.kind === "reasoning")) return "reasoning";
   return "waiting-model";
 }
 

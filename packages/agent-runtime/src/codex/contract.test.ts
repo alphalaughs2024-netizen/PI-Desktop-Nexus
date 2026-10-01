@@ -15,11 +15,13 @@ describe("execution contract", () => {
     expect(restored.snapshot().items[0]).toMatchObject({ status: "completed", completedAt: 150, command: { processId: "123", yieldedAt: 150 } });
     expect(restored.snapshot().items[0].command?.exitedAt).toBeUndefined();
   });
-  it("records truthful waits without inventing reasoning and closes whole-turn timing", () => {
+  it("reports native reasoning starts before text without inventing content and closes whole-turn timing", () => {
     const { contract, event } = fixture();
+    expect(contract.currentProgress()).toBe("waiting-model");
     const item = { id: "reason", nativeId: "reason", kind: "reasoning", label: "reasoning", text: "", startedAt: 110, status: "running" };
     contract.apply(event(1, { type: "item", item }));
-    expect(contract.snapshot().turn?.progressPhase).toBe("waiting-model");
+    expect(contract.snapshot().turn?.progressPhase).toBe("reasoning");
+    expect(contract.snapshot().items[0].text).toBe("");
     contract.apply(event(2, { type: "item", item: { ...item, text: "Inspecting" } }));
     expect(contract.snapshot().turn?.progressPhase).toBe("reasoning");
     contract.apply(event(3, { type: "item", item: { ...item, text: "Inspecting", status: "completed" } }));
