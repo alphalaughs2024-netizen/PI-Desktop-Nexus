@@ -75,7 +75,11 @@ export class BrowserBroker {
     try {
       target = { ...(this.host.resolveTarget?.(context.sessionId, context.browserId, !contextInput?.browserId) ?? { sessionId: context.sessionId, browserId: context.browserId }), signal };
     } catch (error) {
-      return { requestId: context.requestId, ok: false, code: errorCode(error), retryable: false, message: error instanceof Error ? error.message : "Browser target is unavailable" };
+      const code = errorCode(error);
+      const availableBrowserIds = this.listTabs(context.sessionId).map(tab => tab.browserId);
+      return { requestId: context.requestId, ok: false, code, retryable: false,
+        ...(code === "BROWSER_TAB_NOT_FOUND" ? { availableBrowserIds } : {}),
+        message: code === "BROWSER_TAB_NOT_FOUND" ? "The requested Browser tab is unavailable in this chat. Omit browserId to use this chat's active tab, or use an ID from browser_list_tabs." : error instanceof Error ? error.message : "Browser target is unavailable" };
     }
     let completion: Promise<unknown> | undefined;
     const execute = async (): Promise<BrowserResult<T>> => {
@@ -89,7 +93,7 @@ export class BrowserBroker {
         completion = work(target);
         const result = await Promise.race([completion as Promise<T>, new Promise<never>((_, reject) => { timer = setTimeout(() => reject(Object.assign(new Error("Browser command timed out"), { code: "TIMEOUT" })), timeoutMs); })]);
         this.record = { ...this.record, state: "ready", updatedAt: Date.now() };
-        return { requestId: context.requestId, ok: true, result };
+        return { requestId: context.requestId, browserId: target.browserId as BrowserRequestContext["browserId"], ok: true, result };
       } catch (error) {
         const code = errorCode(error); this.lastError = { code, reason: error instanceof Error ? error.name : "unknown", at: Date.now() };
         const timeout = code === "BROWSER_TIMEOUT";

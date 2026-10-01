@@ -187,7 +187,11 @@ delegations, with admission refusing undelivered overflow. Preset maxTurns bound
 provider attempts and maxTokens caps each model response.
 
 TaskWait returns bounded reports with explicit truncation/omitted IDs; a timeout
-does not stop children. TaskList returns the roster; TaskStop retains partial
+does not stop children. In the Codex adapter it defaults to 60 seconds and caps
+each call at 180 seconds, below the 240-second MCP transport deadline (ADR 0263).
+Oversized legacy calls are clamped. Results include the effective timeout and
+explicit guidance to repeat waiting on the same IDs, without launching workers
+again. TaskList returns the roster; TaskStop retains partial
 results. If the parent idles with undelivered work, show waiting-subagents,
 retain its host turn/start time, and integrate settled reports through a normal
 new native segment. Emit one terminal outcome after convergence. Stop, disposal
@@ -202,6 +206,12 @@ user-owned pins remain in Rust-owned documents. Changes apply at the next parent
 launch and do not replace running workers or modify prompts/tools.
 
 ## Acceptance boundaries
+
+Browser results identify the resolved browserId; callers may omit it for the
+chat's active tab. Invalid explicit IDs return only the requesting chat's
+available IDs and never redirect. BrowserPreview rejection identifies the bound
+workspace and scratch roots; external files can be served over HTTP(S) without
+granting broader file navigation access (ADR 0263).
 
 Text steering preserves the original host turn and records an accepted
 instruction once. During model text/reasoning generation (including a quiet

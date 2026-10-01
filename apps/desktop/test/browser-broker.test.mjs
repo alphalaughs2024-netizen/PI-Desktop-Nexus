@@ -14,6 +14,26 @@ test("broker preserves request metadata and serializes mutations", async () => {
   assert.equal(result.ok, true);
   assert.match(result.requestId, /^browser-/);
   assert.equal(calls[0], "navigate");
+  assert.equal(result.browserId, "browser-core-1");
+});
+
+test("missing explicit tab returns only this chat's IDs and never dispatches elsewhere", async () => {
+  const { host: target, calls } = host({
+    listTabs: () => [{ sessionId: "a", browserId: "actual-a" }, { sessionId: "b", browserId: "private-b" }],
+    resolveTarget: (sessionId, browserId, createDefault) => {
+      if (!createDefault) throw Object.assign(new Error("Browser tab is unavailable"), { code: "BROWSER_TAB_NOT_FOUND" });
+      return { sessionId, browserId: "actual-a" };
+    },
+  });
+  const broker = new BrowserBroker(target);
+  const missing = await broker.navigate({ url: "https://example.com" }, "a", { browserId: "invented" });
+  assert.equal(missing.code, "BROWSER_TAB_NOT_FOUND");
+  assert.deepEqual(missing.availableBrowserIds, ["actual-a"]);
+  assert.match(missing.message, /Omit browserId/);
+  assert.deepEqual(calls, []);
+  const active = await broker.navigate({ url: "https://example.com" }, "a");
+  assert.equal(active.browserId, "actual-a");
+  assert.deepEqual(calls, ["navigate"]);
 });
 
 test("navigation in another tab starts while the first tab is loading", async () => {

@@ -11874,3 +11874,26 @@ or delete caches, profiles or earlier recovery files to hide this condition.
 - **Validation**: Targeted phase/icon checks, transcript tests, desktop typecheck,
   isolated renderer inspection and user visual acceptance. Local E2E suites and
   packaged validation remain unrun unless separately requested.
+
+### E2E-Codex-Yielded-Processes: Accurate activity and resumable waits (ADR 0263)
+
+- **Preconditions**: Opt-in Codex profile, browser tools and configured workers.
+- **Steps**: Start a preview server through native exec and retain its yielded
+  process handle. Continue reasoning and browser inspection. Let the response
+  finish while the server is alive, then repeat with a server that fails before
+  completion. Interrupt another active response and reload an unfinished one.
+  Let TaskWait expire, then repeat with the same worker IDs until reports arrive.
+  Supply an invalid browser ID, then omit it. Preview a file outside the chat's
+  workspace/scratch roots. Stream sustained output while inspecting status.
+- **Expected**: The main status follows current foreground work; background
+  output cannot restore foreground priority. Returned commands are not falsely
+  failed at successful completion, and process exit is never fabricated.
+  Authoritative failure and partial output remain available. Stop/recovery do
+  not replay mutations. Waits return within their 60-second default/180-second
+  cap with a current roster and repeat-wait guidance; workers keep running and
+  are not duplicated. Browser success returns the real ID; invalid selection
+  neither dispatches nor reveals other chats' IDs. Preview rejection identifies
+  permitted roots and preserves containment. Streaming metadata does not clone
+  the growing full snapshot for every chunk. The accepted visual design stays.
+- **Validation**: Focused adapter/contract/wait/broker regression checks. Full
+  local E2E suites remain unrun unless explicitly requested.

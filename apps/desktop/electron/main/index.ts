@@ -5424,12 +5424,14 @@ async function startSidecar(): Promise<void> {
     }
     const scratchRoot = join(dataDir, "scratch", sessionId);
     signal?.throwIfAborted();
+    const workspaceRoot = root;
     root = [root, scratchRoot].find(candidate => candidate && resolveLocalFile(raw, candidate)) ?? null;
     if (!root) {
       return {
         ok: false,
         isError: true,
-        content: `BrowserPreview: "${raw}" does not resolve to an existing file inside this session workspace or scratch directory.`,
+        content: `BrowserPreview: "${raw}" does not resolve to an existing file inside this session workspace or scratch directory. Create the preview inside one of these roots, or serve external files over HTTP(S).`,
+        details: { workspaceRoot, scratchRoot },
       };
     }
     markBrowserSource(sessionId, "workspace-preview");

@@ -254,3 +254,4 @@ Each ADR includes:
 | 0254 | Browser execution against retained session tabs | Accepted design; manual acceptance pending |
 | 0255 | Connect Codex to Nexus-owned tools | Phase 2 manual acceptance pending |
 | 0260 | Exact model selection for every subagent | Manual acceptance pending |
+| 0263 | Codex command observations and bounded waits | Manual acceptance pending |

@@ -3,7 +3,7 @@ import type { BrowserBroker } from "./browser-broker";
 export const BROWSER_TYPED_TOOL_NAMES = ["browser_list_tabs", "browser_open", "browser_navigate", "browser_snapshot", "browser_screenshot", "browser_click", "browser_fill", "browser_type", "browser_keypress", "browser_wait", "browser_console", "browser_set_viewport", "browser_evaluate", "browser_cdp"] as const;
 export const BROWSER_PLAN_SAFE_TOOLS = new Set(["browser_list_tabs", "browser_open", "browser_navigate", "browser_snapshot", "browser_screenshot", "browser_wait", "browser_console"]);
 
-const guidance = "Use browser_snapshot before interaction. Refs are scoped to browserId and snapshotId; navigation invalidates refs. After a click, use browser_wait or browser_snapshot to observe navigation. After BROWSER_POSSIBLY_APPLIED, snapshot before retrying. Plan mode can inspect but cannot interact, evaluate, or use CDP.";
+const guidance = "Use browser_snapshot before interaction. Browser results identify the resolved browserId; omit browserId to use this chat's active tab or use an exact ID from browser_list_tabs. Never invent tab IDs. Refs are scoped to browserId and snapshotId; navigation invalidates refs. After a click, use browser_wait or browser_snapshot to observe navigation. After BROWSER_POSSIBLY_APPLIED, snapshot before retrying. Plan mode can inspect but cannot interact, evaluate, or use CDP.";
 
 export function createBrowserTypedTools(broker: BrowserBroker) {
   const tool = (name: string, description: string, execute: (args: any, context: any) => Promise<unknown>) => ({ name, description: `${description} ${guidance}`, planSafe: BROWSER_PLAN_SAFE_TOOLS.has(name), execute });
