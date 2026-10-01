@@ -114,8 +114,19 @@ active navigation stops its owned guest, and an active mutation reports
 `BROWSER_POSSIBLY_APPLIED`. Later workflow, Git and plugin mutation boundaries
 check cancellation. Already-started native Git/devkit changes are not rolled
 back or claimed undone. MCP shutdown aborts active calls and bounds its cleanup
-wait to one second. Plan/Goal and legacy extension
-commands remain pending integration, not capabilities established by this bridge.
+wait to one second. Plan/Goal remains pending integration.
+
+## Trusted extensions (ADR 0257)
+
+The existing granted extension catalog loads through a Codex session bridge.
+Commands, dialogs, rename, creation/fork and queued messages use the originating
+host session. Registered tools cannot replace reserved names; they execute only
+in an active Agent turn and receive its cancellation signal. Supported lifecycle
+events and extension-owned tool_call/tool_result hooks are forwarded. pi-specific
+context/provider mutation and unsupported control APIs produce diagnostics.
+No pi agent, inference fallback or fabricated context usage is introduced.
+Trusted code retains its sidecar trust and must cooperate with cancellation.
+Disposal withdraws published commands; appearance is unchanged.
 
 ## Configured subagents (ADR 0256)
 

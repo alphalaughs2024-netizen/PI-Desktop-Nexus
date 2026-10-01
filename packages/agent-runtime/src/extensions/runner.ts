@@ -249,12 +249,16 @@ export type TrustedExtensionRunnerOptions = {
   bridge: TrustedExtensionBridge;
   /** Names an extension tool may not take (core, plugin, MCP tools). */
   reservedToolNames?: () => Iterable<string>;
+  supportedEvents?: ReadonlySet<string>;
+  unsupportedMembers?: ReadonlySet<string>;
 };
 
 export class TrustedExtensionRunner {
   private readonly bridge: TrustedExtensionBridge;
   private readonly specs: TrustedExtensionSpec[];
   private readonly reservedToolNames: () => Iterable<string>;
+  private readonly supportedEvents?: ReadonlySet<string>;
+  private readonly unsupportedMembers?: ReadonlySet<string>;
   private readonly loaded = new Map<string, LoadedExtension>();
   private readonly diagnostics = new Map<string, TrustedExtensionDiagnostic>();
   private readonly reports = new Map<string, TrustedExtensionLoadReport>();
@@ -265,6 +269,8 @@ export class TrustedExtensionRunner {
     this.bridge = options.bridge;
     this.specs = options.specs;
     this.reservedToolNames = options.reservedToolNames ?? (() => []);
+    this.supportedEvents = options.supportedEvents;
+    this.unsupportedMembers = options.unsupportedMembers;
   }
 
   get extensionIds(): string[] {
@@ -499,6 +505,7 @@ export class TrustedExtensionRunner {
     return new Promise((resolve, reject) => {
       const child = spawn(command, args, {
         cwd: options?.cwd ?? this.bridge.cwd,
+        windowsHide: true,
         env: options?.env ? { ...process.env, ...options.env } : process.env,
         stdio: ["ignore", "pipe", "pipe"],
       });
@@ -571,7 +578,7 @@ export class TrustedExtensionRunner {
 
   private createContext(extension: LoadedExtension): Record<string, unknown> {
     const bridge = this.bridge;
-    return {
+    const context: Record<string, unknown> = {
       ui: this.createUi(extension),
       hasUI: true,
       cwd: bridge.cwd,
@@ -595,6 +602,10 @@ export class TrustedExtensionRunner {
       compact: (options?: { customInstructions?: string }) => bridge.compact(options),
       getSystemPrompt: () => bridge.getSystemPrompt(),
     };
+    for (const member of this.unsupportedMembers ?? []) {
+      if (member in context) context[member] = this.inert(extension, member);
+    }
+    return context;
   }
 
   private createCommandContext(extension: LoadedExtension): Record<string, unknown> {
@@ -617,6 +628,10 @@ export class TrustedExtensionRunner {
     const api: Record<string, unknown> = {
       on: (event: string, handler: Handler) => {
         if (typeof handler !== "function") return;
+        if (this.supportedEvents && !this.supportedEvents.has(event)) {
+          this.report(extension.spec.id, "unsupported_api", `event "${event}" is unavailable in this engine`, `on:${event}`);
+          return;
+        }
         if (
           !NOT_EMITTED_EVENTS.has(event) &&
           !(TRUSTED_EXTENSION_EVENTS as readonly string[]).includes(event)
@@ -692,6 +707,9 @@ export class TrustedExtensionRunner {
     };
     for (const member of INERT_API_MEMBERS) {
       api[member] = this.inert(extension, member);
+    }
+    for (const member of this.unsupportedMembers ?? []) {
+      if (member in api) api[member] = this.inert(extension, member);
     }
     return api;
   }

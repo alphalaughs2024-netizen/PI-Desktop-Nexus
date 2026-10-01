@@ -55,6 +55,7 @@ export class CodexAdapter implements EngineAdapter {
     this.store = new CodexSessionStore(config.dataDir, config.sessionId);
   }
   snapshot(): EngineSnapshot { return this.contract.snapshot(); }
+  executionSignal(): AbortSignal { return this.turnLifetime.signal; }
   activeTurnId(): string | undefined { const turn = this.snapshot().turn; return this.cancelled || this.disposed || turn?.outcome ? undefined : turn?.id; }
   setDelegationActivity(count: number): void {
     this.delegationActivity = count ? { phase: "waiting-subagents", since: this.delegationActivity?.since ?? Date.now(), subagentCount: count } : undefined;

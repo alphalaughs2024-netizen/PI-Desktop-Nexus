@@ -10,9 +10,11 @@ import { instructionCatalogPrompt } from "../plugin-skills-prompt.js";
 import { startNexusToolBridge } from "./nexus-tools.js";
 import { CodexSessionStore } from "./store.js";
 import { CodexSubagents } from "./subagents.js";
+import { CodexExtensions } from "./extensions.js";
 export class CodexController {
   private sessions = new Map<string, CodexAdapter>();
   private delegates = new Map<string, CodexSubagents>();
+  private extensions = new Map<string, CodexExtensions>();
   private admitting = new Set<string>();
   private dataDir?: string;
   constructor(private emit: (event: AgentEventEnvelope) => void, private host?: RuntimeHost) {}
@@ -34,7 +36,7 @@ export class CodexController {
         try {
           const config: CodexConfig = { sessionId, dataDir: this.dataDir, workspace: params.projectPath || params.scratchDir, provider: params.provider,
             permissionMode, scratchDir: params.scratchDir, nexusToolsAvailable: !!this.host,
-            serviceCatalogKey: createHash("sha256").update(JSON.stringify({ subagents: params.subagents ?? [], tools: params.pluginTools ?? [] })).digest("hex"),
+            serviceCatalogKey: createHash("sha256").update(JSON.stringify({ subagents: params.subagents ?? [], tools: params.pluginTools ?? [], extensions: params.trustedExtensions ?? [] })).digest("hex"),
             developerInstructions: [
               "Nexus is the graphical host. Use Nexus MCP tools for browser/preview, skills, workflows and plugins; use native Codex tools for file changes, local images and shell. Every tool is bound to this chat. Preserve user work, inspect failures and never automatically replay an ambiguously applied mutation.",
               "Delegate through Nexus Task presets only. Each configured preset uses its saved provider/model and declared tools; unpinned presets inherit this chat's selected model. Converge with TaskWait or TaskStop. Do not invent model overrides.",
@@ -45,14 +47,16 @@ export class CodexController {
           if (!config.workspace || !params.turnId) throw new Error("CODEX_SESSION_IDENTITY_REQUIRED");
           let runtime = adapter;
           if (runtime && JSON.stringify(runtime.config) !== JSON.stringify(config)) {
+            await this.extensions.get(sessionId)?.dispose(); this.extensions.delete(sessionId);
             await runtime.shutdown(); this.sessions.delete(sessionId); this.delegates.delete(sessionId); runtime = undefined;
           }
           let delegates = this.delegates.get(sessionId);
           if (!runtime) {
-            runtime = new CodexAdapter(config, this.emit, this.host ? { tools: snapshot => startNexusToolBridge({
+            runtime = new CodexAdapter(config, event => { this.emit(event); this.extensions.get(sessionId)?.event(event); }, this.host ? { tools: snapshot => startNexusToolBridge({
               host: this.host!, sessionId, scratchDir: config.scratchDir ?? config.workspace, mode: "agent", snapshot,
-              tools: [...(params.pluginTools ?? []), ...(delegates?.catalog() ?? [])], imageInput: config.provider.modelConfig?.input.includes("image") === true,
-              executeLocal: (name, args, internalId) => delegates?.execute(name, args, name === "Task" ? runtime!.claimToolItem(name, args) : internalId) ?? Promise.resolve(undefined),
+              tools: [...(params.pluginTools ?? []), ...(delegates?.catalog() ?? []), ...(this.extensions.get(sessionId)?.catalog() ?? [])], imageInput: config.provider.modelConfig?.input.includes("image") === true,
+              executeLocal: async (name, args, internalId) => await delegates?.execute(name, args, name === "Task" ? runtime!.claimToolItem(name, args) : internalId)
+                ?? await this.extensions.get(sessionId)?.execute(name, args, internalId),
             }), beforeComplete: signal => delegates?.beforeComplete(signal) ?? Promise.resolve(undefined), stopOwnedWork: () => delegates?.stopAll() ?? Promise.resolve() } : {});
             this.sessions.set(sessionId, runtime);
           }
@@ -62,6 +66,14 @@ export class CodexController {
               settled: (id: string, value: { status: string }) => runtime!.completeTask(id, value, value.status === "failed") };
             if (delegates) delegates.update(options);
             else { delegates = new CodexSubagents(options); this.delegates.set(sessionId, delegates); }
+            if (!this.extensions.has(sessionId) && params.trustedExtensions?.length) {
+              const listed = await this.host.call<{ tools: { name: string }[] }>("tools.list", { sessionId });
+              const extensions = new CodexExtensions({ sessionId, workspace: config.workspace, host: this.host, specs: params.trustedExtensions,
+                adapter: () => runtime!, mode: () => params.mode ?? "agent", reservedTools: [...(listed.tools ?? []).map(tool => tool.name), ...(params.pluginTools ?? []).map((tool: any) => tool.name),
+                  "Task", "TaskWait", "TaskList", "TaskStop", "EnterPlanMode", "EnterGoalMode", "SubmitPlan", "SubmitGoal", "exec_command", "apply_patch"] });
+              this.extensions.set(sessionId, extensions); await extensions.load();
+            }
+            this.extensions.get(sessionId)?.setThinkingLevel(params.thinkingLevel ?? "off");
           }
           return await runtime.start({ turnId: params.turnId, text: params.content ?? "", thinkingLevel: params.thinkingLevel, images: (params.attachments ?? []).filter((a: any) => a.kind === "image" && a.data).map((a: any) => ({ mimeType: a.mimeType ?? "image/png", data: a.data })) });
         } finally { this.admitting.delete(sessionId); }
@@ -95,7 +107,8 @@ export class CodexController {
         throw new Error("CODEX_APPROVAL_STALE");
       }
       case "asktool.resolve": if (!adapter?.resolveQuestion(params as AskToolResolution)) throw new Error("CODEX_QUESTION_STALE"); return { ok: true };
-      case "agent.disposeSession": await adapter?.shutdown(); this.sessions.delete(sessionId); this.delegates.delete(sessionId); return { ok: true };
+      case "extensions.command.run": return await this.extensions.get(sessionId)?.command(String(params.name ?? ""), String(params.args ?? "")) ?? { handled: false };
+      case "agent.disposeSession": await adapter?.shutdown(); await this.extensions.get(sessionId)?.dispose(); this.extensions.delete(sessionId); this.sessions.delete(sessionId); this.delegates.delete(sessionId); return { ok: true };
       default: throw new Error("CODEX_CAPABILITY_UNAVAILABLE: " + method);
     }
   }
@@ -117,5 +130,5 @@ export class CodexController {
     }
     return snapshot;
   }
-  async shutdown(): Promise<void> { await Promise.all([...this.sessions.values()].map(runtime => runtime.shutdown())); this.sessions.clear(); this.delegates.clear(); }
+  async shutdown(): Promise<void> { await Promise.all([...this.sessions.values()].map(runtime => runtime.shutdown())); await Promise.all([...this.extensions.values()].map(extensions => extensions.dispose())); this.sessions.clear(); this.delegates.clear(); this.extensions.clear(); }
 }

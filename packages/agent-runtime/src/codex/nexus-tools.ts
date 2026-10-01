@@ -40,7 +40,12 @@ export function nexusToolDiagnostics(value: unknown): unknown {
  ]);
 }
 export async function nexusToolContent(result: NexusToolResult, name: string, scratchDir: string, imageInput: boolean) {
- const content: any[] = [{ type: "text", text: typeof result.content === "string" ? result.content : JSON.stringify(result.content ?? {}) }];
+ const blocks = Array.isArray(result.content) && result.content.every(block => block &&
+  (block.type === "text" && typeof block.text === "string" || block.type === "image" && typeof block.data === "string" && typeof block.mimeType === "string"));
+ const content: any[] = blocks ? (result.content as any[]).map(block => block.type === "image" && !imageInput
+  ? { type: "text", text: "This model has no image-input capability. Image metadata alone is not visual verification." } : block)
+  : [{ type: "text", text: typeof result.content === "string" ? result.content : JSON.stringify(result.content ?? {}) }];
+ if (blocks && result.details !== undefined) content.push({ type: "text", text: JSON.stringify(result.details) });
  if (name === "browser_screenshot" && result.ok && imageInput) {
   const details = result.details as any;
   const metadata = details?.result ?? details;

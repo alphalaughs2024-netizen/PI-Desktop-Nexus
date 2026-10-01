@@ -11729,3 +11729,20 @@ or delete caches, profiles or earlier recovery files to hide this condition.
   or saving failures do not claim confirmed termination/durability.
 - **Validation**: Targeted lifecycle tests and native Windows fixture probes.
   Full local E2E suites remain unrun unless explicitly requested.
+
+### E2E-Codex-Trusted-Extensions: Session commands and supported tools (ADR 0257)
+
+- **Preconditions**: Fresh opt-in profile and a granted local agent extension
+  with a command, dialog, registered tool, native-context hook and reserved-name
+  override attempt.
+- **Steps**: Load the extension, invoke its command, answer its dialog, run its
+  tool, cancel it, inspect diagnostics, change its catalog and dispose the chat.
+  Try the tool in planning mode and inspect text/image results.
+- **Expected**: Commands/dialogs/session operations retain the owning chat.
+  Extension-owned tool hooks work; reserved names are refused. Planning cannot
+  execute extension tools. Cancellation reaches cooperative trusted code.
+  Unsupported hooks/APIs are diagnosed without pi fallback. Image-capable models
+  receive actual images; others receive an explicit limitation. Disposal withdraws
+  commands and existing appearance remains unchanged.
+- **Validation**: Targeted runner/bridge fixtures. Full local E2E suites and
+  packaged checks remain unrun unless explicitly requested.

@@ -5,6 +5,13 @@
 
 ## 1. Purpose and terminology
 
+The opt-in Codex backend binds the supported subset through ADR 0257. Commands,
+dialogs, session operations, registered tools and lifecycle observations are
+available. Native context/provider mutation and unsupported control APIs are
+diagnosed. Tool_call/tool_result hooks apply to extension-owned tools. This does
+not claim pi-specific hooks can rewrite Codex's native context or intercept its
+native handlers. Existing trusted-code grants and scope rules still apply.
+
 Plugins ([01-plugin-system.md](01-plugin-system.md)) are the one extension
 surface of PI-Desktop. This document specifies one plugin contribution,
 `contributes.agentExtensions`: TypeScript or JavaScript modules that run
