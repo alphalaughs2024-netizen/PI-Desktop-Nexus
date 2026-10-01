@@ -11966,3 +11966,18 @@ or delete caches, profiles or earlier recovery files to hide this condition.
 - **Validation**: Targeted unit/integration tests and a real Electron production-
   host probe. Local E2E suites and packaged Windows verification remain unrun
   unless explicitly requested. Manual acceptance remains a separate gate.
+
+### E2E-Browser-Tab-Selection: Stable New tab after a website (ADR 0266)
+
+- **Steps**: Open an agent-created website, edit an input on that page, and
+  click New Browser tab. Leave it idle, then rapidly switch between the blank
+  tab and website. Duplicate the website, close the duplicate, and close other
+  tabs. Repeat while a page loads and across chats. Deliver a delayed initial
+  tab snapshot and old-tab visible/hidden geometry after the new selection.
+- **Expected**: One completed selection per explicit action, no oscillation,
+  no activation echoes and no stale snapshot rollback. New tab stays blank;
+  the original website and entered input are retained. Old geometry cannot
+  select or hide another tab/chat or recreate a closed tab. Agent/native popup
+  selection still synchronizes the GUI. Existing layout/themes stay intact.
+- **Validation**: Targeted lifecycle/geometry checks and a real-window native
+  regression probe. Local E2E suites remain unrun unless explicitly requested.

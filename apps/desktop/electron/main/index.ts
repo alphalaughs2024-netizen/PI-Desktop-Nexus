@@ -1057,7 +1057,14 @@ const browserHost = new BrowserHost({
 });
 const browserBroker = new BrowserBroker(browserHost, isBrowserCapabilityEnabled);
 const browserTypedTools = createBrowserTypedTools(browserBroker);
-browserPane.onChanged = (sessionId) => sendToRenderer(IPC.event.browserTabs, browserHost.tabsState(sessionId));
+browserPane.onChanged = (sessionId) => {
+  const state = browserHost.tabsState(sessionId);
+  if (sessionId === (visibleBrowserSessionId ?? "") && browserHost.activeSessionId() === sessionId && visibleBrowserId !== state.activeBrowserId) {
+    visibleBrowserId = state.activeBrowserId;
+    publishBrowserViewState(visibleBrowserSessionId, browserHost.getState());
+  }
+  sendToRenderer(IPC.event.browserTabs, state);
+};
 const browserTelemetry = new BrowserTelemetry((event, fields) => logger.app("diagnostics", "info", event, { data: fields }));
 pluginViews.onSurface = () => undefined;
 plugins.setServices({
@@ -6573,11 +6580,11 @@ function registerIpc() {
     if (bounds.width < 0 || bounds.height < 0 || (input.visible && (bounds.width === 0 || bounds.height === 0))) {
       throw Object.assign(new Error("invalid Browser surface dimensions"), { errorCode: "BROWSER_INVALID_INPUT" });
     }
-    if (!input.visible && input.browserId && visibleBrowserId && input.browserId !== visibleBrowserId) return { ok: true as const };
+    if (input.sessionId !== undefined && input.sessionId !== browserHost.activeSessionId()) return { ok: true as const };
+    if (input.browserId && input.browserId !== browserHost.activeBrowserId()) return { ok: true as const };
     const sessionUpdate = browserSurfaceSessionUpdate(visibleBrowserSessionId, input.sessionId, input.visible);
     if (!sessionUpdate.accept) return { ok: true as const };
     visibleBrowserSessionId = sessionUpdate.ownerSessionId;
-    if (input.visible && input.browserId) visibleBrowserId = input.browserId;
     const content = mainWindow && !mainWindow.isDestroyed() ? mainWindow.getContentBounds() : { x: 0, y: 0, width: 0, height: 0 };
     browserHost.setCoreSurface({ sessionId: input.sessionId, browserId: input.browserId, visible: input.visible, measurement: input.measurement, bounds }, content);
     return { ok: true };

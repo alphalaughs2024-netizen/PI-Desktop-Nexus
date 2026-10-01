@@ -89,6 +89,7 @@ export class BrowserHost {
   private readonly preparations = new WeakMap<object, Promise<void>>();
   private readonly deps: BrowserHostDeps;
   private chrome: ChromeSurface | null = null;
+  private coreSurfaceTarget: { sessionId: string; browserId: string } | null = null;
   private hole: BrowserRect | null = null;
   private holePluginId: string | null = null;
   private readonly locations = new Map<string, string>();
@@ -109,8 +110,10 @@ export class BrowserHost {
   }
 
   setCoreSurface(surface: { visible: boolean; bounds: BrowserRect; measurement?: BrowserSurfaceMeasurement; sessionId?: string; browserId?: string } | null, contentBounds?: BrowserRect): void {
-    if (surface?.sessionId) this.setChromeSession(surface.sessionId);
-    if (surface?.visible && surface.browserId) this.activateTab(surface.sessionId ?? "", surface.browserId);
+    // Geometry is observation, not selection. Late reports cannot revive old tabs.
+    if (surface?.sessionId !== undefined && surface.sessionId !== this.pane.activeSession()) return;
+    if (surface?.browserId && surface.browserId !== this.pane.activeBrowserId()) return;
+    this.coreSurfaceTarget = surface ? { sessionId: this.pane.activeSession(), browserId: this.pane.activeBrowserId() } : null;
     const converted = surface?.measurement && contentBounds ? convertBrowserSurfaceMeasurement(surface.measurement, contentBounds) : surface?.bounds;
     if (converted && "ok" in converted && !converted.ok) { this.chrome = null; this.applyGuest(); return; }
     this.chrome = surface && converted ? { visible: surface.visible, bounds: converted as BrowserRect } : null;
@@ -130,8 +133,11 @@ export class BrowserHost {
   }
 
   activateTab(sessionId: string, browserId: string): BrowserState | null {
-    this.setChromeSession(sessionId);
+    const next = sessionId.trim() || null;
+    const sessionChanged = this.chromeSessionId !== next;
+    this.chromeSessionId = next;
     this.pane.activate(sessionId, browserId);
+    if (sessionChanged && next && browserId === "browser-core-1" && !this.pane.getState()) void this.rebindSession(next).catch(() => undefined);
     this.applyGuest();
     return this.pane.getState();
   }
@@ -151,7 +157,7 @@ export class BrowserHost {
   }
   hasTab(sessionId: string, browserId: string): boolean { return this.pane.hasTab(sessionId, browserId); }
   listTabs() { return this.pane.listTabs(); }
-  tabsState(sessionId: string) { return { sessionId, activeBrowserId: this.pane.activeBrowserId(sessionId), tabs: this.listTabs().filter(tab => tab.sessionId === sessionId) }; }
+  tabsState(sessionId: string) { return { sessionId, revision: this.pane.revision(sessionId), activeBrowserId: this.pane.activeBrowserId(sessionId), tabs: this.listTabs().filter(tab => tab.sessionId === sessionId) }; }
   tabOperation(operation: string, target: BrowserTarget, input: { disposition?: "temporary" | "deliverable" | "handoff" } = {}) {
     if (operation === "create") return { browserId: this.pane.createTab(target.sessionId, input) };
     if (operation === "select") this.pane.selectTab(target.sessionId, target.browserId);
@@ -438,6 +444,10 @@ export class BrowserHost {
   }
 
   private applyGuest(): void {
+    if (this.holePluginId === "core" && this.coreSurfaceTarget && (this.coreSurfaceTarget.sessionId !== this.pane.activeSession() || this.coreSurfaceTarget.browserId !== this.pane.activeBrowserId())) {
+      this.pane.setVisible(false);
+      return;
+    }
     const bounds = this.guestBounds();
     const url = this.pane.getState()?.url;
     if (!bounds || (!this.started && !url)) {

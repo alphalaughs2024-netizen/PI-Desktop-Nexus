@@ -19,6 +19,9 @@ export class BrowserTabsPane {
   onGuestCreated?: (sessionId: string, wc: NonNullable<ReturnType<BrowserPane["getWebContents"]>>) => void;
   private nextIncarnation = 0;
   private readonly activeBySession = new Map<string, string>();
+  private readonly revisions = new Map<string, number>();
+  private notificationDepth = 0;
+  private readonly pendingNotifications = new Set<string>();
   private activeKey: string | null = null;
   private activeSessionId = "";
   private window: BrowserWindow | null = null;
@@ -41,6 +44,27 @@ export class BrowserTabsPane {
 
   activeSession(): string { return this.activeSessionId; }
 
+  revision(sessionId: string): number { return this.revisions.get(sessionId) ?? 0; }
+
+  private changed(sessionId: string): void {
+    if (this.notificationDepth) { this.pendingNotifications.add(sessionId); return; }
+    this.revisions.set(sessionId, this.revision(sessionId) + 1);
+    this.onChanged?.(sessionId);
+  }
+
+  // Tab observers must see the completed selection, never intermediate creation.
+  private batchChanges<T>(change: () => T): T {
+    this.notificationDepth++;
+    try { return change(); }
+    finally {
+      if (--this.notificationDepth === 0) {
+        const sessions = [...this.pendingNotifications];
+        this.pendingNotifications.clear();
+        for (const sessionId of sessions) this.changed(sessionId);
+      }
+    }
+  }
+
   resolveTab(sessionId = this.activeSessionId, browserId?: string, createDefault = false) {
     const id = browserId ?? this.activeBrowserId(sessionId);
     const key = tabKey(sessionId, id);
@@ -59,7 +83,7 @@ export class BrowserTabsPane {
       if (!this.canCreateTab(sessionId)) throw Object.assign(new Error("This chat has reached its 20-tab limit"), { code: "BROWSER_INVALID_INPUT" });
       pane = this.createPane((state) => {
         if (this.activeKey === key) this.onState(state);
-        this.onChanged?.(sessionId);
+        this.changed(sessionId);
       });
       pane.setWindow(this.window);
       pane.onGuestCreated = wc => this.onGuestCreated?.(sessionId, wc);
@@ -73,11 +97,11 @@ export class BrowserTabsPane {
         setImmediate(() => {
           if (!this.hasTab(sessionId, popupId)) return;
           if (!options.background && sessionId === this.activeSessionId) this.activate(sessionId, popupId);
-          this.onChanged?.(sessionId);
+          this.changed(sessionId);
         });
         return wc;
       }, () => this.canCreateTab(sessionId));
-      this.onChanged?.(sessionId);
+      this.changed(sessionId);
     }
     return pane;
   }
@@ -86,25 +110,27 @@ export class BrowserTabsPane {
   private canCreateTab(sessionId: string): boolean { return [...this.identities.values()].filter(tab => tab.sessionId === sessionId).length < 20; }
 
   createTab(sessionId: string, options: { openerBrowserId?: string; disposition?: "temporary" | "deliverable" | "handoff" } = {}): string {
-    const browserId = `browser-core-${randomUUID()}`;
-    this.ensureTab(sessionId, browserId);
-    Object.assign(this.identities.get(tabKey(sessionId, browserId))!, options);
-    if (!this.activeBySession.has(sessionId)) this.activeBySession.set(sessionId, browserId);
-    this.onChanged?.(sessionId);
-    return browserId;
+    return this.batchChanges(() => {
+      const browserId = `browser-core-${randomUUID()}`;
+      this.ensureTab(sessionId, browserId);
+      Object.assign(this.identities.get(tabKey(sessionId, browserId))!, options);
+      if (!this.activeBySession.has(sessionId)) this.activeBySession.set(sessionId, browserId);
+      this.changed(sessionId);
+      return browserId;
+    });
   }
 
   selectTab(sessionId: string, browserId: string): void {
     this.resolveTab(sessionId, browserId);
     if (this.activeSessionId === sessionId) this.activate(sessionId, browserId);
     else this.activeBySession.set(sessionId, browserId);
-    this.onChanged?.(sessionId);
+    this.changed(sessionId);
   }
 
   markTab(sessionId: string, browserId: string, disposition: "temporary" | "deliverable" | "handoff") {
     this.resolveTab(sessionId, browserId);
     this.identities.get(tabKey(sessionId, browserId))!.disposition = disposition;
-    this.onChanged?.(sessionId);
+    this.changed(sessionId);
   }
 
   activateSession(sessionId: string): void {
@@ -115,14 +141,17 @@ export class BrowserTabsPane {
     const id = browserId.trim() || DEFAULT_TAB_ID;
     const key = tabKey(sessionId, id);
     if (this.activeKey === key) return;
-    const pane = this.ensureTab(sessionId, id);
-    this.activePane()?.setVisible(false);
-    this.activeKey = key;
-    this.activeSessionId = sessionId;
-    this.activeBySession.set(sessionId, id);
-    pane.setBounds(this.bounds);
-    pane.setVisible(this.visible);
-    this.onChanged?.(sessionId);
+    this.batchChanges(() => {
+      const pane = this.ensureTab(sessionId, id);
+      const previous = this.activePane();
+      this.activeKey = key;
+      this.activeSessionId = sessionId;
+      this.activeBySession.set(sessionId, id);
+      previous?.setVisible(false);
+      pane.setBounds(this.bounds);
+      pane.setVisible(this.visible);
+      this.changed(sessionId);
+    });
   }
 
   close(sessionId: string, browserId: string): void {
@@ -140,7 +169,7 @@ export class BrowserTabsPane {
     pane.dispose();
     const next = this.listTabs().find(tab => tab.sessionId === sessionId);
     if (!this.activeBySession.has(sessionId) && next) this.selectTab(sessionId, next.browserId);
-    this.onChanged?.(sessionId);
+    this.changed(sessionId);
   }
 
   listTabs(): BrowserTabRecord[] {

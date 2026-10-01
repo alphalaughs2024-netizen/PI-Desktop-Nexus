@@ -257,3 +257,4 @@ Each ADR includes:
 | 0263 | Codex command observations and bounded waits | Manual acceptance pending |
 | 0264 | User-selected file previews outside the workspace | Manual acceptance pending |
 | 0265 | Guest-owned built-in browser capabilities | User-approved direction; manual acceptance pending |
+| 0266 | Explicit Browser selection and passive surface geometry | Accepted |

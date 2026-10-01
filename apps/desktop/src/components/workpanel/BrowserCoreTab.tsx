@@ -50,6 +50,10 @@ export function BrowserCoreTab({ sessionId, location, active = true, blocked = f
   const [activeBrowserId, setActiveBrowserId] = useState(() => tabsBySession.get(sessionId ?? "")?.activeId ?? "browser-core-1");
   const activeBrowserIdRef = useRef(activeBrowserId);
   activeBrowserIdRef.current = activeBrowserId;
+  const selectionSequenceRef = useRef(0);
+  const pendingSelectionRef = useRef<{ sessionId?: string; browserId: string; sequence: number } | null>(null);
+  const hostTabsRef = useRef<import("@pi-desktop/shared").BrowserTabsState | null>(null);
+  useEffect(() => { pendingSelectionRef.current = null; hostTabsRef.current = null; }, [sessionId]);
   const targetRef = useRef({ sessionId, browserId: activeBrowserId, epoch: 0 });
   if (targetRef.current.sessionId !== sessionId || targetRef.current.browserId !== activeBrowserId) {
     targetRef.current = { sessionId, browserId: activeBrowserId, epoch: targetRef.current.epoch + 1 };
@@ -73,16 +77,29 @@ export function BrowserCoreTab({ sessionId, location, active = true, blocked = f
   useEffect(() => {
     let disposed = false;
     let hadHostTabs = false;
+    let revision = -1;
+    let selectionEpoch = 0;
     const sync = (event: import("@pi-desktop/shared").BrowserTabsState) => {
-      if (disposed || event.sessionId !== (sessionId ?? "")) return;
+      if (disposed || event.sessionId !== (sessionId ?? "") || event.revision <= revision) return;
+      revision = event.revision;
+      hostTabsRef.current = event;
       if (!event.tabs.length) { if (hadHostTabs) { setBrowserTabs([]); tabsBySession.delete(sessionId ?? ""); onCloseLast(); } return; }
       hadHostTabs = true;
-      setBrowserTabs(event.tabs.map(tab => ({ id: tab.browserId, browserId: tab.browserId, sessionId: tab.sessionId, title: tab.state?.title || "New tab", url: tab.state?.url ?? "", loading: tab.state?.isLoading ?? false, canGoBack: tab.state?.canGoBack ?? false, canGoForward: tab.state?.canGoForward ?? false, guestGeneration: tab.generation, createdAt: tab.createdAt, lastActivatedAt: Date.now() })));
+      const pending = pendingSelectionRef.current?.sessionId === sessionId ? pendingSelectionRef.current : null;
+      setBrowserTabs(previous => {
+        const tabs = event.tabs.map(tab => ({ id: tab.browserId, browserId: tab.browserId, sessionId: tab.sessionId, title: tab.state?.title || "New tab", url: tab.state?.url ?? "", loading: tab.state?.isLoading ?? false, canGoBack: tab.state?.canGoBack ?? false, canGoForward: tab.state?.canGoForward ?? false, guestGeneration: tab.generation, createdAt: tab.createdAt, lastActivatedAt: Date.now() }));
+        const optimistic = pending && previous.find(tab => tab.browserId === pending.browserId);
+        if (optimistic && !tabs.some(tab => tab.browserId === optimistic.browserId)) tabs.push(optimistic);
+        return tabs;
+      });
       const selected = event.tabs.some(tab => tab.browserId === event.activeBrowserId) ? event.activeBrowserId : event.tabs[0].browserId;
+      if (pending && selected !== pending.browserId) return;
       if (selected !== activeBrowserIdRef.current) {
         activeBrowserIdRef.current = selected;
         setActiveBrowserId(selected);
-        void api.browserTabActivate(sessionId, selected).then(state => { if (!disposed && activeBrowserIdRef.current === selected) setViewStateEntry({ browserId: selected, state }); }).catch(() => undefined);
+        setViewStateEntry({ browserId: selected, state: emptyViewState });
+        const selectedEpoch = ++selectionEpoch;
+        void api.browserGetViewState(sessionId).then(state => { if (!disposed && selectionEpoch === selectedEpoch && activeBrowserIdRef.current === selected) setViewStateEntry({ browserId: selected, state }); }).catch(() => undefined);
       }
     };
     const unsubscribe = api.onBrowserTabs(sync);
@@ -98,12 +115,13 @@ export function BrowserCoreTab({ sessionId, location, active = true, blocked = f
   }, [sessionId, activeBrowserId]);
   useEffect(() => {
     if (!active) return;
+    let disposed = false;
     const unsubscribe = api.onBrowserViewState((event) => { if (event.sessionId === sessionId && (!event.browserId || event.browserId === activeBrowserIdRef.current)) setViewStateEntry({ browserId: activeBrowserIdRef.current, state: event.state }); });
     const browserId = activeBrowserIdRef.current;
     void api.browserTabActivate(sessionId, browserId).then((next) => {
-      if (activeBrowserIdRef.current === browserId) setViewStateEntry({ browserId, state: next });
+      if (!disposed && activeBrowserIdRef.current === browserId) setViewStateEntry({ browserId, state: next });
     }).catch(() => undefined);
-    return unsubscribe;
+    return () => { disposed = true; unsubscribe(); };
   }, [active, sessionId]);
   useEffect(() => {
     const navigation = viewState.navigation;
@@ -139,11 +157,32 @@ export function BrowserCoreTab({ sessionId, location, active = true, blocked = f
   const visibleTabs = browserTabs.map((tab) => tab.browserId === activeBrowserId ? { ...tab, loading: tab.loading || state === "loading" } : tab);
   const activateBrowserTab = async (id: string) => {
     if (id === activeBrowserIdRef.current) return;
+    const sequence = ++selectionSequenceRef.current;
+    pendingSelectionRef.current = { sessionId, browserId: id, sequence };
     activeBrowserIdRef.current = id;
     setActiveBrowserId(id);
     setViewStateEntry({ browserId: id, state: emptyViewState });
     setBrowserTabs((tabs) => tabs.map((tab) => tab.browserId === id ? { ...tab, lastActivatedAt: Date.now() } : tab));
-    try { const next = await api.browserTabActivate(sessionId, id); if (activeBrowserIdRef.current === id) setViewStateEntry({ browserId: id, state: next }); } catch (caught) { setError(safeBrowserError(caught)); }
+    try {
+      const next = await api.browserTabActivate(sessionId, id);
+      if (pendingSelectionRef.current?.sequence !== sequence) return;
+      pendingSelectionRef.current = null;
+      if (activeBrowserIdRef.current === id) setViewStateEntry({ browserId: id, state: next });
+    } catch (caught) {
+      if (pendingSelectionRef.current?.sequence !== sequence) return;
+      pendingSelectionRef.current = null;
+      const snapshot = hostTabsRef.current;
+      if (snapshot?.sessionId === (sessionId ?? "") && snapshot.tabs.length) {
+        activeBrowserIdRef.current = snapshot.activeBrowserId;
+        setActiveBrowserId(snapshot.activeBrowserId);
+        setBrowserTabs(tabs => tabs.filter(tab => snapshot.tabs.some(hostTab => hostTab.browserId === tab.browserId)));
+        setViewStateEntry({ browserId: snapshot.activeBrowserId, state: emptyViewState });
+        void api.browserGetViewState(sessionId).then(state => {
+          if (selectionSequenceRef.current === sequence && activeBrowserIdRef.current === snapshot.activeBrowserId) setViewStateEntry({ browserId: snapshot.activeBrowserId, state });
+        }).catch(() => undefined);
+      }
+      setError(safeBrowserError(caught));
+    }
   };
   const newBrowserTab = () => { const id = `browser-core-${crypto.randomUUID()}`; setBrowserTabs((tabs) => [...tabs, { id, sessionId: sessionId ?? "", title: "New tab", url: "", loading: false, canGoBack: false, canGoForward: false, browserId: id, guestGeneration: 0, createdAt: Date.now(), lastActivatedAt: Date.now() }]); void activateBrowserTab(id); };
   const closeBrowserTab = (id: string) => { if (browserTabs.length <= 1) { tabsBySession.delete(sessionId ?? ""); void api.browserTabClose(sessionId, id).catch(() => undefined); onCloseLast(); return; } const index = browserTabs.findIndex((tab) => tab.browserId === id); const next = browserTabs.filter((tab) => tab.browserId !== id); setBrowserTabs(next); if (id === activeBrowserIdRef.current) void activateBrowserTab(next[Math.min(index, next.length - 1)].browserId); void api.browserTabClose(sessionId, id).catch((caught) => setError(safeBrowserError(caught))); };

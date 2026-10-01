@@ -13,6 +13,16 @@ Background link popups preserve selection; self-closing pages remove their tabs.
 Native destruction releases services using retained identities and session
 handles without accessing destroyed Electron objects.
 
+ADR 0266 makes Main authoritative for selection. Creation/activation announce
+completed state atomically; snapshots carry monotonic per-chat revisions and
+the renderer ignores older/duplicate updates. Observing tabs never activates
+them. Pending user selection is protected from older host work until its
+activation settles; superseded activation replies cannot update it. Geometry
+reports cannot select a tab or chat, recreate closed tabs, or
+hide the selected page when an old surface unmounts. Native/agent selection
+updates the presentation without requiring a renderer activation echo. The
+host does not reuse an inactive tab's surface to keep another page visible.
+
 Playwright Core 1.63.0 connects through guest-only in-memory CDP. Semantic
 role/name, label, text, placeholder, test ID and CSS locators support up to
 eight nested frame selectors. Matches are strict unless indexed. Native
