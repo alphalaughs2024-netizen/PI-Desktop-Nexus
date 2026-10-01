@@ -225,3 +225,18 @@ The real Codex 0.157.1 + Rust host Windows fixture passes both Plan and Goal:
 request was needed. The preceding fixture attempt had an async-predicate polling
 bug, which was corrected before these results. GUI acceptance remains pending;
 no full local E2E suite, merge, push or Phase 3 work has occurred.
+
+## Browser first-attachment recovery
+
+The user's loaded-page Surface unavailable report exposed premature capture
+before positive GUI bounds and stale capture results after geometry changes.
+Four focused lifecycle cases failed against the prior implementation. The pane
+now waits for bounds, retires captures across attachment/geometry/navigation
+epochs, and bounds transient retries to three captures without page reload.
+Twelve focused Browser checks pass. The real Electron Windows fixture passes
+initial attachment, injected transient empty capture, actual colored screenshot
+and retained-page hide/resize/reveal with one navigation and no manual Retry.
+Evidence: %USERPROFILE%/.nexus-codex-phase2/browser-surface-20261001-b/report.json
+and surface.png. A previous fixture assertion incorrectly assumed the first real
+Chromium capture must succeed; the successful run allows the specified bounded
+retry budget. Manual GUI acceptance remains pending. No visual styling changed.

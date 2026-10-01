@@ -22,6 +22,8 @@ import { isAllowedHttpUrl, parseAllowedExternalUrl } from "./safe-open-external"
 const PARTITION = "persist:work-browser";
 const LIVE_RELOAD_DEBOUNCE_MS = 250;
 const SURFACE_CAPTURE_TIMEOUT_MS = 5_000;
+const SURFACE_CAPTURE_ATTEMPTS = 3;
+const SURFACE_CAPTURE_RETRY_MS = 100;
 
 export function normalizeUrl(raw: string): string | null {
   const trimmed = raw.trim();
@@ -95,6 +97,9 @@ export class BrowserPane {
   private childOrder: "topmost" | "not-topmost" | "unknown" = "unknown";
   private surfaceVerification: Promise<void> | null = null;
   private surfaceEpoch = 0;
+  private surfaceAttempts = 0;
+  private surfaceRetry: NodeJS.Timeout | null = null;
+  private mainFrameFinished = false;
 
   constructor(onState: (state: BrowserState) => void) {
     this.onState = onState;
@@ -108,12 +113,31 @@ export class BrowserPane {
   }
 
   surfaceStatus() { return { attachment: this.attached ? "attached" as const : "detached" as const, visibility: this.visible ? "visible" as const : "hidden" as const, paint: this.painted, capture: this.captured, childOrder: this.childOrder, generation: this.generation }; }
-  async probeSurface() { const wc = this.view?.webContents; if (!wc || wc.isDestroyed() || !this.attached) return { status: "unavailable" as const, width: 0, height: 0, byteLength: 0 }; try { const image = await wc.capturePage(); const size = image.getSize(); const byteLength = image.toPNG().byteLength; this.captured = size.width > 0 && size.height > 0 && byteLength > 0 ? "nonempty" : "empty"; return { status: this.captured, width: size.width, height: size.height, byteLength }; } catch { return { status: "unavailable" as const, width: 0, height: 0, byteLength: 0 }; } }
+  async probeSurface() {
+    const wc = this.view?.webContents;
+    if (!wc || wc.isDestroyed() || !this.attached || !this.visible || this.bounds.width < 1 || this.bounds.height < 1) return { status: "unavailable" as const, width: 0, height: 0, byteLength: 0 };
+    const epoch = this.surfaceEpoch;
+    try {
+      const image = await wc.capturePage();
+      const size = image.getSize();
+      const byteLength = image.toPNG().byteLength;
+      const status = size.width > 0 && size.height > 0 && byteLength > 0 ? "nonempty" as const : "empty" as const;
+      if (epoch === this.surfaceEpoch && this.attached && this.visible) this.captured = status;
+      return { status, width: size.width, height: size.height, byteLength };
+    } catch { return { status: "unavailable" as const, width: 0, height: 0, byteLength: 0 }; }
+  }
 
-  retrySurface(): void {
+  private invalidateSurface(): void {
     this.surfaceEpoch += 1;
     this.painted = "unknown";
     this.captured = "unknown";
+    this.surfaceAttempts = 0;
+    if (this.surfaceRetry) clearTimeout(this.surfaceRetry);
+    this.surfaceRetry = null;
+  }
+
+  retrySurface(): void {
+    this.invalidateSurface();
     this.verifySurface();
   }
 
@@ -213,8 +237,13 @@ export class BrowserPane {
       width: Math.max(0, Math.round(Number(bounds.width) || 0)),
       height: Math.max(0, Math.round(Number(bounds.height) || 0)),
     };
+    const resized = this.bounds.width !== safe.width || this.bounds.height !== safe.height;
     this.bounds = safe;
-    if (this.view && this.visible) this.view.setBounds(safe);
+    if (resized) this.invalidateSurface();
+    if (this.view && this.visible) {
+      if (safe.width < 1 || safe.height < 1) this.detach();
+      else this.attach();
+    }
   }
 
   setVisible(visible: boolean): void {
@@ -242,7 +271,7 @@ export class BrowserPane {
   }
 
   dispose(): void {
-    this.surfaceEpoch += 1;
+    this.invalidateSurface();
     this.clearLiveReload();
     this.detachRenderHost();
     this.detach();
@@ -285,14 +314,16 @@ export class BrowserPane {
 
   private attach(): void {
     this.detachRenderHost();
-    if (!this.window || this.window.isDestroyed() || !this.view) return;
+    if (!this.window || this.window.isDestroyed() || !this.view || this.bounds.width < 1 || this.bounds.height < 1) return;
     const children = this.window.contentView.children;
     // The guest hole sits on top of plugin chrome. Re-adding a plugin view
     // after this pane is attached would cover the guest unless we keep it last.
     if (children.includes(this.view) && children[children.length - 1] !== this.view) {
+      this.invalidateSurface();
       this.window.contentView.removeChildView(this.view);
     }
     if (!this.window.contentView.children.includes(this.view)) {
+      this.invalidateSurface();
       this.window.contentView.addChildView(this.view);
     }
     this.view.setBounds(this.bounds);
@@ -302,10 +333,12 @@ export class BrowserPane {
   }
 
   private verifySurface(pageFinished = false): void {
+    if (pageFinished) this.mainFrameFinished = true;
     const wc = this.view?.webContents;
-    if (!wc || wc.isDestroyed() || !this.attached || (!pageFinished && wc.isLoading()) || this.surfaceVerification || this.painted === "painted") return;
+    if (!wc || wc.isDestroyed() || !this.attached || !this.visible || this.bounds.width < 1 || this.bounds.height < 1 || (!this.mainFrameFinished && wc.isLoading()) || this.surfaceVerification || this.surfaceRetry || this.painted !== "unknown") return;
     const generation = this.generation;
     const epoch = this.surfaceEpoch;
+    this.surfaceAttempts += 1;
     let timeout: NodeJS.Timeout | undefined;
     const capture = Promise.race([
       this.probeSurface(),
@@ -315,6 +348,12 @@ export class BrowserPane {
     ]);
     this.surfaceVerification = capture.then((result) => {
       if (generation !== this.generation || epoch !== this.surfaceEpoch || wc.isDestroyed() || !this.attached) return;
+      // First attachment can precede Chromium's first usable compositor frame.
+      // Retry verification only; never replay navigation or page interactions.
+      if (result.status !== "nonempty" && this.surfaceAttempts < SURFACE_CAPTURE_ATTEMPTS) {
+        this.surfaceRetry = setTimeout(() => { this.surfaceRetry = null; if (epoch === this.surfaceEpoch) this.verifySurface(); }, SURFACE_CAPTURE_RETRY_MS);
+        return;
+      }
       this.painted = result.status === "nonempty" ? "painted" : "blank";
       const state = this.getState();
       if (state) this.onState(state);
@@ -331,6 +370,7 @@ export class BrowserPane {
   }
 
   private detach(): void {
+    if (this.attached) this.invalidateSurface();
     if (!this.window || this.window.isDestroyed() || !this.view) return;
     const children = this.window.contentView.children;
     if (children.includes(this.view)) {
@@ -425,9 +465,8 @@ export class BrowserPane {
       if (state) this.onState(state);
     };
     wc.on("did-start-loading", () => {
-      this.surfaceEpoch += 1;
-      this.painted = "unknown";
-      this.captured = "unknown";
+      this.mainFrameFinished = false;
+      this.invalidateSurface();
       push();
     });
     wc.on("did-stop-loading", () => { this.verifySurface(); push(); });

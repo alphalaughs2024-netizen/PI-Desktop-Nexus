@@ -20,15 +20,21 @@ content surface occupies the reserved viewport.
 
 After a navigation completes, the native guest remains mounted in `loading`
 while the host verifies a nonempty page capture. An attached, visible guest
-becomes `ready` only after that verification. A failed or empty capture becomes
-`unavailable`; Retry starts a new verification without replaying navigation.
+becomes `ready` only after that verification. Verification waits for positive
+GUI bounds and uses an attachment/geometry/navigation epoch so stale captures
+cannot mark the current surface unavailable. An empty or failed capture is
+retried at most three times, 100ms apart, with each capture bounded to five
+seconds. During these checks the measured guest stays mounted in `loading`.
+Only exhausted verification becomes `unavailable`; Retry starts a new
+verification without replaying navigation. Hide, resize, reattachment and
+navigation invalidate pending verification and retire its results.
 Normal `WebContentsView` guests do not use the offscreen `paint` event as a
 readiness signal.
 The guest rectangle uses renderer CSS pixels and Electron's local content-view
 coordinates directly; display scale is not applied a second time. The main
 frame finishing may verify a page even while subresources keep Electron's
 loading flag active. A verified guest is ready on that path.
-Surface capture has a bounded wait; a capture that does not settle enters
+Surface capture has a bounded wait and retry budget; persistent failure enters
 `unavailable` so the user can retry.
 The visible Browser surface takes ownership when the active session changes.
 Late hide messages from the previous session cannot detach the new session's

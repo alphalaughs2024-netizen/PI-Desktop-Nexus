@@ -11690,6 +11690,13 @@ or delete caches, profiles or earlier recovery files to hide this condition.
   commands. Stop interrupts its tab; other tabs can proceed. Hiding preserves
   the page; shutdown releases guests and the hidden render host. Materials,
   controls, and panel geometry remain unchanged.
+- **Surface attachment regression**: Open a page through an agent before GUI
+  bounds arrive, then reveal it in the panel. Delay a capture across resize,
+  overlay hide/show and tab switching. Inject one empty capture, then a
+  persistent capture failure. The first cases must render without manual Retry
+  or page reload; stale captures cannot mark the current guest unavailable.
+  Persistent failure exhausts three bounded attempts and exposes recovery.
+  Manual Retry checks the existing page without replaying navigation/actions.
 - **Validation**: Targeted unit tests and an isolated native fixture; full local
   E2E suites are not run unless explicitly requested.
 
