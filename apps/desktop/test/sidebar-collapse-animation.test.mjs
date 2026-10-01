@@ -98,19 +98,19 @@ test("the collapse keyframes cannot reflow the sidebar's content", () => {
   assert.match(sidebarBlock, /overflow:\s*hidden/);
 });
 
-test("a collapsed sidebar narrows the transcript but keeps the composer width", () => {
+test("both sidebar states keep the transcript on the composer width", () => {
   assert.match(
     appSource,
     /sidebarCollapsed && "sidebar-collapsed"/,
   );
 
   const mainPaneBlock = globalStyles.match(/\.main-pane\s*\{[\s\S]*?\}/)?.[0] ?? "";
-  assert.match(mainPaneBlock, /--chat-content-max-width:\s*760px/);
+  assert.match(mainPaneBlock, /--chat-content-max-width:\s*var\(--chat-composer-max-width\)/);
   assert.match(mainPaneBlock, /--chat-composer-max-width:\s*768px/);
 
   const collapsedBlock =
     globalStyles.match(/\.app-shell\.sidebar-collapsed \.main-pane\s*\{[\s\S]*?\}/)?.[0] ?? "";
-  assert.match(collapsedBlock, /--chat-content-max-width:\s*640px/);
+  assert.doesNotMatch(collapsedBlock, /--chat-content-max-width:/);
   assert.doesNotMatch(collapsedBlock, /--chat-composer-max-width:/);
   assert.match(
     collapsedBlock,
@@ -119,7 +119,7 @@ test("a collapsed sidebar narrows the transcript but keeps the composer width", 
 
   const threadContentBlock =
     globalStyles.match(/\.thread-content\s*\{[\s\S]*?\}/)?.[0] ?? "";
-  assert.match(threadContentBlock, /width:\s*min\(100%,\s*var\(--chat-content-max-width\)\)/);
+  assert.match(threadContentBlock, /width:\s*min\(calc\(100% - 48px\),\s*var\(--chat-content-max-width\)\)/);
   assert.match(threadContentBlock, /transition:\s*width var\(--chat-width-transition\)/);
 
   const homeStackBlock =

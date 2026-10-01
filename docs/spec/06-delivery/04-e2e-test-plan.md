@@ -11898,6 +11898,20 @@ or delete caches, profiles or earlier recovery files to hide this condition.
 - **Validation**: Focused adapter/contract/wait/broker regression checks. Full
   local E2E suites remain unrun unless explicitly requested.
 
+### E2E-Conversation-Width: Match the composer band
+
+- **Steps**: View a conversation with short prompts, a multi-paragraph answer,
+  and response status. Expand/collapse the sidebar, open the work panel, and
+  narrow the main pane. Switch to a long conversation that shows the settle
+  skeleton. Repeat in dark, light, and scenic themes.
+- **Expected**: Output and composer share the 768px cap and 24px outer
+  clearance, allowing for the scroller's stable gutter. Collapsing the sidebar
+  does not narrow the transcript. Answers fill the column, short user bubbles
+  remain compact, and the settle skeleton aligns with settled content. No
+  horizontal overflow or changes to materials, typography, or motion.
+- **Validation**: Focused style checks and rendered layout inspection. Local
+  E2E suites remain unrun unless explicitly requested.
+
 ### E2E-User-Selected-Files: View explicit external references (ADR 0264)
 
 - **Steps**: Click AGENTS.md in a subfolder-rooted chat, then repeat with a local

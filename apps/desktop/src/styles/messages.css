@@ -45,7 +45,7 @@
 .message-row.assistant > .message-col,
 .message-row.system .message-col,
 .message-row.tool .message-col {
-  width: min(100%, 720px);
+  width: 100%;
   align-items: flex-start;
 }
 

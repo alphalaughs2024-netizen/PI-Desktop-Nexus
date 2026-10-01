@@ -43,17 +43,13 @@
   flex: 1;
   flex-direction: column;
   background: var(--ds-bg-primary);
-  --chat-content-max-width: 760px;
   --chat-composer-max-width: 768px;
+  --chat-content-max-width: var(--chat-composer-max-width);
   --chat-width-transition: var(--motion-duration-normal) var(--motion-ease-out);
 }
 
-/*
- * A collapsed sidebar gives the shell more room, but the transcript should
- * retain a readable line length. Keep the composer at its expanded width.
- */
+/* Keep the conversation and composer on the same width in both sidebar states. */
 .app-shell.sidebar-collapsed .main-pane {
-  --chat-content-max-width: 640px;
   --chat-width-transition: var(--motion-duration-fast) var(--motion-ease-in);
 }
 
@@ -240,13 +236,13 @@
 }
 
 .thread-content {
-  width: min(100%, var(--chat-content-max-width));
+  width: min(calc(100% - 48px), var(--chat-content-max-width));
   margin: 0 auto;
   transition: width var(--chat-width-transition);
   /* Reserve exactly the composer's real height (+ a small gap) so the last
    * message sits just above the box instead of far below it. The variable is
    * published by Composer.tsx from the docked composer's measured height. */
-  padding: 20px 32px calc(var(--composer-dock-height, 228px) + 16px);
+  padding: 20px 0 calc(var(--composer-dock-height, 228px) + 16px);
 }
 
 .chat-surface:has(.speech-overlay) .thread-content {
@@ -297,8 +293,8 @@
   justify-content: flex-end;
   gap: 24px;
   box-sizing: border-box;
-  width: min(100%, var(--chat-content-max-width));
-  padding: calc(var(--ds-toolbar-height) + 20px) 28px
+  width: min(calc(100% - 48px), var(--chat-content-max-width));
+  padding: calc(var(--ds-toolbar-height) + 20px) 0
     calc(var(--composer-dock-height, 228px) + 16px);
 }
 

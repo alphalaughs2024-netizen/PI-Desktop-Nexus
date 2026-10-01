@@ -968,7 +968,7 @@ Codex parity decisions (D034/D070) supersede any older value here.
 | Work panel width (open) | `244px–720px` (default 280px), fixed at the committed width | the panel is an in-flow column whose width is taken from the existing client area; the renderer owns its divider (ADR 0151) |
 | Composer shell minimum | ~80px | One-line draft + toolbar padding |
 | Composer draft height | 1–7 text lines | Auto-grow; internal scroll beyond line 7 |
-| Chat message max width | 720px assistant / 560px user plate | Prevent eye-span over-stretch; user turns stay compact |
+| Chat message max width | 768px assistant, matching composer / `min(82%, 600px)` user plate | Same conversation band in both sidebar states; user turns stay compact |
 | Window min width | 1040px | Enforced by Electron for the whole app; opening the panel never changes native bounds |
 | Window min height | 700px | Enforced by Electron |
 
@@ -1132,7 +1132,7 @@ Full component contract and usage rules: [08-component-spec.md §17](08-componen
 | **Compact list rows 28px height** | Sidebar session items, settings list rows |
 | **Button rows 32px height** | Standard buttons |
 | **Never exceed 24px vertical gap** | Even for "breathing room" — this is a workstation |
-| **Max content width 720px** | Chat messages, tool disclosure rows — prevent over-wide eye-span |
+| **Max conversation width 768px** | Answers and response status share the composer band in both sidebar states |
 
 ## 14. Do / Don't
 

@@ -721,7 +721,7 @@ reading surface of the workstation.
 ### 4.3 Layout
 
 - Background: bg-primary
-- Max content width: 720px (messages), centered
+- Max conversation width: 768px, matching the composer and centered
 - The transcript keeps one stable scrollbar gutter on the trailing edge. It
   never reserves a matching left gutter, so the minimap and first message do
   not leave a decorative blank strip beside the session.
@@ -1407,10 +1407,12 @@ Single message render — either user (plaintext) or assistant (markdown streami
 
 ### 8.3 Layout
 
-- Max content band: 760px thread column; assistant body max 720px
-- When the sidebar is collapsed, the centered thread column uses a 640px
-  ceiling while the home and docked composers retain their 768px ceiling.
-  The outer main pane remains fluid and the thread width transition follows
+- The centered thread column and home/docked composers share the 768px
+  ceiling in both sidebar states. The transcript reserves the same 24px
+  outer clearance on each side as the docked composer, without additional
+  inner horizontal padding. Assistant bodies fill the column; the settle
+  skeleton uses the same band. The scroll region retains its stable scrollbar
+  gutter. The outer main pane stays fluid and the width transition follows
   the sidebar dock transition.
 - User: right-aligned, theme-neutral soft plate (`color-mix` on primary ink,
   never a fixed accent tint), borderless, `radius-lg-plus` with a tighter
@@ -3257,7 +3259,7 @@ Sidebar footer                                        Popover (360px max)
 2. All interactive elements have visible focus rings (2px accent, offset 2px)
 3. Layout shell metrics (46px titlebar row, ~275/48 sidebar, 280 context,
    compact composer with 1–7-line draft growth) match spec
-4. Chat messages constrained to 720px max width
+4. Conversation output shares the composer's 768px cap in both sidebar states
 5. ToolCallCard shows status, args preview, result preview, duration per [01-ui-ia.md](01-ui-ia.md) §5
 6. PermissionCard shows tool name, risk, args, countdown, and three action buttons per [03-permission-ux.md](03-permission-ux.md)
 7. Composer: Enter sends, Shift+Enter newline, draft grows from one through
