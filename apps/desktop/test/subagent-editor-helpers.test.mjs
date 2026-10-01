@@ -88,7 +88,7 @@ test("preset tools and maxTurns match the runtime builtin documents", () => {
   assert.match(presetSource, /id: "test-runner"[\s\S]*?maxTurns: 40/);
   assert.match(presetSource, /id: "fixer"[\s\S]*?tools: \["Read", "Glob", "Grep", "Edit", "Write", "Bash"\]/);
   assert.match(presetSource, /id: "fixer"[\s\S]*?maxTurns: 80/);
-  assert.match(presetSource, /id: "ui-designer"[\s\S]*?tools: \["Read", "Glob", "Grep", "BrowserPreview", "Bash", "Edit", "Write"\]/);
+  assert.match(presetSource, /id: "ui-designer"[\s\S]*?tools: \["Read", "Glob", "Grep", "BrowserPreview", "Bash", "Edit", "Write", \.\.\.SUBAGENT_BROWSER_TOOLS\]/);
   assert.match(presetSource, /id: "ui-designer"[\s\S]*?maxTurns: 80/);
 });
 

@@ -627,6 +627,15 @@ is guidance, not the security boundary.
 
 ### 10.2 Delegation and subagent tool scope (D201, ADR 0062)
 
+Settings exposes a provider/model picker on every subagent row (ADR 0260).
+Current clears the pin and uses the parent chat's selection at worker launch.
+Explicit selections store stable provider IDs and exact model IDs. Missing pins
+and removed configured models fail without fallback. Built-in profile preferences
+are applied before catalog merging; user documents still override built-ins by
+name. The host's model-only save replaces model/provider fields without changing
+prompt bytes, tool declarations, advanced fields or permissions. Preferences apply
+on the next parent launch and never modify an already-running child.
+
 `Task` is available in Agent mode only, and only when the session has at least
 one subagent definition. Plan and Goal are read-only contract negotiations, so a
 delegate with `Bash`, `Edit` or `Write` would drive straight through them.

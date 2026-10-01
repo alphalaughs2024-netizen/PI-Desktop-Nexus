@@ -242,6 +242,7 @@ export const IPC = {
     subagentRemove: "pi-desktop/subagent/remove",
     subagentSetEnabled: "pi-desktop/subagent/setEnabled",
     subagentSetBuiltinEnabled: "pi-desktop/subagent/setBuiltinEnabled",
+    subagentSetModel: "pi-desktop/subagent/setModel",
     subagentSetScope: "pi-desktop/subagent/setScope",
     subagentReveal: "pi-desktop/subagent/reveal",
     marketRefresh: "pi-desktop/market/refresh",

@@ -3879,6 +3879,14 @@ async fn handle_request(
             let st = state.lock().await;
             Ok(json!({ "disabled": st.user_subagents.disabled_builtins() }))
         }
+        "agents.setModel" => {
+            let id = require_id(&params)?;
+            let model = params.get("model").and_then(Value::as_str)
+                .ok_or_else(|| rpc_err(1002, "model is required", "INVALID_PARAMS"))?;
+            let mut st = state.lock().await;
+            let subagent = st.user_subagents.set_model(&id, model).map_err(subagent_err)?;
+            Ok(json!({ "subagent": subagent }))
+        }
         "agents.setBuiltinEnabled" => {
             let id = params.get("id").and_then(Value::as_str).unwrap_or("");
             let enabled = params.get("enabled").and_then(Value::as_bool).unwrap_or(false);

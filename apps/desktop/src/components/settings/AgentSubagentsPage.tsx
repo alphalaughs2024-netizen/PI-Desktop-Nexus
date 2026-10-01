@@ -27,6 +27,8 @@ import {
   type SubagentDraft,
 } from "./SubagentEditorSheet";
 import { EMPTY_SUBAGENT_PAGE, fetchSubagentPageData } from "./subagent-settings";
+import { SubagentModelPicker } from "./SubagentModelPicker";
+import { groupSubagentModelChoices, subagentModelChoices, subagentModelOrphanPin, subagentModelSelectValue } from "./subagent-models";
 import {
   IconBot,
   IconCopy,
@@ -57,6 +59,9 @@ function builtinDisplayName(
 export function AgentSubagentsPage() {
   const { t } = useTranslation();
   const showToast = useAppStore((state) => state.showToast);
+  const providers = useAppStore((state) => state.providers);
+  const modelChoices = useMemo(() => subagentModelChoices(providers).map(choice => ({ ...choice, value: `${choice.providerId}/${choice.modelId}` })), [providers]);
+  const modelGroups = useMemo(() => groupSubagentModelChoices(modelChoices), [modelChoices]);
   const {
     data: { owned, builtins },
     setData: setSubagents,
@@ -71,6 +76,7 @@ export function AgentSubagentsPage() {
   const [menuFor, setMenuFor] = useState<string | null>(null);
   const [editor, setEditor] = useState<SubagentEditorState | null>(null);
   const [saving, setSaving] = useState(false);
+  const [modelSaving, setModelSaving] = useState<string | null>(null);
   const { armed, setArmed } = useArmedDelete();
   const ownedHandles = useMemo(() => new Set(owned.map((row) => row.id)), [owned]);
 
@@ -131,6 +137,34 @@ export function AgentSubagentsPage() {
       presetId: definition.name,
     });
   };
+
+  const chooseModel = async (id: string, source: "builtin" | "user", value: string) => {
+    const choice = modelChoices.find(item => item.value === value);
+    if (value && !choice) return;
+    if (modelSaving) return;
+    setModelSaving(`${source}:${id}`);
+    try {
+      await api.setSubagentModel(id, source, choice ? { providerId: choice.providerId, modelId: choice.modelId } : null);
+      await load();
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : String(error), { variant: "error" });
+    } finally {
+      setModelSaving(null);
+    }
+  };
+
+  const modelPicker = (id: string, source: "builtin" | "user", pin: string) => (
+    <div className="subagent-row-model">
+      <SubagentModelPicker
+        value={subagentModelSelectValue(pin, modelChoices)}
+        groups={modelGroups}
+        orphanPin={subagentModelOrphanPin(pin, modelChoices)}
+        disabled={Boolean(modelSaving) || busyId === id}
+        label={t("extensions.subagents.modelForAgent", { name: id })}
+        onChange={value => void chooseModel(id, source, value)}
+      />
+    </div>
+  );
 
   const save = async () => {
     if (!editor) return;
@@ -222,6 +256,7 @@ export function AgentSubagentsPage() {
     const handle = definition.name;
     const name = builtinDisplayName(handle, t);
     const canCopy = !ownedHandles.has(handle);
+    const busy = modelSaving === `builtin:${handle}`;
     return (
       <CapabilityRow
         key={`builtin:${handle}`}
@@ -234,13 +269,12 @@ export function AgentSubagentsPage() {
         }
         description={definition.description || t("settings.noCapabilityDescription")}
         meta={
-          definition.tools?.length ? (
-            <>
+          <>
+              {modelPicker(handle, "builtin", definition.model ? `${definition.model.providerId}/${definition.model.modelId}` : "")}
               {definition.tools.map((tool) => (
                 <code key={tool}>{tool}</code>
               ))}
-            </>
-          ) : undefined
+          </>
         }
         actions={
           <>
@@ -249,12 +283,13 @@ export function AgentSubagentsPage() {
               type="button"
               className="settings-icon-button"
               tooltip={t("extensions.subagents.copy")}
+              disabled={busy}
               onClick={() => copyBuiltin(definition)}
             >
               <IconCopy size={15} />
             </TooltipButton>
           ) : null}
-          <CapabilityToggle checked={definition.enabled} busy={false} label={t("settings.toggleCapability", { name })} onChange={() => api.setBuiltinSubagentEnabled(handle, !definition.enabled).then(() => void load()).catch((error) => showToast(error instanceof Error ? error.message : String(error), { variant: "error" }))} />
+          <CapabilityToggle checked={definition.enabled} busy={busy} label={t("settings.toggleCapability", { name })} onChange={() => api.setBuiltinSubagentEnabled(handle, !definition.enabled).then(() => void load()).catch((error) => showToast(error instanceof Error ? error.message : String(error), { variant: "error" }))} />
           </>
         }
       />
@@ -263,7 +298,7 @@ export function AgentSubagentsPage() {
 
   const renderRow = (subagent: UserSubagentRecord) => {
     const name = subagent.name || subagent.id;
-    const busy = busyId === subagent.id;
+    const busy = busyId === subagent.id || modelSaving === `user:${subagent.id}`;
     const isArmed = armed === subagent.id;
     const items: CapabilityMenuItem[] = [
       {
@@ -302,13 +337,12 @@ export function AgentSubagentsPage() {
         badges={<span className="agent-capability-badge">{t("settings.globalOnly")}</span>}
         description={subagent.description || t("settings.noCapabilityDescription")}
         meta={
-          subagent.tools?.length ? (
-            <>
-              {subagent.tools.map((tool) => (
+          <>
+              {modelPicker(subagent.id, "user", subagent.model ?? "")}
+              {(subagent.tools ?? []).map((tool) => (
                 <code key={tool}>{tool}</code>
               ))}
-            </>
-          ) : undefined
+          </>
         }
         actions={
           <>

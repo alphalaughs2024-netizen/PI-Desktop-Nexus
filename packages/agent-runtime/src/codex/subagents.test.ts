@@ -40,6 +40,19 @@ it("pins exact provider/model and only declared tools, attributing child events 
   expect(await f.manager.beforeComplete(new AbortController().signal)).toBeUndefined();
   expect(f.children[0].closed).toBe(1);
 });
+
+it("Current uses the parent provider/model at delegation start, including later selections", async () => {
+  const f = await fixture(); f.definition.model = undefined;
+  await f.manager.execute("Task", { agent: "reviewer", task: "Inspect" }, "first");
+  expect(f.children[0].config.provider).toMatchObject({ id: "parent-provider", modelId: "parent-model" });
+  f.children[0].finish();
+  await f.manager.execute("TaskWait", {}, "wait");
+  f.options.parent = { ...f.options.parent, provider: { ...f.options.parent.provider, id: "new-provider", modelId: "new-model" } };
+  f.manager.update(f.options);
+  await f.manager.execute("Task", { agent: "reviewer", task: "Inspect again" }, "second");
+  expect(f.children[1].config.provider).toMatchObject({ id: "new-provider", modelId: "new-model" });
+  await f.manager.stopAll();
+});
 it("keeps live reasoning, commentary and final output inside the owning Task", async () => {
   const f = await fixture();
   let emitChild: any;

@@ -193,7 +193,13 @@ retain its host turn/start time, and integrate settled reports through a normal
 new native segment. Emit one terminal outcome after convergence. Stop, disposal
 and parent failure stop owned children. Recovery reads partial child snapshots
 and marks unresolved work interrupted without tool replay or automatic relaunch.
-No credentials enter records. The exact-model settings picker is follow-up work.
+No credentials enter records. Settings exposes a searchable provider/model picker
+on every built-in and user-owned row (ADR 0260). Current clears the pin and uses
+the parent chat's model at worker launch. Exact selections store provider IDs,
+not ambiguous names; removed configured models fail without fallback. Built-in
+preferences are Main-owned profile metadata applied before catalog merge, while
+user-owned pins remain in Rust-owned documents. Changes apply at the next parent
+launch and do not replace running workers or modify prompts/tools.
 
 ## Acceptance boundaries
 

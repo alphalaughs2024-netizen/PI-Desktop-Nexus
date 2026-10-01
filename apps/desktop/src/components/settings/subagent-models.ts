@@ -80,7 +80,7 @@ export function pinMatchesChoice(pin: string, choice: SubagentModelChoice): bool
   const parts = subagentModelPinParts(pin);
   if (!parts) return false;
   if (!modelIdsMatch(parts.modelId, choice.modelId)) return false;
-  if (parts.providerPart === choice.providerId) return true;
+  if (parts.providerPart === choice.providerId) return parts.modelId === choice.modelId;
   const alias = providerAlias(parts.providerPart);
   if (!alias) return false;
   const canonicalProviderPart = subagentModelPinParts(choice.value)?.providerPart;
@@ -177,7 +177,14 @@ export function subagentModelSelectValue(
 ): string {
   const trimmed = pin.trim();
   if (!trimmed) return "";
-  const match = choices.find((choice) => pinMatchesChoice(trimmed, choice));
+  let match = choices.find((choice) => pinMatchesChoice(trimmed, choice));
+  if (!match) {
+    const parts = subagentModelPinParts(trimmed);
+    const candidates = parts ? choices.filter(choice =>
+      choice.modelId === parts.modelId && [choice.providerName, choice.vendorKey].some(alias => providerAlias(alias) === providerAlias(parts.providerPart)),
+    ) : [];
+    if (candidates.length === 1) match = candidates[0];
+  }
   return match?.value ?? trimmed;
 }
 
@@ -191,6 +198,6 @@ export function subagentModelOrphanPin(
 ): string | null {
   const trimmed = pin.trim();
   if (!trimmed) return null;
-  if (choices.some((choice) => pinMatchesChoice(trimmed, choice))) return null;
+  if (choices.some(choice => choice.value === subagentModelSelectValue(trimmed, choices))) return null;
   return trimmed;
 }

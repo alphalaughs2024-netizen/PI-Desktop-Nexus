@@ -38,6 +38,7 @@ export function SubagentModelPicker({
   groups,
   orphanPin,
   disabled = false,
+  label,
   onChange,
 }: {
   /** Current pin, or the empty string for inherit-session. */
@@ -46,6 +47,7 @@ export function SubagentModelPicker({
   /** A pin that is no longer configured, kept selectable so an edit cannot drop it. */
   orphanPin: string | null;
   disabled?: boolean;
+  label?: string;
   onChange: (next: string) => void;
 }) {
   const { t } = useTranslation();
@@ -133,7 +135,8 @@ export function SubagentModelPicker({
   };
 
   const selected = rows.find((row) => row.id === value) ?? null;
-  const triggerLabel = selected?.label ?? value;
+  const triggerLabel = selected?.groupName ? `${selected.groupName} / ${selected.label}` : selected?.label ?? value;
+  const accessibleLabel = label ?? t("extensions.subagents.model");
 
   return (
     <AnchoredMenu
@@ -141,7 +144,7 @@ export function SubagentModelPicker({
       open={open}
       onClose={close}
       menuClassName="provider-service-menu"
-      label={t("extensions.subagents.model")}
+      label={accessibleLabel}
       initialFocus="input"
       trigger={(ref) => (
         <button
@@ -151,7 +154,8 @@ export function SubagentModelPicker({
           disabled={disabled}
           aria-haspopup="listbox"
           aria-expanded={open}
-          aria-label={t("extensions.subagents.model")}
+          aria-label={`${accessibleLabel}: ${triggerLabel}`}
+          title={triggerLabel}
           onClick={() => {
             setQuery("");
             setActiveId(value);
@@ -198,12 +202,12 @@ export function SubagentModelPicker({
           </div>
         ) : null}
         <ul className="provider-service-list">
-          {visible.map((row) => {
+          {visible.map((row, index) => {
             const isCurrent = row.id === value;
             const isActive = row.id === activeId;
             return (
               <li key={row.id || "__inherit__"}>
-                {row.startsGroup ? (
+                {row.groupName && (index === 0 || visible[index - 1]?.groupName !== row.groupName) ? (
                   <div
                     className={cx(
                       "provider-service-group",

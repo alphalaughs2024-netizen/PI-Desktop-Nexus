@@ -11672,6 +11672,24 @@ or delete caches, profiles or earlier recovery files to hide this condition.
 - **Validation**: Targeted lifecycle tests and isolated native Windows Plan/Goal
   fixtures. Full local E2E suites remain unrun unless explicitly requested.
 
+### E2E-Subagent-Exact-Model: Per-row pins and Current (ADR 0260)
+
+- **Preconditions**: Opt-in Codex profile; built-in and custom subagents; two
+  configured providers serving the same model ID, including an ID with slashes.
+- **Steps**: In Settings > Subagents, select a specific provider/model on a
+  built-in row and a custom row. Reopen Settings and restart the app. Delegate
+  each preset and inspect the structured provider/model report. Change the parent
+  model; pinned delegates must keep their selection. Select Current and delegate
+  again. Remove a pinned model from configuration and try another delegation.
+  Search, use arrow keys/Enter/Escape, and inspect narrow/wide layouts and long IDs.
+- **Expected**: Choices persist per preset with exact endpoint/model identity.
+  Current inherits the parent's latest model at delegation start. Running workers
+  do not change. Missing pins fail explicitly without fallback. Custom documents
+  retain prompts, tools and other settings; built-in documents are not copied or
+  edited. Menus remain contained and usable; save failures preserve the old choice.
+- **Validation**: Targeted persistence, catalog and delegation tests plus manual
+  acceptance. Full local E2E suites remain unrun unless explicitly requested.
+
 ### E2E-Renderer-Copy-Permissions: Copy remains available with speech permissions
 
 - **Preconditions**: Nexus contains an older conversation with user prompts.

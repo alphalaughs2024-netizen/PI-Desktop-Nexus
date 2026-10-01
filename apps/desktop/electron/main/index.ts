@@ -22,6 +22,8 @@ import { existsSync, mkdirSync, statSync, writeFileSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
 import { listInstalledFonts } from "./system-fonts";
 import { rendererPermissionAllowed } from "./renderer-permissions";
+import { builtinSubagentModels } from "./subagent-model-preferences";
+import { saveSubagentModelSelection } from "./subagent-model-selection";
 import {
   applyNetworkProxyFromAppSettings,
   currentNetworkProxy,
@@ -1894,6 +1896,7 @@ async function resolveAgentRuntimeLaunch(
   // skills above; a delegate the model can see is one it will try to call.
   const subagentCatalog = await loadSubagentDefinitions(projectPath, {
     userDocuments: userSubagentDocuments,
+    builtinModels: builtinSubagentModels(dataDir),
     disabledBuiltins: host ? (await host.call<{ disabled?: string[] }>("agents.disabledBuiltins", {})).disabled ?? [] : [],
   });
   const subagentBindings = await resolveSubagentProviders({
@@ -10095,7 +10098,7 @@ function registerIpc() {
     const projectPath = (await optionalWorkspaceRoot()) ?? undefined;
     const { definitions, builtins, diagnostics } = await loadSubagentDefinitions(
       projectPath,
-      { userDocuments: await activeUserSubagentDocuments(projectPath), disabledBuiltins: host ? (await host.call<{ disabled?: string[] }>("agents.disabledBuiltins", {})).disabled ?? [] : [] },
+      { userDocuments: await activeUserSubagentDocuments(projectPath), builtinModels: builtinSubagentModels(dataDir), disabledBuiltins: host ? (await host.call<{ disabled?: string[] }>("agents.disabledBuiltins", {})).disabled ?? [] : [] },
     );
     return { subagents: definitions, builtins: builtins.map((item) => ({ ...item, enabled: definitions.some((entry) => entry.name === item.name) })), diagnostics, projectPath: projectPath ?? null };
   });
@@ -10105,6 +10108,13 @@ function registerIpc() {
     const res = await host.call("agents.create", { subagent });
     sendToRenderer(IPC.event.pluginChanged,{ reason: "subagent" });
     return res;
+  });
+
+  handle(IPC.invoke.subagentSetModel, async (payload: { id: string; source: "builtin" | "user"; model: { providerId: string; modelId: string } | null }) => {
+    if (!host) throw new Error("host unavailable");
+    const result = await saveSubagentModelSelection(dataDir, host, payload);
+    sendToRenderer(IPC.event.pluginChanged, { reason: "subagent" });
+    return result;
   });
 
   handle(

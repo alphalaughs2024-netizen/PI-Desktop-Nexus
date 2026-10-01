@@ -1229,7 +1229,21 @@ SESSIONS                                      [msg+][↕]
 
 ---
 
+## Subagent Settings Model Controls (ADR 0260)
+
+Each built-in and user-owned subagent row has a compact searchable model picker
+showing provider name and exact model ID. Current is the unpinned choice and
+uses the parent chat's provider/model when delegation starts. Configured runnable
+models are grouped by provider; search matches provider and model. The existing
+anchored menu supports keyboard selection and a bounded scrolling list. Long IDs
+fit within the row with a full-value tooltip. Saving disables model controls,
+keeps the old choice until success and reports failures through the existing
+toast. Unavailable saved pins remain visible; selecting Current clears them.
+The same Current choice appears in the custom-agent editor. Built-in pin changes
+do not require Copy as mine and do not modify instructions, tools or permissions.
+
 ## 7. ChatTranscript
+
 
 ### 7.1 Purpose
 

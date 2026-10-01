@@ -258,3 +258,31 @@ input; custom catalogs stay exact. Thirty runtime/bridge/definition checks and
 36 shared parser/preset checks pass, including a restricted child's authenticated
 screenshot bridge and parent turn/permission identity. Runtime build and desktop
 typecheck pass. No paid/provider trial was used. Manual acceptance is pending.
+
+## Latest acceptance and exact-model settings
+
+The user reports all preceding manual tests passed, with two remaining issues:
+brainstorming in Plan mode and Copy on older prompts. Main now permits guidance
+loading through the planning gate and main-window sanitized clipboard writes.
+Thirty-seven focused checks and desktop typecheck passed. Those two latest
+manual checks remain pending; Phase 3 has not started.
+
+ADR 0260 adds a searchable model picker to every built-in and custom row. Current
+uses the parent chat's provider/model at delegation start. Explicit choices retain
+the exact configured provider ID and model ID. Built-in choices persist as Main
+profile metadata; custom choices use the Rust model-only document save, preserving
+advanced fields and exact prompt bytes. No paid model request was needed.
+
+The isolated live renderer fixture passed built-in/custom selections, Current,
+keyboard search, bounded menus at 1280x900 and 720x800, long IDs and rejected-save
+feedback with zero page errors. In-memory provider/save fixtures avoided changing
+the user's configuration. Evidence: %USERPROFILE%/.nexus-codex-phase2/
+model-picker-20261001-b/report.json and picker-1280.png / picker-720.png.
+Its first attempt observed the old page before remount; that fixture timing error
+was corrected. Targeted desktop checks (48), runtime checks (25) and Rust document
+checks (2) pass. Desktop typecheck and the release Rust host build pass. No full
+local E2E suite or packaged verification was run. Manual
+model-picker acceptance remains pending. The user authorized merging Phase 2
+and the picker into local main before that test, followed by a fresh launch with
+the rebuilt Rust host. No push is authorized. One restart timed out waiting for
+sidecar.configure; the following recorded startup configured successfully.

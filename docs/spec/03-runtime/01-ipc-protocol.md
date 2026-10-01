@@ -1938,6 +1938,19 @@ startup failure is logged and does not prevent the desktop from launching.
 
 ## 14. Error Codes — Initial registry (extensible)
 
+### Subagent model selection (ADR 0260)
+
+`pi-desktop/subagent/setModel` accepts `{ id, source: "builtin" | "user",
+model: { providerId, modelId } | null }`. Null is Current (parent model at
+delegation launch). Main validates exact configured identifiers and source before
+saving. Built-in pins use Main-owned profile metadata; user pins use a model-only
+Rust `agents.setModel({ id, model })`. Empty model clears the pin; the host replaces
+only model/provider fields, preserving all other document bytes. Successful saving
+publishes the existing subagent capability
+change notification. Unknown/stale selections reject without changing the saved
+pin. This additive allowlisted IPC does not change protocol version or database
+schema. No secrets cross the renderer boundary.
+
 ### Browser Phase 9 boundary
 
 Browser renderer calls use the typed `browserCoreSurfaceSet`, `browserNavigate`,

@@ -21,6 +21,15 @@ import {
 } from "./model-capabilities.js";
 
 describe("builtin subagent documents", () => {
+  it("applies builtin model preferences without overriding a user-owned agent", async () => {
+    const model = { providerId: "chosen-endpoint", modelId: "family/exact-model" };
+    const loaded = await loadSubagentDefinitions(null, {
+      builtinModels: { explorer: model, fixer: model },
+      userDocuments: [{ id: "explorer", document: "---\nname: explorer\ndescription: Custom inspection\nmodel: mine/own\ntools: Read\n---\nInspect" }],
+    });
+    expect(loaded.definitions.find(item => item.name === "explorer")?.model).toEqual({ providerId: "mine", modelId: "own" });
+    expect(loaded.definitions.find(item => item.name === "fixer")?.model).toEqual(model);
+  });
   it("parses explicit tools with shell-enabled inspection and browser-capable design", async () => {
     const { definitions, diagnostics } = await loadSubagentDefinitions(null);
 
@@ -222,6 +231,26 @@ describe("resolveSubagentProviders", () => {
 
   const getSecret = async (id: string) =>
     id === providers[0].id ? "sk-test" : undefined;
+
+  it("refuses a removed configured model without secret lookup or fallback", async () => {
+    const getSecret = vi.fn();
+    const result = await resolveSubagentProviders({
+      definitions: [definition("reviewer", { providerId: providers[0].id, modelId: "removed-model" })],
+      providers: [{ ...providers[0], models: [{ id: "other-model" }] }], getSecret,
+    });
+    expect(result.providers).toEqual({});
+    expect(result.diagnostics[0]).toContain("no fallback selected");
+    expect(getSecret).not.toHaveBeenCalled();
+  });
+
+  it("does not resolve a removed stored provider ID through another endpoint's name", async () => {
+    const result = await resolveSubagentProviders({
+      definitions: [definition("reviewer", { providerId: providers[0].id, modelId: "model" })],
+      providers: [{ ...providers[1], name: providers[0].id }], getSecret,
+    });
+    expect(result.providers).toEqual({});
+    expect(result.diagnostics[0]).toContain("no enabled provider");
+  });
 
   it("resolves a pin by vendor key, display name or stored id", async () => {
     const { providers: resolved, diagnostics } = await resolveSubagentProviders({

@@ -130,6 +130,14 @@ test("the sheet lists configured models from enabled, credentialed providers", (
   );
 });
 
+test("row picker restores legacy pins only when their exact endpoint is unambiguous", () => {
+  const choices = subagentModelChoices([provider()]).map(choice => ({ ...choice, value: `${choice.providerId}/${choice.modelId}` }));
+  assert.equal(subagentModelSelectValue("anthropic/claude-haiku-4-5", choices), "p1/claude-haiku-4-5");
+  assert.equal(subagentModelOrphanPin("anthropic/claude-haiku-4-5", choices), null);
+  const duplicate = [...choices, ...choices.map(choice => ({ ...choice, providerId: "p2", value: `p2/${choice.modelId}` }))];
+  assert.equal(subagentModelSelectValue("anthropic/claude-haiku-4-5", duplicate), "anthropic/claude-haiku-4-5");
+});
+
 test("the sheet lists every configured binding regardless of the delegation flag", () => {
   // The editor no longer consults `availableForSubagents`: a model the user
   // configured in Settings is selectable, so the list cannot be empty while a

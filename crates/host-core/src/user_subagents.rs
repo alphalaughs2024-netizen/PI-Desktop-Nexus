@@ -8,7 +8,7 @@ use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 const MAX_USER_SUBAGENTS: usize = 64;
 pub const MAX_SUBAGENT_BYTES: usize = 32 * 1024;
@@ -237,6 +237,46 @@ fn render_document(record: &UserSubagentRecord, body: &str) -> String {
 
 fn default_body(name: &str) -> String {
     format!("Do the work the task names and report only what the parent needs. Start with the first concrete step for `{name}`.\n")
+}
+
+/// Replace only model/provider fields in the supported frontmatter format.
+fn model_pin_document(raw: &str, model: Option<&str>) -> Result<String> {
+    let (fields, _) = parse_front_matter(raw);
+    if fields.is_empty() || model.is_some_and(|value| value.contains(['\n', '\r'])) {
+        bail!("SUBAGENT_INVALID: invalid model/frontmatter");
+    }
+    let newline = if raw.contains("\r\n") { "\r\n" } else { "\n" };
+    let mut output = String::new();
+    let mut lines = raw.split_inclusive('\n');
+    let first = lines.next().unwrap_or_default();
+    if first.trim_start_matches('\u{feff}').trim() != "---" {
+        bail!("SUBAGENT_INVALID: frontmatter is required");
+    }
+    output.push_str(first);
+    let mut skip_value = false;
+    for line in lines.by_ref() {
+        if line.trim() == "---" {
+            if let Some(pin) = model {
+                output.push_str(&format!("model: {pin}{newline}"));
+            }
+            output.push_str(line);
+            for tail in lines { output.push_str(tail); }
+            return Ok(output);
+        }
+        let indented = line.starts_with(' ') || line.starts_with('\t');
+        if skip_value && indented { continue; }
+        if !line.trim().is_empty() { skip_value = false; }
+        if !indented {
+            if let Some((key, _)) = line.split_once(':') {
+                if matches!(key.trim().to_lowercase().as_str(), "model" | "provider") {
+                    skip_value = true;
+                    continue;
+                }
+            }
+        }
+        output.push_str(line);
+    }
+    bail!("SUBAGENT_INVALID: unterminated frontmatter")
 }
 
 impl UserSubagentRegistry {
@@ -485,6 +525,24 @@ impl UserSubagentRegistry {
         self.builtins.disabled_ids(SUBAGENT_BUILTIN_KIND, CapabilityLevel::Global)
     }
 
+    pub fn set_model(&mut self, id: &str, value: &str) -> Result<Option<UserSubagentRecord>> {
+        let Some(current) = self.find(id)? else { return Ok(None); };
+        let model = normalize_model(Some(value))?;
+        let raw = fs::read_to_string(&current.path)?;
+        let document = model_pin_document(&raw, model.as_deref())?;
+        if document.len() > MAX_SUBAGENT_BYTES {
+            bail!("SUBAGENT_INVALID: document exceeds {MAX_SUBAGENT_BYTES} bytes");
+        }
+        let path = PathBuf::from(&current.path);
+        let temporary = path.with_extension(format!("{}.tmp", uuid::Uuid::new_v4()));
+        fs::write(&temporary, document)?;
+        if let Err(error) = fs::rename(&temporary, &path) {
+            let _ = fs::remove_file(&temporary);
+            return Err(error.into());
+        }
+        self.find(id)
+    }
+
     pub fn set_builtin_enabled(&mut self, handle: &str, enabled: bool) -> Result<String> {
         let name = normalize_name(handle);
         if name.is_empty() { bail!("SUBAGENT_INVALID: a builtin handle is required"); }
@@ -506,6 +564,24 @@ impl UserSubagentRegistry {
 mod tests {
     use super::*;
     use tempfile::tempdir;
+
+    #[test]
+    fn model_only_save_preserves_unknown_fields_and_exact_prompt_bytes() {
+        let raw = "\u{feff}---\r\nname: mine\r\ndescription: Review\r\n# keep this comment\r\ntools: inherit\r\npermission: ask\r\nidleTimeoutSeconds: 90\r\nprovider: old\r\nmodel: old/model\r\ncustomField: |\r\n  keep these lines\r\n  too\r\n---\r\n\r\n  Exact body\r\n\r\n";
+        let changed = model_pin_document(raw, Some("chosen/family/model:free")).unwrap();
+        assert_eq!(changed, raw.replace("provider: old\r\n", "").replace("model: old/model\r\n", "").replace("  too\r\n---", "  too\r\nmodel: chosen/family/model:free\r\n---"));
+        let current = model_pin_document(&changed, None).unwrap();
+        assert_eq!(current, raw.replace("provider: old\r\n", "").replace("model: old/model\r\n", ""));
+    }
+
+    #[test]
+    fn model_only_save_removes_block_pin_and_rejects_line_injection() {
+        let raw = "---\nname: mine\ndescription: Review\nmodel: |\n  old/model\ntools: [Read]\n---\nBody\n";
+        let changed = model_pin_document(raw, Some("provider/model")).unwrap();
+        assert_eq!(changed, "---\nname: mine\ndescription: Review\ntools: [Read]\nmodel: provider/model\n---\nBody\n");
+        assert!(model_pin_document(raw, Some("provider/model\npermission: auto")).is_err());
+        assert!(model_pin_document("name: mine", None).is_err());
+    }
 
     #[test]
     fn parser_rejects_missing_description() {

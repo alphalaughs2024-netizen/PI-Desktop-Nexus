@@ -281,6 +281,7 @@ export type LoadSubagentOptions = {
   /** Documents already scanned by host-core from `~/.agents/subagents`. */
   userDocuments?: readonly UserSubagentDocument[];
   disabledBuiltins?: readonly string[];
+  builtinModels?: Readonly<Record<string, SubagentDefinition["model"]>>;
 };
 
 function loadUserSubagents(documents: readonly UserSubagentDocument[]): {
@@ -313,6 +314,10 @@ export async function loadSubagentDefinitions(
   options: LoadSubagentOptions = {},
 ): Promise<{ definitions: SubagentDefinition[]; builtins: SubagentDefinition[]; diagnostics: string[] }> {
   const builtin = builtinSubagents();
+  for (const definition of builtin.definitions) {
+    const pin = options.builtinModels?.[definition.name];
+    if (pin) definition.model = { ...pin };
+  }
   const dir =
     options.overrideDir ??
     (workspaceRoot ? subagentDefinitionDir(workspaceRoot) : undefined);
@@ -354,6 +359,7 @@ export type SubagentProviderSource = {
   defaultModelId?: string;
   authKind?: string;
   apiStyle?: string;
+  models?: readonly { id: string }[];
 };
 
 /** Loose spelling used when matching a pin against a provider name. */
@@ -375,6 +381,8 @@ function findProvider(
   const alias = providerAlias(providerId);
   const exact = providers.find((provider) => provider.id === providerId);
   if (exact) return exact;
+  // Stored IDs must not become a display-name alias after their endpoint is removed.
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(providerId)) return undefined;
   const vendorMatches = providers.filter(
     (provider) => providerAlias(provider.vendorKey ?? "") === alias,
   );
@@ -433,6 +441,12 @@ export async function resolveSubagentProviders(input: {
       diagnostics.push(
         `${definition.name}: no enabled provider matches "${pin.providerId}"`,
       );
+      continue;
+    }
+    if (provider.models !== undefined && !(provider.models.length
+      ? provider.models.some(binding => binding.id === pin.modelId)
+      : provider.defaultModelId === pin.modelId)) {
+      diagnostics.push(`${definition.name}: provider "${provider.name}" no longer configures "${pin.modelId}"; no fallback selected`);
       continue;
     }
     const isVendorAccount = provider.authKind === OAUTH_AUTH_KIND;
