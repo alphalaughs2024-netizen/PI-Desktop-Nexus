@@ -14,6 +14,18 @@ export class BrowserComposerHost {
   private lastWindowHeight = 0;
   private nextRequest = 0;
   private resized = () => this.raise();
+  private outside = () => {
+    if (this.snapshot?.visible && this.view && !this.view.webContents.isDestroyed()) this.view.webContents.send(IPC.event.browserComposer, { kind: "collapse-history" });
+  };
+  private outsideMouse = (_event: unknown, input: { type: string }) => { if (input.type === "mouseDown") this.outside(); };
+  private watchedGuests = new WeakSet<BrowserWindow["webContents"]>();
+
+  watchGuest(contents: BrowserWindow["webContents"]): void {
+    if (this.watchedGuests.has(contents)) return;
+    this.watchedGuests.add(contents);
+    contents.on("focus", this.outside);
+    contents.on("before-mouse-event", this.outsideMouse);
+  }
   private reloading = (_event: unknown, _url: string, isInPlace: boolean, isMainFrame: boolean) => {
     if (!isMainFrame || isInPlace) return;
     this.view?.setVisible(false);
@@ -138,12 +150,15 @@ export class BrowserComposerHost {
     this.view.setVisible(false);
     this.view.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
     this.view.webContents.on("will-navigate", event => event.preventDefault());
+    this.view.webContents.on("blur", this.outside);
     this.view.webContents.on("render-process-gone", () => {
       this.rejectPending("Browser composer renderer stopped");
       window.webContents.send(IPC.event.browserComposer, { kind: "failed" });
       this.dispose();
     });
     window.on("resize", this.resized);
+    window.webContents.on("focus", this.outside);
+    window.webContents.on("before-mouse-event", this.outsideMouse);
     window.webContents.on("did-start-navigation", this.reloading);
     window.once("closed", () => this.dispose());
     const rendererUrl = process.env.ELECTRON_RENDERER_URL;
@@ -164,7 +179,11 @@ export class BrowserComposerHost {
   dispose(): void {
     this.rejectPending("Browser composer closed");
     this.window?.removeListener("resize", this.resized);
-    this.window?.webContents.removeListener("did-start-navigation", this.reloading);
+    if (this.window && !this.window.isDestroyed()) {
+      this.window.webContents.removeListener("did-start-navigation", this.reloading);
+      this.window.webContents.removeListener("focus", this.outside);
+      this.window.webContents.removeListener("before-mouse-event", this.outsideMouse);
+    }
     if (this.view && !this.view.webContents.isDestroyed()) this.view.webContents.close();
     this.view = null; this.window = null; this.ready = null; this.snapshot = null; this.lastWindowHeight = 0;
   }

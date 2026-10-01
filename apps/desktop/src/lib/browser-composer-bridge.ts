@@ -27,8 +27,8 @@ const fields = [
   "draftConfiguration", "latestTurnResults", "pendingPermissions",
 ] as const;
 
-const composerBlockers = new Set<"global" | "browser-controls">();
-export function setBrowserComposerBlocked(source: "global" | "browser-controls", blocked: boolean): void {
+const composerBlockers = new Set<"global" | "browser-controls" | "presentation">();
+export function setBrowserComposerBlocked(source: "global" | "browser-controls" | "presentation", blocked: boolean): void {
   if (blocked) composerBlockers.add(source);
   else composerBlockers.delete(source);
   void browserComposerRequest({ kind: "blocked", blocked: composerBlockers.size > 0 }).catch(() => {});
@@ -76,6 +76,7 @@ export function useBrowserComposerBridge(blocked: boolean): void {
         font: computed.getPropertyValue("--font-sans"),
         scenicTheme: document.documentElement.dataset.scenicTheme,
         styleTokens,
+        history: browserComposerHistory(store.messages, store.sessions.find(session => session.id === nextSession)?.title ?? "Chat"),
         contextUsage,
       };
       void browserComposerRequest({ kind: "snapshot", snapshot }).catch(() => {
@@ -120,4 +121,19 @@ export function useBrowserComposerBridge(blocked: boolean): void {
     publish();
     return () => { unsubscribe(); off(); if (timer) clearTimeout(timer); };
   }, []);
+}
+
+export function browserComposerHistory(messages: import("@pi-desktop/shared").UiMessage[], title: string): NonNullable<BrowserComposerSnapshot["history"]> {
+  const eligible = messages.filter(message => (message.role === "user" || message.role === "assistant") && message.content);
+  const retained: import("@pi-desktop/shared").UiMessage[] = [];
+  let budget = 48000;
+  let truncated = false;
+  for (const message of eligible.slice().reverse()) {
+    if (retained.length >= 24 || budget <= 0) { truncated = true; break; }
+    const length = Math.min(message.content.length, budget, 12000);
+    retained.unshift({ id: message.id, turnId: message.turnId, role: message.role, content: message.content.slice(-length), createdAt: message.createdAt, status: message.status });
+    budget -= length;
+    if (length < message.content.length) truncated = true;
+  }
+  return { title, messages: retained, truncated };
 }

@@ -1,13 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
-import { LoaderCircle } from "lucide-react";
+import { LoaderCircle, Plus } from "lucide-react";
+import { useBrowserMenu } from "../../lib/browser-menu";
 import type { BrowserTab } from "../../lib/browser-tabs";
-import { IconClose, IconPlus, IconGlobe } from "../icons";
+import { IconClose, IconGlobe } from "../icons";
 
 type ContextMenuState = { browserId: string; left: number; top: number };
-export function BrowserTabStrip({ tabs, activeId, enabled = true, onActivate, onClose, onNew, onReload, onDuplicate, onCloseOthers, onContextMenuOpenChange }: { enabled?: boolean; tabs: BrowserTab[]; activeId: string | null; onActivate: (browserId: string) => void; onClose: (browserId: string) => void; onNew: () => void; onReload: (browserId: string) => void; onDuplicate: (browserId: string) => void; onCloseOthers: (browserId: string) => void; onContextMenuOpenChange?: (open: boolean) => void }) {
+export function BrowserTabStrip({ tabs, activeId, sessionId, enabled = true, onActivate, onClose, onNew, onReload, onDuplicate, onCloseOthers, onContextMenuOpenChange }: { sessionId?: string; enabled?: boolean; tabs: BrowserTab[]; activeId: string | null; onActivate: (browserId: string) => void; onClose: (browserId: string) => void; onNew: () => void; onReload: (browserId: string) => void; onDuplicate: (browserId: string) => void; onCloseOthers: (browserId: string) => void; onContextMenuOpenChange?: (open: boolean) => void }) {
   const ref = useRef<HTMLDivElement>(null);
-  const contextMenuRef = useRef<HTMLDivElement>(null);
   const contextOriginRef = useRef<string | null>(null);
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
   useEffect(() => { onContextMenuOpenChange?.(Boolean(contextMenu)); return () => onContextMenuOpenChange?.(false); }, [contextMenu, onContextMenuOpenChange]);
@@ -40,14 +39,6 @@ export function BrowserTabStrip({ tabs, activeId, enabled = true, onActivate, on
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [activeId, onClose, onNew, onActivate, tabs, enabled, contextMenu]);
-  useEffect(() => {
-    if (!contextMenu) return;
-    contextMenuRef.current?.querySelector<HTMLButtonElement>("button:not(:disabled)")?.focus();
-    const onKey = (event: KeyboardEvent) => { const items = Array.from(contextMenuRef.current?.querySelectorAll<HTMLButtonElement>("button:not(:disabled)") ?? []); const index = items.indexOf(document.activeElement as HTMLButtonElement); if (event.key === "Escape") { event.preventDefault(); closeContextMenu(); } else if (event.key === "ArrowDown" || event.key === "ArrowUp") { event.preventDefault(); items[(index + (event.key === "ArrowDown" ? 1 : -1) + items.length) % items.length]?.focus(); } else if (event.key === "Home" || event.key === "End") { event.preventDefault(); (event.key === "Home" ? items[0] : items.at(-1))?.focus(); } };
-    const onPointerDown = (event: PointerEvent) => { if (!contextMenuRef.current?.contains(event.target as Node)) closeContextMenu(); };
-    window.addEventListener("keydown", onKey); window.addEventListener("pointerdown", onPointerDown); window.addEventListener("resize", onPointerDown as EventListener);
-    return () => { window.removeEventListener("keydown", onKey); window.removeEventListener("pointerdown", onPointerDown); window.removeEventListener("resize", onPointerDown as EventListener); };
-  }, [contextMenu]);
   const moveFocus = (browserId: string, delta: number) => {
     const index = tabs.findIndex((tab) => tab.browserId === browserId);
     if (index < 0 || tabs.length < 2) return;
@@ -62,5 +53,49 @@ export function BrowserTabStrip({ tabs, activeId, enabled = true, onActivate, on
     focusTab(next.browserId);
   };
   const contextTab = tabs.find((tab) => tab.browserId === contextMenu?.browserId);
-  return <div className="browser-tab-band"><div ref={ref} className="browser-tab-strip" role="tablist" aria-label="Browser tabs">{tabs.map((tab) => <div key={tab.browserId} data-browser-tab={tab.browserId} className={`browser-tab${tab.browserId === activeId ? " is-active" : ""}`} role="tab" aria-selected={tab.browserId === activeId} aria-haspopup="menu" aria-expanded={contextMenu?.browserId === tab.browserId || undefined} tabIndex={tab.browserId === activeId ? 0 : -1} onContextMenu={(event) => { event.preventDefault(); openContextMenu(tab.browserId, event.clientX, event.clientY); }} onClick={(event) => { (event.currentTarget as HTMLElement).focus(); onActivate(tab.browserId); }} onKeyDown={(event) => { if (event.key === "ContextMenu" || (event.shiftKey && event.key === "F10")) { event.preventDefault(); const rect = event.currentTarget.getBoundingClientRect(); openContextMenu(tab.browserId, rect.left + 8, rect.bottom + 4); } else if (event.key === "Enter" || event.key === " ") { event.preventDefault(); onActivate(tab.browserId); } else if (event.key === "ArrowRight") { event.preventDefault(); moveFocus(tab.browserId, 1); } else if (event.key === "ArrowLeft") { event.preventDefault(); moveFocus(tab.browserId, -1); } else if (event.key === "Home") { event.preventDefault(); focusEdge("first"); } else if (event.key === "End") { event.preventDefault(); focusEdge("last"); } }}><span className="browser-tab-icon" aria-hidden>{tab.loading ? <LoaderCircle size={13} className="browser-tab-spinner" /> : <IconGlobe size={13} />}</span><span className="browser-tab-title" title={tab.title}>{tab.title || "New tab"}</span><button type="button" className="browser-tab-close" aria-label={`Close ${tab.title || "Browser tab"}`} onClick={(event) => { event.stopPropagation(); const index = tabs.findIndex((candidate) => candidate.browserId === tab.browserId); const next = tabs[index + 1] ?? tabs[index - 1]; onClose(tab.browserId); if (next) focusTab(next.browserId); }}><IconClose size={12} /></button></div>)}</div><button type="button" className="browser-tab-new" aria-label="New Browser tab" title="New Browser tab" onClick={() => { onNew(); focusLastTab(); }}><IconPlus size={14} /></button>{contextMenu && contextTab && createPortal(<div ref={contextMenuRef} id="browser-tab-context-menu" className="browser-tab-context-menu" role="menu" aria-label={`Actions for ${contextTab.title || "Browser tab"}`} style={{ left: contextMenu.left, top: contextMenu.top }}><button type="button" role="menuitem" onClick={() => runContextAction(() => { onNew(); focusLastTab(); })}>New tab</button><button type="button" role="menuitem" disabled={!contextTab.url || contextTab.loading} onClick={() => runContextAction(() => onReload(contextTab.browserId))}>Reload tab</button><button type="button" role="menuitem" disabled={!contextTab.url} onClick={() => runContextAction(() => onDuplicate(contextTab.browserId))}>Duplicate tab</button><button type="button" role="menuitem" onClick={() => { const id = contextTab.browserId; const index = tabs.findIndex((tab) => tab.browserId === id); const next = tabs[index + 1] ?? tabs[index - 1]; closeContextMenu(false); onClose(id); if (next) focusTab(next.browserId); }}>Close tab</button><button type="button" role="menuitem" disabled={tabs.length <= 1} onClick={() => runContextAction(() => onCloseOthers(contextTab.browserId))}>Close other tabs</button></div>, document.body)}</div>;
+  useBrowserMenu({
+    open: Boolean(contextMenu && contextTab), sessionId, title: `Actions for ${contextTab?.title || "Browser tab"}`,
+    anchor: () => ({ left: contextMenu?.left ?? 8, top: contextMenu?.top ?? 8 }),
+    triggerContains: target => Boolean(ref.current?.contains(target)),
+    items: [
+      { id: "new", label: "New tab", icon: "plus", shortcut: "Ctrl+T" },
+      { id: "reload", label: "Reload tab", icon: "reload", disabled: !contextTab?.url || contextTab.loading },
+      { id: "duplicate", label: "Duplicate tab", icon: "duplicate", disabled: !contextTab?.url },
+      { id: "close", label: "Close tab", icon: "close", separatorBefore: true, shortcut: "Ctrl+W" },
+      { id: "close-others", label: "Close other tabs", icon: "close-others", disabled: tabs.length <= 1 },
+    ],
+    onClose: closeContextMenu,
+    onSelect: action => {
+      if (!contextTab) return;
+      if (action === "new") runContextAction(() => { onNew(); focusLastTab(); });
+      else if (action === "reload") runContextAction(() => onReload(contextTab.browserId));
+      else if (action === "duplicate") runContextAction(() => onDuplicate(contextTab.browserId));
+      else if (action === "close-others") runContextAction(() => onCloseOthers(contextTab.browserId));
+      else if (action === "close") {
+        const index = tabs.findIndex(tab => tab.browserId === contextTab.browserId);
+        const next = tabs[index + 1] ?? tabs[index - 1];
+        closeContextMenu(false); onClose(contextTab.browserId); if (next) focusTab(next.browserId);
+      }
+    },
+  });
+  return <div className="browser-tab-band">
+    <div ref={ref} className="browser-tab-strip" role="tablist" aria-label="Browser tabs">
+      {tabs.map(tab => <div key={tab.browserId} data-browser-tab={tab.browserId} className={`browser-tab${tab.browserId === activeId ? " is-active" : ""}`} role="tab" aria-selected={tab.browserId === activeId} aria-haspopup="menu" aria-expanded={contextMenu?.browserId === tab.browserId || undefined} tabIndex={tab.browserId === activeId ? 0 : -1}
+        onContextMenu={event => { event.preventDefault(); openContextMenu(tab.browserId, event.clientX, event.clientY); }}
+        onClick={event => { event.currentTarget.focus(); onActivate(tab.browserId); }}
+        onKeyDown={event => {
+          if (event.key === "ContextMenu" || (event.shiftKey && event.key === "F10")) { event.preventDefault(); const rect = event.currentTarget.getBoundingClientRect(); openContextMenu(tab.browserId, rect.left + 8, rect.bottom + 4); }
+          else if (event.key === "Enter" || event.key === " ") { event.preventDefault(); onActivate(tab.browserId); }
+          else if (event.key === "ArrowRight") { event.preventDefault(); moveFocus(tab.browserId, 1); }
+          else if (event.key === "ArrowLeft") { event.preventDefault(); moveFocus(tab.browserId, -1); }
+          else if (event.key === "Home") { event.preventDefault(); focusEdge("first"); }
+          else if (event.key === "End") { event.preventDefault(); focusEdge("last"); }
+        }}>
+        <span className="browser-tab-icon" aria-hidden>{tab.loading ? <LoaderCircle size={13} className="browser-tab-spinner" /> : <IconGlobe size={13} />}</span>
+        <span className="browser-tab-title" title={tab.title}>{tab.title || "New tab"}</span>
+        <button type="button" className="browser-tab-close" aria-label={`Close ${tab.title || "Browser tab"}`} onClick={event => { event.stopPropagation(); const index = tabs.findIndex(candidate => candidate.browserId === tab.browserId); const next = tabs[index + 1] ?? tabs[index - 1]; onClose(tab.browserId); if (next) focusTab(next.browserId); }}><IconClose size={12} /></button>
+      </div>)}
+    </div>
+    <button type="button" className="browser-tab-new" aria-label="New Browser tab" title="New Browser tab" onClick={() => { onNew(); focusLastTab(); }}><Plus size={18} /></button>
+  </div>;
 }

@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
 import type { BrowserAction, BrowserState } from "@pi-desktop/shared";
 import type { WorkPanelPresentation } from "../../lib/work-panel-presentation";
-import { api } from "../../lib/api";
+import { useBrowserMenu } from "../../lib/browser-menu";
 import { IconChevronLeft, IconChevronRight, IconRefresh, IconSquare, IconMore } from "../icons";
 import { Hand, Play, Globe, Search } from "lucide-react";
 
@@ -12,7 +11,6 @@ export function BrowserToolbar({ presentation, browserState, panelState, busy, d
   const addressDirtyRef = useRef(false);
   const [draft, setDraft] = useState(committedLocation ?? browserState?.url ?? "");
   const [menuOpen, setMenuOpen] = useState(false);
-  const [menuPosition, setMenuPosition] = useState({ left: 0, top: 0 });
   useEffect(() => { onMenuOpenChange?.(menuOpen); return () => onMenuOpenChange?.(false); }, [menuOpen, onMenuOpenChange]);
   const [pending, setPending] = useState<string | null>(null);
   const pendingRef = useRef<{ label: string } | null>(null);
@@ -32,19 +30,26 @@ export function BrowserToolbar({ presentation, browserState, panelState, busy, d
   const canReload = ready && !disabled && !busy && !pending && !loading;
   const canStop = ready && !disabled && loading && !busy && (!pending || pending === "navigate");
   const submit = () => { const value = draft.trim(); if (!value) return; addressDirtyRef.current = false; void run("navigate", () => onNavigate(value)); };
-  const menuRef = useRef<HTMLDivElement | null>(null);
   const menuTriggerRef = useRef<HTMLButtonElement | null>(null);
-  useEffect(() => {
-    if (!menuOpen) return;
-    const rect = menuTriggerRef.current?.getBoundingClientRect();
-    if (rect) setMenuPosition({ left: Math.max(8, Math.min(rect.right - 224, window.innerWidth - 232)), top: Math.max(8, Math.min(rect.bottom + 6, window.innerHeight - 152)) });
-    const outside = (event: PointerEvent) => { if (!menuRef.current?.contains(event.target as Node) && !menuTriggerRef.current?.contains(event.target as Node)) setMenuOpen(false); };
-    const dismiss = () => setMenuOpen(false);
-    window.addEventListener("pointerdown", outside);
-    window.addEventListener("resize", dismiss);
-    return () => { window.removeEventListener("pointerdown", outside); window.removeEventListener("resize", dismiss); };
-  }, [menuOpen]);
-  useEffect(() => { if (!menuOpen) return; const first = menuRef.current?.querySelector<HTMLButtonElement>('button:not(:disabled)'); first?.focus(); const key = (event: KeyboardEvent) => { const items = Array.from(menuRef.current?.querySelectorAll<HTMLButtonElement>('button:not(:disabled)') ?? []); const index = items.indexOf(document.activeElement as HTMLButtonElement); if (event.key === "Escape") { event.preventDefault(); setMenuOpen(false); menuTriggerRef.current?.focus(); } else if (event.key === "ArrowDown" || event.key === "ArrowUp") { event.preventDefault(); const next = items[(index + (event.key === "ArrowDown" ? 1 : -1) + items.length) % items.length]; next?.focus(); } else if (event.key === "Home") { event.preventDefault(); items[0]?.focus(); } else if (event.key === "End") { event.preventDefault(); items.at(-1)?.focus(); } }; window.addEventListener("keydown", key); return () => window.removeEventListener("keydown", key); }, [menuOpen]);
+  useBrowserMenu({
+    open: menuOpen, sessionId, title: "Browser actions",
+    anchor: () => { const rect = menuTriggerRef.current?.getBoundingClientRect(); return { left: (rect?.right ?? window.innerWidth) - 280, top: (rect?.bottom ?? 100) + 6 }; },
+    triggerContains: target => Boolean(menuTriggerRef.current?.contains(target)),
+    items: [
+      { id: "external", label: "Open in default browser", icon: "external", disabled: !browserState?.url },
+      { id: "copy", label: "Copy safe address", icon: "copy", disabled: !browserState?.url },
+      { id: "capture", label: "Capture screenshot", icon: "camera", separatorBefore: true, disabled: !ready || Boolean(pending) },
+      { id: "inspect", label: "Diagnostics", icon: "inspect" },
+    ],
+    onClose: restoreFocus => { setMenuOpen(false); if (restoreFocus) menuTriggerRef.current?.focus(); },
+    onSelect: id => {
+      setMenuOpen(false); menuTriggerRef.current?.focus();
+      if (id === "external") void onOpenExternal();
+      else if (id === "copy") void onCopyLocation();
+      else if (id === "capture") void run("screenshot", onScreenshot);
+      else if (id === "inspect") onOpenDiagnostics?.();
+    },
+  });
   return (
     <div className={`browser-toolbar browser-toolbar--${presentation}`} role="toolbar" aria-label="Browser controls" data-browser-toolbar-disabled={disabled || undefined}>
       <div className="browser-toolbar-actions">
@@ -59,7 +64,6 @@ export function BrowserToolbar({ presentation, browserState, panelState, busy, d
       {onControl && <button type="button" disabled={disabled || busy || Boolean(pending)} aria-pressed={controlOwner === "user"} aria-label={controlOwner === "user" ? "Resume agent control" : "Take control of browser"} title={controlOwner === "user" ? "You control this tab. Resume agent control" : "Take control of browser"} onClick={() => void run("control", onControl)}>{controlOwner === "user" ? <Play size={15} /> : <Hand size={15} />}</button>}
       <div className="browser-toolbar-overflow">
         <button ref={menuTriggerRef} type="button" aria-haspopup="menu" aria-expanded={menuOpen} aria-label="More Browser actions" title="More Browser actions" onClick={() => setMenuOpen((open) => !open)}><IconMore size={15} /></button>
-        {menuOpen && createPortal(<div ref={menuRef} className="browser-toolbar-menu" role="menu" style={menuPosition}><button type="button" role="menuitem" disabled={!browserState?.url} onClick={() => { setMenuOpen(false); void onOpenExternal(); }}>Open in default browser</button><button type="button" role="menuitem" disabled={!browserState?.url} onClick={() => { setMenuOpen(false); void onCopyLocation(); }}>Copy safe address</button><button type="button" role="menuitem" disabled={!ready || Boolean(pending)} onClick={() => { setMenuOpen(false); void run("screenshot", onScreenshot); }}>Capture screenshot</button><button type="button" role="menuitem" onClick={() => { setMenuOpen(false); onOpenDiagnostics?.(); }}>Diagnostics</button></div>, document.body)}
       </div>
     </div>
   );

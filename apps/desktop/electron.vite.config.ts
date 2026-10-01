@@ -44,6 +44,7 @@ function dropLegacyFontFallbacks(): Plugin {
 
 export default defineConfig({
   main: {
+    resolve: { alias: { "@pi-desktop/shared": resolve(__dirname, "../../packages/shared/src") } },
     build: {
       rollupOptions: {
         // Bundle JS workspace packages into Main. Only runtime modules that
@@ -63,6 +64,7 @@ export default defineConfig({
     },
   },
   preload: {
+    resolve: { alias: { "@pi-desktop/shared": resolve(__dirname, "../../packages/shared/src") } },
     // The preload must be a fully bundled CJS file so it can run in a
     // sandboxed renderer without Node module resolution.
     build: {
@@ -97,6 +99,7 @@ export default defineConfig({
     resolve: {
       alias: {
         "@renderer": resolve("src"),
+        "@pi-desktop/shared": resolve(__dirname, "../../packages/shared/src"),
         // Always read locale source so new keys work without a stale packages/*/dist.
         "@pi-desktop/i18n": resolve(__dirname, "../../packages/i18n/src/index.ts"),
       },

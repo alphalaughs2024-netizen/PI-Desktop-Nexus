@@ -47,8 +47,8 @@ renderer by its native identity; webpages are never granted these app privileges
 Switching presentation stops an active voice cycle so a hidden input surface
 cannot continue recording. Voice can be started again in the visible composer.
 
-Browser tab and overflow menus use viewport-positioned body portals to avoid
-transformed-panel containing blocks. Existing New tab controls remain available;
+Browser tab and overflow menus use a trusted native menu surface (ADR 0269)
+above the live page. Existing New tab controls remain available;
 final visual redesign is deferred to user review after functionality. External browser profiles,
 agent permissions and browser capability contracts are unchanged.
 
@@ -64,6 +64,20 @@ another. Viewport selection remains owned by the existing Electron browser
 service and is shared between the toolbar and drawer.
 
 ## Validation
+
+The floating composer adds an optional compact Brain model trigger, preserving
+the full selector and its model/reasoning tooltip. A disclosure and accessible
+top-edge resize handle expose the current conversation above the input. The
+chat opens when the composer is clicked or its editable is focused, and collapses
+to just the composer on outside focus/input. History is independently bounded to 24 user/assistant text messages, 48,000
+characters total and 12,000 per message; tools/reasoning/attachments are omitted.
+Main remains the conversation owner and sends history through existing bounded
+streaming batches. Markdown file/URL actions use the explicit bridge allowlist.
+Users reading older messages are not forced to the bottom by streaming.
+
+Dock/Full view transitions animate actual panel bounds for 300ms while keeping
+the same live guest and hiding the input surface until geometry settles.
+Reduced motion skips the animation; cancellation/resize restores inline layout.
 
 Targeted lifecycle, sender, stale-action, draft handoff and compositor checks
 must accompany desktop typecheck and production renderer/main/preload builds.

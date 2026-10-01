@@ -9,6 +9,7 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
 import { useTranslation } from "react-i18next";
+import { Brain } from "lucide-react";
 import type {
   ModelInfo,
   Mode,
@@ -625,6 +626,7 @@ export function Composer({
   prefill,
   onDraftChange,
   contextUsage,
+  compactModelSelector = false,
   executeCommand = runPaletteCommand,
   ensureSession = materializeDraftSession,
 }: {
@@ -632,6 +634,7 @@ export function Composer({
   prefill?: ComposerPrefill | null;
   onDraftChange?: (draft: ComposerDraftSnapshot) => void;
   contextUsage?: LatestTurnContextInspector | null;
+  compactModelSelector?: boolean;
   executeCommand?: (commandId: string) => Promise<void>;
   ensureSession?: () => Promise<string | null>;
 }) {
@@ -2626,7 +2629,7 @@ export function Composer({
               >
                 <TooltipButton
                   type="button"
-                  className={`icon-btn composer-model-thinking-chip ${
+                  className={`icon-btn composer-model-thinking-chip ${compactModelSelector ? "composer-model-thinking-compact" : ""} ${
                     modelThinkingOpen ? "active" : ""
                   }`}
                   tooltip={`${modelLabel} · ${t("chat.reasoningLevel")}: ${thinkingLabel}`}
@@ -2645,6 +2648,7 @@ export function Composer({
                     setModelThinkingOpen((open) => !open);
                   }}
                 >
+                  {compactModelSelector ? <Brain size={18} aria-hidden="true" /> : <>
                   <span className="composer-model-thinking-icon" aria-hidden="true">
                     <IconBot size={14} />
                   </span>
@@ -2662,6 +2666,7 @@ export function Composer({
                     </>
                   ) : null}
                   <IconChevronDown size={12} aria-hidden="true" />
+                  </>}
                 </TooltipButton>
                 {modelThinkingOpen ? (
                   <div

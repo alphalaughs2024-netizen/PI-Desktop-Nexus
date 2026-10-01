@@ -28,6 +28,7 @@ if (!process.env.NEXUS_BROWSER_PROBE_PROFILE || !process.env.PI_DESKTOP_HOST_BIN
       env: { ...process.env, PI_DESKTOP_DATA_DIR: process.env.NEXUS_BROWSER_PROBE_PROFILE, NEXUS_AGENT_ENGINE: "codex", PI_DESKTOP_DEV: "1" },
       timeout: 30000,
     });
+    app.context().setDefaultTimeout(10000);
     await app.evaluate(({ dialog }) => {
       globalThis.__browserProbeFailures = [];
       dialog.showErrorBox = (title, content) => globalThis.__browserProbeFailures.push({ title, content });
@@ -42,6 +43,17 @@ if (!process.env.NEXUS_BROWSER_PROBE_PROFILE || !process.env.PI_DESKTOP_HOST_BIN
     assert.ok(page, "main window appears");
     const errors = [];
     page.on("pageerror", error => errors.push(String(error)));
+    const nativeMenu = async () => {
+      let menu;
+      for (let i = 0; i < 100; i++) {
+        menu = app.context().pages().find(surface => surface.url().includes("surface=browser-menu"));
+        if (menu) break;
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+      assert.ok(menu, "Native menu renderer appears");
+      await menu.getByRole("menu").waitFor();
+      return menu;
+    };
     await page.waitForFunction(() => !!window.__PI_DESKTOP__ && !!window.piDesktop);
     const sessionId = await page.evaluate(async () => {
       const response = await window.piDesktop.invoke(window.piDesktop.channels.invoke.sessionList);
@@ -96,6 +108,18 @@ if (!process.env.NEXUS_BROWSER_PROBE_PROFILE || !process.env.PI_DESKTOP_HOST_BIN
 
     if (process.env.NEXUS_BROWSER_PROBE_FULL_VIEW === "1") {
       await page.locator('.composer-input[contenteditable="true"]').fill("Draft before Full view");
+      await page.evaluate(() => {
+        window.__motionWidths = [];
+        window.__motionStarted = false;
+        const start = performance.now();
+        const sample = () => {
+          const panel = document.querySelector('.work-panel--browser');
+          if (panel.getAnimations().some(animation => animation.playState === "running")) window.__motionStarted = true;
+          if (window.__motionStarted) window.__motionWidths.push(panel.getBoundingClientRect().width);
+          if (performance.now() - start < 600) requestAnimationFrame(sample);
+        };
+        requestAnimationFrame(sample);
+      });
       await page.getByRole("button", { name: "Enter full view", exact: true }).click();
       await page.waitForFunction(() => document.querySelector(".app-shell")?.classList.contains("browser-full-view"));
       let composer;
@@ -108,17 +132,62 @@ if (!process.env.NEXUS_BROWSER_PROBE_PROFILE || !process.env.PI_DESKTOP_HOST_BIN
       composer.on("pageerror", error => errors.push(String(error)));
       const input = composer.locator('.composer-input[contenteditable="true"]');
       await input.waitFor();
+      const motionWidths = await page.evaluate(() => window.__motionWidths);
+      assert.ok(new Set(motionWidths.map(width => Math.round(width))).size > 3, "Full view animates actual intermediate browser widths");
+      assert.equal(await app.evaluate(({ webContents }, id) => !!webContents.fromId(id), guestId), true, "Animation retains the native guest");
       assert.equal(await input.innerText(), "Draft before Full view", "Main draft reaches the native composer");
       await input.fill("Draft edited over the page");
       await new Promise(resolve => setTimeout(resolve, 150));
+      await app.evaluate(({ webContents }, id) => webContents.fromId(id).focus(), guestId);
+      await composer.waitForFunction(() => document.querySelector('.browser-floating-history')?.hasAttribute('hidden'));
+      await composer.waitForTimeout(150);
       const baseHeight = await composer.evaluate(() => innerHeight);
+      assert.equal(await composer.locator('.composer-model-thinking-compact svg.lucide-brain').count(), 1, "Floating model selector uses a brain icon");
+      assert.equal(await composer.locator('.composer-model-thinking-chip').innerText(), "", "Floating model trigger has no long label");
+      console.log("COMPOSER_COMPACT_PASS", { baseHeight });
+      const historySnapshot = await composer.evaluate(async () => (await window.piDesktop.invoke(window.piDesktop.channels.invoke.browserComposer, { kind: "ready" })).data);
+      await page.evaluate(async snapshot => window.piDesktop.invoke(window.piDesktop.channels.invoke.browserComposer, { kind: "snapshot", snapshot: { ...snapshot, history: { title: "Probe conversation", truncated: false, messages: [
+        { id: "probe-user", role: "user", content: "Inspect the retained website", createdAt: 1 },
+        { id: "probe-assistant", role: "assistant", content: "The **website** is ready to inspect.", createdAt: 2 },
+      ] } } }), historySnapshot);
+      await input.click();
+      await composer.getByRole("region", { name: "Current conversation", exact: true }).waitFor();
+      await composer.waitForFunction(base => innerHeight > base + 200, baseHeight);
+      console.log("COMPOSER_HISTORY_EXPANDED", await composer.evaluate(() => ({ height: innerHeight, history: document.querySelector('.browser-floating-history').getBoundingClientRect().height })));
+      assert.equal(await composer.locator('.browser-floating-message').count(), 2, "Floating chat renders its current conversation snapshot");
+      await composer.locator('.browser-floating-message').first().click();
+      assert.equal(await composer.getByRole("region", { name: "Current conversation", exact: true }).isVisible(), true, "Clicking chat content keeps it expanded");
+      if (process.env.NEXUS_BROWSER_PROBE_SCREENSHOT) await composer.screenshot({ path: process.env.NEXUS_BROWSER_PROBE_SCREENSHOT.replace(/\.png$/, "-expanded-chat.png") });
+      const handle = composer.getByRole("separator", { name: "Resize floating chat", exact: true });
+      await handle.focus();
+      await handle.press("ArrowUp");
+      assert.equal(await handle.getAttribute("aria-valuenow"), "360");
+      await handle.press("Home");
+      await composer.waitForFunction(base => innerHeight === base, baseHeight);
+      console.log("COMPOSER_HISTORY_RESIZE_PASS");
+      await input.click();
+      await app.evaluate(({ webContents }, id) => {
+        const guest = webContents.fromId(id);
+        guest.focus();
+        guest.sendInputEvent({ type: "mouseDown", x: 20, y: 20, button: "left", clickCount: 1 });
+        guest.sendInputEvent({ type: "mouseUp", x: 20, y: 20, button: "left", clickCount: 1 });
+      }, guestId);
+      await composer.waitForFunction(() => document.querySelector('.browser-floating-history')?.hasAttribute('hidden'));
+      await page.getByRole("textbox", { name: "Browser address", exact: true }).click();
+      assert.equal(await composer.locator('.browser-floating-heading').isVisible(), false, "Collapsed chat shows only the composer");
       await composer.locator(".composer-model-thinking-chip").click();
       await composer.locator('.composer-menu-entry').first().click();
-      await composer.waitForFunction(base => innerHeight > base + 60, baseHeight);
+      await composer.waitForFunction(base => innerHeight > base, baseHeight);
       const modelMenu = await composer.locator(".composer-model-menu").boundingBox();
       const composerViewport = await composer.evaluate(() => ({ width: innerWidth, height: innerHeight }));
       assert.ok(modelMenu.x >= 0 && modelMenu.y >= 0 && modelMenu.x + modelMenu.width <= composerViewport.width && modelMenu.y + modelMenu.height <= composerViewport.height, "Model menu fits native input bounds");
       await composer.locator(".composer-model-thinking-chip").click();
+      await app.evaluate(({ webContents }, id) => {
+        const guest = webContents.fromId(id);
+        guest.focus();
+        guest.sendInputEvent({ type: "mouseDown", x: 20, y: 20, button: "left", clickCount: 1 });
+        guest.sendInputEvent({ type: "mouseUp", x: 20, y: 20, button: "left", clickCount: 1 });
+      }, guestId);
       await composer.waitForFunction(base => innerHeight === base, baseHeight);
       const themes = await Promise.all([page, composer].map(surface => surface.evaluate(() => ({
         theme: document.documentElement.dataset.theme,
@@ -176,11 +245,20 @@ if (!process.env.NEXUS_BROWSER_PROBE_PROFILE || !process.env.PI_DESKTOP_HOST_BIN
       await page.waitForTimeout(400);
       assert.equal(await page.locator('.app-shell').evaluate(element => element.classList.contains('browser-full-view')), false, "Native page shortcut stays docked after transition settling");
       assert.equal(await page.evaluate(() => window.__probeToggles.length), 1, "Native shortcut dispatches exactly one toggle");
+      assert.equal(await app.evaluate(async ({ webContents }, id) => webContents.fromId(id).executeJavaScript('document.getElementById("draft").value'), guestId), "keep this draft", "Full view transitions preserve page input");
       await page.locator(`[data-browser-tab="${websiteId}"]`).click({ button: "right" });
-      const menuBounds = await page.getByRole("menu", { name: /Actions for/ }).boundingBox();
-      const viewport = await page.evaluate(() => ({ width: innerWidth, height: innerHeight }));
-      assert.ok(menuBounds.x >= 0 && menuBounds.y >= 0 && menuBounds.x + menuBounds.width <= viewport.width && menuBounds.y + menuBounds.height <= viewport.height, "Tab menu is viewport-contained");
-      await page.keyboard.press("Escape");
+      const menu = await nativeMenu();
+      const menuState = await app.evaluate(({ BrowserWindow }, guestId) => {
+        const window = BrowserWindow.getAllWindows().find(w => /renderer\/index\.html/.test(w.webContents.getURL()) && !w.webContents.getURL().includes("surface="));
+        const view = window.contentView.children.find(v => v.webContents?.getURL().includes("surface=browser-menu"));
+        return { bounds: view.getBounds(), size: window.getContentSize(), topmost: window.contentView.children.at(-1) === view, guestVisible: window.contentView.children.find(v => v.webContents?.id === guestId)?.getVisible() };
+      }, guestId);
+      assert.ok(menuState.bounds.x >= 0 && menuState.bounds.y >= 0 && menuState.bounds.x + menuState.bounds.width <= menuState.size[0] && menuState.bounds.y + menuState.bounds.height <= menuState.size[1], "Tab menu is viewport-contained");
+      assert.equal(menuState.topmost, true);
+      assert.equal(menuState.guestVisible, true, "Native menus preserve the live webpage");
+      if (process.env.NEXUS_BROWSER_PROBE_SCREENSHOT) await menu.screenshot({ path: process.env.NEXUS_BROWSER_PROBE_SCREENSHOT.replace(/\.png$/, "-native-menu.png") });
+      await menu.keyboard.press("Escape");
+      await page.waitForFunction(() => !document.querySelector('[data-browser-tab][aria-expanded="true"]'));
       // Restore the one-tab starting state for the selection regression below.
       const tabs = await page.evaluate(async sessionId => (await window.piDesktop.invoke(window.piDesktop.channels.invoke.browserTabs, { sessionId })).data, sessionId);
       for (const tab of tabs.tabs) if (tab.browserId !== websiteId) await page.evaluate(async ({ sessionId, browserId }) => window.piDesktop.invoke(window.piDesktop.channels.invoke.browserTabClose, { sessionId, browserId }), { sessionId, browserId: tab.browserId });
@@ -237,7 +315,7 @@ if (!process.env.NEXUS_BROWSER_PROBE_PROFILE || !process.env.PI_DESKTOP_HOST_BIN
         navigator.clipboard.writeText = async () => { throw new Error("Probe clipboard denied"); };
       });
       await page.getByRole("button", { name: "More Browser actions", exact: true }).click();
-      await page.getByRole("menuitem", { name: "Copy safe address", exact: true }).click();
+      await (await nativeMenu()).getByRole("menuitem", { name: "Copy safe address", exact: true }).click();
       await page.getByRole("button", { name: "Inspect browser error", exact: true }).waitFor();
       await page.evaluate(() => { navigator.clipboard.writeText = window.__probeClipboardWrite; delete window.__probeClipboardWrite; });
       assert.ok(Math.abs(await pageGap()) < 1, "An error cannot add a page band");
@@ -257,6 +335,9 @@ if (!process.env.NEXUS_BROWSER_PROBE_PROFILE || !process.env.PI_DESKTOP_HOST_BIN
       await page.evaluate(() => { document.documentElement.dataset.theme = "dark"; delete document.documentElement.dataset.scenicTheme; });
       await page.emulateMedia({ reducedMotion: "reduce" });
       assert.equal(await mobile.evaluate(button => getComputedStyle(button).transitionDuration), "0s", "Reduced motion disables new control transitions");
+      await page.getByRole("button", { name: "Exit full view", exact: true }).click();
+      await page.getByRole("button", { name: "Enter full view", exact: true }).click();
+      assert.equal(await page.locator('.work-panel--browser').evaluate(element => element.getAnimations().filter(animation => animation.playState === "running").length), 0, "Reduced motion skips browser expansion animation");
       await page.emulateMedia({ reducedMotion: "no-preference" });
 
       await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().find(w => /renderer\/index\.html/.test(w.webContents.getURL()) && !w.webContents.getURL().includes("surface=")).setSize(600, 802));
@@ -275,6 +356,7 @@ if (!process.env.NEXUS_BROWSER_PROBE_PROFILE || !process.env.PI_DESKTOP_HOST_BIN
       await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().find(w => /renderer\/index\.html/.test(w.webContents.getURL()) && !w.webContents.getURL().includes("surface=")).setSize(1202, 802));
       await page.getByRole("button", { name: "Exit full view", exact: true }).click();
       await page.waitForFunction(() => !document.querySelector(".app-shell")?.classList.contains("browser-full-view"));
+      await page.waitForFunction(() => document.querySelector('.work-panel--browser')?.style.position !== 'fixed');
       await page.locator('.work-panel--browser').evaluate(element => { element.style.flex = "0 0 244px"; element.style.width = "244px"; });
       await page.waitForTimeout(150);
       assert.equal(await page.locator('.browser-inspection-toolbar').evaluate(element => element.scrollWidth <= element.clientWidth && Array.from(element.querySelectorAll('button')).every(button => { const box = button.getBoundingClientRect(); const rect = element.getBoundingClientRect(); return box.left >= rect.left && box.right <= rect.right; })), true, "All inspection tools fit a 244px dock");
@@ -284,6 +366,9 @@ if (!process.env.NEXUS_BROWSER_PROBE_PROFILE || !process.env.PI_DESKTOP_HOST_BIN
       console.log("BROWSER_MATERIAL_PASS", { realViewport: true, customViewport: true, realCapture: true, inspectorGeometry: true, composerNotObscuringControls: true, themes: 4, narrowToolsFit: true, reducedMotion: true });
     }
 
+    // Material checks deliberately navigate/reload; seed the current document
+    // before testing input retention across tab selection.
+    await app.evaluate(async ({ webContents }, id) => webContents.fromId(id).executeJavaScript('document.getElementById("draft").value="keep this draft"'), guestId);
     await page.getByRole("button", { name: "New Browser tab", exact: true }).click();
     await page.waitForFunction(websiteId => document.querySelector('[data-browser-tab][aria-selected="true"]')?.dataset.browserTab !== websiteId, websiteId);
     await new Promise(resolve => setTimeout(resolve, 1500));
@@ -324,8 +409,7 @@ if (!process.env.NEXUS_BROWSER_PROBE_PROFILE || !process.env.PI_DESKTOP_HOST_BIN
     assert.equal(await app.evaluate(async ({ webContents }, id) => webContents.fromId(id).executeJavaScript('document.getElementById("draft").value'), guestId), "keep this draft", "Original page contents survive switching");
 
     await page.locator(`[data-browser-tab="${websiteId}"]`).click({ button: "right" });
-    // Menu dispatch isolates tab lifecycle from native menu hit-testing.
-    await page.getByRole("menuitem", { name: "Duplicate tab", exact: true }).dispatchEvent("click");
+    await (await nativeMenu()).getByRole("menuitem", { name: "Duplicate tab", exact: true }).click();
     await page.waitForFunction(({ websiteId, blankId }) => {
       const selected = document.querySelector('[data-browser-tab][aria-selected="true"]');
       return selected && selected.dataset.browserTab !== websiteId && selected.dataset.browserTab !== blankId && selected.textContent.includes("Tab regression website");
@@ -336,7 +420,7 @@ if (!process.env.NEXUS_BROWSER_PROBE_PROFILE || !process.env.PI_DESKTOP_HOST_BIN
     await duplicate.getByRole("button", { name: "Close Tab regression website" }).click();
     await page.waitForFunction(() => document.querySelectorAll("[data-browser-tab]").length === 2);
     await page.locator(`[data-browser-tab="${websiteId}"]`).click({ button: "right" });
-    await page.getByRole("menuitem", { name: "Close other tabs", exact: true }).dispatchEvent("click");
+    await (await nativeMenu()).getByRole("menuitem", { name: "Close other tabs", exact: true }).click();
     await page.waitForFunction(() => document.querySelectorAll("[data-browser-tab]").length === 1);
     await new Promise(resolve => setTimeout(resolve, 500));
     assert.equal(await page.evaluate(() => window.__tabProbe.last), websiteId);
@@ -370,6 +454,11 @@ if (!process.env.NEXUS_BROWSER_PROBE_PROFILE || !process.env.PI_DESKTOP_HOST_BIN
   } catch (error) {
     const mainPage = app?.windows().find(window => /renderer\/index\.html/.test(window.url()) && !window.url().includes("surface="));
     if (mainPage && process.env.NEXUS_BROWSER_PROBE_SCREENSHOT) await mainPage.screenshot({ path: process.env.NEXUS_BROWSER_PROBE_SCREENSHOT.replace(/\.png$/, "-failure.png") }).catch(() => {});
+    const inputPage = app?.context().pages().find(surface => surface.url().includes("surface=browser-composer"));
+    if (inputPage) {
+      console.error("FLOATING_INPUT_DIAGNOSTIC", await inputPage.evaluate(() => ({ height: innerHeight, shell: document.querySelector('.browser-floating-shell')?.getBoundingClientRect().toJSON(), history: document.querySelector('.browser-floating-history')?.getBoundingClientRect().toJSON(), menus: Array.from(document.querySelectorAll('.composer-model-menu, .ui-tooltip')).map(element => element.getBoundingClientRect().toJSON()) })).catch(() => null));
+      if (process.env.NEXUS_BROWSER_PROBE_SCREENSHOT) await inputPage.screenshot({ path: process.env.NEXUS_BROWSER_PROBE_SCREENSHOT.replace(/\.png$/, "-composer-failure.png") }).catch(() => {});
+    }
     throw error;
   } finally {
     clearTimeout(deadline);

@@ -121,3 +121,28 @@ test("blocking overlays hide native input; main reload rejects work without repl
     assert.equal(f.native().visible, true);
   } finally { f.host.dispose(); }
 });
+
+test("native outside input collapses history without consuming page input or executing commands", async () => {
+  const f = fixture();
+  try {
+    await f.publish(f.snapshot());
+    const events = [];
+    f.native().webContents.send = (_channel, event) => events.push(event);
+    const guest = new EventEmitter();
+    f.host.watchGuest(guest);
+    f.host.watchGuest(guest);
+    assert.equal(guest.listenerCount("before-mouse-event"), 1);
+    guest.emit("before-mouse-event", {}, { type: "mouseMove" });
+    assert.equal(events.length, 0);
+    guest.emit("before-mouse-event", {}, { type: "mouseDown" });
+    f.main.webContents.emit("focus");
+    f.native().webContents.emit("blur");
+    assert.ok(events.every(event => event.kind === "collapse-history"));
+    assert.equal(events.length, 3);
+    assert.equal(f.native().visible, true, "Click-away retains the composer");
+    await f.publish(f.snapshot(2, false));
+    const count = events.length;
+    guest.emit("focus");
+    assert.equal(events.length, count, "Inactive composer ignores outside notifications");
+  } finally { f.host.dispose(); }
+});

@@ -6,7 +6,9 @@
     "types": ["vite/client"],
     "baseUrl": ".",
     "paths": {
-      "@renderer/*": ["src/*"]
+      "@renderer/*": ["src/*"],
+      "@pi-desktop/shared": ["../../packages/shared/src/index.ts"],
+      "@pi-desktop/shared/*": ["../../packages/shared/src/*"]
     },
     "noEmit": true
   },

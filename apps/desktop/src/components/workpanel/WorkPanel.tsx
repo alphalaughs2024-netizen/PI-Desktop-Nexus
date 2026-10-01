@@ -37,6 +37,7 @@ import {
 import { WorkPanelResourceHost } from "./WorkPanelResourceHost";
 import { WorkPanelFrame } from "./WorkPanelFrame";
 import type { WorkPanelPresentation } from "../../lib/work-panel-presentation";
+import { useBrowserPresentationMotion } from "../../lib/browser-presentation-motion";
 import { WorkTabEmpty } from "./WorkTabEmpty";
 import { SubagentPanel } from "./SubagentPanel";
 import type { SubagentPanelSelection } from "../../lib/subagent-panel";
@@ -137,12 +138,15 @@ export function WorkPanel({
   const isResizing = panelDragWidth !== null;
   const isMaximized = presentation === "maximized";
   const isBrowser = activeTab?.kind === "browser" && !subagentPanel;
-  const isPresentationTransitioning = presentationTransition !== "idle";
+  const panelRef = useRef<HTMLElement | null>(null);
+  const browserMoving = useBrowserPresentationMotion(panelRef, isBrowser && !exiting, presentation);
+  const isPresentationTransitioning = browserMoving || presentationTransition !== "idle";
 
   useEffect(() => () => { if (transitionTimer.current !== null) window.clearTimeout(transitionTimer.current); }, []);
   const transitionPresentation = useCallback((next: WorkPanelPresentation) => {
     if (next === presentation || isPresentationTransitioning) return;
     setContextOpen(false);
+    if (isBrowser) { setWorkPanelPresentation(next); return; }
     setPresentationTransition(next === "maximized" ? "maximizing" : "docking");
     if (transitionTimer.current !== null) window.clearTimeout(transitionTimer.current);
     transitionTimer.current = window.setTimeout(() => {
@@ -150,7 +154,7 @@ export function WorkPanel({
       setPresentationTransition("idle");
       transitionTimer.current = null;
     }, 200);
-  }, [isPresentationTransitioning, presentation, setWorkPanelPresentation]);
+  }, [isBrowser, isPresentationTransitioning, presentation, setWorkPanelPresentation]);
 
   useEffect(() => {
     if (!isBrowser) return;
@@ -488,6 +492,7 @@ export function WorkPanel({
 
   return (
     <aside
+      ref={panelRef}
       className={cx(
         "work-panel",
         isBrowser && "work-panel--browser",
@@ -738,7 +743,7 @@ export function WorkPanel({
             )}
           </div>
           <div className="work-panel-actions no-drag">
-            {isBrowser && <TooltipButton type="button" className="work-panel-current-close browser-full-view-button" tooltip={`${isMaximized ? "Exit" : "Enter"} full view (Ctrl+Shift+F)`} ariaLabel={isMaximized ? "Exit full view" : "Enter full view"} disabled={isPresentationTransitioning} onClick={() => transitionPresentation(isMaximized ? "docked" : "maximized")}>{isMaximized ? <Minimize2 size={15} /> : <Maximize2 size={15} />}</TooltipButton>}
+            {isBrowser && <TooltipButton type="button" className="work-panel-current-close browser-full-view-button" tooltip={`${isMaximized ? "Exit" : "Enter"} full view (Ctrl+Shift+F)`} ariaLabel={isMaximized ? "Exit full view" : "Enter full view"} disabled={isPresentationTransitioning} onClick={() => transitionPresentation(isMaximized ? "docked" : "maximized")}>{isMaximized ? <Minimize2 size={18} /> : <Maximize2 size={18} />}</TooltipButton>}
             {activeTab && !subagentPanel ? (
               <TooltipButton
                 type="button"

@@ -11999,10 +11999,22 @@ or delete caches, profiles or earlier recovery files to hide this condition.
   viewport request is pending. Test the Material toolbar in a 244px dock.
   Navigate with slow resources and trigger a browser action error. Activate
   the warning button and check keyboard and screen-reader access to the error.
+  Open overflow/tab menus over a live webpage, dismiss by Escape and outside
+  input, choose an enabled action and resize/reload while the menu loads.
+  Click the composer to expand the conversation; click its chat/menu and then
+  the webpage and main chrome to verify retention and outside collapse. Resize from its top edge with pointer and
+  keyboard, and read older text during streaming. Open the Brain model selector
+  and verify model/reasoning selection and tooltip. Reverse Full view during
+  motion and resize; repeat with reduced motion.
 - **Expected**: One editable composer, no duplicate execution, correct model/
   session, retained draft/attachment/page input and guest identity. Floating
   input is above the page and its menus fit. Other page regions remain
-  clickable. Voice stops when changing presentation and microphone access stays
+  visible and clickable. Native browser menus retain the same live guest;
+  stale/disabled/foreign requests never dispatch actions. Presentation bounds
+  animate smoothly and settle without replacing the guest; reduced motion is
+  immediate. Floating history is bounded, expands above the input and preserves
+  reading position. Only the floating model trigger becomes an icon.
+  Voice stops when changing presentation and microphone access stays
   trusted-renderer/audio-only. Context totals match the main chat after long tool histories.
   Stale commands and untrusted senders fail without mutations;
   timeouts never replay. Search and approvals are accessible. Returning restores

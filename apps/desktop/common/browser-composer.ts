@@ -6,6 +6,7 @@ export const BROWSER_COMPOSER_ACTIONS = [
   "editQueuedPrompt", "loadProviderModels", "configureActiveSession", "showToast",
   "clearComposerPrefill", "resolvePlan", "resolveAsk", "openWorkPanelTabForSession",
   "dockWorkPanel", "runPaletteCommand", "materializeDraftSession",
+  "openFileInWorkPanel", "openUrlInWorkPanel",
 ] as const;
 
 export type BrowserComposerAction = typeof BROWSER_COMPOSER_ACTIONS[number];
@@ -23,6 +24,7 @@ export type BrowserComposerSnapshot = {
   font: string;
   scenicTheme?: string;
   styleTokens?: Record<string, string>;
+  history?: { title: string; messages: UiMessage[]; truncated: boolean };
   contextUsage?: {
     usage: MessageUsage;
     turnUsage: MessageUsage;

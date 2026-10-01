@@ -23,6 +23,20 @@ second agent. Native UI bounds expand for menus; tab reattachment preserves
 the input view's child order. Search hides it and pending tool permissions
 return to Chat. Failure returns to the accessible chat; uncertain actions are
 never replayed. Themes/fonts and reduced-motion preferences are preserved.
+The floating model selector is an icon-only Brain button with the current
+model and reasoning level in its accessible label and tooltip. Its full
+model/reasoning menu is unchanged. The full Chat composer retains its labels.
+Clicking the floating composer (or focusing its editable with the keyboard)
+expands the chat above it. Outside focus/input collapses it to just the composer;
+interactions inside the chat and its menus retain expansion. Its disclosure and
+top-edge resize handle allow pointer or Arrow/Home/End keyboard sizing. It shows a bounded
+tail of the current conversation: up to 24 user/assistant text messages,
+48,000 total characters and 12,000 per message, excluding tools, reasoning
+and attachments. Earlier messages/Open full chat restore the complete chat.
+Live updates follow the bottom only while the user remains near the bottom.
+Browser presentation animates measured position and size for 300ms; the same
+native guest follows the changing rectangle. Input is hidden during motion.
+Reduced motion switches immediately; interruption/resize restores layout.
 Context usage is calculated from the complete main transcript before sending
 bounded reply data. Speech uses the trusted native renderer identity; changing
 presentation stops any active voice cycle, which can be restarted in the visible
@@ -101,8 +115,13 @@ error is readable on every tools tab. Stable screen-reader live regions retain
 readiness, operation and error announcements without reserving page space.
 
 At widths of at least 760px the inspector reserves 380px beside the native page.
-Narrower inspectors cover only page content and hide the guest. Browser menus
-hide the guest. All these controls hide the native floating composer while open;
+Narrower inspectors cover only page content and hide the guest. Browser tab and
+overflow menus use a trusted native UI view above the retained live webpage
+(ADR 0269). Menus keep the guest visible, clamp to window bounds and support
+Arrow/Home/End, Escape, outside focus/input and resize dismissal. Only the main
+renderer can publish menu snapshots; the menu can select an enabled current
+item once, and the main renderer executes its existing callback. Stale menu,
+wrong session and foreign sender requests fail. All these controls hide the native floating composer while open;
 closing one overlay cannot override another overlay's blocking state. Existing
 theme tokens and reduced-motion behavior apply.
 Pending screenshot/control/annotation results cannot update a different tab or

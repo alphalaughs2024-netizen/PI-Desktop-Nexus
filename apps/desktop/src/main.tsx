@@ -6,6 +6,7 @@ import { catalogs, flattenCatalog, resolveLocale } from "@pi-desktop/i18n";
 import App from "./App";
 import { PluginLauncher } from "./components/PluginLauncher";
 import { BrowserComposerSurface } from "./components/BrowserComposerSurface";
+import { BrowserMenuSurface } from "./components/BrowserMenuSurface";
 import { initLanguageSync, resolveOsLocale } from "./lib/app-language";
 import { installScrollbarReveal } from "./lib/scrollbar-reveal";
 import { rendererPlatform } from "./lib/renderer-platform";
@@ -47,7 +48,7 @@ if (!rootEl) {
 try {
   ReactDOM.createRoot(rootEl).render(
     <React.StrictMode>
-      {rendererSurface === "plugin-launcher" ? <PluginLauncher /> : rendererSurface === "browser-composer" ? <BrowserComposerSurface /> : <App />}
+      {rendererSurface === "plugin-launcher" ? <PluginLauncher /> : rendererSurface === "browser-composer" ? <BrowserComposerSurface /> : rendererSurface === "browser-menu" ? <BrowserMenuSurface /> : <App />}
     </React.StrictMode>,
   );
 } catch (error) {

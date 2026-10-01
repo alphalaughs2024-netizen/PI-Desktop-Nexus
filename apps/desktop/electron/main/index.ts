@@ -22,6 +22,7 @@ import { existsSync, mkdirSync, statSync, writeFileSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
 import { listInstalledFonts } from "./system-fonts";
 import { BrowserComposerHost } from "./browser-composer-host";
+import { BrowserMenuHost } from "./browser-menu-host";
 import { rendererPermissionAllowed } from "./renderer-permissions";
 import { builtinSubagentModels } from "./subagent-model-preferences";
 import { saveSubagentModelSelection } from "./subagent-model-selection";
@@ -425,6 +426,7 @@ const WORK_PANEL_CHAT_RESIZE_SETTLE_MS = WINDOW_BOUNDS_SETTLE_MS + 120;
 
 let mainWindow: BrowserWindow | null = null;
 const browserComposerHost = new BrowserComposerHost();
+const browserMenuHost = new BrowserMenuHost();
 let speechService: SpeechService | undefined;
 let tray: Tray | null = null;
 let pluginLauncherWindow: BrowserWindow | null = null;
@@ -1009,6 +1011,7 @@ const emitBrowserState = (state: BrowserState) => {
   pluginPanels.broadcast("browser:state", state);
   pluginViews.broadcast("browser:state", state);
   browserComposerHost.raise();
+  browserMenuHost.raise();
 };
 const browserPane = new BrowserTabsPane(emitBrowserState, (onState) => new BrowserPane(onState));
 const pluginViews = new PluginViewHost(({ pluginId, url }) => {
@@ -1020,7 +1023,10 @@ const pluginViews = new PluginViewHost(({ pluginId, url }) => {
 });
 pluginPanels.addSenderResolver((senderId) => pluginViews.pluginIdForSender(senderId));
 const browserHost = new BrowserHost({
-  onGuestPresented: () => browserComposerHost.raise(),
+  onGuestPresented: (guest) => {
+    if (guest) { browserComposerHost.watchGuest(guest); browserMenuHost.watchGuest(guest); }
+    browserComposerHost.raise(); browserMenuHost.raise();
+  },
   pane: browserPane,
   isCapabilityEnabled: isBrowserCapabilityEnabled,
   getFileRoot: async (sessionId) => {
@@ -6509,6 +6515,7 @@ async function bootBackends() {
 
 function registerIpc() {
   browserComposerHost.register(() => mainWindow);
+  browserMenuHost.register(() => mainWindow);
   const ipcHandlers = new Map<string, (...args: any[]) => Promise<any>>();
   const handle = (channel: string, fn: (...args: any[]) => Promise<any>) => {
     ipcHandlers.set(channel, fn);
@@ -10981,6 +10988,7 @@ app.on("before-quit", (event) => {
     const pluginShutdown = plugins.disposeAll();
     userMcp.disposeAll();
     browserHost.disposeGuest();
+    browserMenuHost.dispose();
     pluginViews.dispose();
     inflightCheckpointer.dispose();
     const sidecarShutdown = sidecar?.dispose();
