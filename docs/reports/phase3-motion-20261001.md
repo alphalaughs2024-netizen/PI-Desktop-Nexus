@@ -1,6 +1,6 @@
 # Phase 3 Accepted Motion Implementation
 
-Date: 2026-10-01. Implementation acceptance: pending user visual test.
+Date: 2026-10-01. Main-row visual polish accepted; broader app testing ongoing.
 
 Branch: `codex/nexus-phase3-motion-20261001`.
 Worktree: `C:\wt\nexus-phase3-motion-20261001`.
@@ -17,6 +17,15 @@ Codex or Kimi artwork is imported.
 - Semantic existing Lucide shapes with adapted cursor, arc, brain, search,
   delegation, pause and one-time completion motion.
 - A fixed icon box, wrapping status label and tabular whole-response duration.
+- User-tested main row increased to 15px scaled text, 18px activity icons and
+  38px minimum height. Timeline rows retain their existing 12.5px text.
+- Sweep box hugs the text instead of spanning empty row space. Primary-ink
+  active icons and a 70% primary-ink sweep base improve dark-theme visibility.
+- Live phase/tool changes play a 180ms, 2px lift/fade once, independently of
+  the continuing 2s sweep. Timer/token updates retain their phase/tool identity.
+- Current tool labels use supplied descriptions or concise targets; model waits
+  retain their truthful phase and show the latest supplied assistant update.
+  TaskWait/TaskList/TaskStop use their existing lifecycle-specific labels.
 - 180ms expansion/reverse collapse with a 150ms caret rotation.
 - Immediately inert closing contents, released after the close; rapid reopen
   cancels release. Tool payloads and thinking Markdown stay lazy.
@@ -30,6 +39,13 @@ sidebar, scenery or work-panel ownership changes are included.
 ## Validation
 
 - Desktop TypeScript check passed, including the final terminal-activity guards.
+- Follow-up desktop TypeScript check and five targeted motion/status tests passed.
+- Follow-up actual renderer check confirmed 15px main text, 18px icon, 38px row
+  height, text/label widths both 123.89px, and the 2s sweep plus 180ms entrance.
+  Search updated to `Searching test`; streamed output retained that status.
+  At 430px, child rows remained 12.5px and horizontal overflow was zero.
+  Reduced-motion animations were `none` with a `0s` disclosure transition;
+  completed history had no entrance animation or commentary tail and froze at 21s.
 - Targeted phase/icon, activity, thinking, transcript and scroll checks: 50 pass,
   one pre-existing transcript-style assertion fails on both this branch and
   unchanged primary `main`. It expects an obsolete assistant bubble selector.
@@ -71,6 +87,7 @@ completion. Expand/collapse the timeline and nested details, including a rapid
 reverse. Check familiar scenic materials, sidebar/work-panel movement, upward
 scroll ownership and reduced motion. Verify the total timer never resets.
 
-The request remains unmerged until this implementation receives visual acceptance.
-After acceptance, merge locally and remove the verified request worktree/branch.
+The user accepted the larger/brighter main row in a real Nexus screenshot and
+continues app testing. The app stays open until the user confirms it is closed.
+Then merge locally and remove the verified request worktree/branch.
 Nothing is pushed.

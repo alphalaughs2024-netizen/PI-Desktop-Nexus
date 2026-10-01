@@ -31,7 +31,7 @@ import {
 import { ConversationMinimap } from "./ConversationMinimap";
 import { ActivityIcon } from "./ActivityIcon";
 import { AnimatedDisclosure } from "./AnimatedDisclosure";
-import { turnActivityIcon } from "../lib/activity-motion";
+import { toolProgressDetail, turnActivityIcon } from "../lib/activity-motion";
 import { TurnOutcomeCard } from "./TurnOutcomeCard";
 import { ReviewChangeCard } from "./ReviewChangeCard";
 import { Markdown, useCopy } from "./Markdown";
@@ -2482,7 +2482,7 @@ const TranscriptTail = memo(function TranscriptTail({
   transcriptEntryEqual(previous.entry, next.entry)
 );
 
-function TurnProgress({ execution, items, active }: { execution: EngineTurn; items: AssistantActivityItem[]; active: boolean }) {
+function TurnProgress({ execution, items, active, commentary }: { execution: EngineTurn; items: AssistantActivityItem[]; active: boolean; commentary?: string }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [now, setNow] = useState(Date.now);
@@ -2498,8 +2498,15 @@ function TurnProgress({ execution, items, active }: { execution: EngineTurn; ite
   }, [live]);
   const elapsed = formatToolDuration(Math.max(0, ((execution.completedAt ?? now) - execution.startedAt) / 1000));
   const phase = execution.outcome ?? (live ? execution.progressPhase ?? execution.phase : "unavailable");
-  const runningTool = [...items].reverse().find(item => item.kind === "tool" && item.message.toolStatus === "running");
+  const runningTool = phase === "tool" ? [...items].reverse().find(item => item.kind === "tool" && item.message.toolStatus === "running") : undefined;
   const iconKind = turnActivityIcon(phase, runningTool ? getToolAction(runningTool.message.toolName) : undefined);
+  const lifecycle = runningTool ? lifecycleKindOf(runningTool.message) : null;
+  const statusLabel = runningTool
+    ? lifecycle ? t(LIFECYCLE_RUNNING_KEYS[lifecycle])
+      : `${t(TOOL_RUNNING_KEYS[getToolAction(runningTool.message.toolName)])} ${toolProgressDetail(runningTool.message)}`
+    : t(`chat.execution.${phase}`);
+  const preview = live && phase === "waiting-model" ? commentary?.replace(/\s+/g, " ").trim() : undefined;
+  const activityKey = `${execution.id}:${phase}:${runningTool?.message.id ?? ""}`;
   const delegates = items.filter(isDelegationActivityItem);
   const statuses = collectDelegationStatuses(items, { turnLive: live });
   const timings = collectDelegationTimings(items);
@@ -2509,11 +2516,12 @@ function TurnProgress({ execution, items, active }: { execution: EngineTurn; ite
   ].sort((a, b) => a.at - b.at);
   return <div className={`tool-activity-group turn-progress ${open ? "open" : ""} ${live ? "active" : ""}`} data-turn-id={execution.id}>
     <button className="tool-activity-header" aria-expanded={open} aria-controls={detailsId} onClick={() => setOpen(value => !value)}>
-      <span className="tool-activity-caret" aria-hidden><IconChevronRight size={12} /></span>
-      <span className="tool-activity-icon" aria-hidden><ActivityIcon key={iconKind} kind={iconKind} animate={live || (phase === "completed" && observedLive.current === execution.id)} size={14} /></span>
-      <span className={`tool-activity-label ${live ? "running" : ""}`} role="status">{t(`chat.execution.${phase}`)}</span>
+      <span className="tool-activity-caret" aria-hidden><IconChevronRight size={14} /></span>
+      <span key={`icon-${activityKey}`} className={`tool-activity-icon${live ? " turn-progress-enter" : ""}`} aria-hidden><ActivityIcon kind={iconKind} animate={live || (phase === "completed" && observedLive.current === execution.id)} size={18} /></span>
+      <span key={`label-${activityKey}`} className={`tool-activity-label ${live ? "running turn-progress-enter" : ""}`} role="status">{statusLabel}</span>
       <span className="turn-progress-time" aria-label={t("chat.execution.totalTime")}>{elapsed}</span>
     </button>
+    {preview ? <div className="tool-activity-preview turn-progress-commentary" title={preview}>{preview}</div> : null}
     <AnimatedDisclosure open={open} id={detailsId}>{() => {
       let renderedDelegates = false;
       return <div className="tool-activity-body turn-timeline">
@@ -2632,7 +2640,7 @@ const AssistantTurn = memo(function AssistantTurn({
             <AssistantFragment key={part.message.id} message={part.message} active={isActive} sessionId={slotSessionId} />
           ),
         )}
-        {entry.execution ? <TurnProgress execution={entry.execution} items={turnAllActivityItems} active={isActive} /> : null}
+        {entry.execution ? <TurnProgress execution={entry.execution} items={turnAllActivityItems} active={isActive} commentary={[...messages].reverse().find(message => message.role === "assistant" && !message.error && message.content?.trim())?.content} /> : null}
         {!isActive && metaMessage ? (
           <MessageMeta
             modelId={modelId}

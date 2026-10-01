@@ -11854,8 +11854,16 @@ or delete caches, profiles or earlier recovery files to hide this condition.
   during streamed output, after interruption, after reloading completed history,
   at narrow/wide widths and with reduced motion. Toggle sidebar/work panel while
   reading and while pinned to the response tail.
-- **Expected**: Status text has the selected 2s sweep. Meaningful Lucide activity
-  icons match the accepted combined specimen without restarting on each token or
+- **Expected**: Status text has the selected 2s sweep. The main row uses larger
+  15px scaled text and an 18px icon; timeline rows remain compact. Status labels
+  hug their text so the highlight crosses the letters at wide widths.
+  A live phase/tool change plays a subtle 180ms lift/fade once; token and timer
+  updates do not replay it, and historical rows remain static.
+  Active icons have primary-text contrast. A running tool shows its action and
+  concise description/target; a model wait shows the waiting arc/label and the
+  latest supplied commentary tail. Finished tools never become the active task
+  during a wait, and terminal turns remove the commentary tail.
+  Meaningful Lucide activity icons match the accepted combined specimen without restarting on each token or
   timer tick. Completion draws once for a live turn and is static in history.
   Stale child activity cannot animate in a terminal turn. The total duration never
   resets. Disclosure opening and reverse closing take 180ms; its caret takes

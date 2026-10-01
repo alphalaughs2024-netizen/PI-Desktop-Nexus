@@ -2747,22 +2747,59 @@
 }
 
 .turn-progress .tool-activity-label {
-  flex: 1;
+  /* Sweep over the text, not the empty space before the timer. */
+  flex: 0 1 auto;
   min-width: 0;
   overflow-wrap: anywhere;
+}
+
+.turn-progress.active .tool-activity-icon,
+.turn-progress.active .tool-activity-caret {
+  color: var(--ds-text-primary);
+}
+
+.turn-progress.active .tool-activity-label.running {
+  background-color: color-mix(in oklab, var(--ds-text-primary) 70%, transparent);
+}
+
+.turn-progress-commentary {
+  color: var(--ds-text-secondary);
+  margin-left: 46px;
+}
+
+.turn-progress .turn-progress-enter {
+  transform-origin: left center;
+  animation: activity-status-in 180ms cubic-bezier(.2, .8, .2, 1) both;
+}
+
+.turn-progress .tool-activity-label.running.turn-progress-enter {
+  animation: activity-text-sweep 2s steps(48, end) infinite,
+    activity-status-in 180ms cubic-bezier(.2, .8, .2, 1) both;
+}
+
+@keyframes activity-status-in {
+  from { opacity: .72; transform: translateY(2px) scale(.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .turn-progress > .tool-activity-header {
   display: flex;
   width: 100%;
-  min-height: 32px;
+  min-height: 38px;
   margin: 0;
   padding: 0 6px;
   gap: 8px;
+  color: var(--ds-text-primary);
+  font-size: var(--text-base-plus);
+}
+
+.turn-progress > .tool-activity-header .turn-progress-time {
+  color: var(--ds-text-secondary);
+  font-size: var(--text-md);
 }
 
 .turn-progress {
-  contain-intrinsic-size: auto 46px;
+  contain-intrinsic-size: auto 52px;
 }
 
 .turn-progress .tool-activity-caret {

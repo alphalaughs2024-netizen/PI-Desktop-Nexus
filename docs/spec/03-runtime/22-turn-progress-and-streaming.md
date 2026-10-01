@@ -26,13 +26,26 @@ remain unchanged. Legacy records without timing retain their previous layout.
 ## Accepted Progress Motion
 
 Response and tool status labels use the accepted theme-derived 2-second stepped
-text sweep. The response row puts the disclosure caret before the activity icon,
+text sweep. The sweep box hugs the label rather than stretching through empty
+row space. Active icons use primary text ink, and the sweep runs from a subdued
+theme-derived base to primary ink for visible contrast. The response row puts the disclosure caret before the activity icon,
 keeps a fixed icon box and a tabular total duration, and lets the label wrap at
-narrow widths. Commentary never replaces the status. Supplied reasoning uses the
+narrow widths. The primary row uses 15px scaled text, an 18px icon and a 38px
+minimum height; timeline rows retain their compact size. Commentary never replaces the status. Supplied reasoning uses the
 brain icon; quiet model waits use the rotating arc. Commands use a blinking cursor,
 search and delegation use one-time movement/stroke draws, approval/input waits use
 the pause icon, and live completion draws its check once. Historical completions
 are static. File, editing and browser activity retain their semantic Lucide icons.
+Live phase/tool changes give the main icon and label a 180ms, 2px lift/fade with
+a subtle scale from .98 to 1. Its identity is phase/tool-based, so timer and token
+updates do not replay the entrance. Historical rows have no entrance animation.
+
+While a tool is actually running, the row describes its action and supplied
+description or concise target. Shell executable paths and raw argument JSON are
+not used as its task label. During model waits, the spinning arc and swept
+"Waiting for model" label remain truthful; the latest supplied assistant update
+is available as a compact tail beneath the row. Nexus does not invent commentary
+or continue describing a finished tool as running. Terminal turns remove that tail.
 
 The timeline, tool details and reasoning disclosures use Motion-inspired 180ms
 grid expansion and reverse collapse, with a 150ms caret rotation. Closed content

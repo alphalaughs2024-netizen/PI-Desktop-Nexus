@@ -711,6 +711,11 @@
   .turn-progress .tool-activity-caret {
     transition: none;
   }
+  .turn-progress .turn-progress-enter,
+  .turn-progress .tool-activity-label.running.turn-progress-enter {
+    animation: none;
+    transform: none;
+  }
   .tool-row-name.running,
   .tool-activity-label.running {
     animation: none;
