@@ -11997,6 +11997,8 @@ or delete caches, profiles or earlier recovery files to hide this condition.
   and close them in either order. Resize across 760px. Select Panel, Desktop
   and Mobile; have an agent set a custom viewport and switch tabs while a
   viewport request is pending. Test the Material toolbar in a 244px dock.
+  Navigate with slow resources and trigger a browser action error. Activate
+  the warning button and check keyboard and screen-reader access to the error.
 - **Expected**: One editable composer, no duplicate execution, correct model/
   session, retained draft/attachment/page input and guest identity. Floating
   input is above the page and its menus fit. Other page regions remain
@@ -12011,6 +12013,9 @@ or delete caches, profiles or earlier recovery files to hide this condition.
   Wide inspectors preserve the page in its remaining measured rectangle;
   narrow inspectors hide it. Inspectors and menus cannot be covered by the
   floating composer, and closing one cannot bypass another active overlay.
+  No readiness/operation/error strip reserves space above the webpage. The tab
+  spinner and Stop control show loading; the warning button and Inspect show
+  errors, with live announcements retained for assistive technology.
 - **Validation**: Focused contract tests, desktop typecheck/build and a native
   Electron probe. Full local E2E suites remain unrun unless requested.
 

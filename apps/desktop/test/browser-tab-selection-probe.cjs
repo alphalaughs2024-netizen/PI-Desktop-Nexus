@@ -230,6 +230,25 @@ if (!process.env.NEXUS_BROWSER_PROBE_PROFILE || !process.env.PI_DESKTOP_HOST_BIN
       if (process.env.NEXUS_BROWSER_PROBE_SCREENSHOT) await page.screenshot({ path: process.env.NEXUS_BROWSER_PROBE_SCREENSHOT.replace(/\.png$/, "-inspector.png") });
       await page.getByRole("button", { name: "Close Browser diagnostics", exact: true }).click();
 
+      const pageGap = () => page.evaluate(() => document.querySelector('.browser-page-surface').getBoundingClientRect().top - document.querySelector('.browser-inspection-toolbar').getBoundingClientRect().bottom);
+      assert.ok(Math.abs(await pageGap()) < 1, "No status bands reserve space above the page");
+      await page.evaluate(() => {
+        window.__probeClipboardWrite = navigator.clipboard.writeText;
+        navigator.clipboard.writeText = async () => { throw new Error("Probe clipboard denied"); };
+      });
+      await page.getByRole("button", { name: "More Browser actions", exact: true }).click();
+      await page.getByRole("menuitem", { name: "Copy safe address", exact: true }).click();
+      await page.getByRole("button", { name: "Inspect browser error", exact: true }).waitFor();
+      await page.evaluate(() => { navigator.clipboard.writeText = window.__probeClipboardWrite; delete window.__probeClipboardWrite; });
+      assert.ok(Math.abs(await pageGap()) < 1, "An error cannot add a page band");
+      assert.equal(await page.locator('#browser-error-notice').getAttribute("role"), "alert");
+      await page.getByRole("button", { name: "Inspect browser error", exact: true }).click();
+      assert.equal(await page.locator('.browser-tools-error').innerText(), "Unable to copy the Browser address.");
+      if (process.env.NEXUS_BROWSER_PROBE_SCREENSHOT) await page.screenshot({ path: process.env.NEXUS_BROWSER_PROBE_SCREENSHOT.replace(/\.png$/, "-error-inspector.png") });
+      await page.getByRole("button", { name: "Close Browser diagnostics", exact: true }).click();
+      await address.fill(url); await address.press("Enter");
+      await page.waitForFunction(() => document.querySelector(".browser-core-view")?.dataset.browserReadiness === "ready");
+
       for (const [theme, scenicTheme] of [["dark", ""], ["light", ""], ["dark", "twilight-mountains"], ["dark", "obsidian-horizon"]]) {
         await page.evaluate(({ theme, scenicTheme }) => { document.documentElement.dataset.theme = theme; if (scenicTheme) document.documentElement.dataset.scenicTheme = scenicTheme; else delete document.documentElement.dataset.scenicTheme; }, { theme, scenicTheme });
         await page.waitForTimeout(100);

@@ -94,6 +94,12 @@ two seconds while the browser is active and ready or loading, reflecting
 agent-set/custom dimensions without guessing the device mode. Pending changes
 and old-tab results cannot select another tab's viewport.
 
+Page content starts directly below the inspection toolbar, without permanent
+readiness, operation or error bands. Loading remains visible in the tab spinner
+and Stop control. A themed warning button opens Inspect, where the current
+error is readable on every tools tab. Stable screen-reader live regions retain
+readiness, operation and error announcements without reserving page space.
+
 At widths of at least 760px the inspector reserves 380px beside the native page.
 Narrower inspectors cover only page content and hide the guest. Browser menus
 hide the guest. All these controls hide the native floating composer while open;

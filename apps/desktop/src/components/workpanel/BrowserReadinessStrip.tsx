@@ -8,5 +8,5 @@ export type BrowserPanelState = BrowserPresentationState;
 
 export function BrowserReadinessStrip({ state }: { state: BrowserPanelState }) {
   const labels: Record<BrowserPanelState, string> = { "no-page": "New tab", starting: "Starting Browser…", ready: "Ready", loading: "Loading page…", unavailable: "Surface unavailable", "policy-blocked": "Policy blocked", "debugger-unavailable": "Debugger unavailable", closed: "Browser closed" };
-  return <div className={`browser-readiness-strip browser-readiness-strip--${state}`} data-browser-state={state}><span className="browser-readiness-dot" aria-hidden="true" /><span>{labels[state]}</span></div>;
+  return <span className="browser-readiness-strip" data-browser-state={state} role="status" aria-live="polite">{labels[state]}</span>;
 }

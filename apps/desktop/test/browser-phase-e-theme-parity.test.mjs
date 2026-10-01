@@ -15,10 +15,10 @@ test("Phase E gives every scenic theme one authoritative Browser token mapping",
 
 test("Phase E Browser chrome uses semantic tokens for state, controls, and diagnostics", () => {
   for (const token of ["browser-text", "browser-text-muted", "browser-border", "browser-focus", "browser-ready", "browser-loading", "browser-error", "browser-panel-surface-raised"]) assert.match(browserCss, new RegExp(`var\\(--${token}`));
-  assert.match(browserCss, /browser-toolbar button[^}]*browser-text-muted/);
+  assert.match(browserCss, /browser-toolbar button[^}]*ds-text-secondary/);
   assert.match(browserCss, /browser-diagnostics-row[^}]*browser-border/);
-  assert.match(browserCss, /browser-readiness-strip--ready[^}]*browser-ready/);
-  assert.match(browserCss, /browser-readiness-strip--unavailable[^}]*browser-error/);
+  assert.match(browserCss, /browser-header-readiness--ready[^}]*browser-ready/);
+  assert.match(browserCss, /browser-inspection-error[^}]*browser-error/);
   assert.match(browserCss, /prefers-reduced-motion/);
   assert.match(core, /BrowserNewTabSurface/);
   assert.doesNotMatch(diagnostics, /WebContents|CDP target|cookie|credential|filesystem path/i);

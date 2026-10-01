@@ -39,7 +39,7 @@ test("Phase D keeps live regions, diagnostics, and motion contracts stable", () 
   assert.equal((core.match(/<BrowserErrorNotice/g) ?? []).length, 1);
   assert.match(diagnostics, /aria-hidden="true"/);
   assert.doesNotMatch(diagnostics, /WebContents|CDP target|cookie|credential|filesystem path/i);
-  assert.match(css, /browser-operation-status[^}]*flex: 0 0 20px/);
+  assert.match(css, /browser-operation-status[^}]*clip: rect\(0, 0, 0, 0\)/);
   assert.match(css, /prefers-reduced-motion/);
   assert.doesNotMatch(core, /Browser ready/);
 });

@@ -17,6 +17,5 @@ test("New Tab controls have distinct actions and no redundant status gap", () =>
   assert.match(newTab, /onClick=\{onSearchWeb\}/);
   assert.match(newTab, /onClick=\{onNewTab\}/);
   assert.match(core, /onSearchWeb=\{\(\) => void navigateToAddress\("https:\/\/www\.google\.com\/"\)\}/);
-  assert.match(css, /\.browser-operation-status:empty\s*\{\s*display:\s*none/);
-  assert.match(css, /\.browser-core-view--new-tab \.browser-readiness-strip--no-page\s*\{\s*display:\s*none/);
+  assert.match(css, /\.browser-readiness-strip, \.browser-operation-status, \.browser-error-notice\s*\{\s*position:\s*absolute;\s*width:\s*1px;\s*height:\s*1px/);
 });
