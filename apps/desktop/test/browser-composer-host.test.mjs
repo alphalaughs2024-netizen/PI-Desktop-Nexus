@@ -84,6 +84,27 @@ test("drafts survive state batches, tab stacking and return; stale snapshots can
   } finally { f.host.dispose(); }
 });
 
+test("animated native height updates retain child order and bottom anchoring", async () => {
+  const f = fixture();
+  try {
+    await f.publish(f.snapshot());
+    let reorderCount = 0;
+    const add = f.main.contentView.addChildView.bind(f.main.contentView);
+    f.main.contentView.addChildView = view => { reorderCount++; add(view); };
+    for (const height of [138, 200, 330, 502, 400, 250, 138]) {
+      assert.equal((await f.invoke(2, { kind: "height", height, generation: 1, sessionId: "chat" })).ok, true);
+      assert.equal(f.native().bounds.height, height);
+      assert.equal(f.native().bounds.y + height, 788);
+      assert.equal(f.main.contentView.children.at(-1), f.native());
+    }
+    assert.equal(reorderCount, 0, "Animation frames never detach/re-add an already raised view");
+    f.main.contentView.addChildView({ page: true });
+    f.host.raise();
+    assert.equal(reorderCount, 2, "Reattached guest is followed by one composer raise");
+    assert.equal(f.main.contentView.children.at(-1), f.native());
+  } finally { f.host.dispose(); }
+});
+
 test("an accepted action runs once and can finish after Full view closes", async () => {
   const f = fixture();
   try {

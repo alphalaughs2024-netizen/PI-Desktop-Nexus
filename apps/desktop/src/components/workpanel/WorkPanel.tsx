@@ -45,6 +45,8 @@ import {
   WORK_PANEL_MAX_WIDTH,
   WORK_PANEL_MIN_WIDTH,
   clampWorkPanelWidth,
+  workPanelDockMaxWidth,
+  browserResizeRequestsFullView,
 } from "../../lib/work-panel-resize";
 
 const TAB_ICONS = {
@@ -61,6 +63,8 @@ type WorkPanelResizeState = {
   startClientX: number;
   startWidth: number;
   currentWidth: number;
+  rawWidth: number;
+  dockMaxWidth: number;
   frame: number;
 };
 
@@ -374,16 +378,20 @@ export function WorkPanel({
         target.releasePointerCapture(pointerId);
       }
       setPanelDragWidth(null);
+      if (isBrowser && !isMaximized && browserResizeRequestsFullView(drag.rawWidth, drag.dockMaxWidth, cancelled)) {
+        transitionPresentation("maximized");
+        return;
+      }
       if (!cancelled && drag.currentWidth !== drag.startWidth) {
         setWidth(drag.currentWidth);
       }
     },
-    [setWidth],
+    [isBrowser, isMaximized, setWidth, transitionPresentation],
   );
 
   const onPanelResizeStart = useCallback(
     (event: React.PointerEvent<HTMLDivElement>) => {
-      if (event.button !== 0 || panelResizeState.current) return;
+      if (event.button !== 0 || panelResizeState.current || isPresentationTransitioning) return;
       event.preventDefault();
       event.stopPropagation();
       event.currentTarget.focus({ preventScroll: true });
@@ -395,12 +403,16 @@ export function WorkPanel({
         startClientX: event.clientX,
         startWidth,
         currentWidth: startWidth,
+        rawWidth: startWidth,
+        dockMaxWidth: isBrowser
+          ? workPanelDockMaxWidth(window.innerWidth, Number.parseFloat(getComputedStyle(event.currentTarget).getPropertyValue("--shell-active-sidebar-width")) || 0)
+          : WORK_PANEL_MAX_WIDTH,
         frame: 0,
       };
       setPanelDragWidth(startWidth);
       event.currentTarget.setPointerCapture(event.pointerId);
     },
-    [width],
+    [isBrowser, isPresentationTransitioning, width],
   );
 
   const onPanelResizeMove = useCallback(
@@ -409,9 +421,8 @@ export function WorkPanel({
       if (drag?.pointerId !== event.pointerId) return;
       // The divider is on the panel's left edge: moving it left makes the
       // panel wider, while moving it right gives that space back to chat.
-      drag.currentWidth = clampWorkPanelWidth(
-        drag.startWidth + drag.startClientX - event.clientX,
-      );
+      drag.rawWidth = drag.startWidth + drag.startClientX - event.clientX;
+      drag.currentWidth = Math.min(drag.dockMaxWidth, clampWorkPanelWidth(drag.rawWidth));
       if (drag.frame) return;
       drag.frame = requestAnimationFrame(() => {
         if (panelResizeState.current !== drag) return;

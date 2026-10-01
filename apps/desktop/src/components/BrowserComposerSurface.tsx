@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { ChevronDown, ChevronUp, Maximize2 } from "lucide-react";
 import { IPC } from "@pi-desktop/shared";
 import { BROWSER_COMPOSER_ACTIONS, type BrowserComposerSnapshot, type BrowserComposerDraft } from "../../common/browser-composer";
@@ -14,21 +14,32 @@ export function BrowserComposerSurface() {
   const [historyHeight, setHistoryHeight] = useState(0);
   const [windowHeight, setWindowHeight] = useState(800);
   const historyRef = useRef<HTMLDivElement | null>(null);
+  const conversationRef = useRef<HTMLDivElement | null>(null);
+  const resizeHandleRef = useRef<HTMLDivElement | null>(null);
+  const lastOpenHeight = useRef(320);
   const pinned = useRef(true);
   const resize = useRef<{ screenY: number; height: number; pointerId: number } | null>(null);
+  const stopResizing = useCallback(() => {
+    const pointerId = resize.current?.pointerId;
+    resize.current = null;
+    if (conversationRef.current) delete conversationRef.current.dataset.resizing;
+    if (pointerId !== undefined && resizeHandleRef.current?.hasPointerCapture(pointerId)) resizeHandleRef.current.releasePointerCapture(pointerId);
+  }, []);
   const maxHistory = Math.max(0, Math.min(560, windowHeight - 340));
   const displayedHeight = Math.min(historyHeight, maxHistory);
+  if (displayedHeight) lastOpenHeight.current = displayedHeight;
+  const retainedHeight = Math.min(lastOpenHeight.current, maxHistory);
   const changeHeight = (value: number) => setHistoryHeight(Math.max(0, Math.min(value, maxHistory)));
   useEffect(() => {
-    const collapse = () => { resize.current = null; setHistoryHeight(0); };
+    const collapse = () => { stopResizing(); setHistoryHeight(0); };
     const outside = (event: PointerEvent) => {
       if (!(event.target as HTMLElement).closest(".browser-floating-shell, .overlay, .speech-overlay, .ui-tooltip")) collapse();
     };
     window.addEventListener("blur", collapse);
     window.addEventListener("pointerdown", outside);
     return () => { window.removeEventListener("blur", collapse); window.removeEventListener("pointerdown", outside); };
-  }, []);
-  useEffect(() => { pinned.current = true; setHistoryHeight(0); }, [snapshot?.sessionId, snapshot?.visible]);
+  }, [stopResizing]);
+  useLayoutEffect(() => { stopResizing(); pinned.current = true; setHistoryHeight(0); }, [snapshot?.sessionId, snapshot?.visible, stopResizing]);
   useLayoutEffect(() => {
     const element = historyRef.current;
     if (element && pinned.current) element.scrollTop = element.scrollHeight;
@@ -62,7 +73,7 @@ export function BrowserComposerSurface() {
     const off = window.piDesktop.on(IPC.event.browserComposer, raw => {
       const event = raw as { kind: string; snapshot: BrowserComposerSnapshot; height: number };
       if (event.kind === "reset") { current = null; setSnapshot(null); }
-      else if (event.kind === "collapse-history") { resize.current = null; setHistoryHeight(0); }
+      else if (event.kind === "collapse-history") { stopResizing(); setHistoryHeight(0); }
       else if (event.kind === "viewport") { document.documentElement.style.setProperty("--browser-composer-window-height", `${event.height}px`); setWindowHeight(event.height); }
       else if (event.kind === "snapshot") apply(event.snapshot);
     });
@@ -70,7 +81,7 @@ export function BrowserComposerSurface() {
     const key = (event: KeyboardEvent) => { if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key.toLowerCase() === "f") { event.preventDefault(); void useAppStore.getState().dockWorkPanel(); } };
     window.addEventListener("keydown", key);
     return () => { disposed = true; off(); window.removeEventListener("keydown", key); };
-  }, []);
+  }, [stopResizing]);
 
   useLayoutEffect(() => {
     if (!snapshot?.visible) return;
@@ -94,6 +105,8 @@ export function BrowserComposerSurface() {
     const observer = new ResizeObserver(measure);
     const mutations = new MutationObserver(measure);
     observer.observe(document.getElementById("root")!);
+    const shell = document.querySelector('.browser-floating-shell');
+    if (shell) observer.observe(shell);
     mutations.observe(document.body, { childList: true, subtree: true, attributes: true });
     window.addEventListener("resize", measure);
     measure();
@@ -111,20 +124,22 @@ export function BrowserComposerSurface() {
   }} onFocusCapture={event => {
     if ((event.target as HTMLElement).closest('.composer-input[contenteditable="true"]') && !displayedHeight) { pinned.current = true; changeHeight(Math.min(320, maxHistory)); }
   }}>
-    <div hidden={!displayedHeight} className="browser-floating-resize" role="separator" aria-label="Resize floating chat" aria-orientation="horizontal" aria-valuemin={0} aria-valuemax={maxHistory} aria-valuenow={displayedHeight} tabIndex={0}
-      onPointerDown={event => { if (event.button !== 0) return; resize.current = { screenY: event.screenY, height: displayedHeight, pointerId: event.pointerId }; event.currentTarget.setPointerCapture(event.pointerId); event.preventDefault(); }}
+    <div ref={conversationRef} className="browser-floating-conversation" style={{ height: displayedHeight ? displayedHeight + 44 : 0 }} inert={!displayedHeight} aria-hidden={!displayedHeight}>
+    <div ref={resizeHandleRef} className="browser-floating-resize" role="separator" aria-label="Resize floating chat" aria-orientation="horizontal" aria-valuemin={0} aria-valuemax={maxHistory} aria-valuenow={displayedHeight} tabIndex={0}
+      onPointerDown={event => { if (event.button !== 0) return; resize.current = { screenY: event.screenY, height: displayedHeight, pointerId: event.pointerId }; if (conversationRef.current) conversationRef.current.dataset.resizing = "true"; event.currentTarget.setPointerCapture(event.pointerId); event.preventDefault(); }}
       onPointerMove={event => { const drag = resize.current; if (drag?.pointerId === event.pointerId) changeHeight(drag.height + drag.screenY - event.screenY); }}
-      onPointerUp={event => { resize.current = null; if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId); }}
-      onPointerCancel={() => { resize.current = null; }} onLostPointerCapture={() => { resize.current = null; }}
+      onPointerUp={stopResizing}
+      onPointerCancel={stopResizing} onLostPointerCapture={stopResizing}
       onKeyDown={event => { if (["ArrowUp", "ArrowDown", "Home", "End"].includes(event.key)) { event.preventDefault(); changeHeight(event.key === "Home" ? 0 : event.key === "End" ? maxHistory : displayedHeight + (event.key === "ArrowUp" ? 40 : -40)); } }}><span /></div>
-    <header hidden={!displayedHeight} className="browser-floating-heading">
+    <header className="browser-floating-heading">
       <button type="button" title={displayedHeight ? "Collapse conversation" : "Expand conversation"} aria-label={displayedHeight ? "Collapse conversation" : "Expand conversation"} aria-expanded={displayedHeight > 0} aria-controls="browser-floating-history" onClick={() => { pinned.current = true; changeHeight(displayedHeight ? 0 : Math.min(320, maxHistory)); }}>{displayedHeight ? <ChevronDown size={16} /> : <ChevronUp size={16} />}</button>
       <span title={snapshot.history?.title}>{snapshot.history?.title ?? "Chat"}</span>
       <button type="button" title="Open full chat" aria-label="Open full chat" onClick={() => void useAppStore.getState().dockWorkPanel()}><Maximize2 size={16} /></button>
     </header>
-    <div id="browser-floating-history" className="browser-floating-history" ref={historyRef} style={{ height: displayedHeight }} hidden={!displayedHeight} role="region" aria-label="Current conversation" onScroll={event => { const element = event.currentTarget; pinned.current = element.scrollHeight - element.scrollTop - element.clientHeight < 32; }}>
+    <div id="browser-floating-history" className="browser-floating-history" ref={historyRef} style={{ height: retainedHeight }} role="region" aria-label="Current conversation" onScroll={event => { const element = event.currentTarget; pinned.current = element.scrollHeight - element.scrollTop - element.clientHeight < 32; }}>
       {snapshot.history?.truncated && <button type="button" className="browser-floating-earlier" onClick={() => void useAppStore.getState().dockWorkPanel()}>Earlier messages</button>}
       {snapshot.history?.messages.map(message => <article key={message.id} className={`browser-floating-message browser-floating-message--${message.role}`} aria-label={message.role === "user" ? "You" : "Assistant"}>{message.role === "user" ? <p>{message.content}</p> : <div className="markdown"><Markdown source={message.content} renderDiagrams={false} /></div>}</article>)}
+    </div>
     </div>
     <Composer compactModelSelector key={`${snapshot.sessionId}:${snapshot.generation}`} onDraftChange={draftChanged} contextUsage={snapshot.contextUsage ?? null}
     executeCommand={commandId => requestAction<void>("runPaletteCommand", [commandId])}

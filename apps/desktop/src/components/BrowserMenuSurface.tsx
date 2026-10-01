@@ -37,7 +37,7 @@ export function BrowserMenuSurface() {
   }, []);
   useEffect(() => { menu.current?.querySelector<HTMLButtonElement>('button:not(:disabled)')?.focus(); }, [snapshot?.id]);
   if (!snapshot) return null;
-  return <div ref={menu} className="browser-native-menu" role="menu" aria-label={snapshot.title} onKeyDown={event => {
+  return <div ref={menu} className="browser-native-menu" data-browser-menu-id={snapshot.id} role="menu" aria-label={snapshot.title} onKeyDown={event => {
     const items = Array.from(menu.current?.querySelectorAll<HTMLButtonElement>('button:not(:disabled)') ?? []);
     const index = items.indexOf(document.activeElement as HTMLButtonElement);
     if (event.key === "Escape" || event.key === "Tab") { event.preventDefault(); request("dismiss", { restoreFocus: true }); }

@@ -6,6 +6,16 @@ export const WORK_PANEL_MAX_WIDTH = 720;
 export const WORK_PANEL_CHAT_MIN_WIDTH = 1040;
 export const WORK_PANEL_CHAT_MAX_WIDTH = 10000;
 export const MAIN_PANE_MIN_WIDTH = 360;
+export const WORK_PANEL_DOCK_CHAT_MIN_WIDTH = 480;
+export const BROWSER_FULL_VIEW_DRAG_MARGIN = 32;
+
+export function workPanelDockMaxWidth(viewportWidth: number, sidebarWidth: number) {
+  return clampWorkPanelWidth(viewportWidth - sidebarWidth - WORK_PANEL_DOCK_CHAT_MIN_WIDTH);
+}
+
+export function browserResizeRequestsFullView(rawWidth: number, dockMaxWidth: number, cancelled: boolean) {
+  return !cancelled && rawWidth >= dockMaxWidth + BROWSER_FULL_VIEW_DRAG_MARGIN;
+}
 
 export type WorkPanelChatResizeGesture = {
   startClientX: number;

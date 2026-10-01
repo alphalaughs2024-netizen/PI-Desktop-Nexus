@@ -130,7 +130,7 @@ export class BrowserComposerHost {
     const viewWidth = Math.min(500, Math.max(1, width - 24));
     const viewHeight = Math.min(this.height, Math.max(1, height - 100));
     view.setBounds({ x: Math.max(0, width - viewWidth - 12), y: Math.max(0, height - viewHeight - 12), width: viewWidth, height: viewHeight });
-    window.contentView.addChildView(view);
+    if (window.contentView.children.at(-1) !== view) window.contentView.addChildView(view);
     view.setVisible(true);
   }
 

@@ -10,6 +10,8 @@ export function useBrowserPresentationMotion(elementRef: RefObject<HTMLElement |
     const element = elementRef.current;
     if (!element || !enabled) { previous.current = null; return; }
     const before = previous.current;
+    // Full view disables the mount animation; returning must not start it again.
+    if (before && before.presentation !== presentation) element.dataset.browserPresentationMotion = "settled";
     const target = element.getBoundingClientRect();
     previous.current = { presentation, rect: target };
     let restore: ((interrupted?: boolean) => void) | undefined;

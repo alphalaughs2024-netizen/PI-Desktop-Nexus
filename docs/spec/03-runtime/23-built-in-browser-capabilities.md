@@ -36,9 +36,15 @@ tail of the current conversation: up to 24 user/assistant text messages,
 48,000 total characters and 12,000 per message, excluding tools, reasoning
 and attachments. Earlier messages/Open full chat restore the complete chat.
 Live updates follow the bottom only while the user remains near the bottom.
+Chat opening and closing animate height for 220ms with the existing disclosure
+easing. Native bounds follow the measured animation and child order stays stable.
+Pointer resizing tracks directly; closed history is inert. Reduced motion skips
+this animation.
 Browser presentation animates measured position and size for 300ms; the same
 native guest follows the changing rectangle. Input is hidden during motion.
 Reduced motion switches immediately; interruption/resize restores layout.
+Returning from Full view suppresses the panel mount animation before measuring
+the dock destination, so the panel never collapses to zero and reopens.
 Context usage is calculated from the complete main transcript before sending
 bounded reply data. Speech uses the trusted native renderer identity; changing
 presentation stops any active voice cycle, which can be restarted in the visible
@@ -92,6 +98,13 @@ style changes, evaluation and public CDP. Resuming clears annotation click
 handlers before agent control is restored.
 
 ## Tool and GUI Contract
+
+Dragging the docked browser's left divider at least 32px past its effective
+dock limit enters the existing Full view on pointer release. The limit follows
+viewport/sidebar geometry and the chat minimum width. Merely reaching the limit,
+returning below the margin or canceling the gesture stays docked. Expansion
+retains the prior saved dock width, page, input and guest; other resources keep
+their existing resize behavior.
 
 `BROWSER_TOOL_NAMES` is authoritative. Existing tools remain, with capabilities,
 tabs, locator interactions, dialogs, Developer approval, events, downloads,

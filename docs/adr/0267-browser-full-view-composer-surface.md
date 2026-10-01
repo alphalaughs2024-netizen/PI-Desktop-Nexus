@@ -78,6 +78,10 @@ Users reading older messages are not forced to the bottom by streaming.
 Dock/Full view transitions animate actual panel bounds for 300ms while keeping
 the same live guest and hiding the input surface until geometry settles.
 Reduced motion skips the animation; cancellation/resize restores inline layout.
+The mount animation is retired before measuring presentation changes and is
+not replayed on return to dock. The floating history uses a 220ms height
+disclosure; its native bounds track shell ResizeObserver updates while retaining
+child order. Pointer resizing skips easing and closed content becomes inert.
 
 Targeted lifecycle, sender, stale-action, draft handoff and compositor checks
 must accompany desktop typecheck and production renderer/main/preload builds.

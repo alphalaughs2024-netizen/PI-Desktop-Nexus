@@ -12008,6 +12008,10 @@ or delete caches, profiles or earlier recovery files to hide this condition.
   keyboard, and read older text during streaming. Open the Brain model selector
   and verify model/reasoning selection and tooltip. Reverse Full view during
   motion and resize; repeat with reduced motion.
+  Drag the browser's left divider to the dock limit, then at least 32px beyond
+  it. Check presentation before and after release. Repeat by dragging back,
+  canceling with Escape/pointer cancellation, and with a collapsed sidebar and
+  narrow window; verify non-browser resource resizing remains unchanged.
 - **Expected**: One editable composer, no duplicate execution, correct model/
   session, retained draft/attachment/page input and guest identity. Floating
   input is above the page and its menus fit. Other page regions remain
@@ -12016,6 +12020,13 @@ or delete caches, profiles or earlier recovery files to hide this condition.
   animate smoothly and settle without replacing the guest; reduced motion is
   immediate. Floating history is bounded, expands above the input and preserves
   reading position. Only the floating model trigger becomes an icon.
+  Chat opening/closing interpolate native height without snapping, clipping or
+  reordering the input view; pointer sizing is direct and closed history inert.
+  Full view exit settles directly at dock width without a zero-width frame or
+  replay of the panel's opening animation.
+  Divider overshoot enters the same Full view only on release, preserves the
+  previous saved dock width, and retains the guest and page input. Reaching the
+  limit without overshoot, retreating and canceled gestures remain docked.
   Voice stops when changing presentation and microphone access stays
   trusted-renderer/audio-only. Context totals match the main chat after long tool histories.
   Stale commands and untrusted senders fail without mutations;

@@ -52,6 +52,10 @@ if (!process.env.NEXUS_BROWSER_PROBE_PROFILE || !process.env.PI_DESKTOP_HOST_BIN
       }
       assert.ok(menu, "Native menu renderer appears");
       await menu.getByRole("menu").waitFor();
+      await menu.waitForFunction(async () => {
+        const result = await window.piDesktop.invoke(window.piDesktop.channels.invoke.browserMenu, { kind: "ready" });
+        return result.data && document.querySelector('[data-browser-menu-id]')?.dataset.browserMenuId === String(result.data.id);
+      });
       return menu;
     };
     await page.waitForFunction(() => !!window.__PI_DESKTOP__ && !!window.piDesktop);
@@ -139,8 +143,9 @@ if (!process.env.NEXUS_BROWSER_PROBE_PROFILE || !process.env.PI_DESKTOP_HOST_BIN
       await input.fill("Draft edited over the page");
       await new Promise(resolve => setTimeout(resolve, 150));
       await app.evaluate(({ webContents }, id) => webContents.fromId(id).focus(), guestId);
-      await composer.waitForFunction(() => document.querySelector('.browser-floating-history')?.hasAttribute('hidden'));
-      await composer.waitForTimeout(150);
+      await composer.waitForFunction(() => document.querySelector('.browser-floating-conversation')?.getAttribute('aria-hidden') === 'true');
+      await composer.waitForFunction(() => document.querySelector('.browser-floating-conversation')?.getBoundingClientRect().height === 0);
+      await composer.waitForTimeout(50);
       const baseHeight = await composer.evaluate(() => innerHeight);
       assert.equal(await composer.locator('.composer-model-thinking-compact svg.lucide-brain').count(), 1, "Floating model selector uses a brain icon");
       assert.equal(await composer.locator('.composer-model-thinking-chip').innerText(), "", "Floating model trigger has no long label");
@@ -150,9 +155,21 @@ if (!process.env.NEXUS_BROWSER_PROBE_PROFILE || !process.env.PI_DESKTOP_HOST_BIN
         { id: "probe-user", role: "user", content: "Inspect the retained website", createdAt: 1 },
         { id: "probe-assistant", role: "assistant", content: "The **website** is ready to inspect.", createdAt: 2 },
       ] } } }), historySnapshot);
+      await composer.evaluate(() => {
+        window.__chatMotion = [];
+        const start = performance.now();
+        const sample = () => {
+          window.__chatMotion.push({ native: innerHeight, content: document.querySelector('.browser-floating-conversation').getBoundingClientRect().height });
+          if (performance.now() - start < 600) requestAnimationFrame(sample);
+        };
+        requestAnimationFrame(sample);
+      });
       await input.click();
       await composer.getByRole("region", { name: "Current conversation", exact: true }).waitFor();
-      await composer.waitForFunction(base => innerHeight > base + 200, baseHeight);
+      await composer.waitForFunction(base => innerHeight >= base + 364, baseHeight);
+      const opening = await composer.evaluate(() => window.__chatMotion);
+      assert.ok(new Set(opening.filter(value => value.content > 0 && value.content < 364).map(value => Math.round(value.content))).size >= 3, "Chat opening has intermediate content heights");
+      assert.ok(new Set(opening.filter(value => value.native > baseHeight && value.native < baseHeight + 364).map(value => value.native)).size >= 3, "Native input follows chat opening instead of snapping");
       console.log("COMPOSER_HISTORY_EXPANDED", await composer.evaluate(() => ({ height: innerHeight, history: document.querySelector('.browser-floating-history').getBoundingClientRect().height })));
       assert.equal(await composer.locator('.browser-floating-message').count(), 2, "Floating chat renders its current conversation snapshot");
       await composer.locator('.browser-floating-message').first().click();
@@ -162,8 +179,20 @@ if (!process.env.NEXUS_BROWSER_PROBE_PROFILE || !process.env.PI_DESKTOP_HOST_BIN
       await handle.focus();
       await handle.press("ArrowUp");
       assert.equal(await handle.getAttribute("aria-valuenow"), "360");
+      await composer.waitForFunction(base => innerHeight >= base + 404, baseHeight);
+      await composer.evaluate(() => {
+        window.__chatClosing = [];
+        const start = performance.now();
+        const sample = () => {
+          window.__chatClosing.push(innerHeight);
+          if (performance.now() - start < 600) requestAnimationFrame(sample);
+        };
+        requestAnimationFrame(sample);
+      });
       await handle.press("Home");
       await composer.waitForFunction(base => innerHeight === base, baseHeight);
+      const closing = await composer.evaluate(() => window.__chatClosing);
+      assert.ok(new Set(closing.filter(height => height > baseHeight && height < baseHeight + 404)).size >= 3, "Native input follows chat closing instead of snapping");
       console.log("COMPOSER_HISTORY_RESIZE_PASS");
       await input.click();
       await app.evaluate(({ webContents }, id) => {
@@ -172,9 +201,9 @@ if (!process.env.NEXUS_BROWSER_PROBE_PROFILE || !process.env.PI_DESKTOP_HOST_BIN
         guest.sendInputEvent({ type: "mouseDown", x: 20, y: 20, button: "left", clickCount: 1 });
         guest.sendInputEvent({ type: "mouseUp", x: 20, y: 20, button: "left", clickCount: 1 });
       }, guestId);
-      await composer.waitForFunction(() => document.querySelector('.browser-floating-history')?.hasAttribute('hidden'));
+      await composer.waitForFunction(() => document.querySelector('.browser-floating-conversation')?.getAttribute('aria-hidden') === 'true');
       await page.getByRole("textbox", { name: "Browser address", exact: true }).click();
-      assert.equal(await composer.locator('.browser-floating-heading').isVisible(), false, "Collapsed chat shows only the composer");
+      assert.equal(await composer.locator('.browser-floating-conversation').getAttribute('aria-hidden'), 'true', "Collapsed chat shows only the composer");
       await composer.locator(".composer-model-thinking-chip").click();
       await composer.locator('.composer-menu-entry').first().click();
       await composer.waitForFunction(base => innerHeight > base, baseHeight);
@@ -227,8 +256,24 @@ if (!process.env.NEXUS_BROWSER_PROBE_PROFILE || !process.env.PI_DESKTOP_HOST_BIN
         const window = BrowserWindow.getAllWindows().find(w => /renderer\/index\.html/.test(w.webContents.getURL()) && !w.webContents.getURL().includes("surface="));
         return window.contentView.children.at(-1)?.webContents?.getURL().includes("surface=browser-composer");
       }), true, "Tab reattachment retains composer child order");
+      await page.evaluate(() => {
+        window.__exitWidths = [];
+        const start = performance.now();
+        const sample = () => {
+          window.__exitWidths.push(document.querySelector('.work-panel--browser').getBoundingClientRect().width);
+          if (performance.now() - start < 750) requestAnimationFrame(sample);
+        };
+        requestAnimationFrame(sample);
+      });
+      const fullWidth = await page.locator('.work-panel--browser').evaluate(element => element.getBoundingClientRect().width);
       await input.press("Control+Shift+F");
       await page.waitForFunction(() => !document.querySelector(".app-shell")?.classList.contains("browser-full-view"));
+      await page.waitForTimeout(800);
+      const dockWidth = await page.locator('.work-panel--browser').evaluate(element => element.getBoundingClientRect().width);
+      const exitWidths = await page.evaluate(() => window.__exitWidths);
+      assert.ok(new Set(exitWidths.filter(width => width > dockWidth + 1 && width < fullWidth - 1).map(Math.round)).size > 3, "Full view exit has intermediate widths");
+      assert.ok(exitWidths.every(width => width >= dockWidth - 1), "Dock never closes below its final width during Full view exit");
+      assert.ok(exitWidths.every((width, index) => !index || width <= exitWidths[index - 1] + 1), "Exit shrinks directly to dock without reopening");
       assert.equal(await page.locator('.composer-input[contenteditable="true"]').innerText(), "Draft edited over the page", "Native draft returns to Chat");
       await page.getByRole("button", { name: "Enter full view", exact: true }).click();
       await page.waitForFunction(() => document.querySelector(".app-shell")?.classList.contains("browser-full-view"));
@@ -363,6 +408,32 @@ if (!process.env.NEXUS_BROWSER_PROBE_PROFILE || !process.env.PI_DESKTOP_HOST_BIN
       if (process.env.NEXUS_BROWSER_PROBE_SCREENSHOT) await page.screenshot({ path: process.env.NEXUS_BROWSER_PROBE_SCREENSHOT.replace(/\.png$/, "-244px.png") });
       await page.locator('.work-panel--browser').evaluate(element => { element.style.flex = ""; element.style.width = ""; });
       await page.evaluate(() => { window.__tabProbe.changes = []; });
+      await app.evaluate(async ({ webContents }, id) => webContents.fromId(id).executeJavaScript('document.getElementById("draft").value="keep this draft"'), guestId);
+      const divider = page.locator('.work-panel-resize');
+      const dockBefore = await page.locator('.work-panel--browser').evaluate(element => element.getBoundingClientRect().width);
+      const dividerBox = await divider.boundingBox();
+      const dragX = dividerBox.x + dividerBox.width / 2;
+      const dragY = dividerBox.y + dividerBox.height / 2;
+      await page.mouse.move(dragX, dragY);
+      await page.mouse.down();
+      await page.mouse.move(20, dragY, { steps: 12 });
+      assert.equal(await page.locator('.app-shell').evaluate(element => element.classList.contains('browser-full-view')), false, "Overshoot does not maximize while pointer is held");
+      await page.mouse.up();
+      await page.waitForFunction(() => document.querySelector('.app-shell')?.classList.contains('browser-full-view'));
+      await page.waitForTimeout(400);
+      await page.getByRole("button", { name: "Exit full view", exact: true }).click();
+      await page.waitForFunction(() => !document.querySelector('.app-shell')?.classList.contains('browser-full-view'));
+      await page.waitForTimeout(400);
+      assert.ok(Math.abs(await page.locator('.work-panel--browser').evaluate(element => element.getBoundingClientRect().width) - dockBefore) < 1, "Overshoot preserves the saved dock width");
+      const cancelBox = await divider.boundingBox();
+      await page.mouse.move(cancelBox.x + cancelBox.width / 2, dragY);
+      await page.mouse.down();
+      await page.mouse.move(20, dragY, { steps: 12 });
+      await divider.press("Escape");
+      await page.mouse.up();
+      assert.equal(await page.locator('.app-shell').evaluate(element => element.classList.contains('browser-full-view')), false, "Cancelled overshoot stays docked");
+      assert.equal(await app.evaluate(async ({ webContents }, id) => webContents.fromId(id).executeJavaScript('document.getElementById("draft").value'), guestId), "keep this draft", "Resize expansion retains page input");
+      console.log("BROWSER_RESIZE_FULL_VIEW_PASS", { releaseOnly: true, savedWidth: true, cancel: true, retainedInput: true });
       console.log("BROWSER_MATERIAL_PASS", { realViewport: true, customViewport: true, realCapture: true, inspectorGeometry: true, composerNotObscuringControls: true, themes: 4, narrowToolsFit: true, reducedMotion: true });
     }
 
