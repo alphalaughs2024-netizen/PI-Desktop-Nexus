@@ -11841,6 +11841,11 @@ or delete caches, profiles or earlier recovery files to hide this condition.
   User scrolling remains owned by the user; existing theme materials and geometry
   stay intact. Snapshot restoration cannot overwrite a newer generation or replay
   commands. Unowned prior execution is interrupted. Span omissions are explicit.
+  Expanded timeline lifecycle rows have clear vertical separation, a stable
+  elapsed-time column and wrapping labels; thinking names and summaries do not
+  touch. Check narrow/wide dark, light and scenic views with long labels and
+  nested tool/reasoning disclosures. Waiting states do not imply measured
+  provider queuing or unseen reasoning.
 - **Validation**: Targeted runtime lifecycle, Rust canonical metadata roundtrip,
   renderer projection/batching checks and manual Phase 3 acceptance. Local E2E
   suites remain unrun unless explicitly requested.

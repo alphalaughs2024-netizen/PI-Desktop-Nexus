@@ -59,6 +59,15 @@ come from Nexus's existing Lucide dependency. The accepted Lucide Animated
 specimen informed independent CSS timing adaptations; no proprietary Codex/Kimi
 artwork, additional animation dependency or theme palette is imported.
 
+Expanded timeline rows use a spaced vertical stack, readable secondary labels
+and a fixed muted elapsed-time column. Tool/reasoning headers keep separate icon,
+name and summary gaps; long lifecycle labels wrap without overflowing narrow
+conversation widths. This spacing is confined to the response timeline.
+`waiting-model` means the active execution has no foreground tool, approval,
+assistant output or supplied reasoning item to report. It does not distinguish
+provider queuing, hidden reasoning or transport delays; short transitions between
+completed items and turn settlement can also record it.
+
 Phase spans describe wall-clock state and may include simultaneous activities;
 they are not additive provider/CPU measurements. Metadata is bounded to 256 spans,
 retains the first/latest spans and reports omissions. Per-span detail is bounded.
