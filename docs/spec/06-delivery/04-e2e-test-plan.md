@@ -11997,6 +11997,8 @@ or delete caches, profiles or earlier recovery files to hide this condition.
   and close them in either order. Resize across 760px. Select Panel, Desktop
   and Mobile; have an agent set a custom viewport and switch tabs while a
   viewport request is pending. Test the Material toolbar in a 244px dock.
+  Open New tab in docked and Full view layouts and check that its heading and
+  action group are centered in the available page area, with readable labels.
   Navigate with slow resources and trigger a browser action error. Activate
   the warning button and check keyboard and screen-reader access to the error.
   Open overflow/tab menus over a live webpage, dismiss by Escape and outside

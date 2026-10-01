@@ -14,6 +14,8 @@ controls. Address/navigation controls use restrained theme surfaces. Menus
 remain inside the viewport and dismiss on outside input/Escape/resize.
 Existing New tab controls remain available. Final browser visual redesign
 will be selected separately with the user after functional acceptance.
+The New tab heading and action group are centered in the available page area;
+action labels retain their left alignment inside each control.
 
 Full view uses one trusted native input view above the webpage. It reuses
 Composer, with one editable owner and generation-scoped draft/attachment

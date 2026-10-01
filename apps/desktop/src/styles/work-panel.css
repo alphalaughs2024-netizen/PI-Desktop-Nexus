@@ -151,7 +151,7 @@
 .browser-empty-state { background: var(--browser-panel-surface-raised, var(--browser-new-tab-surface)); }
 .browser-empty-state--unavailable, .browser-empty-state--policy-blocked, .browser-empty-state--debugger-unavailable { background: color-mix(in oklab, var(--browser-error, var(--ds-error)) 8%, var(--browser-panel-surface-raised, var(--ds-bg-primary))); }
 .browser-empty-state--starting { background: var(--browser-panel-surface-raised, var(--browser-new-tab-surface)); }
-.browser-new-tab-state { align-items: flex-start; justify-content: center; padding: 10% clamp(28px, 8vw, 124px); background: var(--browser-new-tab-surface, var(--ds-bg-primary)); text-align: left; }
+.browser-new-tab-state { align-items: center; justify-content: center; padding: 10% clamp(28px, 8vw, 124px); background: var(--browser-new-tab-surface, var(--ds-bg-primary)); text-align: center; }
 .browser-new-tab-content { width: min(100%, 680px); }
 .browser-new-tab-state strong { display: block; color: var(--browser-text, var(--ds-text-primary)); font-size: clamp(24px, 3vw, 36px); font-weight: 600; letter-spacing: -.02em; }
 .browser-new-tab-state span { font-size: var(--text-sm); }
