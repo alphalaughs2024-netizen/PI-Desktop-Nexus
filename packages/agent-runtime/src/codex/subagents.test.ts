@@ -1,12 +1,13 @@
-import { afterEach, expect, it } from "vitest";
+import { afterEach, expect, it, vi } from "vitest";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { AgentEventEnvelope, SubagentDefinition } from "@pi-desktop/shared";
-import { CodexSubagents } from "./subagents.js";
+import { CodexSubagents, DEFAULT_TASK_WAIT_SECONDS, MAX_TASK_WAIT_SECONDS } from "./subagents.js";
+import { CODEX_TOOL_TIMEOUT_SECONDS } from "./config.js";
 import type { CodexConfig } from "./config.js";
 const dirs: string[] = [];
-afterEach(async () => { await Promise.all(dirs.splice(0).map(dir => rm(dir, { recursive: true, force: true }))); });
+afterEach(async () => { vi.useRealTimers(); await Promise.all(dirs.splice(0).map(dir => rm(dir, { recursive: true, force: true }))); });
 async function fixture() {
   const dir = await mkdtemp(join(tmpdir(), "nexus-delegates-")); dirs.push(dir);
   let current: string | undefined = "parent-turn";
@@ -28,6 +29,26 @@ async function fixture() {
   const manager = new CodexSubagents(options);
   return { manager, options, children, events, definition, setCurrent: (value?: string) => { current = value; } };
 }
+it.each([undefined, 900, Infinity])("returns a resumable wait before transport expiry (%s)", async timeoutSeconds => {
+  const f = await fixture();
+  const started = await f.manager.execute("Task", { agent: "reviewer", task: "Review" }, "task");
+  const id = (started?.content as any).delegationId;
+  vi.useFakeTimers();
+  const seconds = timeoutSeconds === 900 ? MAX_TASK_WAIT_SECONDS : DEFAULT_TASK_WAIT_SECONDS;
+  expect(MAX_TASK_WAIT_SECONDS).toBeLessThan(CODEX_TOOL_TIMEOUT_SECONDS);
+  expect(f.manager.catalog()[1].parameters).toMatchObject({ properties: { timeoutSeconds: { maximum: MAX_TASK_WAIT_SECONDS } } });
+  let resolved = false;
+  const waiting = f.manager.execute("TaskWait", { delegationIds: [id], timeoutSeconds }, "wait").then(value => { resolved = true; return value; });
+  await vi.advanceTimersByTimeAsync(seconds * 1000 - 1);
+  expect(resolved).toBe(false);
+  await vi.advanceTimersByTimeAsync(1);
+  const value = (await waiting)?.content as any;
+  expect(value).toMatchObject({ status: "timeout", timeoutSeconds: seconds, note: expect.stringContaining("not stopped"), delegations: [{ delegationId: id, status: "running" }] });
+  expect(f.children).toHaveLength(1);
+  const next = f.manager.execute("TaskWait", { delegationIds: [id] }, "again");
+  f.children[0].finish();
+  expect((await next)?.content).toMatchObject({ status: "completed", delegations: [{ delegationId: id, status: "completed", report: "Child report" }] });
+});
 it("pins exact provider/model and only declared tools, attributing child events to the parent", async () => {
   const f = await fixture();
   const started = await f.manager.execute("Task", { agent: "reviewer", task: "Review this" }, "parent-task");

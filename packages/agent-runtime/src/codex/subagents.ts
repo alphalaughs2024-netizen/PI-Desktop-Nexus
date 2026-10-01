@@ -7,7 +7,7 @@ import type { RuntimeProviderConfig } from "../provider-binding.js";
 import { clampThinkingLevel } from "../thinking-level.js";
 import { normalizeDelegationOwnership, concurrentMutationConflict, type DelegationOwnership } from "../task-coordination.js";
 import { CodexAdapter } from "./adapter.js";
-import type { CodexConfig } from "./config.js";
+import { CODEX_TOOL_TIMEOUT_SECONDS, type CodexConfig } from "./config.js";
 import { CodexSessionStore } from "./store.js";
 import { nexusToolCatalog, startNexusToolBridge, type NexusTool, type NexusToolResult } from "./nexus-tools.js";
 
@@ -30,6 +30,8 @@ export type CodexSubagentOptions = {
   create?: (config: CodexConfig, emit: (event: AgentEventEnvelope) => void, tools: NonNullable<ConstructorParameters<typeof CodexAdapter>[2]>["tools"]) => CodexAdapter;
 };
 const CONTROL_TOOLS = new Set(["Task", "TaskWait", "TaskList", "TaskStop", "AskUser", "AskUserQuestion", "EnterPlanMode", "EnterGoalMode", "SubmitPlan", "SubmitGoal"]);
+export const DEFAULT_TASK_WAIT_SECONDS = 60;
+export const MAX_TASK_WAIT_SECONDS = CODEX_TOOL_TIMEOUT_SECONDS - 60;
 const result = (value: unknown, failed = false): NexusToolResult => ({ ok: !failed, isError: failed, content: value });
 const summary = (record: Record): Summary => {
   const { adapter, completion, resolve, stopped, ...value } = record; return value;
@@ -65,7 +67,7 @@ export class CodexSubagents {
     const ids = { type: "array", items: { type: "string" } };
     return [
       { name: "Task", description: "Start a configured subagent in the background. Saved provider/model and tools are fixed; omit model overrides. Children use Nexus host tools, not the parent's native shell sandbox: command results can differ between them. Bash permits mutation under host policy. Ownership paths/access schedule work, not filesystem ACLs; a requested read scope cannot make Bash read-only. Read-only tasks may overlap; one mutating delegate runs per workspace. Converge with TaskWait and compare actual tool outputs before disputing a report. Available presets:\n" + this.options.definitions.map(definition => definition.name + ": " + definition.description + " Tools: " + (definition.inheritTools ? "inherit" : definition.tools.join(", "))).join("\n"), parameters: objectSchema({ agent: { type: "string" }, task: { type: "string" }, description: { type: "string" }, ownership: objectSchema({ access: { type: "string", enum: ["read", "write"] }, paths: ids }) }, ["agent", "task"]) },
-      { name: "TaskWait", description: "Read or await child reports. Timeout leaves children running. Reports also reach the parent when it becomes idle.", parameters: objectSchema({ delegationIds: ids, mode: { type: "string", enum: ["all", "any"] }, minCompleted: { type: "integer", minimum: 1 }, timeoutSeconds: { type: "number", minimum: 1, maximum: 900 } }) },
+      { name: "TaskWait", description: "Read or await child reports (default 60 seconds, capped at 180 seconds per call). A timeout preserves running workers and returns their current status; call TaskWait again with the same IDs to continue waiting. Reports also reach the parent when it becomes idle.", parameters: objectSchema({ delegationIds: ids, mode: { type: "string", enum: ["all", "any"] }, minCompleted: { type: "integer", minimum: 1 }, timeoutSeconds: { type: "number", minimum: 1, maximum: MAX_TASK_WAIT_SECONDS } }) },
       { name: "TaskList", description: "List this chat's delegations and exact provider/model identities.", parameters: objectSchema() },
       { name: "TaskStop", description: "Stop selected running delegates, preserving partial results. Omit ids to stop all running delegates.", parameters: objectSchema({ delegationIds: ids }) },
     ];
@@ -130,11 +132,14 @@ export class CodexSubagents {
     }
     if (name === "TaskWait") {
       const count = args.mode === "any" ? Math.min(targets.length, Math.max(1, Math.floor(Number(args.minCompleted) || 1))) : targets.length;
-      const timedOut = await this.wait(targets, count, Math.min(900, Math.max(1, Number(args.timeoutSeconds) || 600)) * 1000);
+      const requestedTimeout = Number(args.timeoutSeconds);
+      const timeoutSeconds = Math.min(MAX_TASK_WAIT_SECONDS, Math.max(1, Number.isFinite(requestedTimeout) && requestedTimeout > 0 ? requestedTimeout : DEFAULT_TASK_WAIT_SECONDS));
+      const timedOut = await this.wait(targets, count, timeoutSeconds * 1000);
       const value = reports(targets);
       for (const record of targets) if (record.status !== "running" && value.delegations.some(value => value.delegationId === record.delegationId)) record.delivered = true;
       await this.save();
-      return result({ status: timedOut ? "timeout" : "completed", ...value, unknownIds });
+      return result({ status: timedOut ? "timeout" : "completed", timeoutSeconds, ...value, unknownIds,
+        ...(timedOut ? { note: "The wait ended; running workers were not stopped. Call TaskWait again with their delegation IDs to continue waiting." } : {}) });
     }
     return result({ ...reports(targets, false), unknownIds });
   }

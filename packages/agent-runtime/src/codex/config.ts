@@ -5,6 +5,7 @@ import { createRequire } from "node:module";
 import type { EngineSession, ThinkingLevel, Mode } from "@pi-desktop/shared";
 import type { RuntimeProviderConfig } from "../provider-binding.js";
 export const CODEX_VERSION = "0.157.1";
+export const CODEX_TOOL_TIMEOUT_SECONDS = 240;
 export type CodexLaunch = { command: string; args: string[]; cwd: string; env: NodeJS.ProcessEnv };
 export type CodexConfig = {
   sessionId: string;
@@ -129,7 +130,7 @@ export async function prepareLaunch(config: CodexConfig, directory: string): Pro
     args.push(...setting("mcp_servers.nexus.url", config.toolBridge.url),
       ...setting("mcp_servers.nexus.bearer_token_env_var", "NEXUS_CODEX_TOOL_TOKEN"),
       ...setting("mcp_servers.nexus.startup_timeout_sec", 20),
-      ...setting("mcp_servers.nexus.tool_timeout_sec", 240),
+      ...setting("mcp_servers.nexus.tool_timeout_sec", CODEX_TOOL_TIMEOUT_SECONDS),
       ...setting("mcp_servers.nexus.required", true),
       ...setting("mcp_servers.nexus.default_tools_approval_mode", "approve"));
   }
