@@ -61,6 +61,9 @@ describe("SUBAGENT_PRESETS", () => {
     expect(designer?.tools).toContain("Edit");
     expect(designer?.tools).toContain("Write");
     expect(designer?.tools).toContain("BrowserPreview");
+    expect(designer?.tools).toContain("browser_screenshot");
+    expect(designer?.tools).toContain("browser_set_viewport");
+    expect(designer?.tools).toContain("browser_snapshot");
     expect(explorer?.tools ?? []).not.toContain("Edit");
     expect(reviewer?.tools ?? []).not.toContain("Edit");
     expect(runner?.tools ?? []).not.toContain("Edit");

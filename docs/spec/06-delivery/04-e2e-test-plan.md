@@ -11754,6 +11754,15 @@ or delete caches, profiles or earlier recovery files to hide this condition.
   are bounded, truncation is explicit, and timeout keeps workers running. Stop
   preserves partial work. Cold recovery does not launch or replay tools; cleanup
   or saving failures do not claim confirmed termination/durability.
+- **Attribution and capability regression (ADR 0259)**: Stream child reasoning,
+  commentary and final messages; switch chats and reload. Every child row stays
+  inside its Task activity rather than appearing as a parent reply. Explorer's
+  shell capability and scheduling-only ownership are explicit. Compare a host
+  Bash result with a parent native-shell failure without inferring fabricated
+  child output. Ask the built-in UI designer to preview, set desktop/mobile
+  viewports, inspect snapshots/console, interact and capture images. Image input
+  must reach the configured child model. A custom preset without these tools
+  remains restricted and reports the unavailable verification accurately.
 - **Validation**: Targeted lifecycle tests and native Windows fixture probes.
   Full local E2E suites remain unrun unless explicitly requested.
 

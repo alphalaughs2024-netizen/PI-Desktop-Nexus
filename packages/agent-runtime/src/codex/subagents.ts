@@ -17,6 +17,7 @@ type Summary = {
   status: "running" | "completed" | "failed" | "stopped" | "aborted";
   startedAt: number; completedAt?: number; report?: string; error?: string;
   ownership: DelegationOwnership; delivered: boolean;
+  executionPolicy?: { tools: string[]; shell: "nexus-host" | "unavailable"; permissionScope: string; parentPermissionMode: string; ownershipEnforcement: "scheduling-only" };
 };
 type Record = Summary & { adapter?: CodexAdapter; completion: Promise<void>; resolve(): void; stopped?: boolean };
 export type CodexSubagentOptions = {
@@ -40,7 +41,7 @@ function reports(records: Record[], includeReports = true) {
   const omittedIds: string[] = [];
   for (const record of records) {
     const value = { delegationId: record.delegationId, agent: record.agent, modelId: record.modelId, providerId: record.providerId, thinkingLevel: record.thinkingLevel,
-      status: record.status, startedAt: record.startedAt, completedAt: record.completedAt, error: record.error?.slice(0, 1000),
+      status: record.status, startedAt: record.startedAt, completedAt: record.completedAt, error: record.error?.slice(0, 1000), executionPolicy: record.executionPolicy,
       ...(includeReports ? { report: record.report?.slice(0, budget), reportTruncated: (record.report?.length ?? 0) > budget } : {}) };
     if (JSON.stringify([...delegations, value]).length > 45_000) omittedIds.push(record.delegationId);
     else delegations.push(value);
@@ -63,7 +64,7 @@ export class CodexSubagents {
     if (!this.options.definitions.length) return [];
     const ids = { type: "array", items: { type: "string" } };
     return [
-      { name: "Task", description: "Start a configured subagent in the background. Its saved provider/model and tool permissions are fixed; omit model overrides. Give a complete task and ownership scope. Read-only tasks may overlap; only one mutating delegate runs in this workspace. Converge with TaskWait. Available presets:\n" + this.options.definitions.map(definition => definition.name + ": " + definition.description).join("\n"), parameters: objectSchema({ agent: { type: "string" }, task: { type: "string" }, description: { type: "string" }, ownership: objectSchema({ access: { type: "string", enum: ["read", "write"] }, paths: ids }) }, ["agent", "task"]) },
+      { name: "Task", description: "Start a configured subagent in the background. Saved provider/model and tools are fixed; omit model overrides. Children use Nexus host tools, not the parent's native shell sandbox: command results can differ between them. Bash permits mutation under host policy. Ownership paths/access schedule work, not filesystem ACLs; a requested read scope cannot make Bash read-only. Read-only tasks may overlap; one mutating delegate runs per workspace. Converge with TaskWait and compare actual tool outputs before disputing a report. Available presets:\n" + this.options.definitions.map(definition => definition.name + ": " + definition.description + " Tools: " + (definition.inheritTools ? "inherit" : definition.tools.join(", "))).join("\n"), parameters: objectSchema({ agent: { type: "string" }, task: { type: "string" }, description: { type: "string" }, ownership: objectSchema({ access: { type: "string", enum: ["read", "write"] }, paths: ids }) }, ["agent", "task"]) },
       { name: "TaskWait", description: "Read or await child reports. Timeout leaves children running. Reports also reach the parent when it becomes idle.", parameters: objectSchema({ delegationIds: ids, mode: { type: "string", enum: ["all", "any"] }, minCompleted: { type: "integer", minimum: 1 }, timeoutSeconds: { type: "number", minimum: 1, maximum: 900 } }) },
       { name: "TaskList", description: "List this chat's delegations and exact provider/model identities.", parameters: objectSchema() },
       { name: "TaskStop", description: "Stop selected running delegates, preserving partial results. Omit ids to stop all running delegates.", parameters: objectSchema({ delegationIds: ids }) },
@@ -162,6 +163,7 @@ export class CodexSubagents {
     const completion = new Promise<void>(resolve => { resolveCompletion = resolve; });
     const record: Record = { delegationId, childSessionId: this.options.parent.sessionId + ":delegate:" + delegationId, turnId, parentToolCallId,
       agent: definition.name, modelId: provider.modelId, providerId: provider.id, thinkingLevel: thinkingLevel ?? "omit", status: "running", startedAt: Date.now(), ownership, delivered: false,
+      executionPolicy: { tools: allowed, shell: allowed.includes("Bash") ? "nexus-host" : "unavailable", permissionScope: definition.permission ?? "inherit", parentPermissionMode: this.options.parent.permissionMode, ownershipEnforcement: "scheduling-only" },
       completion, resolve: resolveCompletion };
     this.records.set(delegationId, record);
     try { await this.save(); }
@@ -174,11 +176,14 @@ export class CodexSubagents {
     const child: CodexConfig = { ...parent, sessionId: record.childSessionId, restrictedTools: allowed, maxModelRequests: definition.maxTurns,
       provider: { ...provider, modelConfig: provider.modelConfig && definition.maxTokens ? { ...provider.modelConfig, maxTokens: definition.maxTokens } : provider.modelConfig },
       developerInstructions: [parent.developerInstructions, "Workspace: " + parent.workspace, "Scratch: " + (parent.scratchDir ?? parent.workspace), definition.prompt,
-        "You are a configured Nexus subagent. Complete only the supplied brief; use only your declared Nexus MCP tools, including files and shell. Do not delegate or ask the user. Report results and failures accurately."].filter(Boolean).join("\n\n") };
+        "You are a configured Nexus subagent. Complete only the supplied brief; use only your declared Nexus MCP tools, including files and shell. Your Bash uses Nexus host policy, not the parent's native shell sandbox. Ownership paths are task scope, not filesystem ACLs. Do not delegate or ask the user. Report exact commands, exit status and observed results; distinguish launch failure from failing tests."].filter(Boolean).join("\n\n") };
     const emit = (event: AgentEventEnvelope) => {
       if (record.status !== "running") return;
       if (["message_start", "message_update", "message_end", "tool_start", "tool_update", "tool_end"].includes(event.event.type)) {
-        this.options.emit({ ...event, sessionId: parent.sessionId, turnId, parentToolCallId, agentName: definition.name });
+        const childEvent = event.event;
+        const attributed = childEvent.type === "message_start" || childEvent.type === "message_update" || childEvent.type === "message_end"
+          ? { ...childEvent, message: { ...childEvent.message, parentToolCallId, agentName: definition.name } } : childEvent;
+        this.options.emit({ ...event, event: attributed, sessionId: parent.sessionId, turnId, parentToolCallId, agentName: definition.name });
       }
       const state = record.adapter?.snapshot();
       if (state?.turn?.outcome) void this.settle(record, state.turn.outcome === "interrupted" ? record.stopped ? "stopped" : "aborted" : state.turn.outcome, state.turn.error);
@@ -201,7 +206,7 @@ export class CodexSubagents {
     if (error) {
       this.options.emit({ sessionId: this.options.parent.sessionId, turnId: record.turnId, parentToolCallId: record.parentToolCallId, agentName: record.agent, ts: Date.now(),
         event: { type: "message_end", message: { id: "delegate-error:" + record.delegationId, role: "assistant", content: error,
-          status: status === "aborted" || status === "stopped" ? "aborted" : "error", createdAt: new Date().toISOString(), modelId: record.modelId, providerId: record.providerId } } });
+          status: status === "aborted" || status === "stopped" ? "aborted" : "error", createdAt: new Date().toISOString(), modelId: record.modelId, providerId: record.providerId, parentToolCallId: record.parentToolCallId, agentName: record.agent } } });
     }
     try { await record.adapter?.shutdown(); await this.save(); }
     catch { record.error = "Worker cleanup or recovery save failed; stopping its execution is not confirmed."; record.status = "failed"; }

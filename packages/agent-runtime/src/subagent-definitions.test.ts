@@ -21,7 +21,7 @@ import {
 } from "./model-capabilities.js";
 
 describe("builtin subagent documents", () => {
-  it("parse into read-only delegates plus a write-capable fixer", async () => {
+  it("parses explicit tools with shell-enabled inspection and browser-capable design", async () => {
     const { definitions, diagnostics } = await loadSubagentDefinitions(null);
 
     expect(diagnostics).toEqual([]);
@@ -38,11 +38,8 @@ describe("builtin subagent documents", () => {
       expect(definition.description.length).toBeGreaterThan(20);
       expect(definition.prompt.length).toBeGreaterThan(50);
     }
-    // Only `fixer` and `ui-designer` may write to the workspace; every other
-    // builtin is read-only (the shell delegate reads and runs commands, which
-    // is a permission prompt, not an edit). Builtins inherit the parent
-    // session's permission mode unless they explicitly opt into a narrower
-    // scope.
+    // Edit/Write are limited to implementation roles; Bash remains potentially
+    // mutating under the host permission policy even for inspection tasks.
     const mutating = definitions.filter(
       (definition) =>
         definition.tools.includes("Write") || definition.tools.includes("Edit"),
@@ -60,6 +57,9 @@ describe("builtin subagent documents", () => {
     expect(definitions[2].tools).toContain("Bash");
     const designer = definitions.find((definition) => definition.name === "ui-designer")!;
     expect(designer.tools).toContain("BrowserPreview");
+    expect(designer.tools).toContain("browser_screenshot");
+    expect(designer.tools).toContain("browser_set_viewport");
+    expect(designer.tools).toContain("browser_snapshot");
     expect(designer.maxTurns).toBe(80);
   });
 });

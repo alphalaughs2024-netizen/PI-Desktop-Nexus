@@ -78,9 +78,15 @@ export type SubagentDefinition = {
   filePath?: string;
 };
 
-/** Tools a definition may declare. Plugin, skill, mode and meta tools stay out
- * of reach: a delegate is a bounded file/search/shell worker, not a second
- * full session. */
+export const SUBAGENT_BROWSER_TOOLS = [
+  "browser_list_tabs", "browser_open", "browser_navigate", "browser_snapshot",
+  "browser_screenshot", "browser_set_viewport", "browser_click", "browser_fill",
+  "browser_type", "browser_keypress", "browser_wait", "browser_console",
+  "browser_evaluate",
+] as const;
+
+/** Tools a definition may declare. Plugin, skill, mode and delegation control
+ * tools stay out of reach. Browser tools retain the originating session policy. */
 export const SUBAGENT_ASSIGNABLE_TOOLS = [
   "Read",
   "Glob",
@@ -89,6 +95,7 @@ export const SUBAGENT_ASSIGNABLE_TOOLS = [
   "Bash",
   "Edit",
   "Write",
+  ...SUBAGENT_BROWSER_TOOLS,
 ] as const;
 
 export type SubagentAssignableTool = (typeof SUBAGENT_ASSIGNABLE_TOOLS)[number];

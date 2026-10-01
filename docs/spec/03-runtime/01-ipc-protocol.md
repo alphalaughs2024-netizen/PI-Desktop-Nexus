@@ -1401,6 +1401,14 @@ page can render those defaults as read-only rows. The runtime catalog
 combines the same sources; it does not scan `.pi/agents` or any project
 capability directory.
 
+Browser snapshot, screenshot, viewport, console and interaction tools may be
+explicitly assigned to subagents (ADR 0259). The built-in UI designer declares
+them; user-owned documents remain authoritative and never gain tools implicitly.
+Explorer retains Bash and is shell-enabled, not an enforced read-only worker.
+Codex delegation results describe host shell policy and scheduling-only ownership.
+Child message ownership accompanies both envelopes and payloads so streaming,
+background hydration and persisted rows nest under the same Task.
+
 ## 12d. Capability level and local activation
 
 Skills and MCP management calls use:

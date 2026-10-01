@@ -10,7 +10,7 @@
  * starter values and is exercised by `subagent-presets.test.ts`.
  */
 
-import { DEFAULT_SUBAGENT_TOOLS, type SubagentDefinition } from "./subagent-definition.js";
+import { DEFAULT_SUBAGENT_TOOLS, SUBAGENT_BROWSER_TOOLS, type SubagentDefinition } from "./subagent-definition.js";
 
 /**
  * One built-in subagent surfaced as a "start from template" entry in the
@@ -43,7 +43,7 @@ export const SUBAGENT_PRESETS: readonly SubagentPreset[] = [
     id: "explorer",
     name: "Explorer",
     description:
-      "Fast codebase search and pattern matching — find files, locate implementations and answer \"where is X?\" / \"how does Y work?\". Use when answering needs a sweep over many files and you only want the conclusion.",
+      "Fast codebase search and pattern matching — find files, locate implementations and answer \"where is X?\" / \"how does Y work?\". Shell-enabled; inspection intent does not enforce read-only access.",
     tools: ["Read", "Glob", "Grep", "Bash"],
     maxTurns: 60,
     body:
@@ -147,7 +147,7 @@ export const SUBAGENT_PRESETS: readonly SubagentPreset[] = [
     name: "UI designer",
     description:
       "Design and implement a web interface from a brief — visual system, motion and complete interaction states, inspected in the browser preview or project browser tests. Use for building or restyling a UI when the visual work should run in its own context.",
-    tools: ["Read", "Glob", "Grep", "BrowserPreview", "Bash", "Edit", "Write"],
+    tools: ["Read", "Glob", "Grep", "BrowserPreview", "Bash", "Edit", "Write", ...SUBAGENT_BROWSER_TOOLS],
     maxTurns: 80,
     body: `You are UI designer — a senior UI/UX designer and frontend engineer. The main
 agent hands you one interface task with its brief; deliver a working,
@@ -177,11 +177,13 @@ features, pricing template.
 - Verify before reporting: after the first meaningful visual edit, call
   BrowserPreview with a workspace-relative HTML path and inspect the live-
   reloading page it opens. BrowserPreview opens a page but does not provide
-  screenshots, viewport controls, DOM interaction, keyboard simulation or
-  reduced-motion emulation. Use project-provided browser or E2E tooling through
-  Bash for responsive, keyboard-focus and reduced-motion checks when available;
-  otherwise report those checks as skipped instead of implying BrowserPreview
-  performed them. Fix what you observe and re-check. Run the project's build or
+  screenshots. Use browser_list_tabs to select the session's browserId,
+  browser_set_viewport for desktop/mobile, browser_snapshot for element refs,
+  browser_screenshot for actual images, and browser_console for errors. Use the
+  browser interaction tools to walk the primary journey. Only claim visual
+  inspection when image input is supported and an actual image reaches you;
+  a saved path or pixel counts alone are not visual inspection. Report unavailable
+  checks explicitly. Fix what you observe and re-check. Run the project's build or
   typecheck when it covers your change. A result you did not look at is not
   evidence.
 

@@ -157,8 +157,21 @@ execution, including streamed/namespaced functions; a hidden native tool cannot
 bypass the preset. Children use host Read/Glob/Grep/Write/Edit/Bash rather than
 native file/shell handlers, preserving saved permissions and shell identity.
 This is tool enforcement, not additional containment of an allowed shell.
+Task admission and reports include declared tools, Nexus host shell availability,
+permission scope and parent permission mode. Ownership is explicitly scheduling
+metadata, not filesystem ACLs. Parent native shell and child host shell can have
+different sandbox results; reports must be assessed against their own observed
+outputs. Explorer remains shell-enabled and is not described as enforced read-only.
 
-Message/tool rows remain under the original Task and parent turn. Child status,
+The built-in UI designer declares Nexus Browser snapshot, screenshot, viewport,
+console and interaction tools (ADR 0259). Screenshots deliver actual images to
+image-capable children. BrowserPreview alone is not visual verification. Custom
+presets retain their exact saved tool restrictions; an unavailable capability
+fails explicitly instead of receiving an undeclared fallback tool.
+
+Message/tool rows remain under the original Task and parent turn. Child
+reasoning, commentary and final messages carry ownership on both the event
+envelope and each message payload, so live display and reload agree. Child status,
 error and terminal signals do not end the parent. Final Task results carry
 structured provider/model, timing and outcome metadata; self-contained tool_end
 metadata updates the same persisted row after the original call has returned.

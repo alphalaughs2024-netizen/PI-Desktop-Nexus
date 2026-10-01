@@ -22,6 +22,7 @@ import {
   subagentModelKey,
   subagentPinnedProviders,
   OAUTH_AUTH_KIND,
+  SUBAGENT_BROWSER_TOOLS,
   type SubagentDefinition,
 } from "@pi-desktop/shared";
 import {
@@ -59,7 +60,7 @@ export function subagentDefinitionDir(_workspaceRoot: string): string {
 export const BUILTIN_SUBAGENT_DOCUMENTS: readonly string[] = [
   `---
 name: explorer
-description: Fast codebase search and pattern matching — find files, locate implementations and answer "where is X?" / "how does Y work?". Use when answering needs a sweep over many files and you only want the conclusion.
+description: Fast codebase search and pattern matching — find files, locate implementations and answer "where is X?" / "how does Y work?". Shell-enabled; inspection intent does not enforce read-only access.
 tools: [Read, Glob, Grep, Bash]
 maxTurns: 60
 ---
@@ -155,7 +156,7 @@ Report in this shape:
   `---
 name: ui-designer
 description: Design and implement a web interface from a brief — visual system, motion and complete interaction states, verified in the browser preview. Use for building or restyling a UI when the visual work should run in its own context.
-tools: [Read, Glob, Grep, BrowserPreview, Bash, Edit, Write]
+tools: [Read, Glob, Grep, BrowserPreview, Bash, Edit, Write, ${SUBAGENT_BROWSER_TOOLS.join(", ")}]
 maxTurns: 80
 ---
 
@@ -184,9 +185,14 @@ features, pricing template.
 - The brief is your confirmation; there is no user to ask mid-run. State
   the assumptions a silent brief forced, and stay inside the files the task
   scopes.
-- Verify before reporting: open the changed page in BrowserPreview at
-  desktop and mobile widths, walk the primary journey, check keyboard focus
-  and reduced motion, fix what you observe, and re-check. Run the project's
+- Verify before reporting: BrowserPreview opens the changed page but does not
+  return screenshots. Use browser_list_tabs for its browserId, browser_set_viewport
+  for desktop/mobile, browser_snapshot for element refs, browser_screenshot for
+  actual image input and browser_console for errors. Walk the primary journey
+  with browser interaction tools. Only claim visual inspection when image input
+  is supported and an actual image reaches you; saved paths and pixel counts
+  alone are not visual inspection. Report unavailable checks explicitly.
+  Fix what you observe and re-check. Run the project's
   build or typecheck when it covers your change. A result you did not look
   at is not evidence.
 

@@ -240,3 +240,21 @@ Evidence: %USERPROFILE%/.nexus-codex-phase2/browser-surface-20261001-b/report.js
 and surface.png. A previous fixture assertion incorrectly assumed the first real
 Chromium capture must succeed; the successful run allows the specified bounded
 retry budget. Manual GUI acceptance remains pending. No visual styling changed.
+
+## Subagent feedback corrections
+
+Inspected the user's Native browser visibility check and Greeting Conversation
+saved outputs. The first test-runner's host Bash really produced MODULE_NOT_FOUND
+for the directory test argument and 3-pass/1-fail after a corrected invocation.
+The parent's native shell hit a different sandbox EPERM and wrongly accused the
+child of fabricating results. Task now reports explicit execution-policy metadata.
+Explorer keeps Bash as the user selected, with accurate shell-enabled labeling.
+
+Greeting Conversation exposed live child message ownership missing from message
+payloads, although Main persisted its envelope ownership correctly. All live
+child text/reasoning/failure messages now carry the Task owner. The built-in UI
+designer gains the user-approved typed Browser tools and actual screenshot image
+input; custom catalogs stay exact. Thirty runtime/bridge/definition checks and
+36 shared parser/preset checks pass, including a restricted child's authenticated
+screenshot bridge and parent turn/permission identity. Runtime build and desktop
+typecheck pass. No paid/provider trial was used. Manual acceptance is pending.
