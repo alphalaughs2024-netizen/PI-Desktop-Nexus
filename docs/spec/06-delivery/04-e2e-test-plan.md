@@ -11632,7 +11632,7 @@ Repeat with the host temporarily offline and restarted; the durable outbox must
 drain the correction once and must not duplicate ordinary prompt rows. Steering attachments
 fail explicitly.
 
-Verify Plan/Goal, regenerate and unsupported legacy tools are refused
+Verify regenerate and unsupported legacy tools are refused
 in the opt-in prototype. No paid/provider fallback occurs. Do not run local E2E
 suites merely because these scenarios are documented. Persistent whole-turn
 status/timer UX is the next phase's acceptance gate.
@@ -11647,6 +11647,26 @@ file; an unrelated file remains. Restore storage and verify the next queued
 save succeeds. With the host transcript store also failing, preserve visible
 output and report that reload recovery is not confirmed. Do not replay tools
 or delete caches, profiles or earlier recovery files to hide this condition.
+
+### E2E-Codex-Plan-Goal: Host approval and native execution boundaries (ADR 0258)
+
+- **Preconditions**: Fresh opt-in profile, a workspace fixture, and Plan/Goal
+  approval enabled. Keep the existing themes, controls and layout.
+- **Steps**: Enter Plan and Goal from the GUI and through agent tools. Ask a
+  clarification, submit Markdown with mixed newlines, reject one proposal and
+  approve another with an explicit permission mode. Cancel during transition,
+  question and submission. Inject host transition failure, stale approval and
+  tampered artifact metadata; reload a pending proposal.
+- **Expected**: Old native execution and delegates stop before host mode change.
+  Planning offers only host inspection and declared plan-safe actions. No native
+  patch/shell or delegation before approval. Questions use the GUI; cancellation
+  never fabricates answers. Exact Markdown bytes/hash/size reach the host artifact.
+  Submission leaves approval pending with no continuing tool execution. Approval
+  restores native tools on the same native history, with the approved permission
+  mode and one terminal outcome per host turn. Failures/cancellation cannot restart
+  the prior segment. Pending approval remains visible after reload. No pi fallback.
+- **Validation**: Targeted lifecycle tests and isolated native Windows Plan/Goal
+  fixtures. Full local E2E suites remain unrun unless explicitly requested.
 
 ### E2E-Browser-Session-Execution: Guest initialization and independent tool execution (ADR 0254)
 

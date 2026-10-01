@@ -36,6 +36,45 @@ async function fixture(dataDir?: string, nativeTurns: any[] = [], options: { ste
 const settle = async () => { await new Promise(resolve => setTimeout(resolve, 30)); };
 const runningTool = (f: Awaited<ReturnType<typeof fixture>>) => f.event("item/started", { item: { id: "running-command", type: "commandExecution", command: "long-running fixture" } });
 describe("Codex adapter lifecycle", () => {
+  it("kills the old execution before a host planning transition and keeps one host turn", async () => {
+    const f = await fixture(); await f.adapter.start({ turnId: "host", text: "Plan" }); await settle();
+    const before = f.adapter.snapshot().turn!;
+    f.event("item/started", { item: { id: "enter", type: "mcpToolCall", tool: "EnterPlanMode", arguments: {} } });
+    let closed = false; f.rpc.close = async () => { closed = true; };
+    await f.adapter.controlBoundary(f.adapter.claimToolItem("EnterPlanMode", {}), async () => {
+      expect(closed).toBe(true);
+      return { config: { mode: "plan", restrictedTools: ["Read"] }, result: { mode: "plan" }, text: "Inspect only" };
+    });
+    expect(f.adapter.snapshot().turn).toMatchObject({ id: "host", runId: before.runId, startedAt: before.startedAt, nativeTurnId: "native-2" });
+    expect(f.adapter.snapshot().session.capabilities.nativeTools).toBe(false);
+    expect(f.adapter.snapshot().items.find(item => item.label === "EnterPlanMode")?.status).toBe("completed");
+    f.event("turn/completed", { turn: { id: "native-1", status: "completed" } });
+    expect(f.adapter.snapshot().turn?.outcome).toBeUndefined();
+    f.event("turn/completed", { turn: { id: "native-2", status: "completed" } }); await settle();
+    expect(f.events.filter(event => event.event.type === "agent_end")).toHaveLength(1);
+  });
+  it("finishes submission after stopping execution without starting an unapproved segment", async () => {
+    const f = await fixture(); await f.adapter.start({ turnId: "host", text: "Submit" }); await settle();
+    await f.adapter.controlBoundary("submit", async () => ({ result: { pending: true } }));
+    expect(f.adapter.snapshot().turn?.outcome).toBe("completed");
+    expect(f.calls.filter(call => call.method === "turn/start")).toHaveLength(1);
+  });
+  it("fails a rejected mode transition without restarting the former execution", async () => {
+    const f = await fixture(); await f.adapter.start({ turnId: "host", text: "Enter" }); await settle();
+    await expect(f.adapter.controlBoundary("enter", async () => { throw new Error("host refused"); })).rejects.toThrow("host refused");
+    expect(f.adapter.snapshot().turn?.outcome).toBe("failed");
+    expect(f.calls.filter(call => call.method === "turn/start")).toHaveLength(1);
+  });
+  it("keeps local GUI questions open, rejects malformed answers and resolves or cancels them", async () => {
+    const f = await fixture(); await f.adapter.start({ turnId: "host", text: "Ask" }); await settle();
+    const pending = f.adapter.askQuestions({ questions: [{ question: "Choose", options: ["A", "B"] }] }, "ask");
+    const request = f.events.find(event => event.event.type === "asktool_request")!.event as any;
+    expect(() => f.adapter.resolveQuestion({sessionId:"s", requestId:request.request.requestId, answers:[]})).toThrow("ASKTOOL_INVALID_ARGUMENT");
+    expect(f.adapter.resolveQuestion({sessionId:"s", requestId:request.request.requestId, answers:[["A"]]})).toBe(true);
+    expect((await pending).content).toMatchObject({answers:[["A"]]});
+    const cancelled = f.adapter.askQuestions({ questions: [{question:"Again", options:["A"]}] }, "ask2");
+    await f.adapter.interrupt(); expect((await cancelled).ok).toBe(false);
+  });
   it("integrates child reports in the original host turn before emitting one terminal outcome", async () => {
     let delivery = 0;
     const f = await fixture(undefined, [], { beforeComplete: async () => ++delivery === 1 ? "Integrate verified child report" : undefined });

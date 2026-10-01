@@ -2,7 +2,7 @@ import { access, mkdir, readFile, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { createRequire } from "node:module";
-import type { EngineSession, ThinkingLevel } from "@pi-desktop/shared";
+import type { EngineSession, ThinkingLevel, Mode } from "@pi-desktop/shared";
 import type { RuntimeProviderConfig } from "../provider-binding.js";
 export const CODEX_VERSION = "0.157.1";
 export type CodexLaunch = { command: string; args: string[]; cwd: string; env: NodeJS.ProcessEnv };
@@ -19,6 +19,7 @@ export type CodexConfig = {
   restrictedTools?: string[];
   maxModelRequests?: number;
   serviceCatalogKey?: string;
+  mode?: Mode;
 };
 export function sessionDescriptor(config: CodexConfig): EngineSession {
   return { sessionId: config.sessionId, engine: "codex", version: CODEX_VERSION, workspace: resolve(config.workspace), providerId: config.provider.id, modelId: config.provider.modelId,

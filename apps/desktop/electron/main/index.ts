@@ -8984,8 +8984,8 @@ function registerIpc() {
         errorCode: ErrorCodes.NOT_FOUND,
       });
     }
-    if (codexEngineEnabled && (req.truncateFromMessageId || req.truncateBefore !== undefined || (session.mode && session.mode !== "agent"))) {
-      throw new Error("The Codex prototype supports Agent mode and new turns. Create a new chat instead of regenerating history.");
+    if (codexEngineEnabled && (req.truncateFromMessageId || req.truncateBefore !== undefined)) {
+      throw new Error("The Codex prototype supports new turns. Create a new chat instead of regenerating history.");
     }
     const truncateFromMessageId =
       typeof req.truncateFromMessageId === "string"

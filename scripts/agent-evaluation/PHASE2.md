@@ -212,3 +212,16 @@ The running foreground app still uses its old sidecar. Quit normally and
 relaunch pnpm dev:codex before checking new-chat launch visibility. Manual
 acceptance of the console correction remains pending; no merge or push yet.
 No local E2E suite or packaged Windows build was run.
+
+## Plan/Goal approval integration
+
+ADR 0258 binds Codex to the existing Rust approval workflow. Entering planning
+stops the old native segment and delegates before host mode changes, preserving
+the host turn/start time. Restricted inspection, GUI questions, exact Markdown
+submission and explicit approved native execution retain one history handle.
+Targeted planning/adapter checks pass (51 tests); desktop typecheck passes.
+The real Codex 0.157.1 + Rust host Windows fixture passes both Plan and Goal:
+%USERPROFILE%/.nexus-codex-phase2/planning-20261001-b/report.json. No cloud
+request was needed. The preceding fixture attempt had an async-predicate polling
+bug, which was corrected before these results. GUI acceptance remains pending;
+no full local E2E suite, merge, push or Phase 3 work has occurred.

@@ -17,7 +17,7 @@ export type CodexDependencies = {
   beforeComplete?: (signal: AbortSignal) => Promise<string | undefined>;
   stopOwnedWork?: () => Promise<void>;
 };
-type Approval = { nativeId: string | number; itemId: string; timer?: NodeJS.Timeout; questions?: any[] };
+type Approval = { nativeId: string | number; itemId: string; timer?: NodeJS.Timeout; questions?: any[]; resolveLocal?: (answers: Array<string[] | null>) => void };
 const stableId = (id: string) => {
   const hash = createHash("sha256").update(id).digest("hex");
   return hash.slice(0, 8) + "-" + hash.slice(8, 12) + "-4" + hash.slice(13, 16) + "-a" + hash.slice(17, 20) + "-" + hash.slice(20, 32);
@@ -56,6 +56,20 @@ export class CodexAdapter implements EngineAdapter {
   }
   snapshot(): EngineSnapshot { return this.contract.snapshot(); }
   executionSignal(): AbortSignal { return this.turnLifetime.signal; }
+  async askQuestions(args: any, toolCallId: string): Promise<{ ok: boolean; content: unknown; isError?: boolean }> {
+    const questions = args?.questions;
+    if (!Array.isArray(questions) || !questions.length || questions.length > 20 || questions.some(q => !q || typeof q.question !== "string" || !q.question.trim() ||
+      !Array.isArray(q.options) || !q.options.length || q.options.some((option: unknown) => typeof option !== "string" || !option.trim()))) return { ok: false, isError: true, content: "ASKTOOL_INVALID_ARGUMENT" };
+    if (!this.activeTurnId()) return { ok: false, isError: true, content: "NEXUS_TOOL_TURN_INACTIVE" };
+    const requestId = "codex:" + this.config.sessionId + ":" + randomUUID();
+    const item = this.newItem("question:" + requestId, "approval", "asktool"); this.update(item);
+    const answers = await new Promise<Array<string[] | null>>(resolve => {
+      this.approvals.set(requestId, { nativeId: requestId, itemId: item.id, resolveLocal: resolve,
+        questions: questions.map((q, index) => ({ ...q, id: String(index), options: q.options.map((label: string) => ({ label })) })) });
+      this.event({ type: "asktool_request", request: { requestId, sessionId: this.config.sessionId, toolCallId, questions } }); this.status();
+    });
+    return { ok: !this.turnLifetime.signal.aborted, content: { questions, answers } };
+  }
   activeTurnId(): string | undefined { const turn = this.snapshot().turn; return this.cancelled || this.disposed || turn?.outcome ? undefined : turn?.id; }
   setDelegationActivity(count: number): void {
     this.delegationActivity = count ? { phase: "waiting-subagents", since: this.delegationActivity?.since ?? Date.now(), subagentCount: count } : undefined;
@@ -64,6 +78,59 @@ export class CodexAdapter implements EngineAdapter {
   completeTask(itemId: string, result: unknown, failed: boolean): void {
     const item = this.snapshot().items.find(item => item.id === itemId && item.label === "Task");
     if (item) this.update({ ...item, result: { details: result }, status: failed ? "failed" : "completed", completedAt: Date.now() });
+  }
+  /** Stop all old execution before committing a durable mode/approval boundary. */
+  async controlBoundary(itemId: string, prepare: () => Promise<{ result: unknown; text?: string; config?: Partial<CodexConfig> }>): Promise<void> {
+    const turn = this.snapshot().turn;
+    if (!turn?.nativeTurnId || !this.rpc || this.cancelled || this.ending || this.steeringTransition) throw new Error("CODEX_CONTROL_BOUNDARY_BUSY");
+    let timer: NodeJS.Timeout | undefined;
+    let transition!: NonNullable<CodexAdapter["steeringTransition"]>;
+    const terminal = new Promise<string>((resolve, reject) => {
+      transition = { nativeTurnId: turn.nativeTurnId!, resolve, reject };
+      timer = setTimeout(() => reject(new Error("CODEX_CONTROL_INTERRUPT_TIMEOUT")), this.dependencies.steeringTimeoutMs ?? 30_000);
+    });
+    void terminal.catch(() => undefined);
+    this.steeringTransition = transition;
+    const check = () => { if (this.cancelled || this.disposed || this.snapshot().turn?.runId !== turn.runId || this.snapshot().turn?.outcome) throw new Error("CODEX_CONTROL_CANCELLED"); };
+    try {
+      await this.dependencies.stopOwnedWork?.();
+      check();
+      await this.rpc.request("turn/interrupt", { threadId: this.snapshot().session.nativeHandle, turnId: turn.nativeTurnId });
+      const outcome = await terminal;
+      if (outcome !== "interrupted" && outcome !== "completed") throw new Error("CODEX_CONTROL_NATIVE_FAILED");
+      check();
+      for (const item of this.snapshot().items) if (item.status === "running") this.update({ ...item, status: "interrupted", completedAt: Date.now() });
+      this.retiredTurns.add(turn.nativeTurnId);
+      if (!this.apply({ type: "native-segment", expectedNativeTurnId: turn.nativeTurnId, outcome })) throw new Error("CODEX_CONTROL_STALE_SEGMENT");
+      this.steeringTransition = undefined;
+      this.turnLifetime.abort();
+      for (const id of [...this.approvals.keys()]) this.resolveApproval(id, "deny");
+      await this.closeProcess();
+      check();
+      const prepared = await prepare();
+      check();
+      Object.assign(this.config, prepared.config);
+      this.turnLifetime = new AbortController();
+      this.contract = new ExecutionContract(sessionDescriptor(this.config), this.snapshot());
+      const item = this.snapshot().items.find(item => item.id === itemId);
+      if (item) this.update({ ...item, result: prepared.result, status: "completed", completedAt: Date.now() });
+      await this.checkpoint();
+      check();
+      if (!prepared.text) { await this.end("completed"); return; }
+      await this.connect();
+      check();
+      this.status();
+      const started = await this.rpc!.request("turn/start", { threadId: this.snapshot().session.nativeHandle, model: this.config.provider.modelId,
+        ...(this.turnEffort !== undefined ? { effort: this.turnEffort } : {}), input: [{ type: "text", text: prepared.text }] });
+      check();
+      if (!started.turn?.id) throw new Error("CODEX_CONTROL_START_ACK_INVALID");
+      if (!this.snapshot().turn?.nativeTurnId) this.apply({ type: "phase", phase: "waiting-model", nativeTurnId: started.turn.id });
+    } catch (error) {
+      this.steeringTransition = undefined;
+      await this.closeProcess();
+      await this.end(this.cancelled ? "interrupted" : "failed", error instanceof Error ? error.message : "CODEX_CONTROL_FAILED");
+      throw error;
+    } finally { clearTimeout(timer); if (this.steeringTransition === transition) this.steeringTransition = undefined; }
   }
   claimToolItem(name: string, args: unknown): string {
     const normalized = (value: any): any => Array.isArray(value) ? value.map(normalized) : value && typeof value === "object"
@@ -249,7 +316,7 @@ export class CodexAdapter implements EngineAdapter {
     const state = this.snapshot();
     if (this.disposed) throw Object.assign(new Error("Codex steering session unavailable"), { errorCode: "MISSING_SESSION" });
     if (state.turn?.id !== expectedTurnId) throw Object.assign(new Error("Codex steering target is stale"), { errorCode: "STALE_TURN" });
-    if (!this.rpc || this.cancelled || this.ending || !state.turn.nativeTurnId || state.turn.outcome) throw Object.assign(new Error("No native turn available to steer"), { errorCode: "NOT_RUNNING" });
+    if (!this.rpc || this.cancelled || this.ending || this.steeringTransition || !state.turn.nativeTurnId || state.turn.outcome) throw Object.assign(new Error("No native turn available to steer"), { errorCode: "NOT_RUNNING" });
     // Text-only until attachment preparation is shared with native steering.
     return { projectPath: this.config.workspace, supportsVision: false };
   }
@@ -443,7 +510,10 @@ export class CodexAdapter implements EngineAdapter {
     const approval = this.approvals.get(requestId); if (!approval) return false;
     clearTimeout(approval.timer); this.approvals.delete(requestId);
     const allowed = decision === "allow-once";
-    try { this.rpc?.reply(approval.nativeId, approval.questions ? { answers: {} } : { decision: allowed ? "accept" : "decline" }); } catch { /* engine may have exited */ }
+    try {
+      if (approval.resolveLocal) approval.resolveLocal(approval.questions!.map(() => null));
+      else this.rpc?.reply(approval.nativeId, approval.questions ? { answers: {} } : { decision: allowed ? "accept" : "decline" });
+    } catch { /* engine may have exited */ }
     const item = this.contract.item(approval.itemId);
     if (item) this.update({ ...item, status: allowed ? "completed" : "failed", completedAt: Date.now(), result: allowed ? "Allowed once" : "Denied" });
     this.status(); return true;
@@ -451,10 +521,13 @@ export class CodexAdapter implements EngineAdapter {
   resolveQuestion(resolution: AskToolResolution): boolean {
     const approval = this.approvals.get(resolution.requestId);
     if (!approval?.questions || resolution.sessionId !== this.config.sessionId) return false;
+    if (!Array.isArray(resolution.answers) || resolution.answers.length !== approval.questions.length || resolution.answers.some((answer, index) =>
+      answer !== null && (!Array.isArray(answer) || answer.some(value => typeof value !== "string") || !approval.questions![index].multiSelect && answer.length > 1))) throw new Error("ASKTOOL_INVALID_ARGUMENT");
     clearTimeout(approval.timer); this.approvals.delete(resolution.requestId);
     const answers: Record<string, { answers: string[] }> = {};
     approval.questions.forEach((q, index) => { answers[q.id] = { answers: resolution.answers[index] ?? [] }; });
-    this.rpc?.reply(approval.nativeId, { answers });
+    if (approval.resolveLocal) approval.resolveLocal(resolution.answers);
+    else this.rpc?.reply(approval.nativeId, { answers });
     const item = this.contract.item(approval.itemId);
     if (item) this.update({ ...item, status: "completed", completedAt: Date.now(), result: "Question answered" });
     this.status(); return true;

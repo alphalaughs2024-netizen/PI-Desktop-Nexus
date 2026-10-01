@@ -114,7 +114,26 @@ active navigation stops its owned guest, and an active mutation reports
 `BROWSER_POSSIBLY_APPLIED`. Later workflow, Git and plugin mutation boundaries
 check cancellation. Already-started native Git/devkit changes are not rolled
 back or claimed undone. MCP shutdown aborts active calls and bounds its cleanup
-wait to one second. Plan/Goal remains pending integration.
+wait to one second.
+
+## Plan and Goal boundaries (ADR 0258)
+
+Plan/Goal uses the existing host artifact and approval workflow. Entering either
+mode stops the native execution segment and owned delegates before host mode
+mutation. Partial output, host turn identity and start time remain intact.
+Planning exposes permission-checked Nexus inspection tools and declared
+plan-safe actions; native shell/patch, delegation and arbitrary browser evaluation
+are unavailable. Bash retains its actual host permission policy, so planning
+intent does not promise shell containment. GUI questions use the existing
+non-expiring dialog and preserve unanswered questions on cancellation.
+
+Submission stops the planning segment, validates the host artifact's exact
+Markdown/hash/size, and leaves the proposal awaiting explicit approval. Approval
+claims a new host execution turn with the exact artifact and selected permission
+mode, resumes the same native history and restores native tools. Invalid,
+unclaimed or mismatched execution descriptors fail before launch. Cancellation
+or a failed transition cannot restart the previous segment. Reload uses the host
+approval state and recovery handle; no mutation is replayed.
 
 ## Trusted extensions (ADR 0257)
 
@@ -183,8 +202,8 @@ An engine-admitted instruction remains visible even if later renderer queue
 cleanup fails; only a rejected submission retracts its own optimistic row.
 Chat switching and reload hydration must keep the instruction exactly once.
 
-Agent mode, new user turns, native file/shell tools and configured image input
-are supported. Plan/Goal, legacy regenerate, manual
+Agent/Plan/Goal, new user turns, native file/shell tools and configured image input
+are supported. Legacy regenerate, manual
 compaction and graceful stop do not silently fall back to pi. Existing features
 remain available in the default runtime. Full response timeline/timer rendering
 is Phase 3; full coding services are Phase 4. Existing chat migration is not
