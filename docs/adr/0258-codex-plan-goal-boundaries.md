@@ -14,6 +14,9 @@ are preserved across that transition.
 
 Planning uses Nexus permission-checked inspection tools and declared plan-safe
 actions. Native shell/patch, Task and arbitrary browser evaluation are excluded.
+Main permits Skill and Workflow guidance loading and existing plan-safe browser
+inspection in both Plan and Goal. Workflow activation still checks the manifest's
+supported modes; loading guidance does not grant implementation authority.
 Allowed Bash retains host policy; this is an approval boundary, not a claim of
 filesystem containment. Trusted extension tools remain excluded while planning.
 Questions use the existing non-expiring GUI dialog and resolve as unanswered

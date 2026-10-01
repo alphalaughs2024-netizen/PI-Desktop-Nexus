@@ -175,6 +175,16 @@ test("a manual session selection can choose only an available compatible workflo
   );
 });
 
+test("planning can activate discovery guidance while implementation workflows remain unavailable", () => {
+  for (const mode of ["plan", "goal"]) {
+    const discovery = resolve({ mode, session: { manualActiveId: BRAINSTORMING_WORKFLOW_ID } });
+    assert.equal(discovery.primary?.id, BRAINSTORMING_WORKFLOW_ID);
+    assert.ok(discovery.availableIds.includes(BRAINSTORMING_WORKFLOW_ID));
+    assert.equal(discovery.unavailable.find(item => item.id === EXECUTING_PLANS_WORKFLOW_ID)?.reason, "unsupported_mode");
+    assert.notEqual(resolve({ mode, session: { manualActiveId: EXECUTING_PLANS_WORKFLOW_ID } }).primary?.id, EXECUTING_PLANS_WORKFLOW_ID);
+  }
+});
+
 test("injects only active guidance, keeps Workflow guidance-only, and exposes transparent controls", () => {
   assert.match(runtimeSource, /<active-nexus-workflow/);
   assert.match(runtimeSource, /cannot add tools, permissions, execution rights, or bypass confirmations/);

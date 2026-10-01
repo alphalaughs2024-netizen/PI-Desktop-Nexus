@@ -7,6 +7,7 @@ import { existsSync } from "node:fs";
 import type { HostProcess, ProcessExitHandler, StderrHandler } from "./host-process";
 import { DEFAULT_RPC_TIMEOUT_MS, normalizeMode, rpcTimeoutMs } from "@pi-desktop/shared";
 import { LocalToolExecutor, type LocalToolHandler, type LocalToolResult } from "./local-tool-executor";
+import { localToolAllowedInMode } from "./local-tool-policy";
 export type { LocalToolHandler, LocalToolResult } from "./local-tool-executor";
 
 // stderr lines kept per sidecar so an unexpected exit can be reported with the
@@ -402,6 +403,7 @@ export class AgentSidecar {
           return;
         }
         const requestedToolName = String(params.toolName ?? "");
+        const mode = normalizeMode(params.mode, "agent");
         const planLocalTool =
           requestedToolName === "PluginCheck" ||
           requestedToolName === "PluginScaffold" ||
@@ -409,12 +411,12 @@ export class AgentSidecar {
           requestedToolName.startsWith("plugin_");
         if (
           method === "tools.execute" &&
-          params.mode === "plan" &&
+          mode !== "agent" &&
           planLocalTool &&
           requestedToolName !== "BrowserPreview"
         ) {
           throw Object.assign(
-            new Error(`${requestedToolName} is unavailable in Plan mode`),
+            new Error(`${requestedToolName} is unavailable in ${mode === "goal" ? "Goal" : "Plan"} mode`),
             { code: -32000, data: { errorCode: "TOOL_DISABLED_IN_PLAN" } },
           );
         }
@@ -476,18 +478,15 @@ export class AgentSidecar {
             : undefined;
         if (localTool) {
           const toolName = requestedToolName;
-          // Local tools can bypass host-core's permission boundary. Plan mode
-          // therefore permits only the read-only BrowserPreview bridge; every
-          // other main-local tool fails closed even if a stale runtime asks for
-          // it directly.
-          const mode = normalizeMode(params.mode, "agent");
+          // Guidance and browser inspection retain their own session/mode checks.
+          // Other local tools fail closed before bypassing host-core in planning.
           const result =
-            params.mode === "plan" && toolName !== "BrowserPreview"
+            !localToolAllowedInMode(toolName, mode)
               ? {
                   ok: false,
                   isError: true,
                   errorCode: "TOOL_DISABLED_IN_PLAN",
-                  content: `${toolName} is unavailable in Plan mode.`,
+                  content: `${toolName} is unavailable in ${mode === "goal" ? "Goal" : "Plan"} mode.`,
                 }
               : await this.runLocalTool(localTool, {
                   sessionId: String(params.sessionId ?? ""),

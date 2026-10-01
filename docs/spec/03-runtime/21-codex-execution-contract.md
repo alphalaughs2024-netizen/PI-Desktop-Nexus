@@ -127,6 +127,12 @@ are unavailable. Bash retains its actual host permission policy, so planning
 intent does not promise shell containment. GUI questions use the existing
 non-expiring dialog and preserve unanswered questions on cancellation.
 
+The Main-local gate permits Skill and Workflow guidance loading in Plan/Goal,
+including brainstorming. Workflow activation honors the manifest's supported
+modes; implementation-only workflows remain unavailable. Guidance cannot grant
+tools or waive approval. Existing plan-safe browser inspection remains allowed;
+plugin tools and other Main-local mutation/execution tools fail closed.
+
 Submission stops the planning segment, validates the host artifact's exact
 Markdown/hash/size, and leaves the proposal awaiting explicit approval. Approval
 claims a new host execution turn with the exact artifact and selected permission

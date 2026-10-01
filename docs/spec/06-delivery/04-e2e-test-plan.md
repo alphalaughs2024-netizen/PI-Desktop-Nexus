@@ -11657,6 +11657,8 @@ or delete caches, profiles or earlier recovery files to hide this condition.
   approve another with an explicit permission mode. Cancel during transition,
   question and submission. Inject host transition failure, stale approval and
   tampered artifact metadata; reload a pending proposal.
+  In Plan and Goal, load the brainstorming Skill and activate its Workflow;
+  attempt to activate an implementation-only workflow and call a plugin tool.
 - **Expected**: Old native execution and delegates stop before host mode change.
   Planning offers only host inspection and declared plan-safe actions. No native
   patch/shell or delegation before approval. Questions use the GUI; cancellation
@@ -11665,6 +11667,8 @@ or delete caches, profiles or earlier recovery files to hide this condition.
   restores native tools on the same native history, with the approved permission
   mode and one terminal outcome per host turn. Failures/cancellation cannot restart
   the prior segment. Pending approval remains visible after reload. No pi fallback.
+  Brainstorming guidance loads successfully; workflow manifest mode restrictions,
+  plugin denial and the implementation approval boundary remain enforced.
 - **Validation**: Targeted lifecycle tests and isolated native Windows Plan/Goal
   fixtures. Full local E2E suites remain unrun unless explicitly requested.
 
