@@ -46,8 +46,15 @@ does not establish an executable binding or permission grant.
 
 ## Acceptance Boundaries
 
-This is opt-in integration. Plan/Goal, legacy extension command dispatch,
-Main-local tool cancellation and configured subagent execution remain pending
+Main-local tools receive an execution-owned cancellation signal. Stop, timeout
+and transport close settle the tool promptly; handlers check the signal before
+later mutation boundaries. Browser cancellation prevents queued dispatch,
+interrupts owned navigation and reports possibly-applied active mutations.
+An already-started Git/devkit mutation cannot be undone by cancellation.
+Bridge shutdown aborts active host calls with a bounded one-second cleanup wait.
+
+This is opt-in integration. Plan/Goal, legacy extension command dispatch
+and configured subagent execution remain pending
 Phase 2 work. The bridge does not implement a session-owned preview process
 supervisor; `managedPreview` remains false. Existing file preview is a separate
 capability. The current production runtime and appearance remain unchanged.

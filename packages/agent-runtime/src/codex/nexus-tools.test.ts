@@ -76,3 +76,18 @@ it("aborts only owned host calls when the engine connection closes", async () =>
  const pending = fetch(bridge.url, { method: "POST", headers: { Authorization: "Bearer " + bridge.token }, body: JSON.stringify({ jsonrpc: "2.0", id: 8, method: "tools/call", params: { name: "browser_wait" } }) }).catch(() => undefined);
  await admitted; await bridge.close(); await pending; expect(aborted).toHaveLength(1); expect(aborted[0].sessionId).toBe("owned");
 });
+
+it("closes HTTP connections within a bound even if host abort never responds", async () => {
+ let admitted!: () => void;
+ const started = new Promise<void>(resolve => { admitted = resolve; });
+ const host = { call: async <T>(method: string): Promise<T> => {
+  if (method === "tools.list") return { tools: [definition("browser_wait")] } as T;
+  if (method === "tools.execute") admitted();
+  return new Promise<T>(() => undefined);
+ } };
+ const bridge = await startNexusToolBridge({ host, sessionId: "owned", scratchDir: tmpdir(), mode: "agent", imageInput: false, snapshot: () => ({ turn: { id: "turn", runId: "run" } } as any) }); bridges.push(bridge);
+ const pending = fetch(bridge.url, { method: "POST", headers: { Authorization: "Bearer " + bridge.token }, body: JSON.stringify({ jsonrpc: "2.0", id: 9, method: "tools/call", params: { name: "browser_wait" } }) }).catch(() => undefined);
+ await started;
+ const before = Date.now(); await bridge.close(); await pending;
+ expect(Date.now() - before).toBeLessThan(2000);
+});

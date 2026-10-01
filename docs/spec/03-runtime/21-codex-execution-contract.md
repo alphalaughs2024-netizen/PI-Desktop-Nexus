@@ -107,7 +107,14 @@ owned bridges and preserve the original error.
 Screenshot results deliver actual image blocks to image-capable models while
 transcript/recovery diagnostics omit encoded bytes. Models without image input
 receive an explicit limitation. MCP `isError` results produce failed tool rows.
-Main-local cancellation, configured subagents, Plan/Goal and legacy extension
+Main-local handlers receive a session/call-scoped cancellation signal. Stop,
+timeout or transport close settles their visible result without waiting for an
+unresponsive handler. Queued Browser actions do not dispatch after cancellation;
+active navigation stops its owned guest, and an active mutation reports
+`BROWSER_POSSIBLY_APPLIED`. Later workflow, Git and plugin mutation boundaries
+check cancellation. Already-started native Git/devkit changes are not rolled
+back or claimed undone. MCP shutdown aborts active calls and bounds its cleanup
+wait to one second. Configured subagents, Plan/Goal and legacy extension
 commands remain pending integration, not capabilities established by this bridge.
 
 ## Acceptance boundaries

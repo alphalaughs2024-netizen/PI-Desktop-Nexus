@@ -75,7 +75,7 @@ export function registerPluginDevTools(
   sidecar: Pick<AgentSidecar, "setLocalTool">,
   deps: PluginDevToolDeps,
 ): void {
-  sidecar.setLocalTool("PluginScaffold", async ({ args, sessionId }) => {
+  sidecar.setLocalTool("PluginScaffold", async ({ args, sessionId, signal }) => {
     const template = String((args as { template?: unknown })?.template ?? "").trim();
     if (!isTemplateName(template)) {
       return failure(
@@ -83,6 +83,7 @@ export function registerPluginDevTools(
       );
     }
     const target = await resolveTarget(deps, sessionId, "PluginScaffold", args);
+    signal?.throwIfAborted();
     if ("error" in target) return target.error;
 
     let created;
@@ -101,7 +102,9 @@ export function registerPluginDevTools(
     // runs, so the next edit is a hot reload rather than a first load.
     let loadNote = "";
     try {
+      signal?.throwIfAborted();
       const permissions = await deps.registerDevPlugin(target.path);
+      signal?.throwIfAborted();
       await deps.loadPlugin(target.path, permissions);
       loadNote = " It is loaded as a development plugin and hot-reloads on save.";
     } catch (error) {
@@ -142,8 +145,9 @@ export function registerPluginDevTools(
     };
   });
 
-  sidecar.setLocalTool("PluginPack", async ({ args, sessionId }) => {
+  sidecar.setLocalTool("PluginPack", async ({ args, sessionId, signal }) => {
     const target = await resolveTarget(deps, sessionId, "PluginPack", args);
+    signal?.throwIfAborted();
     if ("error" in target) return target.error;
 
     try {

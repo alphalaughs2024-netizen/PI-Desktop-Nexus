@@ -64,6 +64,47 @@ test("broker denies mutating actions in Plan mode", async () => {
   assert.equal(result.code, "BROWSER_POLICY_BLOCKED");
 });
 
+test("cancelled queued actions settle promptly and never dispatch", async () => {
+  let release;
+  const loading = new Promise(resolve => { release = resolve; });
+  const { host: target, calls } = host({ navigate: async () => { await loading; return { url: "https://example.com" }; } });
+  const broker = new BrowserBroker(target);
+  const first = broker.navigate({ url: "https://example.com" }, "a");
+  const controller = new AbortController();
+  const second = broker.click("ref", { sessionId: "a", signal: controller.signal });
+  controller.abort();
+  assert.equal((await second).code, "BROWSER_CANCELLED");
+  release(); await first;
+  await Promise.resolve();
+  assert.deepEqual(calls, []);
+});
+
+test("cancellation stops an owned load and reports that navigation may have applied", async () => {
+  let release;
+  const loading = new Promise(resolve => { release = resolve; });
+  const { host: target, calls } = host({ navigate: async () => { await loading; return { url: "https://example.com" }; } });
+  const broker = new BrowserBroker(target);
+  const controller = new AbortController();
+  const pending = broker.navigate({ url: "https://example.com" }, "a", { signal: controller.signal });
+  await Promise.resolve();
+  controller.abort();
+  assert.equal((await pending).code, "BROWSER_POSSIBLY_APPLIED");
+  assert.deepEqual(calls, ["stop"]);
+  release();
+});
+
+test("cancelled waits stop polling the retained page", async () => {
+  let polls = 0;
+  const { host: target } = host({ getState: () => { polls++; return null; } });
+  const broker = new BrowserBroker(target);
+  const controller = new AbortController();
+  const pending = broker.wait({ kind: "page_load" }, { signal: controller.signal });
+  await Promise.resolve(); controller.abort();
+  assert.equal((await pending).code, "BROWSER_CANCELLED");
+  await new Promise(resolve => setTimeout(resolve, 230));
+  assert.equal(polls, 1);
+});
+
 test("broker reports ambiguous mutation timeout without replay", async () => {
   const { host: target } = host({ click: async () => new Promise(() => {}) });
   const broker = new BrowserBroker(target);

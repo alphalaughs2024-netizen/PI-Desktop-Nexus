@@ -6,6 +6,8 @@ import { join } from "node:path";
 import { existsSync } from "node:fs";
 import type { HostProcess, ProcessExitHandler, StderrHandler } from "./host-process";
 import { DEFAULT_RPC_TIMEOUT_MS, normalizeMode, rpcTimeoutMs } from "@pi-desktop/shared";
+import { LocalToolExecutor, type LocalToolHandler, type LocalToolResult } from "./local-tool-executor";
+export type { LocalToolHandler, LocalToolResult } from "./local-tool-executor";
 
 // stderr lines kept per sidecar so an unexpected exit can be reported with the
 // process's last words instead of a bare "agent sidecar exited".
@@ -14,20 +16,6 @@ const SIDECAR_STDERR_TAIL_LINES = 40;
 export type SidecarNotificationHandler = (method: string, params: unknown) => void;
 
 /** Result shape the sidecar's tool executor expects from tools.execute. */
-export type LocalToolResult = {
-  ok: boolean;
-  content: unknown;
-  isError?: boolean;
-  errorCode?: string;
-};
-
-export type LocalToolHandler = (input: {
-  sessionId: string;
-  toolCallId: string;
-  args: unknown;
-  mode?: "agent" | "plan" | "goal";
-}) => Promise<LocalToolResult>;
-
 export type ProjectInstructionResolver = (input: {
   sessionId: string;
   path: string;
@@ -125,7 +113,7 @@ export class AgentSidecar {
   // Tools served by Electron main itself (e.g. BrowserPreview drives the
   // work panel's WebContentsView) — host-core never sees these.
   private localTools = new Map<string, LocalToolHandler>();
-  private localToolTimers = new Set<ReturnType<typeof setTimeout>>();
+  private localToolExecutor = new LocalToolExecutor(DEFAULT_RPC_TIMEOUT_MS);
   private projectInstructionResolver: ProjectInstructionResolver | null = null;
   // The sidecar may request a path, but it never chooses the project root.
   // Electron main registers this binding from the host-owned session record
@@ -193,8 +181,7 @@ export class AgentSidecar {
       p.reject(error);
     }
     this.pending.clear();
-    for (const timer of this.localToolTimers) clearTimeout(timer);
-    this.localToolTimers.clear();
+    this.localToolExecutor.abortAll();
     this.handlers.clear();
     this.readline?.close();
     this.readline = undefined;
@@ -245,23 +232,7 @@ export class AgentSidecar {
     handler: LocalToolHandler,
     input: Parameters<LocalToolHandler>[0],
   ): Promise<LocalToolResult> {
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    try {
-      return await Promise.race([
-        handler(input),
-        new Promise<LocalToolResult>((_, reject) => {
-          timer = setTimeout(() => {
-            reject(new Error("main-local tool timeout"));
-          }, DEFAULT_RPC_TIMEOUT_MS);
-          this.localToolTimers.add(timer);
-        }),
-      ]);
-    } finally {
-      if (timer) {
-        clearTimeout(timer);
-        this.localToolTimers.delete(timer);
-      }
-    }
+    return this.localToolExecutor.run(handler, input);
   }
 
   onExit(handler: ProcessExitHandler): () => void {
@@ -426,6 +397,10 @@ export class AgentSidecar {
           );
         }
         const params = (msg.params?.params ?? {}) as Record<string, unknown>;
+        if (method === "tools.abort" && this.localToolExecutor.abort(String(params.sessionId ?? ""), String(params.toolCallId ?? ""))) {
+          this.writeToChild(JSON.stringify({ jsonrpc: "2.0", id: msg.id, result: { ok: true } }) + "\n");
+          return;
+        }
         const requestedToolName = String(params.toolName ?? "");
         const planLocalTool =
           requestedToolName === "PluginCheck" ||

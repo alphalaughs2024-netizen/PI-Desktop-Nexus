@@ -438,6 +438,7 @@ export async function inspectManagedWorktree(
 
 export type GitWorktreeManagerDeps = {
   dataDir: string;
+  signal?: AbortSignal;
   resolveWorkspace: (sessionId: string) => Promise<string | null>;
   confirm: (title: string, detail: string) => Promise<boolean>;
 };
@@ -453,6 +454,7 @@ async function runGitWorktreeOperationInternal(
   sessionId: string,
   input: { operation?: unknown; branch?: unknown },
 ): Promise<string> {
+  deps.signal?.throwIfAborted();
   const operation = String(input.operation ?? "status") as GitWorktreeOperation;
   if (!(["status", "create", "merge", "cleanup"] as const).includes(operation)) {
     throw new Error("GitWorktree: operation must be status, create, merge, or cleanup.");
@@ -501,6 +503,7 @@ async function runGitWorktreeOperationInternal(
     throw error;
   }
   clearGitBlocker(sessionId);
+  deps.signal?.throwIfAborted();
   const worktreePath = managedWorktreePath(repositoryPath, canonicalBranch);
 
   if (operation === "status") {
@@ -532,6 +535,7 @@ async function runGitWorktreeOperationInternal(
     if (await branchExists(repositoryPath, canonicalBranch) || existsSync(worktreePath) || await worktreeIsRegistered(repositoryPath, worktreePath)) {
       throw new Error("GitWorktree: branch or target changed while confirmation was open; creation is refused.");
     }
+    deps.signal?.throwIfAborted();
     mkdirSync(dirname(worktreePath), { recursive: true });
     await gitOrThrow(repositoryPath, ["worktree", "add", worktreePath, "-b", canonicalBranch, "HEAD"]);
     writeRecord(deps.dataDir, { repositoryPath, branch: canonicalBranch, worktreePath, createdAt: new Date().toISOString() });
@@ -557,6 +561,7 @@ async function runGitWorktreeOperationInternal(
     if (confirmedStatus.mergedIntoCurrent) {
       return `GitWorktree: ${canonicalBranch} is already merged into the current branch.`;
     }
+    deps.signal?.throwIfAborted();
     await gitOrThrow(repositoryPath, ["merge", "--no-ff", canonicalBranch, "-m", `merge: integrate ${canonicalBranch}`]);
     if (!(await branchMergedIntoCurrent(repositoryPath, canonicalBranch))) {
       throw new Error("GitWorktree: merge verification failed; the branch is not an ancestor of current HEAD.");
@@ -578,7 +583,9 @@ async function runGitWorktreeOperationInternal(
   if (!confirmedStatus.mergedIntoCurrent) {
     throw new Error(`GitWorktree: ${canonicalBranch} changed after confirmation and is no longer merged; cleanup is refused.`);
   }
+  deps.signal?.throwIfAborted();
   await gitOrThrow(repositoryPath, ["worktree", "remove", worktreePath]);
+  deps.signal?.throwIfAborted();
   await gitOrThrow(repositoryPath, ["branch", "-d", canonicalBranch]);
   removeRecord(deps.dataDir, repositoryPath, canonicalBranch);
   return `GitWorktree: removed ${worktreePath} and deleted merged local branch ${canonicalBranch}. No remote was pushed.`;
@@ -593,6 +600,7 @@ export async function runGitWorktreeOperation(
   try {
     return await runGitWorktreeOperationInternal(deps, sessionId, input);
   } catch (error) {
+    if (deps.signal?.aborted) throw deps.signal.reason;
     const existing = blockers.get(sessionId);
     const category = classifyGitError(error);
     // Preflight failures are already recorded with the safe workspace identity.

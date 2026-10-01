@@ -16,7 +16,7 @@ export type BrowserRect = {
   height: number;
 };
 
-export type BrowserTarget = { sessionId: string; browserId: string; incarnation?: number };
+export type BrowserTarget = { sessionId: string; browserId: string; incarnation?: number; signal?: AbortSignal };
 
 export type BrowserNavigateInput = {
   url?: string;
@@ -186,6 +186,7 @@ export class BrowserHost {
     if (!location) throw Object.assign(new Error("Browser navigation requires a target"), { code: "BROWSER_INVALID_INPUT" });
     const target = this.targetTab(expected ?? this.resolveTarget(sessionId, browserId));
     const root = await this.deps.getFileRoot(target.sessionId || undefined);
+    expected?.signal?.throwIfAborted();
     // A close/reopen while the root is resolving must not navigate a new guest.
     if (this.pane.resolveTab(target.sessionId, target.browserId).pane !== target.pane) {
       throw Object.assign(new Error("Browser tab was replaced"), { code: "BROWSER_TAB_NOT_FOUND" });
@@ -218,7 +219,11 @@ export class BrowserHost {
   async screenshot(input: { fullPage?: boolean } = {}, sessionId?: string, target?: BrowserTarget): Promise<{ mimeType: string; data: string; path?: string }> {
     const { wc, cdp } = await this.client(target);
     const pane = this.targetTab(target).pane;
-    const shot = await this.renderHost.run(pane, () => cdp.withRenderViewport(wc, () => cdp.screenshot(wc, input)));
+    const shot = await this.renderHost.run(pane, () => cdp.withRenderViewport(wc, () => {
+      target?.signal?.throwIfAborted();
+      return cdp.screenshot(wc, input);
+    }));
+    target?.signal?.throwIfAborted();
     const scratch = this.deps.getScratchDir?.(target?.sessionId ?? sessionId ?? this.chromeSessionId ?? undefined);
     if (!scratch) throw new Error("Browser screenshot requires a session scratch directory");
     try {
@@ -234,25 +239,34 @@ export class BrowserHost {
   async click(uid: string, target?: BrowserTarget): Promise<void> {
     const { wc, cdp } = await this.client(target);
     await this.renderHost.run(this.targetTab(target).pane, () => cdp.withRenderViewport(wc, async () => {
+      target?.signal?.throwIfAborted();
       // Capture commits a compositor frame so reparented guests have hit-test data.
       await cdp.screenshot(wc);
+      target?.signal?.throwIfAborted();
       await cdp.click(wc, uid);
     }));
   }
 
   async fill(uid: string, text: string, target?: BrowserTarget): Promise<void> {
     const { wc, cdp } = await this.client(target);
+    target?.signal?.throwIfAborted();
     await cdp.fill(wc, uid, text);
   }
 
   async type(uid: string | undefined, text: string, clearFirst: boolean, target?: BrowserTarget): Promise<void> {
     const { wc, cdp } = await this.client(target);
-    await this.renderHost.run(this.targetTab(target).pane, () => cdp.withRenderViewport(wc, () => cdp.type(wc, uid, text, clearFirst)));
+    await this.renderHost.run(this.targetTab(target).pane, () => cdp.withRenderViewport(wc, () => {
+      target?.signal?.throwIfAborted();
+      return cdp.type(wc, uid, text, clearFirst);
+    }));
   }
 
   async keypress(uid: string | undefined, key: string, modifiers: string[], target?: BrowserTarget): Promise<void> {
     const { wc, cdp } = await this.client(target);
-    await this.renderHost.run(this.targetTab(target).pane, () => cdp.withRenderViewport(wc, () => cdp.keypress(wc, uid, key, modifiers)));
+    await this.renderHost.run(this.targetTab(target).pane, () => cdp.withRenderViewport(wc, () => {
+      target?.signal?.throwIfAborted();
+      return cdp.keypress(wc, uid, key, modifiers);
+    }));
   }
 
   async setViewport(input: { width?: number; height?: number; mobile?: boolean; reset?: boolean }, target?: BrowserTarget) {
@@ -262,6 +276,7 @@ export class BrowserHost {
 
   async evaluate(expression: string, target?: BrowserTarget): Promise<unknown> {
     const { wc, cdp } = await this.client(target);
+    target?.signal?.throwIfAborted();
     return cdp.evaluate(wc, expression);
   }
 
@@ -273,6 +288,7 @@ export class BrowserHost {
 
   async cdpCommand(method: string, params?: unknown, target?: BrowserTarget): Promise<unknown> {
     const { wc, cdp } = await this.client(target);
+    target?.signal?.throwIfAborted();
     return cdp.send(wc, method, params);
   }
 
@@ -338,6 +354,7 @@ export class BrowserHost {
   }
 
   private targetTab(target?: BrowserTarget) {
+    target?.signal?.throwIfAborted();
     const resolved = this.pane.resolveTab(target?.sessionId, target?.browserId);
     if (target?.incarnation !== undefined && resolved.incarnation !== target.incarnation) {
       throw Object.assign(new Error("Browser tab was replaced"), { code: "BROWSER_TAB_NOT_FOUND" });
@@ -355,6 +372,7 @@ export class BrowserHost {
         void preparation.finally(() => this.preparations.delete(resolved.pane)).catch(() => undefined);
       }
       await preparation;
+      target?.signal?.throwIfAborted();
     }
     if (this.pane.resolveTab(resolved.sessionId, resolved.browserId).pane !== resolved.pane) {
       throw Object.assign(new Error("Browser tab was replaced"), { code: "BROWSER_TAB_NOT_FOUND" });

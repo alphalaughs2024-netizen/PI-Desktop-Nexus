@@ -2300,7 +2300,7 @@ export type BrowserId = string & { readonly __browserId: unique symbol };
 export type BrowserRequestId = string & { readonly __browserRequestId: unique symbol };
 export type BrowserSnapshotId = string & { readonly __browserSnapshotId: unique symbol };
 export type BrowserElementRef = string & { readonly __browserElementRef: unique symbol };
-export type BrowserErrorCode = "BROWSER_UNAVAILABLE" | "BROWSER_POLICY_BLOCKED" | "BROWSER_TAB_NOT_FOUND" | "BROWSER_STALE_REF" | "BROWSER_TIMEOUT" | "BROWSER_POSSIBLY_APPLIED" | "BROWSER_UNSUPPORTED" | "BROWSER_INVALID_INPUT" | "BROWSER_UNKNOWN_ERROR";
+export type BrowserErrorCode = "BROWSER_UNAVAILABLE" | "BROWSER_POLICY_BLOCKED" | "BROWSER_TAB_NOT_FOUND" | "BROWSER_STALE_REF" | "BROWSER_TIMEOUT" | "BROWSER_CANCELLED" | "BROWSER_POSSIBLY_APPLIED" | "BROWSER_UNSUPPORTED" | "BROWSER_INVALID_INPUT" | "BROWSER_UNKNOWN_ERROR";
 export type BrowserRequestContext = { requestId: BrowserRequestId; sessionId: string; turnId?: string; effectiveAgentId?: string; mode: "plan" | "agent"; permissionEpoch: number; browserId: BrowserId };
 export type BrowserResult<T = unknown> = { requestId: BrowserRequestId; ok: boolean; code?: BrowserErrorCode; retryable?: boolean; possiblyApplied?: boolean; message?: string; result?: T };
 export type BrowserWaitCondition = { kind: "url"; match: "equals" | "contains"; value: string } | { kind: "text"; value: string } | { kind: "page_load" };

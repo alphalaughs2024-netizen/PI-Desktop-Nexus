@@ -134,7 +134,11 @@ export async function startNexusToolBridge(options: NexusToolOptions): Promise<N
  const address = server.address(); if (!address || typeof address === "string") throw new Error("NEXUS_TOOL_BRIDGE_START_FAILED");
  return { url: "http://127.0.0.1:" + address.port + "/mcp", token, close: async () => {
   if (closed) return; closed = true;
-  await Promise.allSettled([...active].map(toolCallId => options.host.call("tools.abort", { sessionId: options.sessionId, toolCallId })));
-  requests.clear(); admitted.clear(); cacheBytes = 0; server.closeAllConnections(); await new Promise<void>(resolve => server.close(() => resolve()));
+  const aborts = Promise.allSettled([...active].map(toolCallId => options.host.call("tools.abort", { sessionId: options.sessionId, toolCallId }, 1_000)));
+  requests.clear(); admitted.clear(); cacheBytes = 0; server.closeAllConnections();
+  await new Promise<void>(resolve => server.close(() => resolve()));
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try { await Promise.race([aborts, new Promise<void>(resolve => { timer = setTimeout(resolve, 1_000); })]); }
+  finally { if (timer) clearTimeout(timer); }
  } };
 }

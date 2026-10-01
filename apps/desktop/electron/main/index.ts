@@ -5404,7 +5404,7 @@ async function startSidecar(): Promise<void> {
   });
   // Agent-driven work panel preview (D100): open a workspace HTML file in
   // the embedded browser; live reload keeps it current through later edits.
-  s.setLocalTool("BrowserPreview", async ({ args, sessionId }) => {
+  s.setLocalTool("BrowserPreview", async ({ args, sessionId, signal }) => {
     const raw = String((args as { path?: unknown })?.path ?? "").trim();
     if (!raw) {
       return {
@@ -5423,6 +5423,7 @@ async function startSidecar(): Promise<void> {
       root = null;
     }
     const scratchRoot = join(dataDir, "scratch", sessionId);
+    signal?.throwIfAborted();
     root = [root, scratchRoot].find(candidate => candidate && resolveLocalFile(raw, candidate)) ?? null;
     if (!root) {
       return {
@@ -5432,7 +5433,8 @@ async function startSidecar(): Promise<void> {
       };
     }
     markBrowserSource(sessionId, "workspace-preview");
-    const preview = await browserBroker.preview(sessionId, raw, root, { sessionId, mode: "agent" });
+    const preview = await browserBroker.preview(sessionId, raw, root, { sessionId, mode: "agent", signal });
+    signal?.throwIfAborted();
     if (!preview.ok || preview.result?.ok === false) {
       return {
         ok: false,
@@ -5455,10 +5457,11 @@ async function startSidecar(): Promise<void> {
     };
   });
   for (const descriptor of browserTypedTools) {
-    s.setLocalTool(descriptor.name, async ({ args, sessionId, mode }) => {
+    s.setLocalTool(descriptor.name, async ({ args, sessionId, mode, signal }) => {
       markBrowserSource(sessionId, "agent");
       const normalizedArgs = args;
-      const result = await descriptor.execute(normalizedArgs, { sessionId, mode: mode === "plan" ? "plan" : "agent" });
+      const result = await descriptor.execute(normalizedArgs, { sessionId, mode: mode === "plan" ? "plan" : "agent", signal });
+      signal?.throwIfAborted();
       if (result && typeof result === "object" && "ok" in result && !(result as { ok: boolean }).ok) {
         return { ...(result as object), ok: false, isError: true, content: (result as { message?: string }).message ?? "Browser operation failed", details: result };
       }
@@ -5535,12 +5538,13 @@ async function startSidecar(): Promise<void> {
   });
   // Workflow lifecycle is intentionally separate from permissions and tools.
   // Main resolves availability from host facts and returns guidance only.
-  s.setLocalTool("Workflow", async ({ args, sessionId }) => {
+  s.setLocalTool("Workflow", async ({ args, sessionId, signal }) => {
     const input = args as { operation?: unknown; id?: unknown };
     const operation = String(input?.operation ?? "status");
     const id = typeof input?.id === "string" ? input.id.trim() : "";
     try {
       const before = await workflowStatusForSession(sessionId);
+      signal?.throwIfAborted();
       if (operation === "status" || operation === "list") {
         return { ok: true, content: JSON.stringify(before, null, 2) };
       }
@@ -5586,7 +5590,7 @@ async function startSidecar(): Promise<void> {
   // Nexus-owned branches and deterministic sibling worktree paths are admitted,
   // each state-changing operation uses a native confirmation, and no operation
   // can push a remote or touch an unrelated checkout.
-  s.setLocalTool("GitWorktree", async ({ args, sessionId }) => {
+  s.setLocalTool("GitWorktree", async ({ args, sessionId, signal }) => {
     try {
       const input = args as { operation?: unknown; branch?: unknown };
       return {
@@ -5594,12 +5598,14 @@ async function startSidecar(): Promise<void> {
         content: await runGitWorktreeOperation(
           {
             dataDir,
+            signal,
             resolveWorkspace: async (id) => {
               if (!host) throw new Error("host unavailable while reading session");
               const result = await host.call<{ session?: { projectPath?: string } }>("session.get", { id });
               return result?.session?.projectPath?.trim() || null;
             },
             confirm: async (title, detail) => {
+              signal?.throwIfAborted();
               const options = {
                 type: "warning" as const,
                 title,
@@ -5613,6 +5619,7 @@ async function startSidecar(): Promise<void> {
               const result = mainWindow
                 ? await dialog.showMessageBox(mainWindow, options)
                 : await dialog.showMessageBox(options);
+              signal?.throwIfAborted();
               return result.response === 1;
             },
           },

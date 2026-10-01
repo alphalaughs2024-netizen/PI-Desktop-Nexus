@@ -11686,6 +11686,8 @@ or delete caches, profiles or earlier recovery files to hide this condition.
   an evicted completed reply. 5) Fail launch/initialization and cancel while the
   tool bridge is preparing. 6) Change the model while idle and send the next
   request. 7) Inspect startup settings and recovery metadata for credentials.
+  8) Cancel queued Browser input, owned navigation, a polling wait and a delayed
+  Main-local mutation. Close the transport with a handler that never settles.
 - **Expected**: Tools bind to the originating session; preview paths stay within
   that workspace or scratch. Actual screenshot image input reaches the model
   while GUI/recovery keep only metadata. Failed results display as failures.
@@ -11694,5 +11696,9 @@ or delete caches, profiles or earlier recovery files to hide this condition.
   cancelled preparation releases owned servers and cannot launch late work.
   The original startup error survives cleanup errors. Idle model changes keep
   the chat/history and use the selected model; no fallback or credential leak.
+  Queued input never dispatches after cancellation. Owned navigation stops;
+  active mutations report possible application without claiming rollback.
+  Later mutation boundaries stop, unrelated calls remain unaffected, and
+  bridge shutdown settles within its bounded cleanup wait.
 - **Validation**: Targeted lifecycle/bridge fixtures and a recorded native smoke
   check. Full local E2E suites remain unrun unless explicitly requested.

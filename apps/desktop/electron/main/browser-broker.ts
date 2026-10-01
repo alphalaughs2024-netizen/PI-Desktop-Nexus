@@ -3,7 +3,7 @@ import type { BrowserHost, BrowserNavigateInput, BrowserTarget } from "./browser
 import { decideCapability, decideCdp, decideMode, decideNavigation } from "./browser-policy";
 
 type BrowserCommand = "navigate" | "action" | "snapshot" | "screenshot" | "click" | "fill" | "evaluate" | "console" | "cdp" | "preview";
-type BrowserContextInput = Partial<Omit<BrowserRequestContext, "requestId" | "browserId">> & { browserId?: string; snapshotId?: string };
+type BrowserContextInput = Partial<Omit<BrowserRequestContext, "requestId" | "browserId">> & { browserId?: string; snapshotId?: string; signal?: AbortSignal };
 export type BrowserRecord = { browserId: BrowserRequestContext["browserId"]; ownerSessionId?: string; chromeSessionId?: string; state: "starting" | "ready" | "loading" | "unavailable" | "blocked" | "closed"; location?: string; createdAt: number; updatedAt: number; guestGeneration: number };
 
 const MUTATIONS = new Set<BrowserCommand>(["navigate", "action", "click", "fill", "evaluate", "cdp", "preview"]);
@@ -46,6 +46,7 @@ export class BrowserBroker {
   wait(condition: BrowserWaitCondition, context?: BrowserContextInput, timeoutMs = 10_000) { return this.run("snapshot", async (target) => {
     const deadline = Date.now() + Math.min(25_000, Math.max(250, Number(timeoutMs) || 10_000));
     while (Date.now() < deadline) {
+      context?.signal?.throwIfAborted();
       const state = this.host.getState(target);
       if (condition.kind === "page_load" && state?.url && !state.isLoading) return this.host.snapshot(target);
       if (condition.kind === "url" && state?.url && (condition.match === "equals" ? state.url === condition.value : state.url.includes(condition.value))) return this.host.snapshot(target);
@@ -59,23 +60,32 @@ export class BrowserBroker {
 
   private async run<T>(command: BrowserCommand, work: (target: BrowserTarget) => Promise<T>, contextInput?: BrowserContextInput, serialize = true, timeoutMs = TIMEOUTS[command]): Promise<BrowserResult<T>> {
     const context = this.context(contextInput);
+    const signal = contextInput?.signal;
+    let dispatched = false;
+    const cancelled = (): BrowserResult<T> => ({ requestId: context.requestId, ok: false,
+      code: dispatched && MUTATIONS.has(command) ? "BROWSER_POSSIBLY_APPLIED" : "BROWSER_CANCELLED",
+      retryable: false, possiblyApplied: dispatched && MUTATIONS.has(command),
+      message: dispatched && MUTATIONS.has(command) ? "Browser work was cancelled after dispatch. The action may have reached the page; inspect it before retrying." : "Browser work was cancelled." });
+    if (signal?.aborted) return cancelled();
     const key = JSON.stringify([context.sessionId, context.browserId]);
     if (!this.isCapabilityEnabled()) return { requestId: context.requestId, ok: false, code: "BROWSER_POLICY_BLOCKED", retryable: false, message: "Browser is disabled by the core capability setting. Re-enable Browser in Settings and retry." };
     const admission = decideMode(context.mode, command);
     if (!admission.allowed) return { requestId: context.requestId, ok: false, code: admission.code, retryable: false, message: admission.message };
     let target: BrowserTarget;
     try {
-      target = this.host.resolveTarget?.(context.sessionId, context.browserId, !contextInput?.browserId) ?? { sessionId: context.sessionId, browserId: context.browserId };
+      target = { ...(this.host.resolveTarget?.(context.sessionId, context.browserId, !contextInput?.browserId) ?? { sessionId: context.sessionId, browserId: context.browserId }), signal };
     } catch (error) {
       return { requestId: context.requestId, ok: false, code: errorCode(error), retryable: false, message: error instanceof Error ? error.message : "Browser target is unavailable" };
     }
     let completion: Promise<unknown> | undefined;
     const execute = async (): Promise<BrowserResult<T>> => {
+      if (signal?.aborted) return cancelled();
       if (!this.isCapabilityEnabled()) return { requestId: context.requestId, ok: false, code: "BROWSER_POLICY_BLOCKED", retryable: false, message: "Browser is disabled by the core capability setting. Re-enable Browser in Settings and retry." };
       const policy = decideMode(context.mode, command); if (!policy.allowed) { this.lastError = { code: policy.code, reason: policy.reason, at: Date.now() }; return { requestId: context.requestId, ok: false, code: policy.code, retryable: false, message: policy.message }; }
       let timer: ReturnType<typeof setTimeout> | undefined;
       try {
         this.record = { ...this.record, state: command === "navigate" || command === "action" ? "loading" : this.record.state, ownerSessionId: context.sessionId || this.record.ownerSessionId, updatedAt: Date.now() };
+        dispatched = true;
         completion = work(target);
         const result = await Promise.race([completion as Promise<T>, new Promise<never>((_, reject) => { timer = setTimeout(() => reject(Object.assign(new Error("Browser command timed out"), { code: "TIMEOUT" })), timeoutMs); })]);
         this.record = { ...this.record, state: "ready", updatedAt: Date.now() };
@@ -87,7 +97,24 @@ export class BrowserBroker {
         return { requestId: context.requestId, ok: false, code: timeout && MUTATIONS.has(command) ? "BROWSER_POSSIBLY_APPLIED" : timeout ? "BROWSER_TIMEOUT" : code, retryable: !MUTATIONS.has(command), possiblyApplied: timeout && MUTATIONS.has(command), message: timeout && MUTATIONS.has(command) ? "The Browser action may have reached the page. Take a fresh snapshot before retrying." : timeout ? "The Browser command timed out before dispatch completed. Retry is safe." : error instanceof Error ? error.message : "Browser command failed." };
       } finally { if (timer) clearTimeout(timer); }
     };
-    if (!serialize) return execute();
+    const raceCancellation = async (operation: Promise<BrowserResult<T>>) => {
+      if (!signal) return operation;
+      let onAbort!: () => void;
+      try {
+        return await Promise.race([operation, new Promise<BrowserResult<T>>(resolve => {
+          onAbort = () => {
+            // Only loads can be stopped; arbitrary page JS may already have applied.
+            if (dispatched && ["navigate", "preview", "action"].includes(command)) {
+              try { this.host.action("stop", target.sessionId, target.browserId, { ...target, signal: undefined }); } catch { /* The retained tab may have closed. */ }
+            }
+            resolve(cancelled());
+          };
+          signal.addEventListener("abort", onAbort, { once: true });
+          if (signal.aborted) onAbort();
+        })]);
+      } finally { signal.removeEventListener("abort", onAbort); }
+    };
+    if (!serialize) return raceCancellation(execute());
     const previous = this.mutationQueues.get(key) ?? Promise.resolve();
     const chained = previous.then(execute, execute);
     // A deadline returns promptly but does not let later commands overtake an
@@ -95,7 +122,7 @@ export class BrowserBroker {
     const settled = chained.then(() => completion?.then(() => undefined, () => undefined), () => undefined);
     this.mutationQueues.set(key, settled);
     void settled.then(() => { if (this.mutationQueues.get(key) === settled) this.mutationQueues.delete(key); });
-    return chained;
+    return raceCancellation(chained);
   }
 
   navigate(input: BrowserNavigateInput, sessionId?: string, context?: BrowserContextInput) {
