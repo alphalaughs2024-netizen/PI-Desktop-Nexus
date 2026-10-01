@@ -6,7 +6,7 @@ const { BrowserBroker } = await import("../electron/main/browser-broker.ts");
 const { BrowserDeveloper, BROWSER_DEVELOPER_METHODS } = await import("../electron/main/browser-developer.ts");
 const { BrowserSitePermissions } = await import("../electron/main/browser-permissions.ts");
 const { BrowserCdp, flattenAxTree } = await import("../electron/main/browser-cdp.ts");
-const { validateBrowserInteraction, GuestTransport } = await import("../electron/main/browser-automation.ts");
+const { validateBrowserInteraction, GuestTransport, BrowserAutomation } = await import("../electron/main/browser-automation.ts");
 const { BrowserTabsPane } = await import("../electron/main/browser-tabs-pane.ts");
 const { BrowserPageServices } = await import("../electron/main/browser-page.ts");
 import { BROWSER_TOOL_NAMES, SUBAGENT_PRESETS, SUBAGENT_BROWSER_TOOLS } from "@pi-desktop/shared";
@@ -19,6 +19,25 @@ function contents() {
   wc.session = Object.assign(new EventEmitter(), { setPermissionCheckHandler(fn) { this.check = fn; }, setPermissionRequestHandler(fn) { this.request = fn; } });
   return wc;
 }
+
+test("common key names and modifiers accept case variants without changing printable letters", async () => {
+  const wc = contents();
+  const commands = [];
+  wc.debugger.sendCommand = async (method, args) => { commands.push({ method, args }); return {}; };
+  const cdp = new BrowserCdp();
+  await cdp.keypress(wc, undefined, "ENTER", ["ctrl", "SHIFT"]);
+  const events = commands.filter(command => command.method === "Input.dispatchKeyEvent");
+  assert.equal(events[0].args.key, "Enter");
+  assert.equal(events[0].args.modifiers, 10);
+  assert.equal(events[1].args.type, "keyUp");
+  await assert.rejects(cdp.keypress(wc, undefined, "INVALID_KEY"), /unsupported Browser key/);
+  await assert.rejects(cdp.keypress(wc, undefined, "Enter", ["INVALID_MODIFIER"]), /unsupported Browser key modifier/);
+  const pressed = [];
+  const automation = new BrowserAutomation(wc, "/scratch");
+  automation.page = async () => ({ getByLabel: () => ({ press: async key => pressed.push(key) }), url: () => wc.url });
+  for (const key of ["ENTER", "ctrl+ENTER", "Control+A", "+"]) await automation.interact({ action: "press", locator: { label: "Draft" }, key });
+  assert.deepEqual(pressed, ["Enter", "Control+Enter", "Control+A", "+"]);
+});
 
 test("browser catalog, tool registration and writing presets expose the same complete set", () => {
   assert.deepEqual(createBrowserTypedTools({}).map(tool => tool.name).sort(), [...BROWSER_TOOL_NAMES].sort());

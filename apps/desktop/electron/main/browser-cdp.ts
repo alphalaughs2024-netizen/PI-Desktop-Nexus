@@ -1,6 +1,7 @@
 import type { WebContents } from "electron";
 import { createHash } from "node:crypto";
 import type { BrowserScreenshotOptions } from "@pi-desktop/shared";
+import { normalizeBrowserKey } from "../../common/browser-keys";
 
 /** Chrome DevTools Protocol revision attached to the work-panel guest. */
 export const BROWSER_CDP_PROTOCOL = "1.3";
@@ -477,12 +478,12 @@ export class BrowserCdp {
 
   async keypress(wc: WebContents, uid: string | undefined, key: string, modifiers: string[] = []): Promise<void> {
     const codes: Record<string, number> = { Enter: 13, Tab: 9, Escape: 27, Backspace: 8, Delete: 46, ArrowLeft: 37, ArrowUp: 38, ArrowRight: 39, ArrowDown: 40, Home: 36, End: 35, PageUp: 33, PageDown: 34, Space: 32 };
-    const normalized = key === " " ? "Space" : key;
+    const normalized = normalizeBrowserKey(key);
     if (!(normalized in codes) && !/^[a-z0-9]$/i.test(normalized)) throw Object.assign(new Error("unsupported Browser key"), { code: "BROWSER_INVALID_INPUT" });
     if (uid) await this.focus(wc, uid);
     else await this.attach(wc);
     const mask = modifiers.reduce((value, modifier) => {
-      const bit = { Alt: 1, Control: 2, Meta: 4, Shift: 8 }[modifier as "Alt" | "Control" | "Meta" | "Shift"];
+      const bit = { Alt: 1, Control: 2, Meta: 4, Shift: 8 }[normalizeBrowserKey(modifier) as "Alt" | "Control" | "Meta" | "Shift"];
       if (!bit) throw Object.assign(new Error("unsupported Browser key modifier"), { code: "BROWSER_INVALID_INPUT" });
       return value | bit;
     }, 0);

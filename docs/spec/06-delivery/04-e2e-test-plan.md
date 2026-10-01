@@ -12004,3 +12004,18 @@ or delete caches, profiles or earlier recovery files to hide this condition.
   return to Chat. Controls/text do not overlap or leave the viewport.
 - **Validation**: Focused contract tests, desktop typecheck/build and a native
   Electron probe. Full local E2E suites remain unrun unless requested.
+
+### E2E-Browser-Document-Readiness: Slow resources and keyboard aliases (ADR 0268)
+
+- **Steps**: Submit a form using `ENTER`, `Enter` and a locator `ctrl+ENTER`
+  chord; type uppercase letters and try invalid keys/modifiers. Navigate to a
+  page whose main document is ready but whose image remains pending. Inspect
+  and capture before full load; explicitly wait for page load. Test a refused
+  connection and a document that never becomes ready.
+- **Expected**: Common named keys/modifiers accept either case; printable
+  characters retain case and unsupported keys fail. DOM readiness permits
+  early inspection while state still reports loading. Full-load waits and
+  never-ready navigation time out truthfully. Errors and uncertain mutations
+  remain available without automatic retries. Readiness listeners are retired.
+- **Validation**: Focused keyboard/navigation/surface tests and a native
+  delayed-resource probe. Local E2E suites remain unrun unless requested.

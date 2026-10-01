@@ -55,6 +55,15 @@ actionability applies without forced-click fallback. Hidden rendering uses
 the existing retained render host; explicit viewport emulation survives until
 reset. Cancellation disconnects an operation without destroying the page.
 Uncertain mutations are reported and never replayed automatically.
+Keyboard actions accept case-insensitive common named keys/modifiers and the
+Return/Esc/Ctrl/Cmd aliases, while retaining printable character case and
+Playwright chord semantics. Unsupported keys still fail explicitly.
+Navigation returns on main-document DOM readiness (or earlier full-load
+completion), allowing inspection while subresources continue loading. Returned
+navigation state and GUI still report `isLoading`; explicit page-load waits
+retain their full-load meaning. A document that never becomes ready still hits
+the bounded navigation deadline. Later resource/navigation errors remain visible
+through the page lifecycle; navigation is never silently retried.
 Snapshot, console and page inspection remain available while an uncertain
 mutation is pending. Later mutations retain their ordering fence.
 

@@ -1,6 +1,7 @@
 import type { WebContents } from "electron";
 import { chromium, type Browser, type ConnectOverCDPTransport, type Locator, type Page } from "playwright-core";
 import type { BrowserInteraction, BrowserLocator } from "@pi-desktop/shared";
+import { normalizeBrowserChord } from "../../common/browser-keys";
 
 type Message = { id?: number; method?: string; params?: Record<string, any>; sessionId?: string };
 
@@ -130,7 +131,7 @@ export class BrowserAutomation {
         case "hover": await required().hover({ timeout }); break;
         case "fill": await required().fill(input.text ?? "", { timeout }); break;
         case "type": await required().pressSequentially(input.text ?? "", { timeout }); break;
-        case "press": await required().press(input.key ?? "", { timeout }); break;
+        case "press": await required().press(normalizeBrowserChord(input.key ?? ""), { timeout }); break;
         case "check": await required().setChecked(input.checked ?? true, { timeout }); break;
         case "select": await required().selectOption(input.values ?? [], { timeout }); break;
         case "drag": if (!input.destination) throw new Error("Drag requires a destination locator"); await required().dragTo(this.locator(page, input.destination), { timeout }); break;

@@ -259,3 +259,4 @@ Each ADR includes:
 | 0265 | Guest-owned built-in browser capabilities | User-approved direction; manual acceptance pending |
 | 0266 | Explicit Browser selection and passive surface geometry | Accepted |
 | 0267 | Browser Full view and native composer surface | User-approved direction; manual acceptance pending |
+| 0268 | Browser navigation returns at document readiness | User-approved direction; manual acceptance pending |

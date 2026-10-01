@@ -109,7 +109,7 @@ export class BrowserPane {
   private surfaceEpoch = 0;
   private surfaceAttempts = 0;
   private surfaceRetry: NodeJS.Timeout | null = null;
-  private mainFrameFinished = false;
+  private mainDocumentReady = false;
 
   constructor(onState: (state: BrowserState) => void) {
     this.onState = onState;
@@ -208,8 +208,14 @@ export class BrowserPane {
     const view = this.ensureView();
     if (this.visible) this.attach();
     let timer: ReturnType<typeof setTimeout> | undefined;
+    let onDocumentReady!: () => void;
+    const documentReady = new Promise<void>(resolve => {
+      onDocumentReady = () => resolve();
+      view.webContents.once("dom-ready", onDocumentReady);
+    });
     try {
       await Promise.race([
+        documentReady,
         view.webContents.loadURL(target),
         new Promise<never>((_, reject) => {
           timer = setTimeout(() => {
@@ -223,6 +229,7 @@ export class BrowserPane {
       return state;
     } finally {
       if (timer) clearTimeout(timer);
+      view.webContents.removeListener("dom-ready", onDocumentReady);
     }
   }
 
@@ -343,10 +350,10 @@ export class BrowserPane {
     this.verifySurface();
   }
 
-  private verifySurface(pageFinished = false): void {
-    if (pageFinished) this.mainFrameFinished = true;
+  private verifySurface(documentReady = false): void {
+    if (documentReady) this.mainDocumentReady = true;
     const wc = this.view?.webContents;
-    if (!wc || wc.isDestroyed() || !this.attached || !this.visible || this.bounds.width < 1 || this.bounds.height < 1 || (!this.mainFrameFinished && wc.isLoading()) || this.surfaceVerification || this.surfaceRetry || this.painted !== "unknown") return;
+    if (!wc || wc.isDestroyed() || !this.attached || !this.visible || this.bounds.width < 1 || this.bounds.height < 1 || (!this.mainDocumentReady && wc.isLoading()) || this.surfaceVerification || this.surfaceRetry || this.painted !== "unknown") return;
     const generation = this.generation;
     const epoch = this.surfaceEpoch;
     this.surfaceAttempts += 1;
@@ -483,7 +490,7 @@ export class BrowserPane {
       if (state) this.onState(state);
     };
     wc.on("did-start-loading", () => {
-      this.mainFrameFinished = false;
+      this.mainDocumentReady = false;
       this.invalidateSurface();
       push();
     });
@@ -493,6 +500,7 @@ export class BrowserPane {
     wc.on("page-title-updated", push);
     wc.on("did-fail-load", push);
     wc.on("did-finish-load", () => { this.verifySurface(true); push(); });
+    wc.on("dom-ready", () => { this.verifySurface(true); push(); });
     wc.on("render-process-gone", push);
     wc.on("destroyed", () => {
       this.attached = false; this.painted = "blank"; this.generation += 1; push();

@@ -31,7 +31,7 @@ function fixture(capture) {
       wc.isLoading = () => false;
       wc.navigationHistory = { canGoBack: () => false, canGoForward: () => false };
       wc.setWindowOpenHandler = () => {};
-      wc.session = { setPermissionRequestHandler() {} };
+      wc.session = { setPermissionRequestHandler() {}, setPermissionCheckHandler() {} };
       wc.loadURL = async url => { wc.emit("did-start-loading"); wc.url = url; wc.emit("did-finish-load"); wc.emit("did-stop-loading"); };
       wc.capturePage = async () => { this.captures++; return capture?.(this) ?? image(this.bounds.width, this.bounds.height); };
       wc.close = () => {};
@@ -58,6 +58,36 @@ test("agent-opened page waits for GUI bounds before verifying its surface", asyn
   f.pane.setBounds({ x: 20, y: 50, width: 640, height: 480 });
   await waitFor(() => f.pane.surfaceStatus().paint === "painted");
   assert.equal(f.view.webContents.url, "https://fixture.example/");
+  f.pane.dispose();
+});
+
+test("main-document readiness returns and paints while remaining resources are loading", async () => {
+  const f = fixture();
+  await f.pane.navigateAndWait("https://fixture.example/");
+  const wc = f.view.webContents;
+  wc.isLoading = () => true;
+  wc.loadURL = url => { wc.url = url; wc.emit("did-start-loading"); queueMicrotask(() => wc.emit("dom-ready")); return new Promise(() => {}); };
+  f.pane.setBounds({ x: 0, y: 0, width: 640, height: 480 }); f.pane.setVisible(true);
+  const result = await f.pane.navigateAndWait("https://fixture.example/slow", null, 100);
+  assert.equal(result.isLoading, true, "Resource loading remains truthful");
+  assert.equal(result.url, "https://fixture.example/slow");
+  assert.equal(wc.listenerCount("dom-ready"), 1, "Only the pane's lifecycle listener remains");
+  await waitFor(() => f.pane.surfaceStatus().paint === "painted");
+  f.pane.dispose();
+});
+
+test("failed and never-ready navigation preserve explicit errors and retire readiness listeners", async () => {
+  const f = fixture();
+  await f.pane.navigateAndWait("https://fixture.example/");
+  const wc = f.view.webContents;
+  wc.loadURL = async () => { throw new Error("ERR_CONNECTION_REFUSED"); };
+  await assert.rejects(f.pane.navigateAndWait("https://fixture.example/failed"), /ERR_CONNECTION_REFUSED/);
+  let stopped = false;
+  wc.loadURL = () => new Promise(() => {});
+  wc.stop = () => { stopped = true; };
+  await assert.rejects(f.pane.navigateAndWait("https://fixture.example/stalled", null, 15), /navigation timed out/);
+  assert.equal(stopped, true);
+  assert.equal(wc.listenerCount("dom-ready"), 1);
   f.pane.dispose();
 });
 
