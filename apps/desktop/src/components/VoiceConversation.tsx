@@ -17,7 +17,7 @@ export function useVoiceMode(): VoiceMode {
   return context;
 }
 
-export function VoiceModeProvider({ children }: { children: ReactNode }) {
+export function VoiceModeProvider({ children, suspended = false }: { children: ReactNode; suspended?: boolean }) {
   const { t } = useTranslation();
   const [active, setActive] = useState(false);
   const [state, setState] = useState<VoiceState>("idle");
@@ -62,6 +62,12 @@ export function VoiceModeProvider({ children }: { children: ReactNode }) {
     setDetailsOpen(false);
     setRecordingSeconds(0);
   };
+
+  useEffect(() => {
+    if (suspended) stop();
+    // Presentation switches must not leave a hidden microphone or voice loop active.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [suspended]);
 
   useEffect(() => () => {
     cycle.current += 1;

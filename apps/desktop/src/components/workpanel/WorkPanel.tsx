@@ -7,6 +7,7 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
 import { useTranslation } from "react-i18next";
+import { Maximize2, Minimize2, ArrowLeft } from "lucide-react";
 import type { PluginViewMeta } from "@pi-desktop/shared";
 import {
   isKnownWorkPanelTab,
@@ -135,6 +136,7 @@ export function WorkPanel({
   const renderPanelWidth = clampWorkPanelWidth(panelDragWidth ?? width);
   const isResizing = panelDragWidth !== null;
   const isMaximized = presentation === "maximized";
+  const isBrowser = activeTab?.kind === "browser" && !subagentPanel;
   const isPresentationTransitioning = presentationTransition !== "idle";
 
   useEffect(() => () => { if (transitionTimer.current !== null) window.clearTimeout(transitionTimer.current); }, []);
@@ -149,6 +151,18 @@ export function WorkPanel({
       transitionTimer.current = null;
     }, 200);
   }, [isPresentationTransitioning, presentation, setWorkPanelPresentation]);
+
+  useEffect(() => {
+    if (!isBrowser) return;
+    const onKey = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key.toLowerCase() === "f") {
+        event.preventDefault();
+        transitionPresentation(isMaximized ? "docked" : "maximized");
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [isBrowser, isMaximized, transitionPresentation]);
 
   useEffect(() => {
     if (isResizing) {
@@ -476,6 +490,8 @@ export function WorkPanel({
     <aside
       className={cx(
         "work-panel",
+        isBrowser && "work-panel--browser",
+        isBrowser && isMaximized && "work-panel--browser-full",
         exiting && !exitAnimationReady && "is-exit-pending",
         exitAnimationReady && "is-exiting",
       )}
@@ -520,6 +536,7 @@ export function WorkPanel({
       >
       <div className="work-panel-main">
         <header className="work-panel-header" data-work-panel-section="current">
+          {isBrowser && isMaximized && <button type="button" className="browser-return-chat no-drag" onClick={() => transitionPresentation("docked")}><ArrowLeft size={15} />Chat</button>}
           <div className="work-panel-context no-drag" ref={contextRef}>
             {subagentPanel ? (
               <div
@@ -721,6 +738,7 @@ export function WorkPanel({
             )}
           </div>
           <div className="work-panel-actions no-drag">
+            {isBrowser && <TooltipButton type="button" className="work-panel-current-close browser-full-view-button" tooltip={`${isMaximized ? "Exit" : "Enter"} full view (Ctrl+Shift+F)`} ariaLabel={isMaximized ? "Exit full view" : "Enter full view"} disabled={isPresentationTransitioning} onClick={() => transitionPresentation(isMaximized ? "docked" : "maximized")}>{isMaximized ? <Minimize2 size={15} /> : <Maximize2 size={15} />}</TooltipButton>}
             {activeTab && !subagentPanel ? (
               <TooltipButton
                 type="button"

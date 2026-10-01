@@ -1634,3 +1634,38 @@
 .context-vault-relationship-section, .context-vault-review-section { padding-top: 1px; }.context-vault-editor footer, .context-vault-modal footer { position: sticky; bottom: -12px; display: flex; flex-wrap: wrap; gap: 6px; padding: 12px 0 1px; background: color-mix(in oklab, var(--ds-bg-secondary) 92%, transparent); }
 .context-vault-modal-backdrop { position: absolute; z-index: 40; inset: 0; display: grid; place-items: center; padding: 16px; background: color-mix(in oklab, var(--ds-bg-primary) 54%, transparent); }.context-vault-modal { width: min(460px, 100%); max-height: min(540px, calc(100% - 20px)); overflow: auto; padding: 16px; border: 1px solid var(--ds-border-default); border-radius: var(--radius-md); background: var(--ds-bg-elevated-opaque); box-shadow: var(--ds-shadow-dialog); }.context-vault-modal h2 { margin: 0; }.context-vault-modal p { margin: 5px 0 0; color: var(--ds-text-muted); font-size: var(--text-xs); line-height: var(--leading-body); }.context-vault-import-items { display: flex; flex-direction: column; gap: 5px; margin-top: 12px; }.context-vault-import-item { display: flex; align-items: flex-start; gap: 8px; padding: 8px; border: 1px solid var(--ds-border-subtle); border-radius: var(--radius-sm); }.context-vault-import-item input { margin-top: 2px; }.context-vault-import-item span { min-width: 0; }.context-vault-import-item b, .context-vault-import-item small { display: block; overflow-wrap: anywhere; }.context-vault-import-item small { margin-top: 2px; color: var(--ds-text-muted); font-size: var(--text-2xs); }.context-vault-import-item:not(.is-selectable) { opacity: .62; }
 @media (max-width: 720px) { .context-vault-main { padding: 10px; }.context-vault-toolbar { align-items: stretch; }.context-vault-search-shell { flex-basis: 100%; }.context-vault-actions { justify-content: flex-start; }.context-vault-field-grid, .context-vault-evidence-row { grid-template-columns: minmax(0, 1fr); }.context-vault-evidence-row .context-vault-icon-button { justify-self: end; }.context-vault-grid.is-editing { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(120px, .8fr) minmax(0, 1.2fr); } }
+
+/* Browser chrome shares one tab band; native content and input retain separate ownership. */
+.work-panel--browser { animation-fill-mode: backwards; }
+.work-panel--browser .work-panel-main { position: relative; }
+.work-panel--browser .work-panel-header { position: absolute; inset: 0 0 auto; z-index: 5; height: 44px; min-height: 44px; padding: 0 8px; background: transparent !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; pointer-events: none; -webkit-app-region: no-drag; }
+.work-panel--browser .work-panel-header::before { display: none; }
+.work-panel--browser .work-panel-context, .work-panel--browser .work-panel-actions, .browser-return-chat { pointer-events: auto; }
+.work-panel--browser .work-panel-switcher-trigger { width: 32px; min-width: 32px; height: 30px; padding: 0; justify-content: center; }
+.work-panel--browser .work-panel-current-label, .work-panel--browser .work-panel-switcher-chevron { display: none; }
+.work-panel--browser .browser-tab-strip { padding-left: 48px; padding-right: 72px; }
+.work-panel--browser .work-panel-body { padding: 0; }
+.browser-tab-spinner { animation: browser-tab-spin 1s linear infinite; }
+@keyframes browser-tab-spin { to { transform: rotate(360deg); } }
+.browser-toolbar-menu, .browser-tab-context-menu { position: fixed; z-index: 1100; width: 224px; min-width: 0; right: auto; max-width: calc(100vw - 16px); background: var(--ds-bg-elevated-opaque, var(--ds-bg-secondary)); }
+.browser-toolbar-menu button { width: 100%; height: 32px; flex-basis: auto; justify-content: flex-start; padding: 0 10px; font-size: 12px; }
+.browser-return-chat { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px 0 2px; border: 0; border-radius: 6px; background: transparent; color: var(--ds-text-primary); font: inherit; font-size: 13px; }
+.browser-return-chat:hover { background: var(--ds-bg-hover); }
+.browser-return-chat:focus-visible { outline: 2px solid var(--ds-focus); outline-offset: -2px; }
+.browser-full-view > .sidebar, .browser-full-view > .sidebar-rail, .browser-full-view > .main-pane { visibility: hidden; pointer-events: none; }
+.browser-full-view > .app-work-panel-toggle { display: none; }
+.work-panel--browser-full { position: fixed; inset: 0; width: auto; height: auto; animation: none; transform: none; z-index: 40; background: var(--ds-bg-primary); }
+.work-panel--browser-full > .work-panel-resize { display: none; }
+.work-panel--browser-full .work-panel-frame.is-maximized { position: relative; inset: auto; width: 100%; height: 100%; border: 0; border-radius: 0; box-shadow: none; animation: none; }
+.work-panel--browser-full .work-panel-header { padding-right: calc(var(--ds-window-controls-width, 0px) + 8px); }
+.work-panel--browser-full .browser-tab-strip { padding-left: 120px; padding-right: calc(var(--ds-window-controls-width, 0px) + 72px); }
+:root[data-platform="darwin"] .work-panel--browser-full .browser-return-chat { margin-left: 76px; }
+:root[data-platform="darwin"] .work-panel--browser-full .browser-tab-strip { padding-left: 196px; }
+html[data-surface="browser-composer"], html[data-surface="browser-composer"] body, html[data-surface="browser-composer"] #root { background: transparent !important; }
+html[data-surface="browser-composer"] .composer-dock { position: absolute; inset-inline: 0; bottom: 0; padding: 8px; }
+html[data-surface="browser-composer"] .composer-stack { width: 100%; max-height: calc(100vh - 16px); overflow: visible; }
+html[data-surface="browser-composer"] .composer-shell { background: var(--ds-bg-composer); box-shadow: var(--ds-shadow-dialog); }
+html[data-surface="browser-composer"] .composer-input { max-height: 160px; }
+html[data-surface="browser-composer"] :is(.composer-model-menu, .composer-permission-menu, .composer-plus-menu, .composer-autocomplete) { max-height: min(440px, calc(var(--browser-composer-window-height, 700px) - 180px)); }
+html[data-surface="browser-composer"] .composer-queued-prompts { max-height: 110px; overflow: auto; }
+@media (prefers-reduced-motion: reduce) { .browser-tab-spinner { animation: none; } .browser-tab, .browser-toolbar button { transition: none; } }

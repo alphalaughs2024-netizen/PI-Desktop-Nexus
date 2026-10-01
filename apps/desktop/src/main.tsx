@@ -5,6 +5,7 @@ import { initReactI18next } from "react-i18next";
 import { catalogs, flattenCatalog, resolveLocale } from "@pi-desktop/i18n";
 import App from "./App";
 import { PluginLauncher } from "./components/PluginLauncher";
+import { BrowserComposerSurface } from "./components/BrowserComposerSurface";
 import { initLanguageSync, resolveOsLocale } from "./lib/app-language";
 import { installScrollbarReveal } from "./lib/scrollbar-reveal";
 import { rendererPlatform } from "./lib/renderer-platform";
@@ -46,7 +47,7 @@ if (!rootEl) {
 try {
   ReactDOM.createRoot(rootEl).render(
     <React.StrictMode>
-      {rendererSurface === "plugin-launcher" ? <PluginLauncher /> : <App />}
+      {rendererSurface === "plugin-launcher" ? <PluginLauncher /> : rendererSurface === "browser-composer" ? <BrowserComposerSurface /> : <App />}
     </React.StrictMode>,
   );
 } catch (error) {

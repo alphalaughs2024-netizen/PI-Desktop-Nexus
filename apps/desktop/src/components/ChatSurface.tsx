@@ -11,6 +11,7 @@ import { ActiveWorkflowCard } from "./ActiveWorkflowCard";
 import { useAppStore } from "../stores/app-store";
 import { headPermission } from "../lib/pending-permissions";
 import { headAsk } from "../lib/pending-asks";
+import { isBrowserFullView } from "../lib/browser-composer-bridge";
 
 const StableComposer = memo(Composer);
 
@@ -41,6 +42,7 @@ function projectName(path?: string | null, name?: string | null) {
  * measured metrics and focus.
  */
 export const ChatSurface = memo(function ChatSurface() {
+  const browserFullView = useAppStore(isBrowserFullView);
   const { t } = useTranslation();
   const activeSessionId = useAppStore((state) => state.activeSessionId);
   const selectingSessionId = useAppStore((state) => state.selectingSessionId);
@@ -125,7 +127,7 @@ export const ChatSurface = memo(function ChatSurface() {
   const showEmptyState =
     !hasTranscript && (!visibleSessionId || visibleSessionId === activeSessionId);
   return (
-    <VoiceModeProvider>
+    <VoiceModeProvider suspended={browserFullView}>
     <div
       className={`chat-surface route-surface${sessionSwitching ? " session-switching" : ""}`}
       aria-busy={sessionSwitching}
@@ -185,7 +187,7 @@ export const ChatSurface = memo(function ChatSurface() {
             </div>
           </div>
           <div className="home-composer-wrap">
-            <StableComposer variant="home" />
+            {!browserFullView && <StableComposer variant="home" />}
           </div>
         </div>
       ) : (
@@ -199,7 +201,7 @@ export const ChatSurface = memo(function ChatSurface() {
               />
             ))}
           </div>
-          <StableComposer variant="docked" />
+          {!browserFullView && <StableComposer variant="docked" />}
         </>
       )}
 

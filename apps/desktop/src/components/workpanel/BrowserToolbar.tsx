@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import type { BrowserAction, BrowserState } from "@pi-desktop/shared";
 import type { WorkPanelPresentation } from "../../lib/work-panel-presentation";
 import { api } from "../../lib/api";
 import { IconChevronLeft, IconChevronRight, IconRefresh, IconSquare, IconMore } from "../icons";
-import { Hand, Play } from "lucide-react";
+import { Hand, Play, Globe, Search } from "lucide-react";
 
 export function BrowserToolbar({ presentation, browserState, panelState, busy, disabled = false, sessionId, committedLocation, controlOwner = "agent", onControl, onNavigate, onAction, onScreenshot, onOpenExternal, onCopyLocation, onOpenDiagnostics, onMenuOpenChange }: { presentation: WorkPanelPresentation; browserState: BrowserState | null; panelState: string; busy: boolean; disabled?: boolean; sessionId?: string; committedLocation?: string; controlOwner?: "user" | "agent"; onControl?: () => Promise<void>; onNavigate: (url: string) => Promise<void>; onAction: (action: BrowserAction) => Promise<void>; onScreenshot: () => Promise<void>; onOpenExternal: () => Promise<void>; onCopyLocation: () => Promise<void>; onOpenDiagnostics?: () => void; onMenuOpenChange?: (open: boolean) => void }) {
   // Accessible labels: Go back, Go forward, Reload page, Stop loading, Browser address, Capture screenshot, Open in default browser, More Browser actions.
@@ -11,27 +12,38 @@ export function BrowserToolbar({ presentation, browserState, panelState, busy, d
   const addressDirtyRef = useRef(false);
   const [draft, setDraft] = useState(committedLocation ?? browserState?.url ?? "");
   const [menuOpen, setMenuOpen] = useState(false);
+  const [menuPosition, setMenuPosition] = useState({ left: 0, top: 0 });
   useEffect(() => { onMenuOpenChange?.(menuOpen); return () => onMenuOpenChange?.(false); }, [menuOpen, onMenuOpenChange]);
   const [pending, setPending] = useState<string | null>(null);
   const pendingRef = useRef<{ label: string } | null>(null);
   useEffect(() => { if (document.activeElement !== inputRef.current || !addressDirtyRef.current) { addressDirtyRef.current = false; setDraft(committedLocation ?? browserState?.url ?? ""); } }, [browserState?.url, committedLocation]);
   useEffect(() => { const onKey = (event: KeyboardEvent) => { if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "l" && document.activeElement !== inputRef.current) { event.preventDefault(); inputRef.current?.focus(); inputRef.current?.select(); } }; window.addEventListener("keydown", onKey); return () => window.removeEventListener("keydown", onKey); }, []);
   const run = async (label: string, fn: () => Promise<void>) => {
-    if (busy || (pendingRef.current && !(label === "stop" && pendingRef.current.label === "navigate"))) return;
+    if (disabled || busy || (pendingRef.current && !(label === "stop" && pendingRef.current.label === "navigate"))) return;
     const operation = { label };
     pendingRef.current = operation;
     setPending(label);
     try { await fn(); } finally { if (pendingRef.current === operation) { pendingRef.current = null; setPending(null); } }
   };
   const ready = panelState === "ready" || panelState === "loading";
-  const canBack = ready && !busy && !pending && Boolean(browserState?.canGoBack);
-  const canForward = ready && !busy && !pending && Boolean(browserState?.canGoForward);
+  const canBack = ready && !disabled && !busy && !pending && Boolean(browserState?.canGoBack);
+  const canForward = ready && !disabled && !busy && !pending && Boolean(browserState?.canGoForward);
   const loading = Boolean(browserState?.isLoading) || panelState === "loading";
-  const canReload = ready && !busy && !pending && !loading;
-  const canStop = ready && loading && !busy && (!pending || pending === "navigate");
+  const canReload = ready && !disabled && !busy && !pending && !loading;
+  const canStop = ready && !disabled && loading && !busy && (!pending || pending === "navigate");
   const submit = () => { const value = draft.trim(); if (!value) return; addressDirtyRef.current = false; void run("navigate", () => onNavigate(value)); };
   const menuRef = useRef<HTMLDivElement | null>(null);
   const menuTriggerRef = useRef<HTMLButtonElement | null>(null);
+  useEffect(() => {
+    if (!menuOpen) return;
+    const rect = menuTriggerRef.current?.getBoundingClientRect();
+    if (rect) setMenuPosition({ left: Math.max(8, Math.min(rect.right - 224, window.innerWidth - 232)), top: Math.max(8, Math.min(rect.bottom + 6, window.innerHeight - 152)) });
+    const outside = (event: PointerEvent) => { if (!menuRef.current?.contains(event.target as Node) && !menuTriggerRef.current?.contains(event.target as Node)) setMenuOpen(false); };
+    const dismiss = () => setMenuOpen(false);
+    window.addEventListener("pointerdown", outside);
+    window.addEventListener("resize", dismiss);
+    return () => { window.removeEventListener("pointerdown", outside); window.removeEventListener("resize", dismiss); };
+  }, [menuOpen]);
   useEffect(() => { if (!menuOpen) return; const first = menuRef.current?.querySelector<HTMLButtonElement>('button:not(:disabled)'); first?.focus(); const key = (event: KeyboardEvent) => { const items = Array.from(menuRef.current?.querySelectorAll<HTMLButtonElement>('button:not(:disabled)') ?? []); const index = items.indexOf(document.activeElement as HTMLButtonElement); if (event.key === "Escape") { event.preventDefault(); setMenuOpen(false); menuTriggerRef.current?.focus(); } else if (event.key === "ArrowDown" || event.key === "ArrowUp") { event.preventDefault(); const next = items[(index + (event.key === "ArrowDown" ? 1 : -1) + items.length) % items.length]; next?.focus(); } else if (event.key === "Home") { event.preventDefault(); items[0]?.focus(); } else if (event.key === "End") { event.preventDefault(); items.at(-1)?.focus(); } }; window.addEventListener("keydown", key); return () => window.removeEventListener("keydown", key); }, [menuOpen]);
   return (
     <div className={`browser-toolbar browser-toolbar--${presentation}`} role="toolbar" aria-label="Browser controls" data-browser-toolbar-disabled={disabled || undefined}>
@@ -41,13 +53,13 @@ export function BrowserToolbar({ presentation, browserState, panelState, busy, d
         <button type="button" disabled={!canReload && !canStop} aria-label={canStop ? "Stop loading" : "Reload page"} title={canStop ? "Stop loading" : "Reload page"} onClick={() => void run(canStop ? "stop" : "reload", () => onAction(canStop ? "stop" : "reload"))}>{canStop ? <IconSquare size={13} /> : <IconRefresh size={14} />}</button>
       </div>
       <form className="browser-toolbar-address" onSubmit={(event) => { event.preventDefault(); submit(); }}>
-        <span className="browser-address-site" aria-hidden="true">{draft && draft !== "about:blank" ? "◉" : "⌂"}</span>
-        <input ref={inputRef} type="url" aria-label="Browser address" value={draft} spellCheck={false} autoCorrect="off" autoCapitalize="off" placeholder="Enter a URL…" onChange={(event) => { addressDirtyRef.current = true; setDraft(event.target.value); }} onKeyDown={(event) => { if (event.key === "Escape") { event.preventDefault(); addressDirtyRef.current = false; setDraft(committedLocation ?? browserState?.url ?? ""); inputRef.current?.blur(); } }} disabled={disabled || panelState === "starting" || panelState === "unavailable" || panelState === "policy-blocked" || Boolean(pending)} />
+        <span className="browser-address-site" aria-hidden="true">{draft && draft !== "about:blank" ? <Globe size={14} /> : <Search size={14} />}</span>
+        <input ref={inputRef} type="text" aria-label="Browser address" value={draft} spellCheck={false} autoCorrect="off" autoCapitalize="off" placeholder="Enter a URL" onChange={(event) => { addressDirtyRef.current = true; setDraft(event.target.value); }} onKeyDown={(event) => { if (event.key === "Escape") { event.preventDefault(); addressDirtyRef.current = false; setDraft(committedLocation ?? browserState?.url ?? ""); inputRef.current?.blur(); } }} disabled={disabled || panelState === "starting" || panelState === "unavailable" || panelState === "policy-blocked" || Boolean(pending)} />
       </form>
       {onControl && <button type="button" disabled={disabled || busy || Boolean(pending)} aria-pressed={controlOwner === "user"} aria-label={controlOwner === "user" ? "Resume agent control" : "Take control of browser"} title={controlOwner === "user" ? "You control this tab. Resume agent control" : "Take control of browser"} onClick={() => void run("control", onControl)}>{controlOwner === "user" ? <Play size={15} /> : <Hand size={15} />}</button>}
       <div className="browser-toolbar-overflow">
         <button ref={menuTriggerRef} type="button" aria-haspopup="menu" aria-expanded={menuOpen} aria-label="More Browser actions" title="More Browser actions" onClick={() => setMenuOpen((open) => !open)}><IconMore size={15} /></button>
-        {menuOpen && <div ref={menuRef} className="browser-toolbar-menu" role="menu"><button type="button" role="menuitem" disabled={!browserState?.url} onClick={() => { setMenuOpen(false); void onOpenExternal(); }}>Open in default browser</button><button type="button" role="menuitem" disabled={!browserState?.url} onClick={() => { setMenuOpen(false); void onCopyLocation(); }}>Copy safe address</button><button type="button" role="menuitem" disabled={!ready || Boolean(pending)} onClick={() => { setMenuOpen(false); void run("screenshot", onScreenshot); }}>Capture screenshot</button><button type="button" role="menuitem" onClick={() => { setMenuOpen(false); onOpenDiagnostics?.(); }}>Diagnostics</button></div>}
+        {menuOpen && createPortal(<div ref={menuRef} className="browser-toolbar-menu" role="menu" style={menuPosition}><button type="button" role="menuitem" disabled={!browserState?.url} onClick={() => { setMenuOpen(false); void onOpenExternal(); }}>Open in default browser</button><button type="button" role="menuitem" disabled={!browserState?.url} onClick={() => { setMenuOpen(false); void onCopyLocation(); }}>Copy safe address</button><button type="button" role="menuitem" disabled={!ready || Boolean(pending)} onClick={() => { setMenuOpen(false); void run("screenshot", onScreenshot); }}>Capture screenshot</button><button type="button" role="menuitem" onClick={() => { setMenuOpen(false); onOpenDiagnostics?.(); }}>Diagnostics</button></div>, document.body)}
       </div>
     </div>
   );

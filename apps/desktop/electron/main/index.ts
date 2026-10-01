@@ -21,6 +21,7 @@ import * as fs from "node:fs";
 import { existsSync, mkdirSync, statSync, writeFileSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
 import { listInstalledFonts } from "./system-fonts";
+import { BrowserComposerHost } from "./browser-composer-host";
 import { rendererPermissionAllowed } from "./renderer-permissions";
 import { builtinSubagentModels } from "./subagent-model-preferences";
 import { saveSubagentModelSelection } from "./subagent-model-selection";
@@ -423,6 +424,7 @@ const WORK_PANEL_NATIVE_RESIZE_SETTLE_MS = 180;
 const WORK_PANEL_CHAT_RESIZE_SETTLE_MS = WINDOW_BOUNDS_SETTLE_MS + 120;
 
 let mainWindow: BrowserWindow | null = null;
+const browserComposerHost = new BrowserComposerHost();
 let speechService: SpeechService | undefined;
 let tray: Tray | null = null;
 let pluginLauncherWindow: BrowserWindow | null = null;
@@ -1006,6 +1008,7 @@ const emitBrowserState = (state: BrowserState) => {
   publishBrowserViewState(visibleBrowserSessionId, state);
   pluginPanels.broadcast("browser:state", state);
   pluginViews.broadcast("browser:state", state);
+  browserComposerHost.raise();
 };
 const browserPane = new BrowserTabsPane(emitBrowserState, (onState) => new BrowserPane(onState));
 const pluginViews = new PluginViewHost(({ pluginId, url }) => {
@@ -1017,6 +1020,7 @@ const pluginViews = new PluginViewHost(({ pluginId, url }) => {
 });
 pluginPanels.addSenderResolver((senderId) => pluginViews.pluginIdForSender(senderId));
 const browserHost = new BrowserHost({
+  onGuestPresented: () => browserComposerHost.raise(),
   pane: browserPane,
   isCapabilityEnabled: isBrowserCapabilityEnabled,
   getFileRoot: async (sessionId) => {
@@ -3231,10 +3235,11 @@ async function createWindow() {
   window.webContents.on("did-start-loading", () => speechService?.close());
   window.webContents.once("destroyed", () => speechService?.close());
   window.webContents.session.setPermissionRequestHandler((contents, permission, callback, details) => {
-    callback(rendererPermissionAllowed(window.webContents.id, contents.id, permission, details, "request"));
+    const rendererId = browserComposerHost.ownsSender(contents.id, true) ? contents.id : window.webContents.id;
+    callback(rendererPermissionAllowed(rendererId, contents.id, permission, details, "request"));
   });
   window.webContents.session.setPermissionCheckHandler((contents, permission, _origin, details) =>
-    rendererPermissionAllowed(window.webContents.id, contents?.id, permission, details, "check"),
+    rendererPermissionAllowed(browserComposerHost.ownsSender(contents?.id, true) ? contents!.id : window.webContents.id, contents?.id, permission, details, "check"),
   );
   const initialBounds = window.getBounds();
   workPanelBaseBounds = savedState ? { ...savedState } : { ...initialBounds };
@@ -6503,6 +6508,7 @@ async function bootBackends() {
 }
 
 function registerIpc() {
+  browserComposerHost.register(() => mainWindow);
   const ipcHandlers = new Map<string, (...args: any[]) => Promise<any>>();
   const handle = (channel: string, fn: (...args: any[]) => Promise<any>) => {
     ipcHandlers.set(channel, fn);
@@ -6522,6 +6528,9 @@ function registerIpc() {
         errorCode: "PERMISSION_DENIED",
       });
     }
+  };
+  const assertComposerSender = (event: { sender: { id: number } }, activeOnly: boolean): void => {
+    if (!browserComposerHost.ownsSender(event.sender.id, activeOnly)) assertMainWindowSender(event);
   };
 
   handle(IPC.invoke.coreCapabilityList, async () => ([{
@@ -7573,17 +7582,20 @@ function registerIpc() {
     if (!host) throw new Error("host unavailable");
     const settings = await host.call("settings.get") as { speech?: import("@pi-desktop/shared").SpeechSettings };
     return settings.speech;
-  }, progress => sendToRenderer(IPC.event.speechProgress, progress));
+  }, progress => {
+    sendToRenderer(IPC.event.speechProgress, progress);
+    browserComposerHost.sendSpeechProgress(progress);
+  });
   speechService = speech;
   app.once("before-quit", () => speech.close());
   handleWithEvent(IPC.invoke.speechTranscribe, async (event, audioBase64: unknown, requestId: unknown) => {
-    assertMainWindowSender(event);
+    assertComposerSender(event, true);
     if (typeof audioBase64 !== "string") throw new Error("Invalid speech recording");
     if (typeof requestId !== "string") throw new Error("Invalid speech request ID");
     return { text: await speech.start(requestId, audioBase64) };
   });
   handleWithEvent(IPC.invoke.speechCancel, async (event, requestId: unknown) => {
-    assertMainWindowSender(event);
+    assertComposerSender(event, false);
     if (typeof requestId !== "string") throw new Error("Invalid speech request ID");
     speech.cancel(requestId);
     return { canceled: true };

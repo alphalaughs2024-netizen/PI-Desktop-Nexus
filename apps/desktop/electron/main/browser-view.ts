@@ -450,6 +450,12 @@ export class BrowserPane {
     // Detached agent tabs need a real viewport before GUI geometry arrives.
     view.setBounds({ x: 0, y: 0, width: 1280, height: 800 });
     const wc = view.webContents;
+    wc.on("before-input-event", (event, input) => {
+      if (input.type === "keyDown" && (input.control || input.meta) && input.shift && input.key.toLowerCase() === "f" && this.attached) {
+        event.preventDefault();
+        this.window?.webContents.send("pi-desktop/browser/event/composer", { kind: "toggle-full-view" });
+      }
+    });
     installBrowserPermissionHandlers(wc.session);
     wc.setWindowOpenHandler(({ url, disposition }) => {
       if ((url === "about:blank" || isAllowedHttpUrl(url)) && this.popupHandler && (this.canOpenPopup?.() ?? true)) {

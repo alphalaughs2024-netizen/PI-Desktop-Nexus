@@ -33,6 +33,7 @@ import { Sidebar } from "./components/Sidebar";
 import { BrandLogo } from "./components/BrandLogo";
 import { ConversationTopbar } from "./components/ConversationTopbar";
 import { WorkPanel } from "./components/workpanel/WorkPanel";
+import { isBrowserFullView, useBrowserComposerBridge } from "./lib/browser-composer-bridge";
 import { ChatSurface } from "./components/ChatSurface";
 import { SearchDialog } from "./components/SearchDialog";
 import { ToastHost } from "./components/Toast";
@@ -227,6 +228,7 @@ function RoutePending() {
 }
 
 function AppShell() {
+  const browserFullView = useAppStore(isBrowserFullView);
   const { t } = useTranslation();
   const platform = rendererPlatform();
   const bootstrap = useAppStore((s) => s.bootstrap);
@@ -294,6 +296,7 @@ function AppShell() {
 
 
   const [searchOpen, setSearchOpen] = useState(false);
+  useBrowserComposerBridge(searchOpen);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(() => loadSidebarWidth());
   const [sidebarExiting, setSidebarExiting] = useState(false);
@@ -1164,6 +1167,7 @@ function AppShell() {
     <div
       className={cx(
         "app-shell",
+        browserFullView && "browser-full-view",
         !ready && "app-shell-boot",
         page === "settings" && ready && "settings-mode",
         sidebarCollapsed && "sidebar-collapsed",

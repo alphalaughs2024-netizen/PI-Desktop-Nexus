@@ -30,10 +30,11 @@ import {
 } from "@pi-desktop/shared";
 import { materializeDraftSession, useAppStore } from "../stores/app-store";
 import type { ComposerDraftSnapshot } from "../lib/composer-smart-stop";
-import { latestTurnContextInspector } from "../lib/latest-turn-context";
+import { latestTurnContextInspector, type LatestTurnContextInspector } from "../lib/latest-turn-context";
 import {
   HOME_DRAFT_KEY,
   captureComposerDraft,
+  snapshotComposerDraft,
   deleteComposerDraft,
   draftKeyForSession,
   draftOwnerSessionId,
@@ -622,9 +623,17 @@ type PromptEnhancementError = {
 export function Composer({
   variant = "docked",
   prefill,
+  onDraftChange,
+  contextUsage,
+  executeCommand = runPaletteCommand,
+  ensureSession = materializeDraftSession,
 }: {
   variant?: "home" | "docked";
   prefill?: ComposerPrefill | null;
+  onDraftChange?: (draft: ComposerDraftSnapshot) => void;
+  contextUsage?: LatestTurnContextInspector | null;
+  executeCommand?: (commandId: string) => Promise<void>;
+  ensureSession?: () => Promise<string | null>;
 }) {
   const { t } = useTranslation();
   const sendPrompt = useAppStore((s) => s.sendPrompt);
@@ -656,13 +665,13 @@ export function Composer({
   // One inspector in the composer toolbar, always the newest turn with usage.
   const composerContextUsage = useMemo(
     () =>
-      latestTurnContextInspector(
+      contextUsage !== undefined ? contextUsage : latestTurnContextInspector(
         liveMessages,
         providerModels,
         providers,
         sessionCompactions,
       ),
-    [liveMessages, providerModels, providers, sessionCompactions],
+    [contextUsage, liveMessages, providerModels, providers, sessionCompactions],
   );
   const loadProviderModels = useAppStore((s) => s.loadProviderModels);
   const configureActiveSession = useAppStore((s) => s.configureActiveSession);
@@ -814,6 +823,10 @@ export function Composer({
 
   const persistDraft = (key = draftKeyRef.current) =>
     captureComposerDraft(key, liveDraftText(), fileReferencesRef.current);
+
+  useLayoutEffect(() => {
+    onDraftChange?.(snapshotComposerDraft(value, fileReferences, draftKey));
+  }, [value, fileReferences, draftKey, onDraftChange]);
 
   const paintCurrentDraft = (el: HTMLElement, nextValue: string) => {
     paintEditorValue(
@@ -1703,7 +1716,7 @@ export function Composer({
           commandEnd === -1 ? "" : serializedContent.slice(commandEnd).trim();
         if (command.kind === "workflow" && command.id.startsWith("builtin.workflow.")) {
           try {
-            const sessionId = useAppStore.getState().activeSessionId ?? await materializeDraftSession();
+            const sessionId = useAppStore.getState().activeSessionId ?? await ensureSession();
             if (!sessionId) throw new Error("Unable to open a session for this workflow.");
             await api.activateSessionWorkflow(sessionId, command.id.slice("builtin.workflow.".length));
             if (commandBody) {
@@ -1733,7 +1746,7 @@ export function Composer({
         // the normal agent path so the user's message remains visible.
         if (isModeCommand && commandBody) {
           try {
-            await runPaletteCommand(command.id);
+            await executeCommand(command.id);
             const visibleDraft = text.trim();
             const visibleCommandEnd = visibleDraft.search(/\s/);
             const visibleCommandBody =
@@ -1775,7 +1788,7 @@ export function Composer({
         // never silently discard a draft the user typed after the alias.
         if (!commandBody) {
           try {
-            if (command.kind === "builtin") await runPaletteCommand(command.id);
+            if (command.kind === "builtin") await executeCommand(command.id);
             else await api.executeCommand(command.id);
             clearDraftForKey(submittedDraftKey);
           } catch (e) {
@@ -1927,7 +1940,7 @@ export function Composer({
       try {
         // A picker action is real input, so a home draft gets a durable owner
         // before native paths are copied into scratch.
-        const sessionId = sourceSessionId ?? (await materializeDraftSession());
+        const sessionId = sourceSessionId ?? (await ensureSession());
         if (!sessionId) throw new Error("session unavailable");
         const imported = await api.importFiles(sessionId, result.token);
         const chips = imported.files.map((file) => {
@@ -2031,7 +2044,7 @@ export function Composer({
         if (!sessionId) {
           // Pastes count as real input: persist the draft so the files have
           // a durable session owner before they are written.
-          sessionId = (await materializeDraftSession()) ?? "";
+          sessionId = (await ensureSession()) ?? "";
         }
         if (!sessionId) throw new Error("session unavailable");
 

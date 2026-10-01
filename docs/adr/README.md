@@ -258,3 +258,4 @@ Each ADR includes:
 | 0264 | User-selected file previews outside the workspace | Manual acceptance pending |
 | 0265 | Guest-owned built-in browser capabilities | User-approved direction; manual acceptance pending |
 | 0266 | Explicit Browser selection and passive surface geometry | Accepted |
+| 0267 | Browser Full view and native composer surface | User-approved direction; manual acceptance pending |

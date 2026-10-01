@@ -26,6 +26,10 @@ if (!process.env.NEXUS_BROWSER_PROBE_PROFILE || !process.env.PI_DESKTOP_HOST_BIN
       env: { ...process.env, PI_DESKTOP_DATA_DIR: process.env.NEXUS_BROWSER_PROBE_PROFILE, NEXUS_AGENT_ENGINE: "codex", PI_DESKTOP_DEV: "1" },
       timeout: 30000,
     });
+    await app.evaluate(({ dialog }) => {
+      globalThis.__browserProbeFailures = [];
+      dialog.showErrorBox = (title, content) => globalThis.__browserProbeFailures.push({ title, content });
+    });
     deadline = setTimeout(() => { console.error("Browser tab probe exceeded 90 seconds"); void app.evaluate(({ app }) => app.exit(1)); }, 90000);
     let page;
     for (let i = 0; i < 150; i++) {
@@ -73,6 +77,91 @@ if (!process.env.NEXUS_BROWSER_PROBE_PROFILE || !process.env.PI_DESKTOP_HOST_BIN
       return guest.id;
       function assertExists(value) { if (!value) throw new Error("Website guest missing"); }
     }, url);
+
+    if (process.env.NEXUS_BROWSER_PROBE_FULL_VIEW === "1") {
+      await page.locator('.composer-input[contenteditable="true"]').fill("Draft before Full view");
+      await page.getByRole("button", { name: "Enter full view", exact: true }).click();
+      await page.waitForFunction(() => document.querySelector(".app-shell")?.classList.contains("browser-full-view"));
+      let composer;
+      for (let i = 0; i < 100; i++) {
+        composer = app.context().pages().find(p => p.url().includes("surface=browser-composer"));
+        if (composer) break;
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+      assert.ok(composer, "Native composer renderer appears");
+      composer.on("pageerror", error => errors.push(String(error)));
+      const input = composer.locator('.composer-input[contenteditable="true"]');
+      await input.waitFor();
+      assert.equal(await input.innerText(), "Draft before Full view", "Main draft reaches the native composer");
+      await input.fill("Draft edited over the page");
+      await new Promise(resolve => setTimeout(resolve, 150));
+      const baseHeight = await composer.evaluate(() => innerHeight);
+      await composer.locator(".composer-model-thinking-chip").click();
+      await composer.locator('.composer-menu-entry').first().click();
+      await composer.waitForFunction(base => innerHeight > base + 60, baseHeight);
+      const modelMenu = await composer.locator(".composer-model-menu").boundingBox();
+      const composerViewport = await composer.evaluate(() => ({ width: innerWidth, height: innerHeight }));
+      assert.ok(modelMenu.x >= 0 && modelMenu.y >= 0 && modelMenu.x + modelMenu.width <= composerViewport.width && modelMenu.y + modelMenu.height <= composerViewport.height, "Model menu fits native input bounds");
+      await composer.locator(".composer-model-thinking-chip").click();
+      await composer.waitForFunction(base => innerHeight === base, baseHeight);
+      const themes = await Promise.all([page, composer].map(surface => surface.evaluate(() => ({
+        theme: document.documentElement.dataset.theme,
+        scenicTheme: document.documentElement.dataset.scenicTheme,
+        text: getComputedStyle(document.documentElement).getPropertyValue("--ds-text-primary"),
+      }))));
+      assert.deepEqual(themes[1], themes[0], "Native composer retains main theme tokens");
+      const tabGeometry = await page.locator(`[data-browser-tab="${websiteId}"]`).boundingBox();
+      assert.ok(tabGeometry.width > 100 && tabGeometry.height > 20 && tabGeometry.y >= 0 && tabGeometry.y < 44, "Selected tab occupies the visible top band");
+      console.log("FULL_VIEW_TAB_GEOMETRY", tabGeometry);
+      assert.equal(await page.locator(".work-panel-header").evaluate(element => getComputedStyle(element).backdropFilter), "none", "Browser controls cannot blur over the tab band");
+      const speechBoundary = await composer.evaluate(() => window.piDesktop.invoke(window.piDesktop.channels.invoke.speechTranscribe, null, "probe"));
+      assert.equal(speechBoundary.error?.message, "Invalid speech recording", "Native composer reaches the speech service through its trusted identity");
+      if (process.env.NEXUS_BROWSER_PROBE_SCREENSHOT) await page.locator(".browser-tab-strip").screenshot({ path: process.env.NEXUS_BROWSER_PROBE_SCREENSHOT.replace(/\.png$/, "-tabs.png") });
+      const overlay = await app.evaluate(async ({ BrowserWindow, webContents }, guestId) => {
+        const window = BrowserWindow.getAllWindows().find(w => /renderer\/index\.html/.test(w.webContents.getURL()) && !w.webContents.getURL().includes("surface="));
+        const composer = window.contentView.children.find(view => view.webContents?.getURL().includes("surface=browser-composer"));
+        const guest = window.contentView.children.find(view => view.webContents?.id === guestId);
+        const capture = await composer.webContents.capturePage();
+        const colors = new Set();
+        const pixels = capture.toBitmap();
+        for (let i = 0; i < pixels.length; i += 16) colors.add(pixels.readUInt32LE(i));
+        return { guestBounds: guest?.getBounds(), composerBounds: composer.getBounds(), topmost: window.contentView.children.at(-1) === composer, colors: colors.size, png: capture.toPNG().toString("base64") };
+      }, guestId);
+      assert.equal(overlay.topmost, true, "Composer is above the page");
+      assert.ok(overlay.guestBounds.width > 1000, "Page spans the app");
+      assert.ok(overlay.composerBounds.y >= overlay.guestBounds.y && overlay.composerBounds.y < overlay.guestBounds.y + overlay.guestBounds.height, "Composer floats over native page bounds");
+      assert.ok(overlay.colors > 20, "Native composer is nonblank");
+      if (process.env.NEXUS_BROWSER_PROBE_SCREENSHOT) {
+        writeFileSync(process.env.NEXUS_BROWSER_PROBE_SCREENSHOT.replace(/\.png$/, "-composer.png"), Buffer.from(overlay.png, "base64"));
+        await page.screenshot({ path: process.env.NEXUS_BROWSER_PROBE_SCREENSHOT.replace(/\.png$/, "-full-view.png") });
+      }
+      await page.getByRole("button", { name: "New Browser tab", exact: true }).click();
+      await page.locator(`[data-browser-tab="${websiteId}"]`).click();
+      await new Promise(resolve => setTimeout(resolve, 200));
+      assert.equal(await app.evaluate(({ BrowserWindow }) => {
+        const window = BrowserWindow.getAllWindows().find(w => /renderer\/index\.html/.test(w.webContents.getURL()) && !w.webContents.getURL().includes("surface="));
+        return window.contentView.children.at(-1)?.webContents?.getURL().includes("surface=browser-composer");
+      }), true, "Tab reattachment retains composer child order");
+      await input.press("Control+Shift+F");
+      await page.waitForFunction(() => !document.querySelector(".app-shell")?.classList.contains("browser-full-view"));
+      assert.equal(await page.locator('.composer-input[contenteditable="true"]').innerText(), "Draft edited over the page", "Native draft returns to Chat");
+      await page.getByRole("button", { name: "Enter full view", exact: true }).click();
+      const guestPage = app.context().pages().find(p => p.url() === url);
+      assert.ok(guestPage, "Native webpage remains inspectable");
+      await guestPage.locator("#draft").press("Control+Shift+F");
+      await page.waitForFunction(() => !document.querySelector(".app-shell")?.classList.contains("browser-full-view"));
+      await page.locator(`[data-browser-tab="${websiteId}"]`).click({ button: "right" });
+      const menuBounds = await page.getByRole("menu", { name: /Actions for/ }).boundingBox();
+      const viewport = await page.evaluate(() => ({ width: innerWidth, height: innerHeight }));
+      assert.ok(menuBounds.x >= 0 && menuBounds.y >= 0 && menuBounds.x + menuBounds.width <= viewport.width && menuBounds.y + menuBounds.height <= viewport.height, "Tab menu is viewport-contained");
+      await page.keyboard.press("Escape");
+      // Restore the one-tab starting state for the selection regression below.
+      const tabs = await page.evaluate(async sessionId => (await window.piDesktop.invoke(window.piDesktop.channels.invoke.browserTabs, { sessionId })).data, sessionId);
+      for (const tab of tabs.tabs) if (tab.browserId !== websiteId) await page.evaluate(async ({ sessionId, browserId }) => window.piDesktop.invoke(window.piDesktop.channels.invoke.browserTabClose, { sessionId, browserId }), { sessionId, browserId: tab.browserId });
+      await page.waitForFunction(() => document.querySelectorAll("[data-browser-tab]").length === 1);
+      await page.evaluate(() => { window.__tabProbe.changes = []; });
+      console.log("BROWSER_FULL_VIEW_PASS", JSON.stringify({ draftHandoff: true, nativeOverlap: true, topmostAcrossTabs: true, menuInViewport: true, modelMenuExpansion: true, themeMatch: true, pageShortcut: true, colors: overlay.colors }));
+    }
 
     await page.getByRole("button", { name: "New Browser tab", exact: true }).click();
     await page.waitForFunction(websiteId => document.querySelector('[data-browser-tab][aria-selected="true"]')?.dataset.browserTab !== websiteId, websiteId);
@@ -151,6 +240,7 @@ if (!process.env.NEXUS_BROWSER_PROBE_PROFILE || !process.env.PI_DESKTOP_HOST_BIN
     assert.ok(nativeSurface.bounds.width > 0 && nativeSurface.bounds.height > 0);
     assert.ok(nativeSurface.colors > 20, "Native website capture is nonblank");
     assert.deepEqual(errors, [], "No renderer exceptions");
+    assert.deepEqual(await app.evaluate(() => globalThis.__browserProbeFailures), [], "No native error dialogs");
     if (process.env.NEXUS_BROWSER_PROBE_SCREENSHOT) {
       writeFileSync(process.env.NEXUS_BROWSER_PROBE_SCREENSHOT, Buffer.from(nativeSurface.windowPng, "base64"));
       writeFileSync(process.env.NEXUS_BROWSER_PROBE_SCREENSHOT.replace(/\.png$/, "-guest.png"), Buffer.from(nativeSurface.guestPng, "base64"));

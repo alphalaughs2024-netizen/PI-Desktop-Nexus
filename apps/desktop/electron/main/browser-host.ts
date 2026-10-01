@@ -63,6 +63,7 @@ function asRect(value: unknown): BrowserRect | null {
 }
 
 export type BrowserHostDeps = {
+  onGuestPresented?: () => void;
   pane: BrowserTabsPane;
   isCapabilityEnabled?: () => boolean;
   getFileRoot: (sessionId?: string) => Promise<string | null>;
@@ -456,6 +457,7 @@ export class BrowserHost {
     }
     this.pane.setBounds(bounds);
     this.pane.setVisible(true);
+    this.deps.onGuestPresented?.();
   }
 
   private async rebindSession(sessionId: string): Promise<void> {

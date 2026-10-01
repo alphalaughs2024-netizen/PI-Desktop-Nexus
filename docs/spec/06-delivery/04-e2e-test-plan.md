@@ -11981,3 +11981,26 @@ or delete caches, profiles or earlier recovery files to hide this condition.
   selection still synchronizes the GUI. Existing layout/themes stay intact.
 - **Validation**: Targeted lifecycle/geometry checks and a real-window native
   regression probe. Local E2E suites remain unrun unless explicitly requested.
+
+### E2E-Browser-Full-View: Floating composer and retained page (ADR 0267)
+
+- **Steps**: Enter a draft with an attachment, open a website and fill a page
+  input. Enter Full view using the button and keyboard shortcut. Continue
+  editing the draft in the floating composer; open its model/permission/plus
+  menus. Send, steer, queue and stop work, then return through Chat. Repeat
+  expansion while switching tabs/chats, resizing, navigating and opening a
+  browser menu. Test shortcuts with page and composer focused. Open Search,
+  test dictation/voice in the floating input, switch presentation while recording,
+  trigger a tool permission, Plan/Ask decision and reload/crash the input view.
+  Inspect docked and Full view in dark/light/scenic themes and reduced motion.
+- **Expected**: One editable composer, no duplicate execution, correct model/
+  session, retained draft/attachment/page input and guest identity. Floating
+  input is above the page and its menus fit. Other page regions remain
+  clickable. Voice stops when changing presentation and microphone access stays
+  trusted-renderer/audio-only. Context totals match the main chat after long tool histories.
+  Stale commands and untrusted senders fail without mutations;
+  timeouts never replay. Search and approvals are accessible. Returning restores
+  the dock width and chat. Renderer failures preserve available draft data and
+  return to Chat. Controls/text do not overlap or leave the viewport.
+- **Validation**: Focused contract tests, desktop typecheck/build and a native
+  Electron probe. Full local E2E suites remain unrun unless requested.

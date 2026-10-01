@@ -3,6 +3,31 @@
 Normative amendment: [ADR 0265](../../adr/0265-built-in-browser-capabilities.md).
 Extends ADR 0254 retained-session execution while preserving Browser design.
 
+## Browser Presentation (ADR 0267)
+
+Enter full view expands the built-in Browser across application content;
+Exit full view and Chat restore the previous dock width. Ctrl/Command+Shift+F
+works in browser chrome, a focused page and the floating composer. Tabs,
+page input, session/model identity and running work survive the transition.
+The tab band combines the panel menu, tabs, new-tab, expansion and close
+controls. Address/navigation controls use restrained theme surfaces. Menus
+remain inside the viewport and dismiss on outside input/Escape/resize.
+Existing New tab controls remain available. Final browser visual redesign
+will be selected separately with the user after functional acceptance.
+
+Full view uses one trusted native input view above the webpage. It reuses
+Composer, with one editable owner and generation-scoped draft/attachment
+handoff. Main React remains the chat controller; an allowlisted, sender-checked
+bridge returns actions/results and bounded state updates without starting a
+second agent. Native UI bounds expand for menus; tab reattachment preserves
+the input view's child order. Search hides it and pending tool permissions
+return to Chat. Failure returns to the accessible chat; uncertain actions are
+never replayed. Themes/fonts and reduced-motion preferences are preserved.
+Context usage is calculated from the complete main transcript before sending
+bounded reply data. Speech uses the trusted native renderer identity; changing
+presentation stops any active voice cycle, which can be restarted in the visible
+composer. Page guests do not receive these app speech privileges.
+
 ## Execution and Ownership
 
 Resolve each command against its originating chat and retained tab. Unknown
