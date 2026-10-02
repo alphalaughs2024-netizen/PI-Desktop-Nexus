@@ -76,7 +76,7 @@
 }
 
 :root[data-scenic-theme="obsidian-horizon"] .composer-shell:focus-within {
-  box-shadow: 0 0 0 1px #020509, var(--ds-shadow-composer);
+  box-shadow: var(--ds-shadow-composer);
 }
 
 :root[data-scenic-theme="obsidian-horizon"] .composer-shell.is-file-drop-active {

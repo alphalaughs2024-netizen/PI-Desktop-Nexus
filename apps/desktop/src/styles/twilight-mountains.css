@@ -178,7 +178,7 @@
 }
 
 :root[data-scenic-theme="twilight-mountains"] .composer-shell:focus-within {
-  box-shadow: 0 0 0 1px #09265c, var(--ds-shadow-composer);
+  box-shadow: var(--ds-shadow-composer);
 }
 
 :root[data-scenic-theme="twilight-mountains"] .composer-shell.is-file-drop-active {

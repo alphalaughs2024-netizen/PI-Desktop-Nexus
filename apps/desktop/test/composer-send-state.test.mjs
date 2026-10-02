@@ -36,9 +36,9 @@ test("composer send/stop button follows draft content and the visible session's 
   assert.match(submitSlot, /onClick=\{\(\) => void abort\(\)\}/);
   assert.doesNotMatch(composerRight, /\{runActive \? \(/);
   assert.match(
-    composerRight,
+    composer.slice(composer.indexOf('<div className="composer-model-group-control">')),
     /composer-model-thinking-chip[\s\S]*composer-enhance-btn[\s\S]*className="(?:stop|send)-btn"/,
-    "The enhancement action should sit between model selection and the submit slot",
+    "Model selection should precede the separate voice/enhancement/submit group",
   );
   const modelTrigger =
     composer.match(

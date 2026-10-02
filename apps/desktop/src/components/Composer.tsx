@@ -2618,10 +2618,7 @@ export function Composer({
               ) : null}
             </div>
 
-            <div className="composer-right">
-              {composerContextUsage ? (
-                <ContextUsageInspector {...composerContextUsage} />
-              ) : null}
+            <div className="composer-model-group-control">
               <div
                 className="composer-model-thinking"
                 ref={modelThinkingRef}
@@ -2880,6 +2877,11 @@ export function Composer({
                 ) : null}
               </div>
               <RendererSlotMount slot="composerControl" position="left" props={{ position: "left", disabled: controlsBlocked }} />
+            </div>
+            <div className="composer-right">
+              {composerContextUsage ? (
+                <ContextUsageInspector {...composerContextUsage} />
+              ) : null}
               <SpeechControl
                 disabled={controlsBlocked || pasting}
                 canVoice={modelReady && !runActive}

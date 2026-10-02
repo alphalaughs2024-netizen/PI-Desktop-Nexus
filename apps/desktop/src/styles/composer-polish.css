@@ -1,0 +1,75 @@
+/* Geometry and ink follow theme materials without replacing their glass fills. */
+.composer-shell::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 1px solid color-mix(in oklab, var(--ds-text-primary) 14%, transparent);
+  pointer-events: none;
+  transition: border-color var(--motion-duration-normal) var(--motion-ease-out);
+}
+
+.composer-shell:focus-within::after {
+  border-color: color-mix(in oklab, var(--ds-accent) 50%, transparent);
+}
+
+.composer-shell .composer-input-wrap { padding: 14px 16px 0; }
+.composer-shell .composer-toolbar { padding: 8px 10px 10px; gap: 8px; }
+.composer-shell :is(.composer-left, .composer-right) { gap: 6px; }
+.composer-shell .composer-right { flex: 0 1 auto; min-width: 0; margin-left: auto; }
+.composer-model-group-control {
+  display: flex;
+  align-items: center;
+  flex: 1 1 140px;
+  min-width: 0;
+  max-width: 300px;
+  gap: 6px;
+}
+
+.composer-model-group-control:has(.composer-model-thinking-compact) {
+  flex: 0 0 32px;
+  max-width: 32px;
+}
+
+.composer-shell .composer-model-thinking-menu {
+  max-width: calc(100cqw - 20px);
+}
+
+.composer-shell .composer-toolbar :is(.icon-btn, .context-inspector-trigger) {
+  height: 32px;
+  min-height: 32px;
+  min-width: 32px;
+  border-radius: 8px;
+}
+
+.composer-shell .composer-toolbar :is(.send-btn, .stop-btn) {
+  height: 32px;
+  width: 32px;
+  flex-basis: 32px;
+}
+
+:root .composer-shell .send-btn:disabled {
+  background: color-mix(in oklab, var(--ds-text-primary) 10%, transparent);
+  color: var(--ds-text-muted);
+  opacity: 1;
+}
+
+:root .composer-shell .composer-placeholder {
+  color: var(--ds-text-secondary);
+  -webkit-text-fill-color: var(--ds-text-secondary);
+  opacity: 1;
+}
+
+@container composer-stack (max-width: 540px) {
+  .composer-shell .composer-left { flex: 1 1 100%; }
+  .composer-model-group-control { flex-basis: 100px; }
+  .composer-shell .composer-model-thinking-menu { left: 0; right: auto; }
+}
+
+html[data-surface="browser-composer"] .browser-floating-shell .composer-shell::after {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .composer-shell::after { transition: none; }
+}

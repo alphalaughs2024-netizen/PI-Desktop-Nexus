@@ -261,3 +261,4 @@ Each ADR includes:
 | 0267 | Browser Full view and native composer surface | User-approved direction; manual acceptance pending |
 | 0268 | Browser navigation returns at document readiness | User-approved direction; manual acceptance pending |
 | 0269 | Native Browser menu surface | User-approved direction; manual acceptance pending |
+| 0270 | Composer visual trial | Trial only; merge pending visual acceptance |

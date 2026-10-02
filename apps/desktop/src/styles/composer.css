@@ -202,9 +202,9 @@
     transform var(--motion-duration-normal) var(--motion-ease-out);
 }
 
-/* Focus deepens the lift; the shell never gains a stroke (D297). */
+/* Focus ink is owned by the theme-aware composer polish layer (ADR 0270). */
 .composer-shell:focus-within {
-  box-shadow: 0 7px 24px color-mix(in oklab, var(--ds-text-primary) 9%, transparent);
+  box-shadow: var(--ds-shadow-composer);
 }
 
 /* A file drop is an attachment operation, not a text drop. Keep the cue on
@@ -252,7 +252,7 @@
   }
 
   to {
-    opacity: 0.72;
+    opacity: 1;
   }
 }
 
@@ -301,7 +301,7 @@
 
 .composer-input {
   width: 100%;
-  min-height: 3lh;
+  min-height: 2lh;
   max-height: 7lh;
   overflow-y: hidden;
   resize: none;

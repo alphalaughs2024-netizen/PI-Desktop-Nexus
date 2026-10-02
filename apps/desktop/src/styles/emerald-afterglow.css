@@ -91,7 +91,7 @@
 :root[data-scenic-theme="emerald-afterglow"] .speech-details { border-bottom-color: rgba(175, 233, 184, .28); }
 :root[data-scenic-theme="emerald-afterglow"] :is(.speech-primary, .speech-close, .speech-expand):focus-visible { outline-color: #b7efc1; }
 :root[data-scenic-theme="emerald-afterglow"] .composer-shell:focus-within {
-  box-shadow: 0 0 0 1px #082d1b, var(--ds-shadow-composer);
+  box-shadow: var(--ds-shadow-composer);
 }
 :root[data-scenic-theme="emerald-afterglow"] .composer-shell.is-file-drop-active {
   box-shadow: 0 0 0 2px var(--emerald-focus), var(--ds-shadow-composer);

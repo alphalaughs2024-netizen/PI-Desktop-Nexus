@@ -2240,11 +2240,13 @@ reasoning-level control.
   geometry uses the scenic plugin's uniform translucent blue and dark-slate
   fills, respectively. Their composer materials do not change the
   toolbar controls, width, or the other themes.
-- Elevation: 20px radius with the restrained soft shadow alone; the hairline
-  stroke was removed in D297;
+- Elevation: 20px radius with the existing theme shadow. The user-approved
+  composer trial (ADR 0270) amends D297 with an inset, theme-colored hairline
+  that strengthens on focus without changing layout;
   the docked transcript fade is outside the composer shell
-- The solid/near-opaque surface uses no `backdrop-filter`; focus-within adds a
-  1px lift and token shadow without forcing transcript repaint through a blur
+- The solid/near-opaque surface uses no `backdrop-filter`; focus-within changes
+  only the hairline ink and retains the token shadow without forcing transcript
+  repaint through a blur
   layer. Twilight Mountains and Obsidian Horizon may blur this one large
   composer surface; repeated transcript rows, code, and tool output remain
   unblurred.
@@ -2268,9 +2270,11 @@ reasoning-level control.
   The permission menu stays 120px wide; its Chinese Composer short label for
   Accept edits is `允许编辑` / `允許編輯` so the option remains single-line
   beside its selection indicator.
-- The right toolbar owns the remaining-capacity context inspector (when the
-  newest assistant turn has usage) immediately left of one combined model ×
-  reasoning-level chip, then the standalone prompt-enhancement action and the
+- Attachment, mode and permission form the left toolbar group. The combined
+  model × reasoning-level chip has its own flexible group. The right toolbar
+  owns the remaining-capacity context inspector (when the newest assistant
+  turn has usage), dictation/voice, the standalone prompt-enhancement action and
+  the
   single Stop/Send submit slot (D347). The inspector trigger shows the ring
   and percentage only. The chip shows Bot, the current model name, and the
   current reasoning level separated by `·`; `off` omits the level text. The
@@ -2315,8 +2319,15 @@ reasoning-level control.
 - Project session rows retain a 4px gap between adjacent child sessions. The
   gap preserves separate touch targets and prevents an active row from merging
   visually with its sibling in scenic and standard themes.
-- Empty draft height: `.composer-input` uses `min-height: 3lh`, so an idle
-  composer shows three lines of input before it grows with the draft.
+- Empty draft height: `.composer-input` uses `min-height: 2lh`, then grows
+  naturally through seven visible lines. Toolbar controls reserve 32px height
+  with 6px gaps within groups; icon hover surfaces use an 8px radius. At 540px
+  container width or below the left group occupies its own row and the model
+  and submission groups wrap beneath it. The floating browser composer keeps
+  its brain-only model control and existing outer frame.
+- The English welcome placeholder is `Ask Nexus anything` in both placements.
+  Placeholder ink uses semantic secondary text. Enabled Send retains its
+  theme treatment; disabled Send uses a subdued surface and muted arrow.
 - Scroll stability: The thread scrollport reserves one stable trailing gutter,
   so the transcript does not shift when overflow appears while the minimap
   does not create a matching blank strip on the left.

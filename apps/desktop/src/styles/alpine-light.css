@@ -78,7 +78,7 @@
 }
 
 :root[data-scenic-theme="alpine-light"] .composer-shell:focus-within {
-  box-shadow: 0 0 0 1px #fff, var(--ds-shadow-composer);
+  box-shadow: var(--ds-shadow-composer);
 }
 
 :root[data-scenic-theme="alpine-light"] .composer-shell.is-file-drop-active {

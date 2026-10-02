@@ -12054,6 +12054,23 @@ or delete caches, profiles or earlier recovery files to hide this condition.
 - **Validation**: Focused contract tests, desktop typecheck/build and a native
   Electron probe. Full local E2E suites remain unrun unless requested.
 
+### E2E-Composer-Visual-Trial: Theme materials and control grouping (ADR 0270)
+
+- **Steps**: Inspect home and recorded chats in light, dark, Twilight,
+  Obsidian, Emerald and Alpine themes. Focus the empty draft, enter one line
+  and a multiline draft, open the permission/model menus, and resize to a
+  narrow panel. Check the floating browser composer and reduced motion.
+- **Expected**: Existing width and theme fills remain; empty input reserves
+  two lines. A subtle inset hairline strengthens on focus with no geometry
+  shift. Controls are 32px tall with separate left, model and submission
+  groups, wrapping without collisions. The English welcome reads `Ask Nexus
+  anything`; contextual hints remain. Disabled Send is subdued; a ready draft
+  enables it. Multiline growth and menu/input behavior remain intact. The
+  browser composer retains its brain selector and single outer frame.
+- **Validation**: Focused regression checks, actual-component renderer
+  screenshots/geometry checks and desktop typecheck/build. Full local E2E
+  suites remain unrun unless requested. User acceptance precedes merging.
+
 ### E2E-Browser-Document-Readiness: Slow resources and keyboard aliases (ADR 0268)
 
 - **Steps**: Submit a form using `ENTER`, `Enter` and a locator `ctrl+ENTER`
