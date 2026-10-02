@@ -14,10 +14,14 @@ export function SpeechControl({
   disabled,
   canVoice,
   onDictation,
+  showVoiceControl = true,
+  onActiveChange,
 }: {
   disabled: boolean;
   canVoice: boolean;
   onDictation: (text: string, sessionId: string | undefined) => void;
+  showVoiceControl?: boolean;
+  onActiveChange?: (active: boolean) => void;
 }) {
   const { t } = useTranslation();
   const voice = useVoiceMode();
@@ -29,6 +33,7 @@ export function SpeechControl({
   const sourceSession = useRef<string | undefined>(undefined);
   const activeSessionId = useAppStore((s) => s.activeSessionId);
   const showToast = useAppStore((s) => s.showToast);
+  useEffect(() => { onActiveChange?.(Boolean(state)); }, [state, onActiveChange]);
 
   const cancel = () => {
     cycle.current += 1;
@@ -108,9 +113,9 @@ export function SpeechControl({
       <TooltipButton type="button" className={`icon-btn${state ? " active" : ""}`} tooltip={t("chat.dictate")} ariaLabel={t("chat.dictate")} disabled={disabled || voice.active} onClick={() => state ? cancel() : void start()}>
         <IconMic size={15} aria-hidden="true" />
       </TooltipButton>
-      <TooltipButton type="button" className={`icon-btn${voice.active ? " active" : ""}`} tooltip={t("chat.voiceMode")} ariaLabel={t("chat.voiceMode")} disabled={disabled || Boolean(state) || (!canVoice && !voice.active)} onClick={() => voice.active ? voice.stop() : voice.start()}>
+      {showVoiceControl ? <TooltipButton type="button" className={`icon-btn${voice.active ? " active" : ""}`} tooltip={t("chat.voiceMode")} ariaLabel={t("chat.voiceMode")} disabled={disabled || Boolean(state) || (!canVoice && !voice.active)} onClick={() => voice.active ? voice.stop() : voice.start()}>
         <IconVoice size={15} aria-hidden="true" />
-      </TooltipButton>
+      </TooltipButton> : null}
       {state && (
         <div className="composer-dictation-status" role="status">
           <span className={`speech-indicator${state === "recording" ? " recording" : ""}`} />

@@ -12078,6 +12078,24 @@ or delete caches, profiles or earlier recovery files to hide this condition.
   screenshots/geometry checks and desktop typecheck/build. Full local E2E
   suites remain unrun unless requested. User acceptance precedes merging.
 
+### E2E-Composer-Minimal-Trial: Two groups and meaningful controls (ADR 0271)
+
+- **Steps**: Test all six standard/scenic themes and narrow widths. Open `+`,
+  choose Add files, toggle Voice mode, enhance and Undo a prompt. Open the
+  combined mode/permission menu with mouse and keyboard, choose Plan/Goal/Agent,
+  and inspect Full access confirmation. Open context and model/reasoning menus,
+  enter multiline text and inspect the floating browser composer.
+- **Expected**: Six controls with context present; secondary actions live under
+  `+`. Mode and effective permission remain visible, including warning-colored
+  Full access. Goal permits mode changes but locks permission choices. Voice
+  and dictation cannot overlap. Model is text-only with a muted reasoning level;
+  context is ring-only with accessible details. No menu/control clipping or
+  collisions; narrow layouts wrap into two rows. Focus restore, disabled/busy
+  states, draft behavior, theme materials and compact Brain selector remain.
+- **Validation**: Actual-component geometry/interaction inspection, focused
+  regression tests, desktop typecheck/build. Full local E2E suites require an
+  explicit request. This trial requires user testing before merge.
+
 ### E2E-Browser-Document-Readiness: Slow resources and keyboard aliases (ADR 0268)
 
 - **Steps**: Submit a form using `ENTER`, `Enter` and a locator `ctrl+ENTER`

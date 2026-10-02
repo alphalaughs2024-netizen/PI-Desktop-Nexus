@@ -1,20 +1,25 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { useTranslation } from "react-i18next";
-import { IconMore, IconSparkles, IconUndo2 } from "./icons";
+import { IconPlus, IconFileText, IconVoice, IconSparkles, IconUndo2 } from "./icons";
 import { TooltipButton } from "./ui";
+import { useVoiceMode } from "./VoiceConversation";
 
 export function ComposerActions({
-  disabled, enhancementDisabled, enhancing, canUndo, onEnhance, onUndo, onOpen,
+  disabled, attachmentDisabled, voiceDisabled, enhancementDisabled, enhancing, canUndo, onAttach, onEnhance, onUndo, onOpen,
 }: {
   disabled: boolean;
+  attachmentDisabled: boolean;
+  voiceDisabled: boolean;
   enhancementDisabled: boolean;
   enhancing: boolean;
   canUndo: boolean;
+  onAttach: () => void;
   onEnhance: () => void;
   onUndo: () => void;
   onOpen: () => void;
 }) {
   const { t } = useTranslation();
+  const voice = useVoiceMode();
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
@@ -68,8 +73,8 @@ export function ComposerActions({
 
   return <div className="composer-actions" ref={root}>
     <TooltipButton ref={trigger} type="button" className={`icon-btn composer-actions-trigger${open ? " active" : ""}`}
-      tooltip={enhancing ? t("chat.enhancingPrompt") : t("chat.composerActions")}
-      ariaLabel={t("chat.composerActions")} aria-haspopup="menu" aria-expanded={open}
+      tooltip={enhancing ? t("chat.enhancingPrompt") : t("chat.composerAddMenu")}
+      ariaLabel={t("chat.composerAddMenu")} aria-haspopup="menu" aria-expanded={open}
       aria-busy={enhancing} disabled={disabled}
       onClick={() => open ? close() : openMenu()}
       onKeyDown={event => {
@@ -77,9 +82,17 @@ export function ComposerActions({
           event.preventDefault(); openMenu(event.key === "ArrowUp");
         }
       }}>
-      {enhancing ? <span className="tool-spinner" aria-hidden="true" /> : <IconMore size={17} aria-hidden="true" />}
+      {enhancing ? <span className="tool-spinner" aria-hidden="true" /> : <IconPlus size={18} aria-hidden="true" />}
     </TooltipButton>
-    {open ? <div ref={menu} className="composer-actions-menu" role="menu" aria-label={t("chat.composerActions")} tabIndex={-1} onKeyDown={onKeyDown}>
+    {open ? <div ref={menu} className="composer-actions-menu" role="menu" aria-label={t("chat.composerAddMenu")} tabIndex={-1} onKeyDown={onKeyDown}>
+      <button type="button" role="menuitem" className="composer-menu-entry" disabled={attachmentDisabled}
+        onClick={() => { close(true); onAttach(); }}>
+        <IconFileText size={16} aria-hidden="true" /><span>{t("chat.addFiles")}</span>
+      </button>
+      <button type="button" role="menuitem" className="composer-menu-entry" disabled={voiceDisabled && !voice.active}
+        onClick={() => { close(true); voice.active ? voice.stop() : voice.start(); }}>
+        <IconVoice size={16} aria-hidden="true" /><span>{t(voice.active ? "chat.stopVoiceMode" : "chat.voiceMode")}</span>
+      </button>
       <button type="button" role="menuitem" className="composer-menu-entry composer-enhance-btn" disabled={enhancementDisabled}
         onClick={() => { close(true); onEnhance(); }}>
         <IconSparkles size={16} aria-hidden="true" /><span>{t("chat.enhancePrompt")}</span>

@@ -48,7 +48,8 @@ try {
       await page.waitForTimeout(220);
       assert.deepEqual(await shell.boundingBox(), initial, `${theme}/${width}: focus shifted shell`);
       await page.locator(".send-btn").isDisabled().then(disabled => assert.ok(disabled));
-      assert.equal(await page.locator(".composer-permission .mode-chip").innerText(), "Ask");
+      assert.match(await page.locator(".composer-configuration-chip").innerText(), /Agent\s*·\s*Ask/);
+      assert.equal(buttons.length, 6);
       await page.locator("#theme").focus();
       await page.waitForTimeout(220);
       await shell.screenshot({ path: resolve(output, `${theme}-${width}-empty.png`) });
@@ -66,14 +67,17 @@ try {
       const menuBounds = await menu.boundingBox();
       assert.ok(menuBounds.x >= 0 && menuBounds.x + menuBounds.width <= width + 1, `${theme}/${width}: model menu clipped`);
       await page.keyboard.press("Escape");
-      const actions = page.getByRole("button", { name: "More actions", exact: true });
+      const actions = page.getByRole("button", { name: "Add and actions", exact: true });
       await actions.focus();
       await page.keyboard.press("ArrowDown");
-      const actionsMenu = page.getByRole("menu", { name: "More actions", exact: true });
+      const actionsMenu = page.getByRole("menu", { name: "Add and actions", exact: true });
       await actionsMenu.waitFor();
       assert.ok(await page.getByRole("menuitem", { name: "Enhance prompt", exact: true }).isDisabled());
       const actionsBounds = await actionsMenu.boundingBox();
       assert.ok(actionsBounds.x >= 0 && actionsBounds.x + actionsBounds.width <= width + 1, `${theme}/${width}: actions menu clipped`);
+      await page.getByRole("menuitem", { name: "Add files", exact: true }).click();
+      await page.waitForFunction(() => window.composerInspection.pickerCalls() === 1);
+      await actions.click();
       await page.keyboard.press("Escape");
       assert.ok(await actions.evaluate(element => element === document.activeElement));
       await input.fill("Organize this prompt");
@@ -83,16 +87,35 @@ try {
       await page.evaluate(() => window.composerInspection.finishEnhancement());
       await page.waitForFunction(() => document.querySelector(".composer-input").textContent === "Improved: Organize this prompt");
       await actions.click();
-      assert.ok(await page.getByRole("menuitem", { name: "Enhance prompt", exact: true }).evaluate(element => document.activeElement === element));
-      await page.keyboard.press("ArrowDown");
+      assert.ok(await page.getByRole("menuitem", { name: "Add files", exact: true }).evaluate(element => document.activeElement === element));
+      await page.keyboard.press("End");
       assert.ok(await page.getByRole("menuitem", { name: "Undo enhancement", exact: true }).evaluate(element => document.activeElement === element));
       await page.keyboard.press("Enter");
       await page.waitForFunction(() => document.querySelector(".composer-input").textContent === "Organize this prompt");
       await input.fill("");
-      await page.getByRole("button", { name: "Permission mode", exact: true }).click();
+      await page.locator(".composer-configuration-chip").click();
       await page.locator(".composer-permission-menu").waitFor();
+      const configurationBounds = await page.locator(".composer-permission-menu").boundingBox();
+      assert.ok(configurationBounds.x >= 0 && configurationBounds.x + configurationBounds.width <= width + 1);
       await page.mouse.click(10, 100);
       assert.ok(await page.locator(".composer-permission-menu").count() === 0);
+      for (const mode of ["Plan", "Goal", "Agent"]) {
+        await page.locator(".composer-configuration-chip").click();
+        await page.getByRole("menuitemradio", { name: mode, exact: true }).click();
+        assert.match(await page.locator(".composer-configuration-chip").innerText(), new RegExp(mode));
+        if (mode === "Goal") {
+          await page.locator(".composer-configuration-chip").click();
+          assert.ok(await page.locator('.composer-configuration-menu [role="group"]').nth(1).getByRole("menuitemradio").evaluateAll(items => items.every(item => item.disabled)));
+          await page.keyboard.press("Escape");
+        }
+      }
+      await page.locator(".composer-configuration-chip").click();
+      await page.getByRole("menuitemradio", { name: "Full access", exact: true }).click();
+      const confirmation = page.locator(".composer-full-access-overlay");
+      await confirmation.waitFor();
+      assert.ok(await confirmation.evaluate(element => element.parentElement === document.body));
+      await confirmation.getByRole("button", { name: "Cancel", exact: true }).click();
+      assert.match(await page.locator(".composer-configuration-chip").innerText(), /Ask/);
       observations.push({ width, theme, shellHeight: initial.height, multilineHeight: multiline.height, controls: buttons.length });
     }
   }

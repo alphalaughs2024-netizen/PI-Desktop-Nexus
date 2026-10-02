@@ -38,6 +38,7 @@ export function ContextUsageInspector({
   responseDurationMs,
   responseOutputTokens,
   responseOutputEstimated = false,
+  compact = false,
 }: {
   usage: MessageUsage;
   turnUsage: MessageUsage;
@@ -46,6 +47,7 @@ export function ContextUsageInspector({
   responseDurationMs?: number;
   responseOutputTokens?: number;
   responseOutputEstimated?: boolean;
+  compact?: boolean;
 }) {
   const { t } = useTranslation();
   const panelId = useId();
@@ -368,9 +370,9 @@ export function ContextUsageInspector({
             }
           />
         </svg>
-        <span className="context-inspector-ring-value">
+        {!compact ? <span className="context-inspector-ring-value">
           {context.remainingPercent}%
-        </span>
+        </span> : null}
       </TooltipButton>
       {popover && typeof document !== "undefined"
         ? createPortal(popover, document.body)

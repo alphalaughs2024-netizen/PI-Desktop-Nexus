@@ -77,7 +77,6 @@ import { ComposerActions } from "./ComposerActions";
 import {
   IconArrowUp,
   IconCornerDownLeft,
-  IconPlus,
   IconShield,
   IconStop,
   IconChevronDown,
@@ -444,16 +443,8 @@ function paintEditorValue(
   }
 }
 
-/**
- * The composer-left chip is the only mode control, so one click steps through
- * every mode in a fixed order: execute freely, plan first, then goal contract.
- */
+/** Stable order for the explicit operating-mode choices in composer settings. */
 const MODE_CYCLE: readonly Mode[] = ["agent", "plan", "goal"];
-
-function nextMode(mode: Mode): Mode {
-  const index = MODE_CYCLE.indexOf(mode);
-  return MODE_CYCLE[(index + 1) % MODE_CYCLE.length] ?? "agent";
-}
 
 const MODE_LABEL_KEYS: Record<Mode, string> = {
   agent: "settings.modeAgent",
@@ -727,6 +718,8 @@ export function Composer({
   const [permissionOpen, setPermissionOpen] = useState(false);
   const [fullAccessConfirmOpen, setFullAccessConfirmOpen] = useState(false);
   const permissionRef = useRef<HTMLDivElement>(null);
+  const permissionMenuRef = useRef<HTMLDivElement>(null);
+  const [dictationActive, setDictationActive] = useState(false);
   const [modelThinkingOpen, setModelThinkingOpen] = useState(false);
   const [modelThinkingView, setModelThinkingView] =
     useState<ComposerMenuView>("root");
@@ -1169,12 +1162,16 @@ export function Composer({
 
   useEffect(() => {
     if (!permissionOpen) return;
+    permissionMenuRef.current?.querySelector<HTMLButtonElement>('button[aria-checked="true"]')?.focus();
     const onPointer = (e: MouseEvent) => {
       if (!permissionRef.current?.contains(e.target as Node))
         setPermissionOpen(false);
     };
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setPermissionOpen(false);
+      if (e.key === "Escape") {
+        setPermissionOpen(false);
+        permissionRef.current?.querySelector<HTMLButtonElement>("button")?.focus();
+      }
     };
     window.addEventListener("mousedown", onPointer);
     window.addEventListener("keydown", onKey);
@@ -2488,89 +2485,104 @@ export function Composer({
 
           <div className="composer-toolbar">
             <div className="composer-left">
-              <div className="composer-plus">
-                <TooltipButton
-                  type="button"
-                  className="icon-btn"
-                  tooltip={t("chat.addFiles")}
-                  ariaLabel={t("chat.addFiles")}
-                  disabled={controlsBlocked || pasting}
-                  onClick={() => {
-                    setPermissionOpen(false);
-                    void pickAndAttach();
-                  }}
-                >
-                  <IconPlus size={15} aria-hidden="true" />
-                </TooltipButton>
-              </div>
-              <TooltipButton
-                type="button"
-                className="icon-btn mode-chip composer-mode-chip"
-                data-mode={mode}
-                data-planning={planningLive ? "true" : undefined}
-                tooltip={planningLive ? t(`${mode}.planning`) : t("settings.mode")}
-                ariaLabel={planningLive ? t(`${mode}.planning`) : t("settings.mode")}
+              <ComposerActions
+                key={activeSessionId ?? HOME_DRAFT_KEY}
                 disabled={controlsBlocked}
-                onClick={async () => {
-                  setModelThinkingOpen(false);
-                  setPermissionOpen(false);
-                  const next: Mode = nextMode(mode);
-                  try {
-                    await configureActiveSession({
-                      mode: next,
-                      providerId: provider?.id,
-                      modelId,
-                      thinkingLevel,
-                    });
-                  } catch (e) {
-                    showToast(e instanceof Error ? e.message : String(e), {
-                      variant: "error",
-                    });
-                  }
-                }}
-              >
-                <span className="composer-mode-chip-face" key={mode}>
-                  <ModeIcon mode={mode} />
-                  <span className="composer-mode-chip-label text-sm">
-                    {t(MODE_LABEL_KEYS[mode])}
-                  </span>
-                </span>
-              </TooltipButton>
+                attachmentDisabled={pasting}
+                voiceDisabled={pasting || dictationActive || !modelReady || runActive}
+                enhancementDisabled={!enhancementDraft.trim() || enhancementDraft.trim().startsWith("/") || !modelReady || sendBlocked || enhancingPrompt}
+                enhancing={enhancingPrompt}
+                canUndo={enhancementUndoText !== null}
+                onAttach={() => void pickAndAttach()}
+                onEnhance={() => void enhancePrompt()}
+                onUndo={undoPromptEnhancement}
+                onOpen={() => { setModelThinkingOpen(false); setPermissionOpen(false); }}
+              />
               {mode === "agent" || mode === "plan" || mode === "goal" ? (
                 <div className="composer-permission" ref={permissionRef}>
                   <TooltipButton
                     type="button"
-                    className={`icon-btn mode-chip ${permissionOpen ? "active" : ""}`}
+                    className={`icon-btn mode-chip composer-mode-chip composer-configuration-chip ${permissionOpen ? "active" : ""}`}
+                    data-mode={mode}
+                    data-planning={planningLive ? "true" : undefined}
                     data-permission-mode={composerPermissionMode}
                     tooltip={
-                      mode === "goal"
+                      planningLive
+                        ? t(`${mode}.planning`)
+                        : mode === "goal"
                         ? `${t("chat.permissionMode")} · ${t("goal.autoWarning")}`
                         : mode === "plan" && composerPermissionMode === "auto"
                           ? `${t("chat.permissionMode")} · ${t("plan.autoWarning")}`
                           : `${t("chat.permissionMode")}: ${t(PERMISSION_MODE_I18N_KEYS[composerPermissionMode])}`
                     }
-                    ariaLabel={
-                      mode === "goal"
-                        ? `${t("chat.permissionMode")} · ${t("goal.autoWarning")}`
-                        : mode === "plan" && composerPermissionMode === "auto"
-                          ? `${t("chat.permissionMode")} · ${t("plan.autoWarning")}`
-                          : t("chat.permissionMode")
-                    }
-                    aria-haspopup={mode === "goal" ? undefined : "menu"}
-                    aria-expanded={mode === "goal" ? false : permissionOpen}
-                    disabled={controlsBlocked || mode === "goal"}
+                    ariaLabel={`${t("settings.mode")}: ${t(MODE_LABEL_KEYS[mode])}. ${t("chat.permissionMode")}: ${t(PERMISSION_MODE_I18N_KEYS[composerPermissionMode])}`}
+                    aria-haspopup="menu"
+                    aria-expanded={permissionOpen}
+                    disabled={controlsBlocked}
                     onClick={() => {
                       setModelThinkingOpen(false);
                       setPermissionOpen((open) => !open);
                     }}
+                    onKeyDown={event => {
+                      if (!permissionOpen && (event.key === "ArrowDown" || event.key === "ArrowUp")) {
+                        event.preventDefault();
+                        setPermissionOpen(true);
+                        setModelThinkingOpen(false);
+                      }
+                    }}
                   >
-                    <span className="text-sm">
-                      {t(composerPermissionMode === "ask" ? "chat.permissionAskShort" : PERMISSION_MODE_I18N_KEYS[composerPermissionMode])}
+                    <span className="composer-mode-chip-face" key={mode}>
+                      <ModeIcon mode={mode} />
+                      <span className="text-sm">{t(MODE_LABEL_KEYS[mode])}</span>
+                      <span className="composer-configuration-dot" aria-hidden="true">·</span>
+                      <span className="text-sm composer-configuration-policy">
+                        {t(composerPermissionMode === "ask" ? "chat.permissionAskShort" : composerPermissionMode === "auto" ? "chat.permissionAutoShort" : PERMISSION_MODE_I18N_KEYS[composerPermissionMode])}
+                      </span>
                     </span>
                     <IconChevronDown size={12} />
                   </TooltipButton>
-                  {permissionOpen && mode !== "goal" && (
-                    <div className="composer-permission-menu" role="menu">
+                  {permissionOpen && (
+                    <div className="composer-permission-menu composer-configuration-menu" role="menu" aria-label={t("chat.composerConfiguration")} ref={permissionMenuRef}
+                      onKeyDown={event => {
+                        const items = Array.from(permissionMenuRef.current?.querySelectorAll<HTMLButtonElement>('button:not(:disabled)') ?? []);
+                        const index = items.indexOf(document.activeElement as HTMLButtonElement);
+                        if (["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) {
+                          event.preventDefault();
+                          const next = event.key === "Home" ? 0 : event.key === "End" ? items.length - 1 : (index + (event.key === "ArrowDown" ? 1 : -1) + items.length) % items.length;
+                          items[next]?.focus();
+                        } else if (event.key === "Tab") {
+                          setPermissionOpen(false);
+                          permissionRef.current?.querySelector<HTMLButtonElement>("button")?.focus();
+                        }
+                      }}>
+                      <div role="group" aria-label={t("settings.mode")}>
+                        <div className="composer-configuration-heading">{t("settings.mode")}</div>
+                        {MODE_CYCLE.map(candidate => (
+                          <button key={candidate} type="button" role="menuitemradio"
+                            aria-checked={mode === candidate} disabled={controlsBlocked}
+                            className={`composer-plus-item ${mode === candidate ? "active" : ""}`}
+                            onClick={async () => {
+                              setPermissionOpen(false);
+                              permissionRef.current?.querySelector<HTMLButtonElement>("button")?.focus();
+                              try {
+                                await configureActiveSession({
+                                  mode: candidate,
+                                  providerId: provider?.id,
+                                  modelId,
+                                  thinkingLevel,
+                                });
+                              } catch (error) {
+                                showToast(error instanceof Error ? error.message : String(error), { variant: "error" });
+                              }
+                            }}>
+                            <ModeIcon mode={candidate} />
+                            <span className="flex-1 text-left">{t(MODE_LABEL_KEYS[candidate])}</span>
+                            {mode === candidate ? <IconCheck size={13} /> : null}
+                          </button>
+                        ))}
+                      </div>
+                      <div role="group" aria-label={t("chat.permissionMode")}>
+                        <div className="composer-configuration-heading">{t("chat.permissionMode")}</div>
                       {composerPermissionOptions.map(
                         (candidate) => (
                           <button
@@ -2578,12 +2590,13 @@ export function Composer({
                             type="button"
                             role="menuitemradio"
                             aria-checked={composerPermissionMode === candidate}
-                            disabled={controlsBlocked}
+                            disabled={controlsBlocked || mode === "goal"}
                             className={`composer-plus-item ${
                               composerPermissionMode === candidate ? "active" : ""
                             }`}
                             onClick={async () => {
                               setPermissionOpen(false);
+                              permissionRef.current?.querySelector<HTMLButtonElement>("button")?.focus();
                               if (candidate === "full-access") {
                                 setFullAccessConfirmOpen(true);
                                 return;
@@ -2613,13 +2626,17 @@ export function Composer({
                           </button>
                         ),
                       )}
+                      </div>
                     </div>
                   )}
                 </div>
               ) : null}
             </div>
-
+            <div className="composer-right">
             <div className="composer-model-group-control">
+              {composerContextUsage ? (
+                <ContextUsageInspector {...composerContextUsage} compact />
+              ) : null}
               <div
                 className="composer-model-thinking"
                 ref={modelThinkingRef}
@@ -2647,9 +2664,6 @@ export function Composer({
                   }}
                 >
                   {compactModelSelector ? <Brain size={18} aria-hidden="true" /> : <>
-                  <span className="composer-model-thinking-icon" aria-hidden="true">
-                    <IconBot size={14} />
-                  </span>
                   <span className="composer-model-thinking-model">
                     {modelLabel}
                   </span>
@@ -2877,23 +2891,11 @@ export function Composer({
                   </div>
                 ) : null}
               </div>
-              {composerContextUsage ? (
-                <ContextUsageInspector {...composerContextUsage} />
-              ) : null}
-              <ComposerActions
-                key={activeSessionId ?? HOME_DRAFT_KEY}
-                disabled={controlsBlocked}
-                enhancementDisabled={!enhancementDraft.trim() || enhancementDraft.trim().startsWith("/") || !modelReady || sendBlocked || enhancingPrompt}
-                enhancing={enhancingPrompt}
-                canUndo={enhancementUndoText !== null}
-                onEnhance={() => void enhancePrompt()}
-                onUndo={undoPromptEnhancement}
-                onOpen={() => { setModelThinkingOpen(false); setPermissionOpen(false); }}
-              />
               <RendererSlotMount slot="composerControl" position="left" props={{ position: "left", disabled: controlsBlocked }} />
             </div>
-            <div className="composer-right">
               <SpeechControl
+                showVoiceControl={false}
+                onActiveChange={setDictationActive}
                 disabled={controlsBlocked || pasting}
                 canVoice={modelReady && !runActive}
                 onDictation={(text, sourceSessionId) => {

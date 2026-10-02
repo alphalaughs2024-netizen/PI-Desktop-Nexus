@@ -27,8 +27,10 @@ const usage={inputTokens:24000,outputTokens:1200,cacheReadTokens:0,cacheWriteTok
 const contextUsage={usage,turnUsage:usage,contextWindow:128000,tools:[],responseOutputEstimated:false};
 function render(compact=false){root.render(React.createElement(VoiceModeProvider,null,React.createElement(Composer,{compactModelSelector:compact,contextUsage})));}
 let releaseEnhancement;
+let pickerCalls=0;
+api.pickFiles=async()=>{pickerCalls++;return {token:null};};
 api.enhancePrompt=request=>new Promise(resolve=>{releaseEnhancement=()=>resolve({enhancedDraft:`Improved: ${request.draft}`});});
-window.composerInspection={store:useAppStore,render,finishEnhancement:()=>releaseEnhancement?.()};
+window.composerInspection={store:useAppStore,render,finishEnhancement:()=>releaseEnhancement?.(),pickerCalls:()=>pickerCalls};
 render();
 document.querySelector('#theme').addEventListener('change',event=>{const theme=event.target.value;document.documentElement.dataset.theme=theme==="light"||theme==="alpine-light"?"light":"dark";document.documentElement.dataset.scenicTheme=theme==="dark"||theme==="light"?"":theme;});
 </script></body></html>

@@ -60,18 +60,16 @@ test("composer runtime chips keep compact line-height for descenders", () => {
   );
 });
 
-test("mode selector reserves the longest localized label width", () => {
+test("combined configuration fits mode and permission labels", () => {
   assert.match(
     composerSource,
-    /className="icon-btn mode-chip composer-mode-chip"/,
+    /composer-mode-chip composer-configuration-chip/,
   );
 
-  const block = styles.match(/\.composer-mode-chip\s*\{[^}]+\}/)?.[0] ?? "";
-  assert.match(block, /width:\s*88px;/);
-  assert.match(block, /min-width:\s*88px;/);
-  assert.match(block, /max-width:\s*88px;/);
-  assert.match(block, /flex:\s*0 0 88px;/);
-  assert.match(styles, /\.composer-mode-chip-label\s*\{[\s\S]*?text-overflow:\s*ellipsis;/);
+  const block = styles.match(/\.composer-shell \.composer-configuration-chip\s*\{[^}]+\}/)?.[0] ?? "";
+  assert.match(block, /width:\s*auto;/);
+  assert.match(block, /max-width:\s*calc\(100cqw - 72px\);/);
+  assert.match(composerSource, /composer-configuration-policy/);
 });
 
 test("narrow chat keeps permission readable and gives model text the remaining space", () => {

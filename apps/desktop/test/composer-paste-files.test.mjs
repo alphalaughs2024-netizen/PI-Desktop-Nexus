@@ -178,13 +178,13 @@ test("picker attachments materialize a session before importing paths", () => {
   );
 });
 
-test("composer opens one unified file picker directly from the plus button", () => {
+test("composer routes the Add files action to the unified file picker", () => {
   const leftStart = composer.indexOf('<div className="composer-left">');
-  const plusIndex = composer.indexOf('tooltip={t("chat.addFiles")}', leftStart);
+  const plusIndex = composer.indexOf('<ComposerActions', leftStart);
   const modeIndex = composer.indexOf("composer-mode-chip", leftStart);
   assert.ok(leftStart >= 0 && plusIndex > leftStart && modeIndex > leftStart);
   assert.ok(plusIndex < modeIndex, "upload must precede the agent mode chip");
-  assert.match(composer, /void pickAndAttach\(\);/);
+  assert.match(composer, /onAttach=\{\(\) => void pickAndAttach\(\)\}/);
   assert.match(composer, /const pickAndAttach = async \(\) =>/);
   assert.match(composer, /const result = await api\.pickFiles\(\);/);
   assert.doesNotMatch(composer, /plusOpen|plusRef|composer-plus-menu|pickAndAttach\("photos"\)/);

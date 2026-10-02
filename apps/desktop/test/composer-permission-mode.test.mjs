@@ -29,7 +29,7 @@ test("Agent and Plan permission menus present only effective selectable modes", 
   assert.doesNotMatch(permissionControlSource, /\["inherit",/);
 });
 
-test("Goal keeps the permission chip visible but fixes it to Full auto", () => {
+test("Goal allows mode changes while fixing its permission to Auto", () => {
   const permissionControlSource = composerSource.slice(
     composerSource.indexOf('<div className="composer-permission"'),
     composerSource.indexOf('<div className="composer-right">'),
@@ -39,9 +39,10 @@ test("Goal keeps the permission chip visible but fixes it to Full auto", () => {
     composerSource,
     /const composerPermissionMode: Exclude<PermissionMode, "inherit"> =\s*\n\s*mode === "goal" \? "auto" : effectivePermissionMode;/,
   );
-  assert.match(permissionControlSource, /mode === "goal" \? undefined : "menu"/);
+  assert.match(permissionControlSource, /aria-haspopup="menu"/);
   assert.match(permissionControlSource, /disabled=\{controlsBlocked \|\| mode === "goal"\}/);
-  assert.match(permissionControlSource, /permissionOpen && mode !== "goal"/);
+  assert.match(permissionControlSource, /permissionOpen && \(/);
+  assert.match(permissionControlSource, /MODE_CYCLE\.map/);
 });
 
 test("Agent permission menu offers Full access while Plan does not", () => {

@@ -2254,36 +2254,37 @@ reasoning-level control.
 - Padding: px-4 py-3 inner textarea
 - Font: text-sm for Agent, Plan, and Goal; mode changes semantics and tool
   controls, not the typography
-- The Agent/Plan/Goal mode chip reserves one fixed 88px width, sized from the
-  longest built-in label in English and zh-CN ("Agent" / "智能体"). Its label
-  stays single-line and ellipsizes if a future locale exceeds that budget, so
-  switching modes never reflows the adjacent Composer controls. Cycling the
-  chip cross-fades the icon and label in place. While the live turn is
+- The minimalist composer trial (ADR 0271; acceptance pending) combines
+  Agent/Plan/Goal and permission in one flexible control, such as `Agent · Ask`.
+  Its menu contains separate mode and permission radio groups, supports
+  arrow/Home/End navigation, Escape focus restore, Tab and outside dismissal.
+  Changing mode cross-fades the icon and label. While the live turn is
   `planning`, the chip pulses on its icon (purple) instead of leaving a
   second status row parked above the composer; a staged mode choice still
   updates the chip immediately and does not start that pulse until the
   in-flight turn actually projects `planning`.
-- The permission chip remains visible in Agent, Plan, and Goal for a stable
-  toolbar rhythm. Agent and Plan expose the effective selectable permission;
-  Goal displays the localized Auto label as a disabled, non-opening chip while
+- Permission remains visible within the combined control. Agent and Plan
+  expose the effective selectable permission; Goal displays Auto and disables
+  only the menu's permission options, allowing users to switch mode, while
   the approval card remains the separate place for choosing execution policy.
-  The permission menu stays 120px wide; its Chinese Composer short label for
+  The configuration menu stays 248px wide within container bounds; its Chinese
+  Composer short label for
   Accept edits is `允许编辑` / `允許編輯` so the option remains single-line
   beside its selection indicator.
   The composer Ask label is abbreviated locally; its tooltip and the
   permission menu retain the full policy name. No permission semantics change.
-- Attachment, mode and permission form the left toolbar group. The combined
-  model × reasoning-level chip, remaining-capacity context inspector and
-  More actions trigger form a flexible middle group. The right toolbar owns
-  dictation/voice and the single Stop/Send submit slot (D347), with extra
-  spacing before submission. The inspector trigger shows the ring
-  and percentage only. The chip shows Bot, the current model name, and the
+- The left toolbar contains `+` and mode/permission. The right toolbar contains
+  the compact context ring, model/reasoning, dictation and Stop/Send (D347).
+  Context percentage remains in accessible labeling and the inspector.
+  The model chip shows the current model name and the
   current reasoning level separated by `·`; `off` omits the level text. The
-  More actions menu contains prompt enhancement and Undo enhancement when
+  `+` menu contains Add files, Voice mode, prompt enhancement and Undo when
   available. It supports arrow/Home/End navigation, Escape with restored
   trigger focus, Tab and outside-click dismissal, and closes on session change
   or blocked controls. A disabled enhancement remains visible but unavailable.
-  Its trigger uses the shared `.tool-spinner` and localized `Enhancing…`
+  Voice mode and dictation remain mutually exclusive; active voice can be
+  stopped through the menu. Full access keeps its warning label and explicit
+  confirmation. The `+` trigger uses the shared `.tool-spinner` and localized `Enhancing…`
   tooltip while running. Enhancement remains
   a one-shot draft rewrite action. Inline file-reference chips, including
   pasted image chips, do not disable this action and remain in the draft.
@@ -2326,13 +2327,11 @@ reasoning-level control.
   visually with its sibling in scenic and standard themes.
 - Empty draft height: `.composer-input` uses `min-height: 2lh`, then grows
   naturally through seven visible lines. Toolbar controls reserve 32px height
-  with 6px gaps within groups; icon hover surfaces use an 8px radius. At 620px
-  container width or below, the model/context/actions group spans one row;
-  left controls and voice/submission occupy the next row. The model retains
+  with 6px gaps within groups; icon hover surfaces use an 8px radius. At 540px
+  container width or below, mode/actions occupy the first row and
+  context/model/dictation/submission occupy the second. The model retains
   available space and its reasoning label. The floating browser composer keeps
   its brain-only model control and existing outer frame.
-  Below 460px, longer permission names reserve a separate controls row and
-  submission moves beneath it, preserving policy wording without collisions.
   Native floating-surface height includes the actions menu so it remains
   visible above the live webpage.
 - The English welcome placeholder is `Ask Nexus anything` in both placements.

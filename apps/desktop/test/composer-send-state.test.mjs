@@ -14,7 +14,7 @@ const [store, composer, main, attachments, runtime] = await Promise.all([
 const queuedRow = await read("../src/components/QueuedPromptRow.tsx");
 
 test("composer send/stop button follows draft content and the visible session's run state", () => {
-  const composerRight = composer.match(/<div className="composer-right">[\s\S]*?<\/div>\s*<\/div>/)?.[0] ?? "";
+  const composerRight = composer.slice(composer.indexOf('<div className="composer-right">'), composer.indexOf('className="composer-full-access-overlay"'));
   // Plan mode widens the running condition: `runActive` folds an in-flight
   // plan execution into the session's own `isRunning`. The submit slot then
   // switches to Stop only when that session is running and the draft is empty.
@@ -36,16 +36,16 @@ test("composer send/stop button follows draft content and the visible session's 
   assert.match(submitSlot, /onClick=\{\(\) => void abort\(\)\}/);
   assert.doesNotMatch(composerRight, /\{runActive \? \(/);
   assert.match(
-    composer.slice(composer.indexOf('<div className="composer-model-group-control">')),
-    /composer-model-thinking-chip[\s\S]*<ComposerActions[\s\S]*className="(?:stop|send)-btn"/,
-    "Model selection and occasional actions should precede the voice/submit group",
+    composer.slice(composer.indexOf('<div className="composer-toolbar">')),
+    /<ComposerActions[\s\S]*composer-configuration-chip[\s\S]*composer-model-thinking-chip[\s\S]*className="(?:stop|send)-btn"/,
+    "Actions and configuration precede model and submission",
   );
   const modelTrigger =
     composer.match(
-      /className=\{`icon-btn composer-model-thinking-chip[\s\S]*?<\/button>/,
+      /className=\{`icon-btn composer-model-thinking-chip[\s\S]*?<\/TooltipButton>/,
     )?.[0] ?? "";
   assert.ok(modelTrigger.length > 0, "model selector trigger not found");
-  assert.match(modelTrigger, /<IconBot size=\{14\} \/>/);
+  assert.doesNotMatch(modelTrigger, /IconBot/);
   assert.doesNotMatch(modelTrigger, /IconSparkles/);
   assert.doesNotMatch(
     composerRight,

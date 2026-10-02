@@ -48,7 +48,9 @@ test("the combined chip and menu meet the compact accessible visual contract", (
   assert.match(composerSource, /e\.key === "Escape"/);
   assert.match(stylesSource, /\.composer-model-thinking-menu\s*\{[\s\S]*?bottom:\s*calc\(100% \+ 8px\)/);
   assert.match(stylesSource, /\.composer-model-thinking-menu\s*\{[\s\S]*?width:\s*min\(300px,\s*calc\(100vw - 24px\)\)/);
-  assert.match(composerSource, /className="composer-model-thinking-icon"[\s\S]*?<IconBot size=\{14\} \/>/);
+  const trigger = composerSource.match(/className=\{`icon-btn composer-model-thinking-chip[\s\S]*?<\/TooltipButton>/)?.[0];
+  assert.ok(trigger);
+  assert.doesNotMatch(trigger, /IconBot/);
   assert.doesNotMatch(stylesSource, /\.composer-model-thinking-icon\.is-off/);
   assert.match(stylesSource, /@media \(prefers-reduced-motion: reduce\)/);
 });
