@@ -67,3 +67,37 @@ and native CSS/SVG. Normative component/E2E contracts describe the implemented
 behavior. Validate session transitions, expanded/collapsed geometry, dragging,
 keyboard focus, reduced motion, all four themes, and composer clearance.
 Keep the result unmerged until visual testing is accepted.
+
+## Hover border adaptation
+
+The user selected Aceternity's Hover Border Gradient:
+<https://ui.aceternity.com/components/hover-border-gradient>.
+Nexus already uses TypeScript and Tailwind 4.3, with shared React controls in
+`apps/desktop/src/components/ui.tsx` and styles in `src/styles/`. It does not
+use shadcn's scaffold or the `@/` alias. No scaffold migration is needed.
+The decorative component lives alongside existing controls under
+`src/components/ui/HoverBorderGradient.tsx` and uses Nexus's `cx` helper.
+
+The reference's directional pale gradient and blue hover highlight are adapted
+with registered CSS percentage properties and opacity crossfades. A masked
+center keeps the existing glass and controls intact; the reference's black
+backing would hide the wallpaper. A fixed 2px blur supplies the border bloom.
+There is no React interval, animated blur, or additional Motion dependency.
+Keyboard focus receives the same highlight and reduced motion stops the sweep.
+The decoration does not represent agent activity; the fluid ribbon remains
+bound to real session state.
+
+Validation: desktop TypeScript and the Electron build passed; 13 focused
+workflow state, positioning, and regression checks passed. The broader scenic
+suite had one existing Context Vault selector failure, reproduced unchanged
+on the previous pill trial. No full E2E suite was run.
+
+Playwright inspected the launched native application's built renderer. The
+collapsed pill measured 352x47.6 CSS pixels and expanded to 352x186.6; hover and
+keyboard focus paused the sweep and reached full blue-highlight opacity.
+Escape restored the collapsed height. Four temporary scenic-theme projections
+preserved geometry and their glass colors; a 900x720 viewport kept the control
+inside the window. Reduced motion stopped the sweep and a temporarily projected
+working-core visual state. The actual idle core remained stationary. Screenshots
+were visually inspected and no page errors were observed. Temporary theme and
+motion projections were restored before handing the running app to the user.

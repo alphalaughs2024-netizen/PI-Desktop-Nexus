@@ -5,6 +5,7 @@ import type { WorkflowSessionStatus } from "@pi-desktop/shared";
 import { api } from "../lib/api";
 import { useAppStore } from "../stores/app-store";
 import { AgentEnergyCore, WorkflowPillLight } from "./AgentEnergyCore";
+import { HoverBorderGradient } from "./ui/HoverBorderGradient";
 import { workflowAgentActivity } from "../lib/workflow-agent-activity";
 import {
   DEFAULT_WORKFLOW_POSITION, readWorkflowWidgetPosition, rememberWorkflowWidgetPosition,
@@ -177,6 +178,7 @@ export function ActiveWorkflowCard({ sessionId }: { sessionId?: string | null })
       onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node)) close(); }}
     >
       <WorkflowPillLight />
+      <HoverBorderGradient className="active-workflow-border" />
       <span className="sr-only" role="status">{activityLabel}</span>
       <div className="active-workflow-surface">
       <div className="active-workflow-heading">

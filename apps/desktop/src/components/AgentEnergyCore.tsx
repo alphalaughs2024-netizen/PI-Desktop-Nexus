@@ -48,6 +48,5 @@ export function WorkflowPillLight() {
     </defs>
     <rect className="active-workflow-bloom" stroke={`url(#${gradient})`} filter={`url(#${bloom})`} />
     <rect className="active-workflow-caustic" stroke={`url(#${gradient})`} filter={`url(#${caustic})`} />
-    <rect className="active-workflow-orbit" pathLength="1" filter={`url(#${bloom})`} />
   </svg>;
 }

@@ -2338,7 +2338,11 @@ reasoning-level control.
   light deep-navy translucent fill; Alpine uses pale glass. Opposing inset
   highlights and a soft lower shadow give depth. Diagonal caustics and diffuse
   blue light spill beyond the capsule, independently of the clipped surface.
-  Hover/focus adds a 5s orbiting light spill that fades away on leave.
+  An Aceternity-inspired masked border moves a pale highlight around the edge
+  over 4s, then pauses and crossfades to a blue gradient bloom on hover/focus.
+  Leaving resumes the highlight and fades the blue bloom out. The border is
+  decorative, independent of runtime activity, and pointer-transparent. Its
+  cut-out center preserves the glass fill; no opaque backing covers the pill.
   Reduced motion keeps highlights stationary. Reduced transparency and unsupported
   blur use readable fallback surfaces. Labels and errors are localized.
 - The core observes only its displayed session's runtime state. Reported

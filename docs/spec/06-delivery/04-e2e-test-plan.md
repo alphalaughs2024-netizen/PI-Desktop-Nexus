@@ -11180,8 +11180,12 @@ outline subtle and its text readable, with no permanent full-width banner or
 unbounded floating text. Its position must remain reachable below title chrome.
 The 352x48px capsule has a fluid ribbon, readable translucent glass with a fixed
 12px blur, restrained opposing reflections, and diffuse light beyond the
-upper-left/lower-right rim. Hover/focus adds an orbiting light spill; neither
-glow nor changing core states move the controls or cover the composer.
+upper-left/lower-right rim. A pale gradient highlight travels around the
+masked border over 4s. Hover or keyboard focus pauses it and crossfades into
+a blue border bloom; leaving resumes the highlight smoothly. Check collapsed
+and expanded shapes in all four scenic themes: the center remains transparent,
+the blue edge does not wash out the copy, and focus rings remain readable.
+Neither glow nor changing core states move controls or cover the composer.
 Reduced transparency retains the readable opaque fallback.
 
 With the same session selected, verify idle, reported reasoning, running tools,
@@ -11192,7 +11196,7 @@ localized activity label in expanded details and the accessible status/tooltip.
 Start another turn before its first status: the old turn's reasoning/outcome
 must not leak into the new core. Run another session independently and verify
 its events do not animate this pill. Reduced motion stops both the core and
-hover orbit. Inspect content scrolls within the available conversation height;
+decorative border sweep. Inspect content scrolls within the available conversation height;
 the external light layers remain pointer-transparent and do not clip or
 interfere with drag, dismissal, Settings, typing, or keyboard focus.
 

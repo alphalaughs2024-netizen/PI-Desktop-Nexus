@@ -836,19 +836,57 @@
 .active-workflow-card[data-open="true"] .active-workflow-light rect { rx: 15px; }
 .active-workflow-bloom { stroke-width: 9px; opacity: .7; }
 .active-workflow-caustic { stroke-width: 3px; opacity: .9; }
-.active-workflow-light .active-workflow-orbit {
-  stroke: var(--workflow-light-highlight);
-  stroke-width: 8px;
-  stroke-dasharray: .14 .86;
-  opacity: 0;
-  animation: workflow-light-orbit 5s linear infinite paused;
-  transition: opacity 220ms var(--motion-ease-out);
+@property --hover-border-x { syntax: "<percentage>"; inherits: false; initial-value: 50%; }
+@property --hover-border-y { syntax: "<percentage>"; inherits: false; initial-value: 0%; }
+.hover-border-gradient {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-radius: inherit;
+  pointer-events: none;
 }
-.active-workflow-card:is(:hover, :focus-within) .active-workflow-orbit {
+.hover-border-gradient > span {
+  position: absolute;
+  inset: 0;
+  padding: 1.5px;
+  border-radius: inherit;
+  /* Cut out the middle so the existing glass remains transparent. */
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+}
+.hover-border-gradient-sweep {
+  background: radial-gradient(28% 75% at var(--hover-border-x) var(--hover-border-y), var(--hover-border-glint, #e6f4ff), transparent);
   opacity: .85;
-  animation-play-state: running;
+  animation: hover-border-sweep 4s linear infinite;
+  transition: opacity 450ms var(--motion-ease-out);
 }
-@keyframes workflow-light-orbit { to { stroke-dashoffset: -1; } }
+.hover-border-gradient-highlight,
+.hover-border-gradient-bloom {
+  background: radial-gradient(75% 181% at 50% 50%, var(--hover-border-color, #3275f8), transparent);
+  opacity: 0;
+  transition: opacity 450ms var(--motion-ease-out);
+}
+.hover-border-gradient-bloom { filter: blur(2px); }
+.active-workflow-border {
+  --hover-border-color: #3275f8;
+  --hover-border-glint: color-mix(in oklab, var(--ds-text-primary) 78%, var(--workflow-light-highlight));
+}
+.active-workflow-card:is(:hover, :focus-within) .hover-border-gradient-sweep {
+  animation-play-state: paused;
+  opacity: .15;
+}
+.active-workflow-card:is(:hover, :focus-within) :is(.hover-border-gradient-highlight, .hover-border-gradient-bloom) { opacity: 1; }
+.active-workflow-card[data-dragging="true"] .hover-border-gradient-sweep { animation-play-state: paused; }
+@keyframes hover-border-sweep {
+  0%, 100% { --hover-border-x: 50%; --hover-border-y: 0%; }
+  12.5% { --hover-border-x: 100%; --hover-border-y: 0%; }
+  25% { --hover-border-x: 100%; --hover-border-y: 50%; }
+  37.5% { --hover-border-x: 100%; --hover-border-y: 100%; }
+  50% { --hover-border-x: 50%; --hover-border-y: 100%; }
+  62.5% { --hover-border-x: 0%; --hover-border-y: 100%; }
+  75% { --hover-border-x: 0%; --hover-border-y: 50%; }
+  87.5% { --hover-border-x: 0%; --hover-border-y: 0%; }
+}
 .active-workflow-surface {
   position: relative;
   display: flex;
@@ -961,9 +999,10 @@
   .active-workflow-disclosure,
   .active-workflow-chevron,
   .active-workflow-light rect { transition: none; }
-  .active-workflow-orbit,
+  .hover-border-gradient-sweep,
   .agent-energy-flow,
   .agent-energy-highlight { animation: none !important; }
+  .hover-border-gradient > span { transition: none; }
 }
 @media (prefers-reduced-transparency: reduce) {
   .active-workflow-surface { background: var(--ds-bg-elevated-opaque); background-image: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
