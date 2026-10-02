@@ -36,6 +36,7 @@ import {
 } from "../icons";
 import { WorkPanelResourceHost } from "./WorkPanelResourceHost";
 import { WorkPanelFrame } from "./WorkPanelFrame";
+import { WorkPanelDock } from "./WorkPanelDock";
 import type { WorkPanelPresentation } from "../../lib/work-panel-presentation";
 import { useBrowserPresentationMotion } from "../../lib/browser-presentation-motion";
 import { WorkTabEmpty } from "./WorkTabEmpty";
@@ -130,6 +131,8 @@ export function WorkPanel({
   const panelResizeState = useRef<WorkPanelResizeState | null>(null);
   const contextRef = useRef<HTMLDivElement | null>(null);
   const contextButtonRef = useRef<HTMLButtonElement | null>(null);
+  const dockMoreRef = useRef<HTMLButtonElement | null>(null);
+  const [dockMenuStyle, setDockMenuStyle] = useState<CSSProperties | null>(null);
   /** Where focus lands when the menu opens: the active row, or its last row. */
   const contextOpenFocus = useRef<"active" | "last">("active");
   const [contextOpen, setContextOpen] = useState(false);
@@ -195,8 +198,10 @@ export function WorkPanel({
 
   const closeContext = useCallback(() => {
     setContextOpen(false);
-    contextButtonRef.current?.focus();
-  }, []);
+    if (!contextOpen) return;
+    if (dockMenuStyle) dockMoreRef.current?.focus();
+    else contextButtonRef.current?.focus();
+  }, [contextOpen, dockMenuStyle]);
 
   useEffect(() => {
     if (!exiting) {
@@ -212,6 +217,7 @@ export function WorkPanel({
     if (!contextOpen) return;
     const onPointer = (e: PointerEvent) => {
       if (contextRef.current?.contains(e.target as Node)) return;
+      if (dockMoreRef.current?.contains(e.target as Node)) return;
       setContextOpen(false);
     };
     const onKey = (e: KeyboardEvent) => {
@@ -337,7 +343,31 @@ export function WorkPanel({
     if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
     event.preventDefault();
     contextOpenFocus.current = event.key === "ArrowUp" ? "last" : "active";
+    setDockMenuStyle(null);
     setContextOpen(true);
+  };
+
+  const openDockMenu = () => {
+    const rect = dockMoreRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const menuWidth = Math.min(280, window.innerWidth - 24);
+    setDockMenuStyle({
+      position: "fixed",
+      top: "auto",
+      bottom: window.innerHeight - rect.top + 12,
+      left: Math.max(12, Math.min(rect.right - menuWidth, window.innerWidth - menuWidth - 12)),
+      width: menuWidth,
+      minWidth: 0,
+      maxHeight: Math.min(420, rect.top - 24),
+    });
+    setContextOpen(true);
+  };
+
+  const onDockMoreKeyDown = (event: ReactKeyboardEvent<HTMLButtonElement>) => {
+    if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
+    event.preventDefault();
+    contextOpenFocus.current = event.key === "ArrowUp" ? "last" : "active";
+    openDockMenu();
   };
 
   const onContextKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
@@ -574,7 +604,7 @@ export function WorkPanel({
                 aria-expanded={contextOpen}
                 aria-controls="work-panel-context-menu"
                 title={activeTab?.resource ?? activeLabel}
-                onClick={() => setContextOpen((open) => !open)}
+                onClick={() => { setDockMenuStyle(null); setContextOpen((open) => !open); }}
                 onKeyDown={onTriggerKeyDown}
               >
                 <span className="work-panel-current-icon" aria-hidden>
@@ -596,6 +626,7 @@ export function WorkPanel({
               <div
                 id="work-panel-context-menu"
                 className="work-panel-context-menu"
+                style={dockMenuStyle ?? undefined}
                 role="menu"
                 aria-label={t("panel.title")}
                 onKeyDown={onContextKeyDown}
@@ -844,6 +875,18 @@ export function WorkPanel({
             </div>
           )}
         </div>
+        {!subagentPanel && !(isBrowser && isMaximized) && (
+          <WorkPanelDock
+            activeKind={activeTab?.kind}
+            menuOpen={contextOpen && Boolean(dockMenuStyle)}
+            moreRef={dockMoreRef}
+            onBrowser={() => void openBrowser()}
+            onContextVault={() => void openContextVault()}
+            onPromptInspector={() => void openPromptInspector()}
+            onMore={() => contextOpen && dockMenuStyle ? closeContext() : openDockMenu()}
+            onMoreKeyDown={onDockMoreKeyDown}
+          />
+        )}
       </div>
       </WorkPanelFrame>
     </aside>

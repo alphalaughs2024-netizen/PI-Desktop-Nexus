@@ -84,6 +84,25 @@
 
 ### Browser Work Panel Phase 1 launcher matrix
 
+#### Floating Work Panel dock
+
+- Open the docked Work Panel in all four scenic themes and at minimum width.
+  Verify the four dock controls are centered beneath content with readable
+  icons, tooltip labels, a single active dot, and no clipping or overlap.
+- Select Browser, Context Vault, and Prompt Inspector repeatedly. Verify each
+  reuses its existing session resource, preserves state, and keeps the header
+  switcher available for files/reviews. Open More and select a plugin view or
+  file. Verify the menu opens above the dock, suppresses native guests while
+  open, dismisses outside, and restores focus to More on Escape or selection.
+- Tab through every control and open More with ArrowUp/ArrowDown. Verify menu
+  navigation and visible focus. Hover across icons without shifting content or
+  hit targets; repeat with reduced motion and touch without magnification.
+- Enter Browser Full view by button, shortcut, and divider overshoot. Verify
+  dock and reserved footer are absent, guest fills the available content area,
+  and returning restores the dock without recreating the Browser resource.
+- Open subagent detail, verify the dock is absent, then dismiss detail and
+  verify the current resource and dock return.
+
 - With an empty plugin registry and no ToolSearch activity, Browser appears in
   the native Nexus Work Panel menu and empty Work Panel body.
 - Activating Browser creates or reuses the active session's canonical

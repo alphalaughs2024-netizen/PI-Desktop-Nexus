@@ -270,6 +270,98 @@
   flex-direction: column;
 }
 
+/* A dedicated footer keeps magnified controls outside native guest bounds. */
+.work-panel-dock-footer {
+  container: work-panel-dock / inline-size;
+  display: flex;
+  flex: 0 0 88px;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 14px 12px 12px;
+}
+
+.work-panel-dock {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 14px;
+  border: 1px solid var(--ds-border-strong);
+  border-radius: 24px;
+  background: color-mix(in oklab, var(--ds-bg-elevated-opaque) 84%, transparent);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 5px 18px color-mix(in oklab, var(--ds-text-primary) 8%, transparent),
+    inset 0 1px 0 var(--ds-border-subtle);
+}
+
+.work-panel-dock-button {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: 0 0 46px;
+  width: 46px;
+  height: 46px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ds-text-secondary);
+}
+
+.work-panel-dock-circle {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--ds-bg-chip);
+  transform-origin: center bottom;
+  transform: translateY(var(--dock-lift, 0px)) scale(var(--dock-scale, 1));
+  transition: transform 200ms cubic-bezier(.2, .8, .2, 1),
+    background 160ms ease, color 160ms ease;
+}
+
+.work-panel-dock-button:hover,
+.work-panel-dock-button:focus-visible,
+.work-panel-dock-button[aria-pressed="true"],
+.work-panel-dock-button[aria-expanded="true"] {
+  color: var(--ds-text-primary);
+}
+
+.work-panel-dock-button[aria-pressed="true"] .work-panel-dock-circle,
+.work-panel-dock-button[aria-expanded="true"] .work-panel-dock-circle {
+  background: var(--ds-bg-active);
+}
+
+.work-panel-dock-button:focus-visible { outline: none; }
+.work-panel-dock-button:focus-visible .work-panel-dock-circle {
+  outline: 2px solid var(--ds-focus);
+  outline-offset: 3px;
+  transform: translateY(-6px) scale(1.2);
+}
+
+.work-panel-dock-active {
+  position: absolute;
+  bottom: -3px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--ds-accent);
+}
+
+@container work-panel-dock (max-width: 280px) {
+  .work-panel-dock { gap: 8px; padding-inline: 8px; }
+  .work-panel-dock-button { flex-basis: 44px; width: 44px; }
+  .work-panel-dock-circle { width: 38px; height: 38px; }
+}
+
+@media (prefers-reduced-motion: reduce), (hover: none), (pointer: coarse) {
+  .work-panel-dock-circle,
+  .work-panel-dock-button:focus-visible .work-panel-dock-circle {
+    transform: none;
+    transition: none;
+  }
+}
+
 .work-panel-resize {
   position: absolute;
   inset-block: 0;
