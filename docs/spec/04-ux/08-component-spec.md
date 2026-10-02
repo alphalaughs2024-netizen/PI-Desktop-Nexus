@@ -2319,7 +2319,7 @@ reasoning-level control.
   disclosure arrow. The closed 352x48px bar has fully rounded pill ends,
   two-line name/reason copy, and rounded hover controls;
   it reserves no transcript or empty-state height. Long names are ellipsized.
-- Hover or click opens the panel's stage, activation reason, optional next
+- Click opens the panel's stage, activation reason, optional next
   action, and icon-labelled `Inspect`, `Dismiss`, and `Settings` controls.
   Click pins the panel open; outside click, Escape, or focus leaving closes it.
   Escape returns focus to the disclosure. Closed contents are inert. Opening
@@ -2334,11 +2334,12 @@ reasoning-level control.
   the title band and inside the conversation. Positioning never changes host
   workflow activation, tools, or permissions.
 - Twilight, Obsidian, Emerald, and Alpine share the same floating glass shape,
-  12px fixed blur, and readable theme-aware glass. Dark scenic themes use a
-  light deep-navy translucent fill; Alpine uses pale glass. Opposing inset
-  highlights and a soft lower shadow give depth. Diagonal caustics and diffuse
+  clear theme-aware glass with fixed 3px closed/9px expanded blur. Dark scenic
+  themes use a low-opacity navy fill; Alpine uses pale glass. Paired sharp inset
+  reflections, a fine inner contour, and a lower shadow give depth. Diagonal caustics and diffuse
   blue light spill beyond the capsule, independently of the clipped surface.
-  Hover/focus adds a 5s orbiting light spill that fades away on leave.
+  Small light particles extend onto the wallpaper. Hover/focus adds a 5s
+  orbiting light spill and gently drifts the particles; it never opens details.
   Reduced motion keeps highlights stationary. Reduced transparency and unsupported
   blur use readable fallback surfaces. Labels and errors are localized.
 - The core observes only its displayed session's runtime state. Reported

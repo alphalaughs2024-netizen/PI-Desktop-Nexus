@@ -11179,8 +11179,11 @@ expanded stage/actions in System, Light, Dark, and every scenic theme. Keep its
 outline subtle and its text readable, with no permanent full-width banner or
 unbounded floating text. Its position must remain reachable below title chrome.
 The 352x48px capsule has a fluid ribbon, readable translucent glass with a fixed
-12px blur, restrained opposing reflections, and diffuse light beyond the
-upper-left/lower-right rim. Hover/focus adds an orbiting light spill; neither
+3px closed/9px expanded blur, paired inset reflections, a fine inner contour,
+and diffuse light and small particles beyond the upper-left/lower-right rim.
+Hover/focus adds an orbiting light spill and particle drift but never opens the
+panel. Click or keyboard activation opens it; pointer leave keeps it open.
+Clicking again, outside click, Escape, or focus leaving closes it. Neither
 glow nor changing core states move the controls or cover the composer.
 Reduced transparency retains the readable opaque fallback.
 
@@ -11191,8 +11194,8 @@ continuously. Success settles once and error stays stationary. Check the
 localized activity label in expanded details and the accessible status/tooltip.
 Start another turn before its first status: the old turn's reasoning/outcome
 must not leak into the new core. Run another session independently and verify
-its events do not animate this pill. Reduced motion stops both the core and
-hover orbit. Inspect content scrolls within the available conversation height;
+its events do not animate this pill. Reduced motion stops the core, hover orbit,
+and particle drift. Inspect content scrolls within the available conversation height;
 the external light layers remain pointer-transparent and do not clip or
 interfere with drag, dismissal, Settings, typing, or keyboard focus.
 

@@ -35,8 +35,6 @@ export function ActiveWorkflowCard({ sessionId }: { sessionId?: string | null })
   const [maxHeight, setMaxHeight] = useState<number>();
   const cardRef = useRef<HTMLElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
-  const pinnedRef = useRef(false);
-  const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const positionRef = useRef(position);
   const statusRequestRef = useRef(0);
   positionRef.current = position;
@@ -49,13 +47,7 @@ export function ActiveWorkflowCard({ sessionId }: { sessionId?: string | null })
   const selectionKeyRef = useRef(selectionKey);
   selectionKeyRef.current = selectionKey;
 
-  const clearHover = () => {
-    if (hoverTimer.current !== null) clearTimeout(hoverTimer.current);
-    hoverTimer.current = null;
-  };
   const close = () => {
-    clearHover();
-    pinnedRef.current = false;
     setOpen(false);
   };
 
@@ -68,8 +60,6 @@ export function ActiveWorkflowCard({ sessionId }: { sessionId?: string | null })
     dragRef.current = null;
     setDragging(false);
   }, [selectionKey]);
-
-  useEffect(() => () => clearHover(), []);
 
   useEffect(() => {
     if (!sessionId) return;
@@ -146,7 +136,6 @@ export function ActiveWorkflowCard({ sessionId }: { sessionId?: string | null })
   };
   const inspect = async () => {
     const next = !expanded;
-    pinnedRef.current = true;
     setExpanded(next);
     if (next && body === null) {
       const requestedKey = selectionKey;
@@ -166,14 +155,6 @@ export function ActiveWorkflowCard({ sessionId }: { sessionId?: string | null })
       aria-label={t("workflow.activeLabel")}
       style={{ ...(point ? { left: point.left, top: point.top, right: "auto" } : {}),
         ...(maxHeight !== undefined ? { "--workflow-max-height": `${maxHeight}px` } : {}) } as CSSProperties}
-      onPointerEnter={(event) => {
-        clearHover();
-        if (event.pointerType === "mouse" && !dragRef.current) hoverTimer.current = setTimeout(() => setOpen(true), 180);
-      }}
-      onPointerLeave={() => {
-        clearHover();
-        if (!pinnedRef.current && !cardRef.current?.querySelector(".active-workflow-panel")?.contains(document.activeElement)) hoverTimer.current = setTimeout(close, 180);
-      }}
       onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node)) close(); }}
     >
       <WorkflowPillLight />
@@ -229,11 +210,7 @@ export function ActiveWorkflowCard({ sessionId }: { sessionId?: string | null })
           }}
         ><GripVertical size={14} aria-hidden /></button>
         <button ref={triggerRef} type="button" className="active-workflow-trigger" aria-expanded={open} aria-controls={panelId} title={`${primary.name} · ${activityLabel}`}
-          onClick={() => {
-            clearHover();
-            if (open && pinnedRef.current) close();
-            else { pinnedRef.current = true; setOpen(true); }
-          }}
+          onClick={() => setOpen(value => !value)}
         >
           <AgentEnergyCore state={activity.state} turnId={activity.turnId} />
           <span className="active-workflow-label-group">
