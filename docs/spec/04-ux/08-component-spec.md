@@ -2301,11 +2301,12 @@ reasoning-level control.
   tooltip while running. Enhancement remains
   a one-shot draft rewrite action. Inline file-reference chips, including
   pasted image chips, do not disable this action and remain in the draft.
-- The combined chip opens one anchored menu above itself. The menu starts with
-  only Model and Reasoning level entries, each showing its current value and a
-  chevron. Selecting an entry replaces the menu contents in place with a back
-  row and its submenu; selecting a model or level returns to the two-entry root
-  without closing the popover. The menu is `min(300px, 100vw - 24px)`, uses the
+- The combined chip opens one anchored dialog above itself (ADR 0277). Its root
+  is a MuFeng-inspired reasoning slider with an English current-level label,
+  reset-to-model-default button, and a clickable current model. The model
+  button replaces the root with the existing searchable provider/model list;
+  selecting a model returns to the slider without closing the popover.
+  The menu is `min(300px, 100vw - 24px)`, uses the
   large radius/dialog shadow tokens, and enters with a short upward fade.
 - The Model submenu establishes a clear provider → model hierarchy: sticky
   provider headings use the stronger `--text-md` section treatment, while
@@ -2549,16 +2550,23 @@ reasoning-level control.
   entered. The first visible rows use cached metadata or configured bindings;
   live discovery updates them in the background without replacing a configured
   alias with the wire ID or a second visible name.
-- The combined model × reasoning menu opens at `bottom: calc(100% + 8px)` with
-  `role="menu"`. Its root has exactly two `role="menuitem"` entries. The Model
-  submenu has a search input and sticky provider headings, while the Reasoning
-  level submenu starts with `Current model <model> supports these reasoning
-  levels` and lists the selected model binding's enabled levels in canonical
-  order.
-  Rows use `role="menuitemradio"`, `aria-checked`, active-row styling, and a
-  trailing check. Selecting a concrete model or level persists the complete
-  session config, clears model filtering, and returns to the root without
-  dismissing the menu. Closing and reopening always starts at the root.
+- The combined model × reasoning dialog opens at `bottom: calc(100% + 8px)`.
+  The native range and clickable English captions expose only the selected
+  binding's enabled levels in canonical order. Dragging previews locally;
+  releasing, keyboard key-up, or leaving the range commits through existing
+  session configuration, including next-turn staging. Save failures restore
+  the persisted selection and show the existing error toast. Saves are
+  serialized and controls are disabled during the round trip. Reset uses the
+  model binding's supported default. A single supported level disables the
+  range; an Off-only model reports reasoning unavailable.
+  Model rows retain `role="menuitemradio"`, `aria-checked`, and a trailing
+  check. Closing and reopening starts at the slider.
+  Track gradients, current-label ink and particles follow the scenic theme:
+  Twilight blue/violet/cyan, Emerald teal/green, Alpine blue/cyan, and Obsidian
+  warm brown/grey/black with ivory particles. Standard light/dark use Alpine
+  and Twilight fallbacks. Particle density/speed follow selected effort, never
+  agent run state. Off, reduced motion, hidden documents and unmount stop the
+  particle loop; theme and sizing changes update it without leaked observers.
 - Unknown Custom/OpenAI-compatible models remain at `off` until the user
   explicitly enables a level in Settings. The menu never auto-infers reasoning
   support; after an explicit binding selection it renders the configured level.
@@ -2589,11 +2597,11 @@ reasoning-level control.
   menu. The handle supports ArrowUp/ArrowDown; menu navigation supports arrow
   keys, Home/End, and Escape returning focus to the trigger.
 - Disabled send: `aria-disabled="true"` with tooltip explanation
-- The combined model × reasoning chip exposes `aria-haspopup="menu"` and
-  `aria-expanded`. Its root entries use `role="menuitem"`; model and reasoning
-  rows use radio-menu semantics with `aria-checked="true"` on the selected row.
-  Escape/outside click closes the menu; Up/Down, Enter, and Left provide list
-  navigation and root return.
+- The combined model × reasoning chip exposes `aria-haspopup="dialog"` and
+  `aria-expanded`. The native range announces its selected English level and
+  supports arrows/Home/End. Model rows retain radio-menu semantics. Escape or
+  outside click closes the dialog; model list arrows/Enter select and Left
+  returns to the slider. Decorative canvas content is hidden from accessibility.
 
 ### 11.7 MVP constraints
 
@@ -2781,9 +2789,10 @@ there is no separate top-bar model selector.
 
 ### 12.5 Accessibility
 
-- The Composer model × reasoning chip exposes `aria-haspopup="menu"` and
+- The Composer model × reasoning chip exposes `aria-haspopup="dialog"` and
   `aria-expanded`; its current value is announced via `aria-label`
-- Model and reasoning rows: `role="menuitemradio"` with `aria-checked`
+- Model rows: `role="menuitemradio"` with `aria-checked`; reasoning uses a
+  labelled native range with `aria-valuetext`.
 
 ### 12.6 MVP constraints
 

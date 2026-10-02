@@ -69,6 +69,7 @@ import {
 import { ComposerAutocomplete } from "./ComposerAutocomplete";
 import { TooltipButton } from "./ui";
 import { ContextUsageInspector } from "./ContextUsageInspector";
+import { ReasoningSlider } from "./ReasoningSlider";
 import { AskToolCard } from "./AskToolCard";
 import { RendererSlotMount } from "../plugins/renderer-slots";
 import { PlanApprovalBar } from "./PlanApprovalBar";
@@ -84,10 +85,8 @@ import {
   IconChevronLeft,
   IconChevronRight,
   IconCheck,
-  IconBot,
   IconSearch,
   IconListChecks,
-  IconSparkles,
   IconTarget,
   IconX,
 } from "./icons";
@@ -606,7 +605,7 @@ export type ComposerPrefill = {
   token: number;
 };
 
-type ComposerMenuView = "root" | "model" | "thinking";
+type ComposerMenuView = "root" | "model";
 
 type PromptEnhancementError = {
   message: string;
@@ -726,12 +725,12 @@ export function Composer({
     useState<ComposerMenuView>("root");
   const [modelQuery, setModelQuery] = useState("");
   const [modelHighlight, setModelHighlight] = useState(-1);
-  const [thinkingHighlight, setThinkingHighlight] = useState(-1);
+
   const modelThinkingRef = useRef<HTMLDivElement>(null);
   const rootMenuRef = useRef<HTMLDivElement>(null);
   const modelSearchRef = useRef<HTMLInputElement>(null);
   const modelListRef = useRef<HTMLDivElement>(null);
-  const thinkingListRef = useRef<HTMLDivElement>(null);
+
   const [pasting, setPasting] = useState(false);
   const [isFileDropActive, setIsFileDropActive] = useState(false);
   const [enhancingPrompt, setEnhancingPrompt] = useState(false);
@@ -1187,7 +1186,6 @@ export function Composer({
       setModelThinkingView("root");
       setModelQuery("");
       setModelHighlight(-1);
-      setThinkingHighlight(-1);
       return;
     }
     const onPointer = (e: MouseEvent) => {
@@ -1196,7 +1194,10 @@ export function Composer({
       }
     };
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setModelThinkingOpen(false);
+      if (e.key === "Escape") {
+        setModelThinkingOpen(false);
+        modelThinkingRef.current?.querySelector<HTMLButtonElement>(".composer-model-thinking-chip")?.focus();
+      }
     };
     window.addEventListener("mousedown", onPointer);
     window.addEventListener("keydown", onKey);
@@ -1360,30 +1361,18 @@ export function Composer({
   ]);
 
   useEffect(() => {
-    if (!modelThinkingOpen || modelThinkingView !== "thinking") return;
-    setThinkingHighlight(thinkingLevel ? thinkingMenuLevels.indexOf(thinkingLevel) : -1);
-  }, [modelThinkingOpen, modelThinkingView, thinkingLevel, thinkingMenuLevels]);
-
-  useEffect(() => {
     if (!modelThinkingOpen) return;
     requestAnimationFrame(() => {
       if (modelThinkingView === "root") {
-        rootMenuRef.current?.querySelector<HTMLButtonElement>("button")?.focus();
+        const range = rootMenuRef.current?.querySelector<HTMLInputElement>('input[type="range"]');
+        if (range && !range.disabled) range.focus();
+        else rootMenuRef.current?.querySelector<HTMLButtonElement>(".reasoning-model")?.focus();
       }
       if (modelThinkingView === "model") modelSearchRef.current?.focus();
-      if (modelThinkingView === "thinking") {
-        thinkingListRef.current
-          ?.querySelector<HTMLButtonElement>("button")
-          ?.focus();
-      }
+
       if (modelThinkingView === "model" && modelHighlight >= 0) {
         modelListRef.current
           ?.querySelector(`[data-model-index="${modelHighlight}"]`)
-          ?.scrollIntoView({ block: "nearest" });
-      }
-      if (modelThinkingView === "thinking" && thinkingHighlight >= 0) {
-        thinkingListRef.current
-          ?.querySelector(`[data-thinking-index="${thinkingHighlight}"]`)
           ?.scrollIntoView({ block: "nearest" });
       }
     });
@@ -1397,14 +1386,6 @@ export function Composer({
   }, [modelHighlight, modelThinkingOpen, modelThinkingView]);
 
   useEffect(() => {
-    if (!modelThinkingOpen || modelThinkingView !== "thinking" || thinkingHighlight < 0)
-      return;
-    thinkingListRef.current
-      ?.querySelector(`[data-thinking-index="${thinkingHighlight}"]`)
-      ?.scrollIntoView({ block: "nearest" });
-  }, [modelThinkingOpen, modelThinkingView, thinkingHighlight]);
-
-  useEffect(() => {
     if (!modelThinkingOpen) return;
     for (const candidate of providers) {
       if (candidate.enabled && (candidate.hasSecret || candidate.authKind === "none")) {
@@ -1416,7 +1397,6 @@ export function Composer({
   const showModelThinkingView = (view: ComposerMenuView) => {
     setModelThinkingView(view);
     setModelHighlight(-1);
-    setThinkingHighlight(-1);
     if (view !== "model") setModelQuery("");
   };
 
@@ -1448,7 +1428,6 @@ export function Composer({
       setModelQuery("");
       setModelThinkingView("root");
       setModelHighlight(-1);
-      setThinkingHighlight(-1);
     } catch (e) {
       showToast(e instanceof Error ? e.message : String(e), { variant: "error" });
     }
@@ -1462,16 +1441,15 @@ export function Composer({
         modelId,
         thinkingLevel: level,
       });
-      setModelThinkingView("root");
-      setModelHighlight(-1);
-      setThinkingHighlight(-1);
     } catch (e) {
       showToast(e instanceof Error ? e.message : String(e), { variant: "error" });
+      throw e;
     }
   };
 
   const onModelThinkingMenuKeyDown = (e: ReactKeyboardEvent<HTMLDivElement>) => {
     if (e.nativeEvent.isComposing || e.nativeEvent.keyCode === 229) return;
+    if (e.target instanceof HTMLInputElement && e.target.type === "range" && e.key !== "Escape") return;
     if (e.key === "Escape") {
       e.preventDefault();
       setModelThinkingOpen(false);
@@ -1494,13 +1472,6 @@ export function Composer({
           void selectModel(entry.provider, entry.model.modelId);
         }
       }
-      if (e.key === "Enter" && modelThinkingView === "thinking") {
-        const level = thinkingMenuLevels[thinkingHighlight] ?? thinkingMenuLevels[0];
-        if (level) {
-          e.preventDefault();
-          void selectThinkingLevel(level);
-        }
-      }
       return;
     }
     if (modelThinkingView === "root") return;
@@ -1514,12 +1485,6 @@ export function Composer({
       });
       return;
     }
-    if (!thinkingMenuLevels.length) return;
-    const delta = e.key === "ArrowDown" ? 1 : -1;
-    setThinkingHighlight((current) => {
-      const base = current < 0 ? (delta > 0 ? -1 : thinkingMenuLevels.length) : current;
-      return (base + delta + thinkingMenuLevels.length) % thinkingMenuLevels.length;
-    });
   };
 
   const clearDraftForKey = (key: string) => {
@@ -2656,7 +2621,7 @@ export function Composer({
                   }`}
                   tooltip={`${modelLabel} · ${t("chat.reasoningLevel")}: ${thinkingLabel}`}
                   ariaLabel={`${t("chat.model")}: ${modelLabel}. ${t("chat.reasoningLevel")}: ${thinkingLabel}`}
-                  aria-haspopup="menu"
+                  aria-haspopup="dialog"
                   aria-expanded={modelThinkingOpen}
                   disabled={controlsBlocked}
                   onClick={() => {
@@ -2665,7 +2630,6 @@ export function Composer({
                       setModelThinkingView("root");
                       setModelQuery("");
                       setModelHighlight(-1);
-                      setThinkingHighlight(-1);
                     }
                     setModelThinkingOpen((open) => !open);
                   }}
@@ -2690,60 +2654,32 @@ export function Composer({
                 {modelThinkingOpen ? (
                   <div
                     className="composer-model-menu composer-model-thinking-menu"
-                    role="menu"
-                    aria-label={`${t("chat.model")} ${t("chat.reasoningLevel")}`}
+                    role="dialog"
+                    aria-label="Model and reasoning"
                   >
                     {modelThinkingView === "root" ? (
                       <div className="composer-menu-root" ref={rootMenuRef}>
-                        <button
-                          type="button"
-                          className="composer-menu-entry"
-                          role="menuitem"
-                          aria-haspopup="menu"
-                          onClick={() => showModelThinkingView("model")}
-                        >
-                          <IconBot size={14} aria-hidden="true" />
-                          <span className="composer-menu-entry-label">
-                            {t("chat.model")}
-                          </span>
-                          <span
-                            className="composer-menu-entry-value"
-                            title={modelLabel}
-                          >
-                            {modelLabel}
-                          </span>
-                          <IconChevronRight size={14} aria-hidden="true" />
-                        </button>
-                        <button
-                          type="button"
-                          className="composer-menu-entry"
-                          role="menuitem"
-                          aria-haspopup="menu"
-                          onClick={() => showModelThinkingView("thinking")}
-                        >
-                          <IconSparkles size={14} aria-hidden="true" />
-                          <span className="composer-menu-entry-label">
-                            {t("chat.reasoningLevel")}
-                          </span>
-                          <span className="composer-menu-entry-value">
-                            {thinkingLabel}
-                          </span>
-                          <IconChevronRight size={14} aria-hidden="true" />
-                        </button>
+                        <ReasoningSlider
+                          levels={thinkingMenuLevels}
+                          value={thinkingLevel}
+                          defaultValue={draftThinkingLevel}
+                          modelLabel={modelLabel}
+                          disabled={controlsBlocked}
+                          onModel={() => showModelThinkingView("model")}
+                          onSelect={selectThinkingLevel}
+                        />
                       </div>
                     ) : (
                       <>
                         <button
                           type="button"
                           className="composer-menu-back"
-                          role="menuitem"
+                          aria-label="Back to reasoning"
                           onClick={() => showModelThinkingView("root")}
                         >
                           <IconChevronLeft size={14} aria-hidden="true" />
                           <span>
-                            {modelThinkingView === "model"
-                              ? t("chat.model")
-                              : t("chat.reasoningLevel")}
+                            Models
                           </span>
                         </button>
                         <div className="composer-menu-separator" />
@@ -2751,20 +2687,20 @@ export function Composer({
                           <>
                             <label className="composer-model-search">
                               <IconSearch size={13} aria-hidden="true" />
-                              <span className="sr-only">{t("chat.searchModels")}</span>
+                              <span className="sr-only">Search models</span>
                               <input
                                 ref={modelSearchRef}
                                 type="text"
                                 value={modelQuery}
-                                placeholder={t("chat.searchModels")}
-                                aria-label={t("chat.searchModels")}
+                                placeholder="Search models"
+                                aria-label="Search models"
                                 spellCheck={false}
                                 autoCorrect="off"
                                 autoCapitalize="off"
                                 onChange={(e) => setModelQuery(e.target.value)}
                               />
                             </label>
-                            <div className="composer-model-list" ref={modelListRef}>
+                            <div className="composer-model-list" role="menu" aria-label="Models" ref={modelListRef}>
                               {(() => {
                                 let flatIndex = 0;
                                 return filteredModelGroups.map((group) => (
@@ -2850,49 +2786,12 @@ export function Composer({
                               })()}
                               {flatModels.length === 0 ? (
                                 <div className="composer-model-empty">
-                                  {t("chat.noModelResults")}
+                                  No matching models
                                 </div>
                               ) : null}
                             </div>
                           </>
-                        ) : (
-                          <>
-                            <div className="composer-thinking-heading">
-                              {t("chat.reasoningSupportedBy", { model: modelLabel })}
-                            </div>
-                            <div className="composer-thinking-list" ref={thinkingListRef}>
-                              {thinkingMenuLevels.map((level, index) => (
-                                <button
-                                  key={level}
-                                  type="button"
-                                  data-thinking-index={index}
-                                  className={`composer-plus-item ${
-                                    thinkingLevel === level ? "active" : ""
-                                  } ${
-                                    thinkingHighlight === index ? "kb-active" : ""
-                                  }`}
-                                  role="menuitemradio"
-                                  aria-checked={thinkingLevel === level}
-                                  onMouseMove={() => setThinkingHighlight(index)}
-                                  onClick={() => void selectThinkingLevel(level)}
-                                >
-                                  <span className="flex-1">
-                                    {t(THINKING_LEVEL_I18N_KEYS[level], {
-                                      defaultValue: THINKING_LEVEL_LABELS[level],
-                                    })}
-                                  </span>
-                                  {thinkingLevel === level ? (
-                                    <IconCheck
-                                      size={14}
-                                      className="composer-model-check"
-                                      aria-hidden="true"
-                                    />
-                                  ) : null}
-                                </button>
-                              ))}
-                            </div>
-                          </>
-                        )}
+                        ) : null}
                       </>
                     )}
                   </div>

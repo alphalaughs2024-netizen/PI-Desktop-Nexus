@@ -1,0 +1,31 @@
+/* MuFeng-inspired slider: native input owns interaction; canvas is decorative. */
+.reasoning-slider { padding: 13px 12px 10px; }
+.composer-shell .composer-model-thinking-menu { max-width: calc(100cqw - 24px); }
+.reasoning-slider-heading { position: relative; display: flex; justify-content: center; align-items: center; min-height: 26px; padding: 0 22px; font-size: 14px; color: var(--ds-text-primary); }
+.reasoning-slider-heading strong { color: var(--reasoning-text); font-weight: 600; }
+.reasoning-reset { position: absolute; right: 0; width: 26px; height: 26px; display: grid; place-items: center; border: 0; border-radius: 6px; background: transparent; color: var(--ds-text-secondary); }
+.reasoning-reset:hover:not(:disabled) { background: var(--ds-bg-hover); color: var(--ds-text-primary); }
+.reasoning-reset:disabled { opacity: .4; }
+.reasoning-model { display: flex; align-items: center; justify-content: center; gap: 5px; width: 100%; margin: 4px 0 15px; padding: 3px 4px; border: 0; border-radius: 6px; background: transparent; color: var(--ds-text-secondary); font-size: 12px; }
+.reasoning-model span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.reasoning-model:hover { color: var(--ds-text-primary); background: var(--ds-bg-hover); }
+.reasoning-model svg { flex: none; }
+.reasoning-range { position: relative; height: 26px; margin: 0 3px; }
+.reasoning-rail { position: absolute; inset: 5px 0; border-radius: 999px; background: var(--ds-bg-inset); border: 1px solid var(--ds-border-default); overflow: hidden; }
+.reasoning-fill { width: var(--reasoning-fill); height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--reasoning-from), var(--reasoning-to)); box-shadow: inset 0 1px 1px rgb(255 255 255 / 20%); }
+.reasoning-fill canvas { width: 100%; height: 100%; display: block; }
+.reasoning-range input { position: absolute; inset: 0; width: 100%; height: 26px; margin: 0; appearance: none; background: transparent; cursor: pointer; }
+.reasoning-range input::-webkit-slider-runnable-track { height: 16px; background: transparent; }
+.reasoning-range input::-webkit-slider-thumb { appearance: none; width: 22px; height: 22px; margin-top: -3px; border: 2px solid rgb(255 255 255 / 90%); border-radius: 50%; background: #fafcff; box-shadow: 0 1px 5px rgb(0 0 0 / 28%), 0 0 12px color-mix(in srgb, var(--reasoning-to) 40%, transparent); transition: transform 120ms ease; }
+.reasoning-range input:hover:not(:disabled)::-webkit-slider-thumb { transform: scale(1.08); }
+.reasoning-range input:disabled, .reasoning-range input[aria-disabled="true"] { cursor: default; opacity: .65; }
+.reasoning-slider :focus-visible { outline: 2px solid var(--ds-accent); outline-offset: 3px; border-radius: 6px; }
+.reasoning-captions { display: flex; justify-content: space-between; gap: 1px; margin-top: 5px; }
+.reasoning-captions button { padding: 5px 2px; min-width: 0; border: 0; background: transparent; border-radius: 4px; font-size: 10px; color: var(--ds-text-secondary); white-space: nowrap; }
+.reasoning-captions button.is-selected { color: var(--reasoning-text); font-weight: 600; }
+.reasoning-captions button:hover:not(:disabled) { background: var(--ds-bg-hover); }
+.reasoning-unavailable { margin-top: 8px; color: var(--ds-text-secondary); text-align: center; font-size: 11px; }
+:root[data-scenic-theme="obsidian-horizon"] .composer-model-thinking-menu { background: #24211f; }
+:root[data-scenic-theme="obsidian-horizon"] .reasoning-rail { background: #131211; }
+:root[data-scenic-theme="obsidian-horizon"] .reasoning-range input::-webkit-slider-thumb { background: #faf6f0; }
+@media (prefers-reduced-motion: reduce) { .reasoning-range input::-webkit-slider-thumb { transition: none; } }

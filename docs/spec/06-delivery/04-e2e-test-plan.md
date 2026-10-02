@@ -1767,17 +1767,18 @@ membership when dropped on Ungrouped.
 
 - **Preconditions**: Chat route active; provider configured.
 - **Steps**: 1) Click the Composer-right model × reasoning chip. 2) Confirm the
-  menu opens upward from the bottom composer. 3) Enter Model, select a different
-  provider/model, and return to the root. 4) Enter Reasoning level and select a
+  dialog opens upward from the bottom composer. 3) Click the model beneath the
+  reasoning heading, select a different provider/model, and return to the slider.
+  4) Drag or keyboard-select a
   supported level. 5) Open Settings from the command palette or application menu.
-- **Expected**: The trigger uses a Bot icon while retaining the current model
-  and reasoning labels. The root shows only Model and Reasoning level entries.
+- **Expected**: The trigger retains current model and reasoning labels, or the
+  compact brain in browser Full view. The root shows the themed reasoning slider.
   The Model submenu lists enabled runnable providers and only the model bindings
   saved for each provider, with each model row visibly indented beneath its provider
   heading. Cached or freshly discovered models may supply display names and
   metadata for those bindings, but unconfigured discovery results are absent;
-  configured IDs remain available when discovery is unavailable. The Reasoning
-  level submenu lists only the selected model's published levels. Selecting
+  configured IDs remain available when discovery is unavailable. The slider
+  lists only the selected model binding's enabled levels. Selecting
   updates the active session model/reasoning configuration without dismissing
   the menu; Settings opens from the command palette/menu. The Composer model
   trigger ellipsizes long IDs. Each option shows one display name only, and
@@ -3335,19 +3336,18 @@ membership when dropped on Ungrouped.
 - **Preconditions**: One catalogued reasoning model, one non-reasoning model,
   and one unknown free-form model id.
 - **Steps**: 1) Open the Composer model × reasoning chip. 2) Confirm the root
-  contains only Model and Reasoning level entries with current values. 3) Open
-  Model, search for a model, and select a model from a provider group. 4) Confirm
-  the menu remains open at the root, then open Reasoning level and choose multiple
+  contains the themed reasoning slider and current model link. 3) Click the
+  model link, search and select a model from a provider group. 4) Confirm
+  the dialog returns to the slider, then choose multiple
   supported levels. 5) Repeat with a non-reasoning provider and an unknown
   free-form model id; exercise Escape, outside click, Up/Down, Enter, and Left.
-- **Expected**: The chip is in the right toolbar with a Bot icon, before the
-  standalone prompt-enhancement Sparkles action and Send/Abort; Off omits the
-  level text. The single anchored menu replaces its root
+- **Expected**: The chip is in the right toolbar; Off omits the
+  level text. The single anchored dialog replaces its root
   with an in-place back row and submenu, never opens tabs or a second popover,
   and always reopens at the root. Model search filters sticky provider groups;
-  reasoning rows come from the selected model's explicit binding levels in
-  canonical order, use radio semantics and a trailing check, and show the
-  current model support note. Selecting either value immediately updates the
+  reasoning steps come from the selected model's explicit binding levels in
+  canonical order, use native range semantics and English captions. Selecting
+  either value immediately updates the
   chip and root value, clears model filtering, and keeps the menu open. A
   non-reasoning or unknown model starts at `off`, but an explicit Settings
   binding can make its configured levels available; discovery never promotes it
@@ -7397,9 +7397,8 @@ This test plan spec is accepted when:
   reasoning menu.
 - Expect the top bar to show only the task title and window actions. The
   Composer-right model × reasoning chip shows provider A/model A and the current
-  reasoning level. Its menu starts with only Model and Reasoning level entries;
-  Model opens the searchable provider-group list and Reasoning level opens the
-  capability-filtered radio list in the same popover.
+  reasoning level. Its dialog starts with the themed reasoning slider;
+  the model link opens the searchable provider-group list in the same popover.
 - In the searchable provider-group list, expect each provider heading to
   read as the visual parent: its `--text-md` treatment is stronger than the
   indented model rows' normal-weight `--text-sm` treatment. In zh-CN, headings
@@ -12205,3 +12204,24 @@ or delete caches, profiles or earlier recovery files to hide this condition.
   remain available without automatic retries. Readiness listeners are retired.
 - **Validation**: Focused keyboard/navigation/surface tests and a native
   delayed-resource probe. Local E2E suites remain unrun unless requested.
+
+### E2E-Composer-Reasoning-Slider: Themed MuFeng reasoning control (ADR 0277)
+
+- **Steps**: Open the combined chip in home, a recorded chat, and the compact
+  browser Full view composer. Check all four scenic themes and a 375px layout.
+  Drag across all available levels; change with arrows/Home/End and captions.
+  Reset to the model default. Switch through the model link and searchable
+  provider list. Repeat with a sparse ladder, Off-only model and a single
+  positive level. Select during an active response, inject a configuration
+  failure, and reopen after reload. Enable reduced motion and hide the window.
+- **Expected**: English labels and theme-matched gradients/particles; Obsidian
+  is warm charcoal with ivory particles. No invented levels, clipping or
+  composer collisions. Drag previews commit once on release. Reset/model
+  selection use existing binding defaults, capability policy and next-turn
+  staging; failures restore the saved selection. Off-only/single-level tracks
+  cannot be dragged. Escape and outside-click dismiss; model list navigation
+  and the compact brain remain available. Off/reduced-motion/hidden/unmounted
+  sliders have no running particle loop. Settings persist after reopening.
+- **Validation**: Slider palette/capability tests, existing configuration and
+  composer regressions, actual-component browser keyboard/pointer/canvas and
+  theme checks, desktop typecheck/build. No full repository E2E suite required.

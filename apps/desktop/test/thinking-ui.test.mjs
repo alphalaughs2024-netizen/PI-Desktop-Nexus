@@ -53,7 +53,7 @@ test("composer exposes the runtime thinking level order and provider filtering",
   assert.match(composerSource, /supportsReasoning/);
   assert.match(composerSource, /thinkingLevelForProvider/);
   assert.match(composerSource, /thinkingLevel:\s*level/);
-  assert.match(composerSource, /composer-thinking-list/);
+  assert.match(composerSource, /<ReasoningSlider/);
   assert.doesNotMatch(stylesSource, /\.composer-thinking-levels/);
   assert.doesNotMatch(stylesSource, /\.composer-thinking-level\b/);
   assert.match(
@@ -70,9 +70,9 @@ test("Composer owns the mode and model controls", () => {
     composerSource.indexOf('<div className="composer-right">'),
   );
   const modeControl = leftToolbar.indexOf(
-    'className="icon-btn mode-chip composer-mode-chip"',
+    'className={`icon-btn mode-chip composer-mode-chip composer-configuration-chip',
   );
-  const permissionControl = leftToolbar.indexOf('className="composer-permission"');
+  const permissionControl = leftToolbar.indexOf('composer-permission-menu');
   const rightToolbar = composerSource.slice(
     composerSource.indexOf('<div className="composer-right">'),
     composerSource.indexOf('<div className="composer-right">') + 12000,
@@ -86,7 +86,7 @@ test("Composer owns the mode and model controls", () => {
   assert.doesNotMatch(stylesSource, /\.conversation-topbar \.ct-mode/);
   assert.match(rightToolbar, /composer-model-thinking-chip/);
   assert.match(rightToolbar, /composer-model-thinking-menu/);
-  assert.match(rightToolbar, /composer-menu-entry/);
+  assert.match(rightToolbar, /ReasoningSlider/);
   assert.match(rightToolbar, /composer-menu-back/);
 });
 
