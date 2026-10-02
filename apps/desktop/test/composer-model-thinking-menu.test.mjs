@@ -46,6 +46,7 @@ test("the combined chip and menu meet the compact accessible visual contract", (
   assert.match(composerSource, /e.target.type === "range" && e.key !== "Escape"/);
   assert.match(composerSource, /e\.key === "ArrowLeft"/);
   assert.match(composerSource, /e\.key === "Escape"/);
+  assert.match(composerSource, /setModelThinkingOpen\(false\);\s*modelThinkingRef\.current\?\.querySelector<HTMLButtonElement>\("\.composer-model-thinking-chip"\)\?\.focus\(\)/);
   assert.match(stylesSource, /\.composer-model-thinking-menu\s*\{[\s\S]*?bottom:\s*calc\(100% \+ 8px\)/);
   assert.match(stylesSource, /\.composer-model-thinking-menu\s*\{[\s\S]*?width:\s*min\(300px,\s*calc\(100vw - 24px\)\)/);
   const trigger = composerSource.match(/className=\{`icon-btn composer-model-thinking-chip[\s\S]*?<\/TooltipButton>/)?.[0];

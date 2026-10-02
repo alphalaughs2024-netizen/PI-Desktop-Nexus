@@ -1453,6 +1453,7 @@ export function Composer({
     if (e.key === "Escape") {
       e.preventDefault();
       setModelThinkingOpen(false);
+      modelThinkingRef.current?.querySelector<HTMLButtonElement>(".composer-model-thinking-chip")?.focus();
       return;
     }
     if (e.key === "ArrowLeft" && modelThinkingView !== "root") {
