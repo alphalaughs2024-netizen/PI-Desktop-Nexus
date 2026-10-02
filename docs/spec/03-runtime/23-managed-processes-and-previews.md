@@ -1,7 +1,9 @@
 # Managed processes and preview servers
 
-Status: Phase 4 first implementation; manual acceptance pending.
-Related: [ADR 0274](../../adr/0274-session-owned-processes-and-previews.md).
+Status: Phase 4 implementation and focused integration validation complete;
+manual acceptance pending.
+Related: [ADR 0274](../../adr/0274-session-owned-processes-and-previews.md)
+and [ADR 0278](../../adr/0278-phase4-process-inspection-and-native-review.md).
 
 ## Process Contract
 
@@ -36,6 +38,15 @@ changes and model changes retain it.
 
 ## Preview Contract
 
+The Work Panel Processes tool exposes session-owned list/output/status and
+explicit stop-one/stop-all actions through Main-window-only IPC. Rust
+`process.read`/`process.stop` reuse the registry and require a real session;
+foreign ids fail. These user actions never start work or grant agent tools.
+Polling is serialized and paused for inactive/hidden panels. Requests are
+retired on chat changes. Logs remain bounded and recovered interruptions are
+shown without inventing exit codes or replaying work. Opening a preview uses
+the existing browser resource and accepts only a recorded loopback HTTP URL.
+
 Main PreviewServer supports start/status/stop/list. Start requires command and
 loopback HTTP URL with a port; cwd is optional. Status/stop require an owned id.
 List shows the caller's preview records. Status/list are Plan/Goal-safe;
@@ -65,12 +76,34 @@ tools; explorer/reviewer receive inspection. Custom lists retain exact grants.
 Delegates use the parent chat registry and can leave previews after completion.
 TaskStop stops a worker; user Stop stops chat-owned managed work.
 
-## Remaining Phase 4 Work
+## Native Review And Coordination
 
-- Validate full live coding workflows and add process inspection/cleanup UI
-  where the accepted workflow requires it.
-- Audit native file-edit/review contracts and parent/delegate coordination.
-- Verify Git/worktree, diff/review and build/test integration against Codex.
+Native successful `fileChange` items carry bounded message-owned
+`details.nativeFileChanges` evidence: path, add/update/delete, optional previous
+path and reported diff. The Review resource opens for the originating chat and
+renders these alongside host snapshots. Failed/declined/stale events are excluded.
+Native evidence has no host before-image or rollback control. Parent instructions
+require waiting for a writing delegate before native edits/shell; scheduling
+metadata is not a transactional lock. Independent managed worktrees in separate
+chats remain the supported concurrent mutation boundary.
 
-Browser work delivered in Phase 3 is reused. This implementation does not
-establish full Phase 4 completion.
+Task MCP calls await their matching native timeline item for at most five
+seconds. Matching includes the tool name and canonical arguments; claims are
+single-use and retire on cancellation or changed execution. This accommodates
+independent HTTP/notification delivery without launching an unattributed worker.
+Native rename destinations become the displayed path with the original path
+retained. Git inspection is bounded to 15 seconds and 4 MiB per command;
+launch, access, status and diff failures surface as errors, never a clean tree.
+
+## Validation And Acceptance
+
+A controlled local Responses fixture exercises real Codex multi-file patching,
+foreground tests, real Rust preview startup, later inspection, stale-patch
+refusal, user stop, and confirmed Git create/commit/merge/cleanup. A separate
+real parent/child fixture verifies model pins, tool grants, attribution and
+parent convergence. Component inspection covers the Processes/Review surfaces.
+See the [Phase 4 report](../../../scripts/agent-evaluation/PHASE4.md).
+
+Browser work delivered in Phase 3 is reused. External browser profiles, remote
+publishing and processes surviving app shutdown are outside this phase. These
+checks establish implementation coverage; live user acceptance remains pending.

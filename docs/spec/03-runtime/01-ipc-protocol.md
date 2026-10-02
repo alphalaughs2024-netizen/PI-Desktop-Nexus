@@ -11,6 +11,14 @@ session and exposing no arbitrary OS PID. Shared ManagedProcessRecord/Read
 describe results; see [managed processes](23-managed-processes-and-previews.md).
 Protocol 11 and SQLite schema 17 remain unchanged by these additive host tools.
 
+ADR 0278 adds `pi-desktop/process/read`, `/stop` and `/stopSession` for the
+main renderer only. They require sessionId; stop requires an opaque process id.
+Read accepts an optional id and cursor, with no blocking wait from the UI.
+Rust checks that the session exists and the handle belongs to that session.
+These channels cannot start a command or grant tools to an agent. Browser,
+plugin and floating-composer renderers fail sender validation. User stop is
+available independently of agent mode; tool-mode restrictions remain unchanged.
+
 ## 1. Goal
 
 Define a stable contract between the renderer and main.

@@ -1,5 +1,21 @@
 # 08. Component Spec
 
+## Coding Processes And Native Review (ADR 0278)
+
+Processes is a session-owned Work Panel resource available through More and the
+empty tool menu. It shows observed lifecycle status, exit code and bounded
+stdout/stderr, with refresh, stop-one, stop-all and recorded preview actions.
+The layout uses existing theme tokens and scrolls long command/output text.
+Polling is serialized, pauses when inactive/hidden, and retires stale responses
+on chat changes. Stop failures remain visible through successful refreshes.
+Recovered interrupted work has no invented exit status or recreated output.
+
+Review shows successful native Codex file changes beside host snapshots, with
+path/rename, operation, delegate attribution and collapsible reported diff.
+Native evidence has no rollback control. Failed/declined patches are excluded;
+host rollback snapshots retain their existing behavior. Git inspection errors
+are shown as errors rather than reporting a clean workspace.
+
 ## Scheduled task editor
 
 Scheduled uses a compact task list beside an unframed editor. Selecting a task

@@ -2,6 +2,28 @@
 
 ### Phase 4 Managed Commands And Previews
 
+- Deliver the MCP Task request before its native item-start notification. It
+  binds once to the matching item; unrelated arguments cannot claim it. Cancel
+  before the item arrives and verify no worker starts. Confirm selected child
+  model/tool grants and parent convergence with real native processes.
+- Rename a native file and verify the original-to-destination order in Review.
+  Deny/fail a patch and confirm no successful review evidence appears. Remove
+  a workspace or make Git inspection fail; show the error, not a clean tree.
+
+- Apply native multi-file add/update/delete patches, decline an approval and
+  provoke a stale patch. Successful file-change events appear only in the
+  originating chat's Review tab and survive transcript reload; failures do not
+  appear as applied edits. Review shows bounded reported diffs without a fake
+  rollback snapshot. Verify delegate attribution, writer serialization and
+  parent report convergence before further edits or tests.
+
+- Open Work Panel > Processes in two chats. Inspect bounded stdout/stderr,
+  real exit codes, failed and interrupted records. Stop one process and stop
+  all in the selected chat; other chats' work must survive. Check hidden panels,
+  fast chat switches, errors, keyboard focus and all four themes. Preview opens
+  the existing Browser; inspection never launches a command. Guest renderers
+  cannot invoke the new process IPC. Foreign ids fail in the Rust registry.
+
 - Start a long-running command, finish the response, and inspect its output and
   actual exit by the same id on a later turn. Wait timeout must not stop it.
   Another chat cannot list/read/stop it. A changed shell rejects before spawn.
