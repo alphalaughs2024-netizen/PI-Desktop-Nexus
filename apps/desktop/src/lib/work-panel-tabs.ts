@@ -1,5 +1,6 @@
 export type WorkPanelTabKind =
   | "review"
+  | "processes"
   | "promptInspector"
   | "contextVault"
   | "browser"
@@ -160,7 +161,7 @@ export function parsePluginViewRef(
 export function isKnownWorkPanelTab(tab: WorkPanelTab): boolean {
   return (
     Boolean(tab) &&
-    (tab.kind === "review" || tab.kind === "contextVault" || tab.kind === "promptInspector" || tab.kind === "browser" || tab.kind === "file" || tab.kind === "plugin")
+    (tab.kind === "review" || tab.kind === "processes" || tab.kind === "contextVault" || tab.kind === "promptInspector" || tab.kind === "browser" || tab.kind === "file" || tab.kind === "plugin")
   );
 }
 
@@ -192,7 +193,7 @@ export function sanitizeWorkPanelTabsState(
  * they remain visible in the opened-resource section.
  */
 export function isToolWorkPanelTab(tab: WorkPanelTab): boolean {
-  return tab.kind === "plugin" || tab.kind === "browser";
+  return tab.kind === "plugin" || tab.kind === "browser" || tab.kind === "processes";
 }
 
 export function normalizeWorkPanelFilePath(path: string): string {
@@ -237,6 +238,10 @@ export function toolResultRoot(result: unknown): string | null {
 }
 
 export function shouldOpenReviewArtifact(event: ReviewArtifactEvent): boolean {
+  if (event.toolName === "apply_patch" && event.isError !== true) {
+    const details = event.result && typeof event.result === "object" ? (event.result as { details?: { nativeFileChanges?: unknown } }).details : undefined;
+    return Array.isArray(details?.nativeFileChanges) && details.nativeFileChanges.length > 0;
+  }
   return (
     (event.toolName === "Write" || event.toolName === "Edit") &&
     event.isError !== true &&

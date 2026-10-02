@@ -6546,6 +6546,23 @@ function registerIpc() {
     if (!browserComposerHost.ownsSender(event.sender.id, activeOnly)) assertMainWindowSender(event);
   };
 
+  for (const [channel, method] of [
+    [IPC.invoke.managedProcessRead, "process.read"],
+    [IPC.invoke.managedProcessStop, "process.stop"],
+    [IPC.invoke.managedProcessStopSession, "process.stopSession"],
+  ]) {
+    handleWithEvent(channel, async (event, input: { sessionId?: string; id?: string; cursor?: number } = {}) => {
+      assertMainWindowSender(event);
+      if (!host) throw new Error("host unavailable");
+      if (typeof input.sessionId !== "string" || !input.sessionId.trim()) throw new Error("sessionId required");
+      if (input.id !== undefined && (typeof input.id !== "string" || !input.id.trim())) throw new Error("invalid process id");
+      if (method === "process.stop" && !input.id) throw new Error("process id required");
+      // User inspection/cleanup never launches a command or grants an agent tools.
+      return host.call(method, { sessionId: input.sessionId, ...(input.id ? { id: input.id } : {}),
+        ...(method === "process.read" ? { cursor: Number.isSafeInteger(input.cursor) && input.cursor! >= 0 ? input.cursor : 0, waitMs: 0 } : {}) });
+    });
+  }
+
   handle(IPC.invoke.coreCapabilityList, async () => ([{
     id: "browser",
     label: "Browser",

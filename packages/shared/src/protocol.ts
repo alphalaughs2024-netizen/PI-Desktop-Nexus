@@ -50,6 +50,9 @@ export type WindowControlAction = (typeof WINDOW_CONTROL_ACTIONS)[number];
 
 export const IPC = {
   invoke: {
+    managedProcessRead: "pi-desktop/process/read",
+    managedProcessStop: "pi-desktop/process/stop",
+    managedProcessStopSession: "pi-desktop/process/stopSession",
     appGetVersion: "pi-desktop/app/getVersion",
     appOpenFeedback: "pi-desktop/app/openFeedback",
     appHealth: "pi-desktop/app/health",

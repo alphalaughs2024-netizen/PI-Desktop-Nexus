@@ -962,6 +962,9 @@ export const api = {
   /** Toggles the devtools console; rejects unless developer mode is on. */
   toggleDevTools: (open?: boolean) =>
     invoke<{ open: boolean }>(IPC.invoke.devtoolsToggle, { open }),
+  managedProcessRead: (sessionId: string, id?: string) => invoke<import("@pi-desktop/shared").ManagedProcessRead>(IPC.invoke.managedProcessRead, { sessionId, id }),
+  managedProcessStop: (sessionId: string, id: string) => invoke<import("@pi-desktop/shared").ManagedProcessRead>(IPC.invoke.managedProcessStop, { sessionId, id }),
+  managedProcessStopSession: (sessionId: string) => invoke<unknown>(IPC.invoke.managedProcessStopSession, { sessionId }),
   workspaceDiff: () => invoke<WorkspaceDiff>(IPC.invoke.workspaceDiff),
   workspaceReviewRollback: (input: {
     sessionId: string;

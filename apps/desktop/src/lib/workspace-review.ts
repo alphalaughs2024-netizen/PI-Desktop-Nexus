@@ -5,6 +5,7 @@ import type {
   ReviewChangeStatus,
   UiMessage,
 } from "@pi-desktop/shared";
+import { nativeReviewChanges } from "@pi-desktop/shared";
 
 const REVIEW_CHANGE_TOOLS = new Set(["Write", "Edit"]);
 const REVIEW_CHANGE_STATUSES = new Set<ReviewChangeStatus>([
@@ -141,6 +142,12 @@ export function reviewChangesFromMessages(
     const change = reviewChangeFromMessage(message);
     return change ? [{ message, change }] : [];
   });
+}
+
+export function nativeReviewChangesFromMessages(messages: UiMessage[]) {
+  return messages.flatMap(message => message.role === "tool" && message.toolName === "apply_patch" && message.toolStatus === "success"
+    ? nativeReviewChanges(toolResultDetails(message)?.nativeFileChanges).map((change, index) => ({ message, change, id: `${message.id}:native:${index}` }))
+    : []);
 }
 
 export function summarizeReviewChanges(

@@ -3,6 +3,7 @@ import { createElement } from "react";
 import { BrowserCoreTab } from "./BrowserCoreTab";
 import { FilesTab } from "./FilesTab";
 import { ReviewTab } from "./ReviewTab";
+import { ProcessesTab } from "./ProcessesTab";
 import { ContextVaultTab } from "./ContextVaultTab";
 import { PromptInspectorTab } from "./PromptInspectorTab";
 import { PluginViewTab } from "./PluginViewTab";
@@ -41,6 +42,7 @@ export const WORK_PANEL_RESOURCE_REGISTRY: ReadonlyMap<WorkPanelTab["kind"], Wor
   ["browser", { kind: "browser", lifecycle: "native-guest", supportsMaximized: true, render: (props) => <BrowserCoreTab key={props.sessionId} sessionId={props.sessionId} location={props.tab.location} presentation={props.presentation} active={props.active} transitioning={props.transitioning === true} blocked={props.blocked} onCloseLast={() => props.onCloseResource(props.resourceId)} /> }],
   ["file", { kind: "file", lifecycle: "renderer", supportsMaximized: true, render: renderer(FilesTab) }],
   ["review", { kind: "review", lifecycle: "renderer", supportsMaximized: true, render: renderer(ReviewTab) }],
+  ["processes", { kind: "processes", lifecycle: "renderer", supportsMaximized: true, render: (props) => <ProcessesTab key={props.sessionId} sessionId={props.sessionId} active={props.active && !props.blocked} /> }],
   ["contextVault", { kind: "contextVault", lifecycle: "renderer", supportsMaximized: true, render: renderer(ContextVaultTab) }],
   ["promptInspector", { kind: "promptInspector", lifecycle: "renderer", supportsMaximized: true, render: renderer(PromptInspectorTab) }],
   ["plugin", { kind: "plugin", lifecycle: "native-guest", supportsMaximized: true, render: (props, context) => { const ref = parsePluginViewRef(props.tab.resource); return ref ? <PluginViewTab pluginId={ref.pluginId} viewId={ref.viewId} title={props.tab.resource ?? "Plugin"} sessionId={props.sessionId} location={props.tab.location} blocked={props.blocked || !props.active} /> : null; } }],

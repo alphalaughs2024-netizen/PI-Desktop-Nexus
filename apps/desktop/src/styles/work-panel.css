@@ -1797,3 +1797,10 @@ html[data-surface="browser-menu"], html[data-surface="browser-menu"] body, html[
 .browser-native-menu button:focus-visible { box-shadow: inset 0 0 0 1px var(--browser-focus); }
 .browser-native-menu button:disabled { opacity: .45; }
 @media (prefers-reduced-motion: reduce) { .browser-tab-spinner { animation: none; } .browser-tab, .browser-toolbar button, .browser-inspection-toolbar button, .browser-floating-conversation { transition: none; } }
+/* Native reported diffs have no host-owned rollback snapshot. */
+.native-review-change { border-bottom: 1px solid var(--ds-border-default); }
+.native-review-change summary { display: flex; align-items: baseline; gap: 8px; padding: 12px; cursor: pointer; font-size: 12px; }
+.native-review-change strong { font-weight: 500; min-width: 0; overflow-wrap: anywhere; }
+.native-review-change small { margin-left: auto; color: var(--ds-text-secondary); }
+.native-review-change pre { margin: 0; padding: 12px; overflow: auto; font-size: 11px; line-height: 1.6; color: var(--ds-text-primary); background: var(--ds-bg-inset); font-family: var(--font-mono); }
+.native-review-change summary:focus-visible { outline: 2px solid var(--ds-accent); outline-offset: -2px; }

@@ -27,7 +27,7 @@ it("reconstructs cold unresolved state as interrupted without launching an engin
 it("rejects unsupported legacy mode and requests without pi fallback", async () => {
   const dir = await mkdtemp(join(tmpdir(), "nexus-controller-")); dirs.push(dir); vi.stubEnv("PI_DESKTOP_DATA_DIR", dir);
   const controller = new CodexController(() => undefined); controller.configure(dir);
-  await expect(controller.handle("agent.prompt", { sessionId: "s", mode: "plan" })).rejects.toThrow("CODEX_CAPABILITY_UNAVAILABLE");
+  await expect(controller.handle("agent.prompt", { sessionId: "s", mode: "plan" })).rejects.toThrow("CODEX_HOST_REQUIRED");
   await expect(controller.handle("agent.prompt", { sessionId: "s", mode: "agent", permissionMode: "unknown-mode" })).rejects.toThrow("CODEX_PERMISSION_MODE_UNSUPPORTED");
   await expect(controller.handle("agent.compact", { sessionId: "s" })).rejects.toThrow("CODEX_CAPABILITY_UNAVAILABLE");
   await expect(controller.handle("agent.resolveApproval", { requestId: "missing", decision: "allow-session" })).rejects.toThrow("CODEX_APPROVAL_SCOPE_UNSUPPORTED");

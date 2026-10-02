@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 import { mkdir } from "node:fs/promises";
-import { APP_VERSION } from "@pi-desktop/shared";
+import { APP_VERSION, nativeReviewChanges } from "@pi-desktop/shared";
 import type { AgentEvent, AgentEventEnvelope, AgentStatus, AskToolResolution, SteerOutcome, EngineAdapter, EngineEvent, EngineItem, EngineOutcome, EngineSnapshot, ThinkingLevel, UiMessage } from "@pi-desktop/shared";
 import { ExecutionContract } from "./contract.js";
 import { CodexSessionStore, recoveryWriteError } from "./store.js";
@@ -50,6 +50,7 @@ export class CodexAdapter implements EngineAdapter {
   private admission?: { id: string; startedAt: number };
   private turnLifetime = new AbortController();
   private claimedTools = new Set<string>();
+  private toolItemWaiters = new Set<() => void>();
   private delegationActivity?: { phase: "waiting-subagents"; since: number; subagentCount: number };
   constructor(readonly config: CodexConfig, private emit: (event: AgentEventEnvelope) => void, private dependencies: CodexDependencies = {}) {
     this.contract = new ExecutionContract(sessionDescriptor(config));
@@ -142,6 +143,32 @@ export class CodexAdapter implements EngineAdapter {
       canonical(typeof item.args === "string" ? JSON.parse(item.args) : item.args) === canonical(args));
     if (!item) throw new Error("CODEX_TOOL_ITEM_UNBOUND");
     this.claimedTools.add(item.id); return item.id;
+  }
+  async awaitToolItem(name: string, args: unknown): Promise<string> {
+    const runId = this.snapshot().turn?.runId;
+    const signal = this.executionSignal();
+    // MCP HTTP and app-server notifications travel independently.
+    return new Promise((resolve, reject) => {
+      const finish = (id?: string, error?: Error) => {
+        clearTimeout(timer);
+        this.toolItemWaiters.delete(check);
+        signal.removeEventListener("abort", check);
+        if (error) reject(error); else resolve(id!);
+      };
+      const check = () => {
+        if (signal.aborted || !this.activeTurnId() || this.snapshot().turn?.runId !== runId) {
+          finish(undefined, new Error("NEXUS_TOOL_TURN_INACTIVE")); return;
+        }
+        try { finish(this.claimToolItem(name, args)); }
+        catch (error) {
+          if (!(error instanceof Error) || error.message !== "CODEX_TOOL_ITEM_UNBOUND") finish(undefined, error as Error);
+        }
+      };
+      const timer = setTimeout(() => finish(undefined, new Error("CODEX_TOOL_ITEM_UNBOUND")), 5000);
+      this.toolItemWaiters.add(check);
+      signal.addEventListener("abort", check, { once: true });
+      check();
+    });
   }
   getStatus(): AgentStatus {
     const state = this.snapshot();
@@ -476,7 +503,9 @@ export class CodexAdapter implements EngineAdapter {
     if (native.type === "commandExecution" && native.status === "inProgress") completed = false;
     const processId = native.processId ?? base.command?.processId;
     this.update({ ...base, text, ...(processId ? { command: { ...base.command, processId: String(processId), ...(completed ? { exitedAt: Date.now(), ...(typeof native.exitCode === "number" ? { exitCode: native.exitCode } : {}) } : {}) } } : {}), args: native.command ? { command: native.command, cwd: native.cwd } : native.changes ?? native.arguments ?? base.args,
-      result: nexusToolDiagnostics(native.aggregatedOutput ?? native.error ?? toolResult ?? native.changes ?? text),
+      result: native.type === "fileChange" && completed && !failed
+        ? { details: { nativeFileChanges: nativeReviewChanges(native.changes) } }
+        : nexusToolDiagnostics(native.aggregatedOutput ?? native.error ?? toolResult ?? native.changes ?? text),
       status: completed ? failed ? "failed" : "completed" : "running", ...(completed ? { completedAt: Date.now() } : {}) });
   }
   private raw(native: any): void {
@@ -506,6 +535,7 @@ export class CodexAdapter implements EngineAdapter {
     const old = this.contract.item(item.nativeId);
     const phase = this.contract.progressPhase;
     if (!this.apply({ type: "item", item }) || this.reconstructing) return;
+    for (const check of this.toolItemWaiters) check();
     if (phase !== this.contract.progressPhase) this.status();
     if (item.kind === "assistant" || item.kind === "reasoning") {
       const message: UiMessage = { id: item.id, role: "assistant", content: item.kind === "assistant" ? item.text : "", thinking: item.kind === "reasoning" ? item.text : undefined,

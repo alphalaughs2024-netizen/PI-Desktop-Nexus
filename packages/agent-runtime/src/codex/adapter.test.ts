@@ -206,6 +206,19 @@ describe("Codex adapter lifecycle", () => {
     expect(f.adapter.claimToolItem("Task", { task: "Review", agent: "reviewer" })).not.toBe(first);
     expect(() => f.adapter.claimToolItem("Task", { task: "Review", agent: "reviewer" })).toThrow("CODEX_TOOL_ITEM_UNBOUND");
   });
+  it("binds an early MCP Task only when its matching native item arrives", async () => {
+    const f = await fixture(); await f.adapter.start({ turnId: "host", text: "Delegate" }); await settle();
+    const waiting = f.adapter.awaitToolItem("Task", { agent: "reviewer", task: "Review" });
+    f.event("item/started", { item: { id: "other", type: "mcpToolCall", tool: "Task", arguments: { agent: "reviewer", task: "Other" } } });
+    f.event("item/started", { item: { id: "matching", type: "mcpToolCall", tool: "Task", arguments: { task: "Review", agent: "reviewer" } } });
+    expect(await waiting).toBe(f.adapter.snapshot().items.find(item => item.nativeId === "matching")?.id);
+  });
+  it("cancels an unbound Task before any delegate can launch", async () => {
+    const f = await fixture(); await f.adapter.start({ turnId: "host", text: "Delegate" }); await settle();
+    const waiting = f.adapter.awaitToolItem("Task", { agent: "reviewer", task: "Review" });
+    const rejected = expect(waiting).rejects.toThrow("NEXUS_TOOL_TURN_INACTIVE");
+    await f.adapter.interrupt(); await rejected;
+  });
   it("switches model and provider between turns while resuming the same native history", async () => {
     const first = await fixture(); await first.adapter.start({ turnId: "first", text: "Remember emerald" }); await settle();
     first.event("item/completed", { item: { id: "old-answer", type: "agentMessage", text: "Remembered" } });
@@ -501,6 +514,21 @@ describe("Codex adapter lifecycle", () => {
     f.event("rawResponseItem/completed", { item: { type: "custom_tool_call", call_id: "patch", name: "apply_patch", input: "patch content" } });
     f.event("rawResponseItem/completed", { item: { type: "custom_tool_call_output", call_id: "patch", output: "apply_patch verification failed: stale text" } });
     expect(f.adapter.snapshot().items.every(i => i.status === "failed")).toBe(true);
+  });
+  it("persists native multi-file review evidence without inventing rollback snapshots", async () => {
+    const f = await fixture(); await f.adapter.start({ turnId: "t", text: "hi" }); await settle();
+    const changes = [{ path: "one.ts", kind: { type: "update" }, diff: "@@ -1 +1 @@\n-old\n+new" },
+      { path: "two.ts", kind: { type: "add" }, diff: "+added" }];
+    f.event("item/started", { item: { id: "edit", type: "fileChange", changes, status: "inProgress" } });
+    f.event("item/completed", { item: { id: "edit", type: "fileChange", changes, status: "completed" } });
+    const ended = f.events.find(e => e.event.type === "tool_end" && e.event.toolName === "apply_patch")!.event as any;
+    expect(ended.isError).toBe(false);
+    expect(ended.result.details.nativeFileChanges).toHaveLength(2);
+    expect(ended.result.details.nativeFileChanges[0]).toMatchObject({ path: "one.ts", operation: "update", truncated: false });
+    expect(ended.result.details.review).toBeUndefined();
+    expect(f.adapter.snapshot().items[0].result).toEqual(ended.result);
+    f.event("item/completed", { item: { id: "declined", type: "fileChange", changes, status: "declined" } });
+    expect((f.adapter.snapshot().items[1].result as any)?.details?.nativeFileChanges).toBeUndefined();
   });
   it("denies native approvals at the existing 120-second timeout", async () => {
     const f = await fixture(); await f.adapter.start({ turnId: "t", text: "hi" }); await settle(); vi.useFakeTimers();

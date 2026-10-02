@@ -3342,7 +3342,7 @@ async fn handle_request(
             outcome
         }
 
-        "process.stopSession" => {
+        "process.read" | "process.stop" | "process.stopSession" => {
             let session_id = params.get("sessionId").and_then(Value::as_str)
                 .ok_or_else(|| rpc_err(1002, "sessionId required", "INVALID_PARAMS"))?;
             let processes = {
@@ -3352,7 +3352,16 @@ async fn handle_request(
                 }
                 st.managed_processes.clone()
             };
-            processes.stop_session(session_id).await.map_err(|error| rpc_err(1000, error.1, &error.0))
+            let result = match method {
+                "process.read" => processes.read(session_id, &params).await,
+                "process.stop" => {
+                    let id = params.get("id").and_then(Value::as_str).filter(|id| !id.is_empty())
+                        .ok_or_else(|| rpc_err(1002, "process id required", "INVALID_PARAMS"))?;
+                    processes.stop(session_id, id).await
+                }
+                _ => processes.stop_session(session_id).await,
+            };
+            result.map_err(|error| rpc_err(1000, error.1, &error.0))
         }
         "tools.abort" => {
             let session_id = params
@@ -4409,6 +4418,12 @@ mod tests {
         let id = launched["content"]["process"]["id"].clone();
         let foreign = handle_request(state.clone(), "tools.execute", json!({ "sessionId": other.id, "toolCallId": "foreign-read", "toolName": "ProcessRead", "mode": "agent", "args": { "id": id } }), tx.clone()).await.unwrap();
         assert_eq!(foreign["errorCode"], "PROCESS_NOT_FOUND");
+        let inspected = handle_request(state.clone(), "process.read", json!({ "sessionId": session.id, "id": id }), tx.clone()).await.unwrap();
+        assert_eq!(inspected["process"]["id"], id);
+        let denied_ui = handle_request(state.clone(), "process.stop", json!({ "sessionId": other.id, "id": id }), tx.clone()).await.unwrap_err();
+        assert!(format!("{denied_ui:?}").contains("PROCESS_NOT_FOUND"));
+        let ui_stopped = handle_request(state.clone(), "process.stop", json!({ "sessionId": session.id, "id": id }), tx.clone()).await.unwrap();
+        assert_eq!(ui_stopped["process"]["status"], "stopped");
         let stopped = handle_request(state.clone(), "tools.execute", json!({ "sessionId": session.id, "toolCallId": "managed-stop", "toolName": "ProcessStop", "mode": "agent", "args": { "id": id } }), tx).await.unwrap();
         assert_eq!(stopped["content"]["process"]["status"], "stopped");
     }

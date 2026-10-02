@@ -7,7 +7,7 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
 import { useTranslation } from "react-i18next";
-import { Maximize2, Minimize2, ArrowLeft } from "lucide-react";
+import { Maximize2, Minimize2, ArrowLeft, Terminal } from "lucide-react";
 import type { PluginViewMeta } from "@pi-desktop/shared";
 import {
   isKnownWorkPanelTab,
@@ -17,6 +17,7 @@ import {
   contextVaultWorkPanelTab,
   promptInspectorWorkPanelTab,
   CORE_BROWSER_TAB,
+  toolWorkPanelTab,
 } from "../../lib/work-panel-tabs";
 import { pluginViewIcon, pluginViewInitial } from "../../lib/plugin-view-icons";
 import { useAppStore } from "../../stores/app-store";
@@ -51,6 +52,7 @@ import {
 } from "../../lib/work-panel-resize";
 
 const TAB_ICONS = {
+  processes: Terminal,
   review: IconDiff,
   file: IconFileText,
   plugin: IconPlug,
@@ -80,6 +82,7 @@ function tabLabel(
     // back to its id rather than leaving the header blank until the tab closes.
     return view?.title ?? tab.resource ?? t("panel.tabs.plugin");
   }
+  if (tab.kind === "processes") return "Processes";
   if (tab.kind !== "file") return t(`panel.tabs.${tab.kind}`);
   const path = tab.resource ?? "";
   return path.split("/").filter(Boolean).pop() || t("panel.tabs.file");
@@ -331,6 +334,11 @@ export function WorkPanel({
     else openWorkPanelTab(tab);
     closeContext();
   }, [activateTab, closeContext, ensureSession, openWorkPanelTab, tabs]);
+  const openProcesses = useCallback(async () => {
+    if (!(await ensureSession())) return;
+    openWorkPanelTab(toolWorkPanelTab("processes"));
+    closeContext();
+  }, [closeContext, ensureSession, openWorkPanelTab]);
   const openBrowser = useCallback(async () => {
     if (!(await ensureSession())) return;
     const existing = tabs.find((candidate) => candidate.id === CORE_BROWSER_TAB.id);
@@ -633,6 +641,9 @@ export function WorkPanel({
               >
                 <div className="work-panel-menu-group" role="group">
                   <div className="work-panel-menu-title">Nexus</div>
+                  <button type="button" role="menuitemradio" aria-checked={activeTab?.kind === "processes"} tabIndex={-1} data-work-panel-menu-item="" className="work-panel-menu-item" onClick={() => void openProcesses()}>
+                    <Terminal size={15} /><span className="work-panel-menu-label">Processes</span>
+                  </button>
                   <button
                     type="button"
                     role="menuitemradio"
@@ -831,6 +842,7 @@ export function WorkPanel({
                   role="group"
                   aria-label={t("panel.tools")}
                 >
+                  <button type="button" className="work-panel-empty-tool" onClick={() => void openProcesses()}><Terminal size={15} /><span>Processes</span></button>
                   <button
                     type="button"
                     className="work-panel-empty-tool"

@@ -31,3 +31,4 @@ export * from "./feature-flags.js";
 
 export * from "./engine-contract.js";
 export * from "./managed-process.js";
+export * from "./native-review.js";

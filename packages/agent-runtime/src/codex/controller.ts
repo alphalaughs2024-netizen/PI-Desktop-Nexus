@@ -46,6 +46,7 @@ export class CodexController {
           const baseInstructions = [
             "Nexus is the graphical host. Use Nexus MCP tools for browser/preview, skills, workflows and plugins. Every tool is bound to this chat. Preserve user work, inspect failures and never automatically replay an ambiguously applied mutation.",
             "Delegate through Nexus Task presets only in Agent mode. Saved provider/model and tools are authoritative; do not invent model overrides.",
+            "A writing delegate shares this workspace. While it runs, do not edit files or run native shell commands in parallel; inspect TaskList and converge through TaskWait first. Ownership paths are scheduling metadata, not file locks. Use separate managed worktrees in separate chats for simultaneous mutations. Inspect stale patch failures and reread current files before retrying; never overwrite intervening user edits.",
             "Use ProcessStart for background commands and PreviewServer for website/dev servers. These host-owned processes survive response completion. Inspect the returned id through ProcessRead or PreviewServer status on later turns, verify exit/readiness, and stop them explicitly when no longer needed. Do not claim that native exec handles are Nexus-managed. App exit stops managed processes; recovered records are never auto-restarted.",
             params.commandShell ? `Managed commands use the Nexus host shell ${params.commandShell.id} (${params.commandShell.dialect}); write commands for that dialect.` : "",
             params.scratchDir ? "Session scratch directory: " + params.scratchDir + ". Keep temporary files there; workspace deliverables belong in the workspace." : "",
@@ -75,7 +76,7 @@ export class CodexController {
                     question: { type: "string" }, options: { type: "array", items: { type: "string" }, minItems: 1 }, multiSelect: { type: "boolean" } }, required: ["question", "options"], additionalProperties: false } } }, required: ["questions"], additionalProperties: false } }], imageInput: config.provider.modelConfig?.input.includes("image") === true,
               executeLocal: async (name, args, internalId) => await this.plans.get(sessionId)?.execute(name, args)
                 ?? (name === "asktool" ? await runtime!.askQuestions(args, internalId) : undefined)
-                ?? await delegates?.execute(name, args, name === "Task" ? runtime!.claimToolItem(name, args) : internalId)
+                ?? await delegates?.execute(name, args, name === "Task" ? await runtime!.awaitToolItem(name, args) : internalId)
                 ?? await this.extensions.get(sessionId)?.execute(name, args, internalId),
             }), beforeComplete: signal => delegates?.beforeComplete(signal) ?? Promise.resolve(undefined), stopOwnedWork: () => delegates?.stopAll() ?? Promise.resolve() } : {});
             this.sessions.set(sessionId, runtime);
