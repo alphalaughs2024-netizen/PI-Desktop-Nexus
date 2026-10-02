@@ -2556,9 +2556,17 @@ reasoning-level control.
   releasing, keyboard key-up, or leaving the range commits through existing
   session configuration, including next-turn staging. Save failures restore
   the persisted selection and show the existing error toast. Saves are
-  serialized and controls are disabled during the round trip. Reset uses the
-  model binding's supported default. A single supported level disables the
-  range; an Off-only model reports reasoning unavailable.
+  serialized and controls are disabled during the round trip. Use the
+  original MuFeng 180ms eased thumb/fill transitions for clicks, keyboard,
+  reset and pointer previews. A decorative thumb follows the native range's
+  selected step; the native thumb is transparent. Reduced motion disables
+  these transitions. The canvas keeps the rail's width while the fill changes,
+  so fill animation cannot restart its rendering loop on every frame. Gradient
+  colours interpolate and particles retain their lifespans while density,
+  speed and colour ease to the new effort/theme. Off fades the field out and
+  stops the loop; reduced motion and hidden documents clear it immediately.
+  Reset uses the model binding's supported default. A single supported level
+  disables the range; an Off-only model reports reasoning unavailable.
   Model rows retain `role="menuitemradio"`, `aria-checked`, and a trailing
   check. Closing and reopening starts at the slider.
   Track gradients, current-label ink and particles follow the scenic theme:

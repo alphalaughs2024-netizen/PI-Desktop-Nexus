@@ -12214,6 +12214,8 @@ or delete caches, profiles or earlier recovery files to hide this condition.
   provider list. Repeat with a sparse ladder, Off-only model and a single
   positive level. Select during an active response, inject a configuration
   failure, and reopen after reload. Enable reduced motion and hide the window.
+  Sample thumb/fill geometry and gradient colour during a selection transition;
+  reverse it before completion. Observe particles across level changes and Off.
 - **Expected**: English labels and theme-matched gradients/particles; Obsidian
   is warm charcoal with ivory particles. No invented levels, clipping or
   composer collisions. Drag previews commit once on release. Reset/model
@@ -12222,6 +12224,10 @@ or delete caches, profiles or earlier recovery files to hide this condition.
   cannot be dragged. Escape and outside-click dismiss; model list navigation
   and the compact brain remain available. Off/reduced-motion/hidden/unmounted
   sliders have no running particle loop. Settings persist after reopening.
+  Thumb and fill pass through intermediate positions, settle together without
+  overshoot, and reverse from their current positions. Colours interpolate;
+  canvas dimensions and particle lifespans persist through transitions. Off
+  fades to an empty canvas. Reduced motion changes positions immediately.
 - **Validation**: Slider palette/capability tests, existing configuration and
   composer regressions, actual-component browser keyboard/pointer/canvas and
   theme checks, desktop typecheck/build. No full repository E2E suite required.

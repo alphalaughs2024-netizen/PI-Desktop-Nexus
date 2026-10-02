@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState, type CSSProperties } from "react";
 import { ChevronDown, RotateCcw } from "lucide-react";
 import type { ThinkingLevel } from "@pi-desktop/shared";
 import { REASONING_LABELS, reasoningColors, reasoningIntensity } from "../lib/reasoning-slider";
+import sliderLicenseUrl from "../assets/licenses/MuFengThinkingSlider-MIT.txt?no-inline&url";
 
 interface Props {
   levels: ThinkingLevel[];
@@ -26,6 +27,8 @@ export function ReasoningSlider({ levels, value, defaultValue, modelLabel, disab
   const fraction = levels.length > 1 ? selected / (levels.length - 1) : (level === "off" ? 0 : 1);
   const intensity = reasoningIntensity(levels, selected);
   const colors = reasoningColors(theme, intensity);
+  const particleTarget = useRef({ intensity, color: colors.particleRGB });
+  const wakeParticles = useRef<(() => void) | null>(null);
   // Keep the native range focused during saves; blocking events avoids a
   // Chromium key-event interruption caused by disabling the focused input.
   const locked = disabled || saving || levels.length < 2;
@@ -41,6 +44,11 @@ export function ReasoningSlider({ levels, value, defaultValue, modelLabel, disab
   }, []);
 
   useEffect(() => {
+    particleTarget.current = { intensity, color: colors.particleRGB };
+    wakeParticles.current?.();
+  }, [intensity, colors.particleRGB]);
+
+  useEffect(() => {
     const canvas = canvasRef.current;
     const context = canvas?.getContext("2d");
     if (!canvas || !context) return;
@@ -49,23 +57,56 @@ export function ReasoningSlider({ levels, value, defaultValue, modelLabel, disab
     let previous = 0;
     let width = 0;
     let height = 0;
-    const particles = Array.from({ length: Math.round(12 + intensity * 48) }, () => ({ x: Math.random(), y: Math.random(), size: .6 + Math.random() * .8, speed: .2 + Math.random() * .8 }));
+    let energy = particleTarget.current.intensity;
+    const color = [...particleTarget.current.color];
+    // Preserve the particle field across level changes; lifespan fades and
+    // eased density follow MuFeng's effect without reseeding on every input.
+    const particles = Array.from({ length: 60 }, () => ({
+      x: Math.random(), y: Math.random(), size: .7 + Math.random() * 1.35,
+      speed: .2 + Math.random() * .8, age: Math.random() * 450, span: 470 + Math.random() * 600,
+    }));
     const paint = (now: number) => {
-      const delta = previous ? Math.min(40, now - previous) / 1000 : 0;
+      frame = 0;
+      const delta = previous ? Math.min(48, now - previous) : 16.7;
       previous = now;
+      const target = particleTarget.current;
+      const blend = 1 - Math.exp(-delta / 65);
+      energy += (target.intensity - energy) * blend;
+      for (let i = 0; i < 3; i++) color[i] += (target.color[i]! - color[i]!) * blend;
       context.clearRect(0, 0, width, height);
-      context.fillStyle = colors.particle;
-      for (const particle of particles) {
-        particle.x = (particle.x + delta * particle.speed * (.08 + intensity * .2)) % 1;
-        context.globalAlpha = .4 + particle.speed * .55;
+      if (target.intensity === 0 && energy < .001) { energy = 0; return; }
+      context.fillStyle = context.strokeStyle = `rgb(${color.join(", ")})`;
+      const count = energy * 60;
+      for (let i = 0; i < particles.length; i++) {
+        const particle = particles[i]!;
+        particle.x += delta / 1000 * particle.speed * (.08 + energy * .2);
+        particle.age += delta;
+        if (particle.age > particle.span || particle.x > 1) {
+          particle.x = Math.random(); particle.y = Math.random(); particle.age = 0;
+        }
+        const fade = Math.sin(Math.PI * Math.min(1, particle.age / particle.span));
+        context.globalAlpha = fade * (.24 + energy * .5) * Math.max(0, Math.min(1, count - i));
+        const x = particle.x * width;
+        const y = particle.y * height;
         context.beginPath();
-        context.ellipse(particle.x * width, particle.y * height, particle.size * (1 + intensity), particle.size, 0, 0, Math.PI * 2);
+        context.arc(x, y, particle.size * (.8 + energy * .85), 0, Math.PI * 2);
         context.fill();
+        if (energy > .55) {
+          context.globalAlpha *= (energy - .55) / .45 * .4;
+          context.beginPath(); context.moveTo(x - 2 - energy * 3, y); context.lineTo(x, y); context.stroke();
+        }
       }
       frame = requestAnimationFrame(paint);
     };
+    const wake = () => {
+      if (!frame && !reduced.matches && !document.hidden && width > 0 && height > 0 && (particleTarget.current.intensity > 0 || energy > .001)) {
+        previous = 0;
+        frame = requestAnimationFrame(paint);
+      }
+    };
     const restart = () => {
       cancelAnimationFrame(frame);
+      frame = 0;
       previous = 0;
       width = canvas.clientWidth;
       height = canvas.clientHeight;
@@ -73,8 +114,9 @@ export function ReasoningSlider({ levels, value, defaultValue, modelLabel, disab
       canvas.width = Math.round(width * ratio);
       canvas.height = Math.round(height * ratio);
       context.setTransform(ratio, 0, 0, ratio, 0, 0);
-      if (intensity > 0 && !reduced.matches && !document.hidden && width > 0) frame = requestAnimationFrame(paint);
+      wake();
     };
+    wakeParticles.current = wake;
     const observer = new ResizeObserver(restart);
     observer.observe(canvas);
     reduced.addEventListener("change", restart);
@@ -82,12 +124,13 @@ export function ReasoningSlider({ levels, value, defaultValue, modelLabel, disab
     restart();
     return () => {
       cancelAnimationFrame(frame);
+      wakeParticles.current = null;
       observer.disconnect();
       reduced.removeEventListener("change", restart);
       document.removeEventListener("visibilitychange", restart);
       context.clearRect(0, 0, width, height);
     };
-  }, [colors.particle, intensity]);
+  }, []);
 
   const commit = async (next: ThinkingLevel) => {
     if (disabled || busy.current || !levels.includes(next) || next === value) return;
@@ -102,9 +145,10 @@ export function ReasoningSlider({ levels, value, defaultValue, modelLabel, disab
     }
   };
 
-  return <section className="reasoning-slider" aria-label="Reasoning settings" aria-busy={saving} style={{
+  return <section className="reasoning-slider" aria-label="Reasoning settings" aria-busy={saving} data-license={sliderLicenseUrl} style={{
     "--reasoning-from": colors.from, "--reasoning-to": colors.to,
     "--reasoning-text": colors.text, "--reasoning-fill": level === "off" ? "0px" : `calc(11px + (100% - 22px) * ${fraction})`,
+    "--reasoning-position": `calc(11px + (100% - 22px) * ${fraction})`,
   } as CSSProperties}>
     <div className="reasoning-slider-heading">
       <span id={`${id}-label`}>Reasoning <strong>{REASONING_LABELS[level]}</strong></span>
@@ -123,6 +167,7 @@ export function ReasoningSlider({ levels, value, defaultValue, modelLabel, disab
       }} onPointerUp={(event) => void commit(levels[Number(event.currentTarget.value)] ?? value)} onPointerCancel={() => setDraft(value)} onBlur={() => void commit(level)} onKeyUp={(event) => {
         if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End"].includes(event.key)) void commit(levels[Number(event.currentTarget.value)] ?? value);
       }} />
+      <div className="reasoning-thumb" aria-hidden="true" />
     </div>
     <div className="reasoning-captions">{levels.map((option) => <button type="button" key={option} className={option === level ? "is-selected" : ""} disabled={locked} aria-label={`Set reasoning to ${REASONING_LABELS[option]}`} aria-pressed={option === level} onClick={() => void commit(option)}>{REASONING_LABELS[option]}</button>)}</div>
     {levels.length < 2 ? <div className="reasoning-unavailable">{level === "off" ? "Reasoning unavailable for this model" : "Fixed reasoning level"}</div> : null}

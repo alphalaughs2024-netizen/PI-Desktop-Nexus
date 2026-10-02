@@ -49,5 +49,6 @@ export function reasoningColors(theme: string, intensity: number) {
     to: blend(palette.stops[first]!.to, palette.stops[second]!.to),
     text: blend(palette.text[first]!, palette.text[second]!),
     particle: `rgb(${palette.particle.join(", ")})`,
+    particleRGB: palette.particle,
   };
 }
