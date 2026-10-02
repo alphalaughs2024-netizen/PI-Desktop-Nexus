@@ -13,6 +13,7 @@ import { CodexSubagents } from "./subagents.js";
 import { CodexExtensions } from "./extensions.js";
 import { CodexPlans, modeInstructions, planningTools, approvedInstruction } from "./plans.js";
 import { NEXUS_IDENTITY, hasBrowserTools } from "./nexus-identity.js";
+import { NEXUS_DELEGATION_GUIDANCE } from "./delegation-guidance.js";
 export class CodexController {
   private sessions = new Map<string, CodexAdapter>();
   private delegates = new Map<string, CodexSubagents>();
@@ -48,6 +49,7 @@ export class CodexController {
             NEXUS_IDENTITY,
             "Your tools are bound to this Nexus chat. Use the offered browser/preview, skill, workflow, Git and plugin services directly. Preserve user work, inspect failures and never automatically replay an ambiguously applied mutation.",
             "Delegate through Nexus Task presets only in Agent mode. Saved provider/model and tools are authoritative; do not invent model overrides.",
+            NEXUS_DELEGATION_GUIDANCE,
             "A writing delegate shares this workspace. While it runs, do not edit files or run native shell commands in parallel; inspect TaskList and converge through TaskWait first. Ownership paths are scheduling metadata, not file locks. Use separate managed worktrees in separate chats for simultaneous mutations. Inspect stale patch failures and reread current files before retrying; never overwrite intervening user edits.",
             "Use ProcessStart for background commands and PreviewServer for website/dev servers. These host-owned processes survive response completion. Inspect the returned id through ProcessRead or PreviewServer status on later turns, verify exit/readiness, and stop them explicitly when no longer needed. Do not claim that native exec handles are Nexus-managed. App exit stops managed processes; recovered records are never auto-restarted.",
             params.commandShell ? `Managed commands use the Nexus host shell ${params.commandShell.id} (${params.commandShell.dialect}); write commands for that dialect.` : "",

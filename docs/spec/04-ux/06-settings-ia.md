@@ -159,6 +159,17 @@ and provider account sections keep readable text and distinct surfaces across
 base and scenic themes. A narrow content pane reflows metric and ranking grids,
 while the annual heatmap can scroll horizontally inside its own frame.
 
+Usage & Pricing also reads the host-owned request ledger. The compact shell
+popover switches between This chat and All Nexus usage, shows turns, tokens,
+and reported versus estimated spend, and links to the detailed dashboard. The
+dashboard groups chats, models, and recent requests, filters by range/provider/
+model, and displays provider balances and limits separately from Nexus spend.
+OpenRouter and wikivibe key usage, plus Xkiro account usage/history, are read
+from saved provider credentials in Electron main. Other endpoints retain local
+request accounting and can use compatible documented usage schemas. Unknown,
+unpriced, stale, and provider-account values remain labelled rather than being
+converted to zero; provider totals may include activity outside Nexus.
+
 ### Shortcuts (`shortcuts` tab)
 - **Keyboard shortcuts** card:
   - lists navigation, agent, and window actions from one shared shortcut map
