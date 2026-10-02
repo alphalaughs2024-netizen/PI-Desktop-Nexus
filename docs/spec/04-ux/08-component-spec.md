@@ -33,6 +33,17 @@ IDs, CDP target IDs, or raw errors.
 
 ### Work Panel presentation (ADR 0235)
 
+The Work Panel has a bottom-centered floating dock in a dedicated 88px footer:
+Browser, Context Vault, Prompt Inspector, and More. The first three reuse the
+existing session-scoped singleton actions; More opens the existing resource and
+plugin-view menu above its trigger and restores focus there on dismissal. The
+header resource switcher remains available. Hover gently magnifies the target
+and neighboring icons without changing hit targets or content layout; keyboard
+focus has a visible ring, and reduced-motion/coarse-pointer modes omit motion.
+The dock uses semantic theme tokens and never overlays a native guest. Browser
+Full view removes both dock and footer space; returning restores them. Subagent
+detail temporarily omits the dock to preserve its resource override.
+
 The shell exposes transient `docked` and `maximized` presentations. Docked
 is the default fixed-width in-flow right column. Maximized is a bounded
 renderer-owned frame inside the existing client window; the conversation remains
@@ -2365,7 +2376,10 @@ reasoning-level control.
   container width or below, mode/actions occupy the first row and
   context/model/dictation/submission occupy the second. The model retains
   available space and its reasoning label. The floating browser composer keeps
-  its brain-only model control and existing outer frame.
+  its brain-only model control and existing outer frame. Its empty input starts
+  at one line (subject to the shared editor's minimum pixel height), and Add,
+  mode/permissions, context, model, dictation, and Send share one bottom toolbar
+  row below the normal composer's 540px breakpoint. Multiline drafts still grow.
   Native floating-surface height includes the actions menu so it remains
   visible above the live webpage.
 - The English welcome placeholder is `Ask Nexus anything` in both placements.
