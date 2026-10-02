@@ -23,7 +23,11 @@ Unavailable storage defaults to the top right. Container and widget size
 observation keep the panel reachable when its contents or the window resize.
 
 Use one transparent, untinted surface with an 8px backdrop blur, a subtle edge,
-and no colored fill or sheen so the scenery retains its brightness. Use a smooth reversible disclosure, theme-aware
+and no colored fill or sheen so the scenery retains its brightness. A masked
+accent rim glows at the upper-left and lower-right diagonals, without filling
+the capsule or changing its geometry. Hover/focus adds a 2.8s orbiting rim
+highlight with a short fade; reduced motion keeps that highlight stationary.
+Use a smooth reversible disclosure, theme-aware
 text and controls, reduced-motion/reduced-transparency support, and localized
 errors. Hidden contents are inert; Escape restores disclosure focus. Ignore
 late status/inspection/dismissal responses from a previously selected session.
@@ -52,3 +56,6 @@ keyboard movement/reset, dismissal failure/success, long titles, Settings,
 and reduced motion passed. Two broader source-pattern checks failed identically
 on unchanged main (builtin subagent rows and the Context Vault theme selector).
 Visual acceptance by the user remains pending.
+The untinted revision passed the four-theme rendered checks and build. The
+hover rim's computed angle advanced during the loop, faded out on leave, and
+reported no animation under reduced motion.

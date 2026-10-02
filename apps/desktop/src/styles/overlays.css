@@ -815,6 +815,48 @@
   transition: border-radius var(--motion-duration-normal) var(--motion-ease-out), box-shadow var(--motion-duration-normal) var(--motion-ease-out);
   -webkit-app-region: no-drag;
 }
+@property --workflow-rim-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+.active-workflow-card::before,
+.active-workflow-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  border-radius: inherit;
+  pointer-events: none;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  filter: drop-shadow(0 0 3px color-mix(in oklab, var(--ds-accent) 65%, transparent));
+}
+.active-workflow-card::before {
+  background: linear-gradient(135deg,
+    color-mix(in oklab, var(--ds-accent) 35%, white) 0%,
+    color-mix(in oklab, var(--ds-accent) 65%, transparent) 12%,
+    transparent 32%, transparent 68%,
+    color-mix(in oklab, var(--ds-accent) 65%, transparent) 88%,
+    color-mix(in oklab, var(--ds-accent) 35%, white) 100%);
+}
+.active-workflow-card::after {
+  background: conic-gradient(from var(--workflow-rim-angle),
+    transparent 0deg 235deg,
+    color-mix(in oklab, var(--ds-accent) 65%, transparent) 285deg,
+    color-mix(in oklab, var(--ds-accent) 25%, white) 315deg,
+    transparent 350deg 360deg);
+  opacity: 0;
+  animation: workflow-rim-orbit 2.8s linear infinite paused;
+  transition: opacity 180ms var(--motion-ease-out);
+}
+.active-workflow-card:is(:hover, :focus-within)::after {
+  opacity: 1;
+  animation-play-state: running;
+}
+@keyframes workflow-rim-orbit {
+  to { --workflow-rim-angle: 360deg; }
+}
 .active-workflow-card[data-open="true"] { border-radius: 12px; }
 .active-workflow-card[data-dragging="true"] { user-select: none; box-shadow: var(--ds-shadow-composer); }
 .active-workflow-heading { display: flex; align-items: center; height: 36px; min-width: 0; padding: 0 8px; }
@@ -895,6 +937,7 @@
   .active-workflow-card,
   .active-workflow-disclosure,
   .active-workflow-chevron { transition: none; }
+  .active-workflow-card::after { animation: none; transition: none; }
 }
 @media (prefers-reduced-transparency: reduce) {
   .active-workflow-card { background: var(--ds-bg-elevated-opaque); backdrop-filter: none; -webkit-backdrop-filter: none; }

@@ -2334,7 +2334,11 @@ reasoning-level control.
   workflow activation, tools, or permissions.
 - Twilight, Obsidian, Emerald, and Alpine share the same floating glass shape,
   subtle outline, 8px blur, and controls with a transparent, untinted surface
-  that preserves the background's color and brightness. Reduced transparency and unsupported
+  that preserves the background's color and brightness. A static accent glow
+  follows only the upper-left and lower-right rim; it never fills the capsule.
+  Hover or keyboard focus adds a smoothly orbiting rim highlight (2.8s cycle),
+  fading away on leave. Reduced motion keeps the highlight stationary.
+  Reduced transparency and unsupported
   blur use readable fallback surfaces. Labels and errors are localized.
 - Project session rows retain a 4px gap between adjacent child sessions. The
   gap preserves separate touch targets and prevents an active row from merging

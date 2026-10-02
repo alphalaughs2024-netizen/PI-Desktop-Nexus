@@ -11179,7 +11179,11 @@ expanded stage/actions in System, Light, Dark, and every scenic theme. Keep its
 outline subtle and its text readable, with no permanent full-width banner or
 unbounded floating text. Its position must remain reachable below title chrome.
 The capsule has no tint or sheen: scenery keeps its color and brightness through
-an 8px blur. Reduced transparency retains the readable opaque fallback.
+an 8px blur. Its upper-left and lower-right rim glow without covering the
+contents or altering the capsule's size. Hover/focus adds a traveling rim glow
+that fades away on leave and is stationary with reduced motion enabled.
+Reduced transparency retains the
+readable opaque fallback.
 
 On the Scenic themes page, verify every preview card's name and description
 remain legible while each of Twilight, Alpine, Obsidian, and Emerald is active.
