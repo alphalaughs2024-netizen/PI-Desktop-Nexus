@@ -12089,7 +12089,9 @@ or delete caches, profiles or earlier recovery files to hide this condition.
   `+`. Mode and effective permission remain visible, including warning-colored
   Full access. Goal permits mode changes but locks permission choices. Voice
   and dictation cannot overlap. Model is text-only with a muted reasoning level;
-  context is ring-only with accessible details. No menu/control clipping or
+  context is ring-only with accessible details. A new chat retains the ring
+  with a not-reported label rather than invented zero usage. The compact ring
+  fills as reported context usage grows. No menu/control clipping or
   collisions; narrow layouts wrap into two rows. Focus restore, disabled/busy
   states, draft behavior, theme materials and compact Brain selector remain.
 - **Validation**: Actual-component geometry/interaction inspection, focused

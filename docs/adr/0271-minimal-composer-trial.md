@@ -39,3 +39,9 @@ source-pattern failures concern attachment session materialization (two) and
 slash-mode dispatch (one); none is introduced by this trial. Desktop typecheck
 and main/preload/renderer build passed. Live voice and native file selection
 remain for the user's app test.
+
+The context-ring follow-up keeps the compact indicator visible beside the
+model selector without reported usage, showing a neutral ring and an honest
+pending label. Reported usage fills the ring according to used capacity;
+tooltip and accessible text expose used percentage and tokens. Existing
+noncompact inspectors retain their remaining-capacity presentation.

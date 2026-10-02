@@ -12,7 +12,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
-import { en, flattenCatalog } from "@pi-desktop/i18n";
+import { en, flattenCatalog } from "../../../../packages/i18n/src/index.ts";
 import { Composer } from "../../src/components/Composer.tsx";
 import { VoiceModeProvider } from "../../src/components/VoiceConversation.tsx";
 import { useAppStore } from "../../src/stores/app-store.ts";
@@ -25,7 +25,7 @@ useAppStore.setState({activeSessionId:sessionId,providers:[{id:"trial-provider",
 const root=ReactDOM.createRoot(document.querySelector('#root'));
 const usage={inputTokens:24000,outputTokens:1200,cacheReadTokens:0,cacheWriteTokens:0};
 const contextUsage={usage,turnUsage:usage,contextWindow:128000,tools:[],responseOutputEstimated:false};
-function render(compact=false){root.render(React.createElement(VoiceModeProvider,null,React.createElement(Composer,{compactModelSelector:compact,contextUsage})));}
+function render(compact=false,withUsage=true){root.render(React.createElement(VoiceModeProvider,null,React.createElement(Composer,{compactModelSelector:compact,contextUsage:withUsage?contextUsage:null})));}
 let releaseEnhancement;
 let pickerCalls=0;
 api.pickFiles=async()=>{pickerCalls++;return {token:null};};

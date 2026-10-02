@@ -32,6 +32,7 @@ import {
 import { materializeDraftSession, useAppStore } from "../stores/app-store";
 import type { ComposerDraftSnapshot } from "../lib/composer-smart-stop";
 import { latestTurnContextInspector, type LatestTurnContextInspector } from "../lib/latest-turn-context";
+import { resolveContextWindow } from "../lib/context-usage";
 import {
   HOME_DRAFT_KEY,
   captureComposerDraft,
@@ -2634,9 +2635,15 @@ export function Composer({
             </div>
             <div className="composer-right">
             <div className="composer-model-group-control">
-              {composerContextUsage ? (
-                <ContextUsageInspector {...composerContextUsage} compact />
-              ) : null}
+              <ContextUsageInspector
+                {...(composerContextUsage ?? {
+                  usage: { inputTokens: 0, outputTokens: 0, totalTokens: 0 },
+                  turnUsage: { inputTokens: 0, outputTokens: 0, totalTokens: 0 },
+                  contextWindow: resolveContextWindow(provider?.id, modelId, providerModels, providers),
+                  tools: [],
+                })}
+                usageAvailable={Boolean(composerContextUsage)} compact
+              />
               <div
                 className="composer-model-thinking"
                 ref={modelThinkingRef}

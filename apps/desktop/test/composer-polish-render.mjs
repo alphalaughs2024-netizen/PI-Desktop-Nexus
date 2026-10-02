@@ -13,7 +13,7 @@ const errors = [];
 page.on("pageerror", error => errors.push(error.message));
 const observations = [];
 try {
-  for (const width of [1280, 560, 375]) {
+  for (const width of process.env.COMPOSER_INSPECTION_CONTEXT_ONLY ? [] : [1280, 560, 375]) {
     await page.setViewportSize({ width, height: 780 });
     await page.goto(`${origin}/test/fixtures/composer-polish.html`);
     const shell = page.locator(".composer-shell");
@@ -119,6 +119,20 @@ try {
       observations.push({ width, theme, shellHeight: initial.height, multilineHeight: multiline.height, controls: buttons.length });
     }
   }
+  await page.goto(`${origin}/test/fixtures/composer-polish.html`);
+  await page.locator(".composer-shell").waitFor();
+  const ring = page.locator(".context-inspector-trigger");
+  assert.match(await ring.getAttribute("aria-label"), /20% context used/);
+  const progress = page.locator(".context-inspector-ring-progress");
+  const offset = Number(await progress.getAttribute("stroke-dashoffset"));
+  const circumference = Number(await progress.getAttribute("stroke-dasharray"));
+  assert.ok(Math.abs(offset / circumference - (1 - 25200 / 128000)) < 0.001);
+  await page.evaluate(() => window.composerInspection.render(false, false));
+  await page.waitForFunction(() => document.querySelector(".context-inspector-trigger")?.getAttribute("aria-label") === "Context usage not reported yet");
+  await ring.click();
+  assert.ok(await page.getByRole("dialog", { name: "Context", exact: true }).getByText("Context usage not reported yet").isVisible());
+  await page.keyboard.press("Escape");
+  assert.equal(await progress.getAttribute("stroke-dashoffset"), await progress.getAttribute("stroke-dasharray"));
   await page.emulateMedia({ reducedMotion: "reduce" });
   assert.equal(await page.locator(".composer-shell").evaluate(element => getComputedStyle(element, "::after").transitionDuration), "0s");
   await page.evaluate(() => { document.documentElement.dataset.surface = "browser-composer"; window.composerInspection.render(true); });

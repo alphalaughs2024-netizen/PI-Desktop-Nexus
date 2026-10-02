@@ -344,6 +344,8 @@ export const zhTW = {
     usageContextUsed: "已用",
     usageContextRemaining: "剩餘",
     usageContextAria: "上下文剩餘 {{percent}}%，還剩 {{remaining}} tokens",
+    usageContextUsedAria: "上下文已用 {{percent}}%，{{used}} tokens",
+    usageContextPending: "尚未回報上下文用量",
     usageTurnTotal: "本輪合計",
     usageThroughputLabel: "生成速度",
     usageThroughput: "{{count}} tokens/s",

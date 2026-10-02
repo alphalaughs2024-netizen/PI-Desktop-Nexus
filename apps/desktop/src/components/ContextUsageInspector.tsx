@@ -39,6 +39,7 @@ export function ContextUsageInspector({
   responseOutputTokens,
   responseOutputEstimated = false,
   compact = false,
+  usageAvailable = true,
 }: {
   usage: MessageUsage;
   turnUsage: MessageUsage;
@@ -48,6 +49,7 @@ export function ContextUsageInspector({
   responseOutputTokens?: number;
   responseOutputEstimated?: boolean;
   compact?: boolean;
+  usageAvailable?: boolean;
 }) {
   const { t } = useTranslation();
   const panelId = useId();
@@ -64,6 +66,11 @@ export function ContextUsageInspector({
   const [popoverPosition, setPopoverPosition] =
     useState<ContextInspectorPlacement | null>(null);
   const context = calculateContextUsage(usage, contextWindow);
+  const contextLabel = !usageAvailable
+    ? t("chat.usageContextPending")
+    : compact
+      ? t("chat.usageContextUsedAria", { percent: context.usedPercent, used: formatTokenCount(context.usedTokens) })
+      : t("chat.usageContextAria", { percent: context.remainingPercent, remaining: formatTokenCount(context.remainingTokens) });
   // Occupancy, turn total, and provider cache/input/output are the last
   // model request. Summing every tool-loop call inflates cache read past
   // the window (OpenCode last-message accounting).
@@ -226,6 +233,7 @@ export function ContextUsageInspector({
           : undefined
       }
     >
+      {usageAvailable ? <>
       <div className="context-inspector-heading">
         <strong className="context-inspector-heading-value">
           {t("chat.usageContextLeft", {
@@ -322,6 +330,7 @@ export function ContextUsageInspector({
           <strong>~{formatTokenCount(compaction.summaryTokens)}</strong>
         </div>
       ) : null}
+      </> : <div className="context-inspector-heading">{t("chat.usageContextPending")}</div>}
     </div>
   ) : null;
 
@@ -335,14 +344,8 @@ export function ContextUsageInspector({
         ref={triggerRef}
         type="button"
         className="context-inspector-trigger"
-        tooltip={t("chat.usageContextAria", {
-          percent: context.remainingPercent,
-          remaining: formatTokenCount(context.remainingTokens),
-        })}
-        ariaLabel={t("chat.usageContextAria", {
-          percent: context.remainingPercent,
-          remaining: formatTokenCount(context.remainingTokens),
-        })}
+        tooltip={contextLabel}
+        ariaLabel={contextLabel}
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-controls={open ? panelId : undefined}
@@ -366,7 +369,7 @@ export function ContextUsageInspector({
             r={CONTEXT_RING_RADIUS}
             strokeDasharray={CONTEXT_RING_CIRCUMFERENCE}
             strokeDashoffset={
-              CONTEXT_RING_CIRCUMFERENCE * (1 - context.remainingRatio)
+              CONTEXT_RING_CIRCUMFERENCE * (1 - (usageAvailable ? compact ? context.usedRatio : context.remainingRatio : 0))
             }
           />
         </svg>

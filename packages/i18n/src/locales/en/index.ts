@@ -345,6 +345,8 @@ export const en = {
     usageContextUsed: "Used",
     usageContextRemaining: "Remaining",
     usageContextAria: "{{percent}}% context remaining, {{remaining}} tokens left",
+    usageContextUsedAria: "{{percent}}% context used, {{used}} tokens",
+    usageContextPending: "Context usage not reported yet",
     usageTurnTotal: "This turn",
     usageThroughputLabel: "Generation speed",
     usageThroughput: "{{count}} tokens/s",

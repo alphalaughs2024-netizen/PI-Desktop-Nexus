@@ -2276,6 +2276,8 @@ reasoning-level control.
 - The left toolbar contains `+` and mode/permission. The right toolbar contains
   the compact context ring, model/reasoning, dictation and Stop/Send (D347).
   Context percentage remains in accessible labeling and the inspector.
+  The composer ring fills according to used context and remains visible before
+  usage arrives; its tooltip and inspector report unavailable usage honestly.
   The model chip shows the current model name and the
   current reasoning level separated by `·`; `off` omits the level text. The
   `+` menu contains Add files, Voice mode, prompt enhancement and Undo when
