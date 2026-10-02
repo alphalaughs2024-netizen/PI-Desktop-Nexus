@@ -512,6 +512,13 @@ export const tr = {
     permissionAcceptEdits: "Düzenlemeleri kabul et",
     permissionAuto: "Rutin işlemleri onayla",
     permissionFullAccess: "Tam erişim",
+    permissionApprovalQuestion: "Nexus işlemleri nasıl onaylansın?",
+    permissionDescription: {
+      ask: "Düzenlemeler veya komutlar ek izin gerektirdiğinde sor.",
+      "accept-edits": "Çalışma alanı düzenlemelerine izin ver; komutlardan önce sor.",
+      auto: "İzin verilen işlemleri otomatik onayla; kısıtlamalar geçerlidir.",
+      "full-access": "Yerel dosya ve komut sınırlarını kaldır; araç politikaları geçerlidir.",
+    },
     permissionFullAccessTitle: "Tam erişim etkinleştirilsin mi?",
     permissionFullAccessDescription: "Aracı, normal onay istemleri olmadan uygun işlemleri gerçekleştirebilir. Mevcut güvenlik ve politika kısıtlamaları geçerliliğini korur.",
     permissionFullAccessFiles: "Dosyalar: Aracının erişebildiği dosyaları oluşturabilir, düzenleyebilir veya silebilir.",

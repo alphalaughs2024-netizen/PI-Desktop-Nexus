@@ -516,6 +516,13 @@ export const zhTW = {
     permissionAcceptEdits: "允許編輯",
     permissionAuto: "核准例行操作",
     permissionFullAccess: "完整存取",
+    permissionApprovalQuestion: "如何核准 Nexus 的操作？",
+    permissionDescription: {
+      ask: "編輯或命令需要額外權限時詢問。",
+      "accept-edits": "允許工作區編輯；執行命令前詢問。",
+      auto: "自動核准允許的操作；限制仍然有效。",
+      "full-access": "不限制原生檔案和命令；已啟用工具的政策仍然有效。",
+    },
     permissionFullAccessTitle: "啟用完整存取？",
     permissionFullAccessDescription: "代理可以在通常不需逐次核准的情況下執行符合條件的操作。現有安全性與政策限制仍然有效。",
     permissionFullAccessFiles: "檔案：建立、編輯或刪除代理可存取的檔案。",

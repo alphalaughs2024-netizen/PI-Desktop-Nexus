@@ -715,5 +715,21 @@ export function buildToolPresentation(
     Object.entries(args).filter(([key]) => key !== summaryKey),
   );
   if (Object.keys(remaining).length === 0) return blocks;
+  if (message.toolName === "apply_patch" && Array.isArray(remaining.files)) {
+    const files = remaining.files;
+    const rows = files.slice(0, MAX_LIST_ITEMS).flatMap(file => {
+      const entry = asRecord(file);
+      const path = stringAt(entry, "path");
+      if (!path) return [];
+      const oldPath = stringAt(entry, "oldPath");
+      return [{ label: stringAt(entry, "operation") ?? "file", value: oldPath ? `${oldPath} -> ${path}` : path }];
+    });
+    if (rows.length) {
+      const { files: _, ...other } = remaining;
+      return [...blocks, { kind: "fields", role: "files", rows },
+        ...(files.length > MAX_LIST_ITEMS ? [{ kind: "note" as const, role: "notice" as const, text: `${files.length - MAX_LIST_ITEMS} additional file changes omitted.` }] : []),
+        ...recordBlocks(other, "input")];
+    }
+  }
   return [...blocks, ...recordBlocks(remaining, "input")];
 }

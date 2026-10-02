@@ -76,6 +76,8 @@ import { PlanApprovalBar } from "./PlanApprovalBar";
 import { QueuedPromptRow } from "./QueuedPromptRow";
 import { SpeechControl } from "./SpeechControl";
 import { ComposerActions } from "./ComposerActions";
+import { PermissionModeContents } from "./PermissionModeContents";
+import { FullAccessConfirmation } from "./FullAccessConfirmation";
 import {
   IconArrowUp,
   IconCornerDownLeft,
@@ -90,7 +92,6 @@ import {
   IconTarget,
   IconX,
 } from "./icons";
-import { createPortal } from "react-dom";
 
 const COMPOSER_MIN_HEIGHT_PX = 28;
 const COMPOSER_MAX_VISIBLE_ROWS = 7;
@@ -1237,6 +1238,9 @@ export function Composer({
     mode === "agent"
       ? (["ask", "auto", "full-access"] as const)
       : (["ask", "accept-edits", "auto"] as const);
+  useEffect(() => {
+    setFullAccessConfirmOpen(false);
+  }, [activeSessionId, mode, controlsBlocked]);
   const provider = providers.find(
     (candidate) =>
       candidate.id ===
@@ -2549,7 +2553,7 @@ export function Composer({
                         ))}
                       </div>
                       <div role="group" aria-label={t("chat.permissionMode")}>
-                        <div className="composer-configuration-heading">{t("chat.permissionMode")}</div>
+                        <div className="composer-configuration-heading composer-permission-heading">{t("chat.permissionApprovalQuestion")}</div>
                       {composerPermissionOptions.map(
                         (candidate) => (
                           <button
@@ -2558,7 +2562,8 @@ export function Composer({
                             role="menuitemradio"
                             aria-checked={composerPermissionMode === candidate}
                             disabled={controlsBlocked || mode === "goal"}
-                            className={`composer-plus-item ${
+                            data-permission-mode={candidate}
+                            className={`composer-plus-item composer-permission-option ${
                               composerPermissionMode === candidate ? "active" : ""
                             }`}
                             onClick={async () => {
@@ -2584,9 +2589,7 @@ export function Composer({
                               }
                             }}
                           >
-                            <span className="flex-1 text-left">
-                              {t(PERMISSION_MODE_I18N_KEYS[candidate])}
-                            </span>
+                            <PermissionModeContents mode={candidate} label={t(PERMISSION_MODE_I18N_KEYS[candidate])} />
                             {composerPermissionMode === candidate ? (
                               <IconCheck size={13} />
                             ) : null}
@@ -2846,49 +2849,13 @@ export function Composer({
               <RendererSlotMount slot="composerControl" position="right" props={{ position: "right", disabled: controlsBlocked }} />
             </div>
           </div>
-          {fullAccessConfirmOpen && typeof document !== "undefined"
-            ? createPortal(
-            <div className="overlay composer-full-access-overlay" role="presentation">
-              <div className="dialog composer-full-access-dialog" role="dialog" aria-modal="true" aria-labelledby="composer-full-access-title">
-                <h2 id="composer-full-access-title">{t("chat.permissionFullAccessTitle")}</h2>
-                <p>{t("chat.permissionFullAccessDescription")}</p>
-                <ul>
-                  <li>{t("chat.permissionFullAccessFiles")}</li>
-                  <li>{t("chat.permissionFullAccessTerminal")}</li>
-                  <li>{t("chat.permissionFullAccessInternet")}</li>
-                  <li>{t("chat.permissionFullAccessSensitiveData")}</li>
-                  <li>{t("chat.permissionFullAccessPromptInjection")}</li>
-                </ul>
-                <div className="composer-full-access-actions">
-                  <button type="button" onClick={() => setFullAccessConfirmOpen(false)}>
-                    {t("common.cancel")}
-                  </button>
-                  <button
-                    type="button"
-                    className="danger"
-                    onClick={async () => {
-                      try {
-                        await configureActiveSession({
-                          mode,
-                          providerId: provider?.id,
-                          modelId,
-                          thinkingLevel,
-                          permissionMode: "full-access",
-                        });
-                        setFullAccessConfirmOpen(false);
-                      } catch (e) {
-                        showToast(e instanceof Error ? e.message : String(e), { variant: "error" });
-                      }
-                    }}
-                  >
-                    {t("chat.permissionFullAccessConfirm")}
-                  </button>
-                </div>
-              </div>
-            </div>,
-            document.body,
-          )
-            : null}
+          {fullAccessConfirmOpen && mode === "agent" && !controlsBlocked && (
+            <FullAccessConfirmation onCancel={() => setFullAccessConfirmOpen(false)} onConfirm={async () => {
+              if (useAppStore.getState().activeSessionId !== activeSessionId) throw new Error("The active chat changed. Select Full access again in the intended chat.");
+              await configureActiveSession({ mode, providerId: provider?.id, modelId, thinkingLevel, permissionMode: "full-access" });
+              setFullAccessConfirmOpen(false);
+            }} />
+          )}
         </div>
       </div>
     </div>

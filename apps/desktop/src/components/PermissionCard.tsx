@@ -27,6 +27,7 @@ export function PermissionCard({
     permissionSecondsLeft(permission.receivedAt),
   );
   const [resolving, setResolving] = useState(false);
+  const resolvingRef = useRef(false);
   const timeoutHandled = useRef(false);
 
   const restoreComposerFocus = () => {
@@ -38,7 +39,8 @@ export function PermissionCard({
   const resolve = async (
     decision: "allow-once" | "allow-session" | "deny",
   ) => {
-    if (resolving) return;
+    if (resolvingRef.current || permission.allowedDecisions && !permission.allowedDecisions.includes(decision)) return;
+    resolvingRef.current = true;
     setResolving(true);
     try {
       await resolvePermission(permission.sessionId, permission.requestId, decision);
@@ -47,6 +49,7 @@ export function PermissionCard({
         variant: "error",
       });
       setResolving(false);
+      resolvingRef.current = false;
     } finally {
       restoreComposerFocus();
     }
@@ -135,20 +138,24 @@ export function PermissionCard({
         >
           {t("permission.deny")}
         </Button>
-        <Button
-          variant="secondary"
-          disabled={resolving || (permission.allowedDecisions !== undefined && !permission.allowedDecisions.includes("allow-session"))}
-          onClick={() => void resolve("allow-session")}
-        >
-          {t("permission.allowSession")}
-        </Button>
-        <Button
-          variant="primary"
-          disabled={resolving}
-          onClick={() => void resolve("allow-once")}
-        >
-          {t("permission.allowOnce")}
-        </Button>
+        {(permission.allowedDecisions === undefined || permission.allowedDecisions.includes("allow-session")) && (
+          <Button
+            variant="secondary"
+            disabled={resolving}
+            onClick={() => void resolve("allow-session")}
+          >
+            {t("permission.allowSession")}
+          </Button>
+        )}
+        {(!permission.allowedDecisions || permission.allowedDecisions.includes("allow-once")) && (
+          <Button
+            variant="primary"
+            disabled={resolving}
+            onClick={() => void resolve("allow-once")}
+          >
+            {t("permission.allowOnce")}
+          </Button>
+        )}
       </div>
     </section>
   );

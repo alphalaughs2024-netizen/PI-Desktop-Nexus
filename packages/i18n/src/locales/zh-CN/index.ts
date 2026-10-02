@@ -512,6 +512,13 @@ export const zhCN = {
     permissionAcceptEdits: "允许编辑",
     permissionAuto: "批准常规操作",
     permissionFullAccess: "完全访问",
+    permissionApprovalQuestion: "如何批准 Nexus 的操作？",
+    permissionDescription: {
+      ask: "编辑或命令需要额外权限时询问。",
+      "accept-edits": "允许工作区编辑；运行命令前询问。",
+      auto: "自动批准允许的操作；限制仍然有效。",
+      "full-access": "不限制原生文件和命令；已启用工具的策略仍然有效。",
+    },
     permissionFullAccessTitle: "启用完全访问？",
     permissionFullAccessDescription: "代理可以在通常无需逐次审批的情况下执行符合条件的操作。现有安全和策略限制仍然有效。",
     permissionFullAccessFiles: "文件：创建、编辑或删除代理可访问的文件。",

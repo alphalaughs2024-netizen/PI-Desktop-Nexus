@@ -908,6 +908,15 @@
   margin-top: 12px;
 }
 
+.permission-card-actions .btn-primary {
+  color: var(--permission-action-ink, #101820);
+  font-weight: var(--font-weight-medium);
+}
+
+:root[data-theme="light"] .permission-card-actions .btn-primary {
+  --permission-action-ink: #ffffff;
+}
+
 @media (max-width: 560px) {
   .permission-card-meta {
     align-items: flex-start;

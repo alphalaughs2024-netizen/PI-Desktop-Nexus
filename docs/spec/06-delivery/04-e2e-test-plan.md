@@ -2,6 +2,15 @@
 
 ### Phase 4 Managed Commands And Previews
 
+- Verify new/resumed parent turns and configured delegates receive the shared
+  Nexus identity at the actual provider request boundary. Inspect granted
+  Browser/process flags on restricted delegates; absent tools cannot be claimed.
+  Deliver a Plan transition before its native item; wait for exact matching
+  evidence, and cancel before binding to verify no proposal/mode mutation.
+- Native approval previews show available file paths/operations or command/cwd
+  evidence. Invalid decisions leave the request pending, then explicit once/deny
+  settles exactly one reply. Invalid permission modes fail before launch.
+
 - Deliver the MCP Task request before its native item-start notification. It
   binds once to the matching item; unrelated arguments cannot claim it. Cancel
   before the item arrives and verify no worker starts. Confirm selected child
@@ -12253,3 +12262,23 @@ or delete caches, profiles or earlier recovery files to hide this condition.
 - **Validation**: Slider palette/capability tests, existing configuration and
   composer regressions, actual-component browser keyboard/pointer/canvas and
   theme checks, desktop typecheck/build. No full repository E2E suite required.
+
+### E2E-Nexus-Approvals: Policy menu and native cards (ADRs 0279/0280)
+
+- **Steps**: Inspect Ask for approval, Approve for me and Full access in Agent;
+  inspect Plan/Goal options. Change modes with keyboard and mouse. Open Full
+  access, traverse Tab/Shift+Tab, cancel with Escape/backdrop, change chat and
+  retry a refused save. Submit repeatedly while a save is pending. Render native
+  once-only and legacy host permission cards across six themes at desktop and
+  narrow widths. Click once/deny, simulate a failed response, and retry.
+- **Expected**: Short descriptions match actual policy; no invented risk
+  classifier or unrestricted host tool promise. Full access starts focused on
+  Cancel, keeps focus contained, cannot apply to a newly selected chat, and
+  submits once. A failed save remains visible and retryable. Native cards omit
+  unsupported session grants; legacy host grants remain available. File/command
+  evidence is readable, primary action text contrast is at least 4.5:1, controls
+  do not overflow, and repeated clicks dispatch once. Existing expiry/Stop denies
+  pending work. No session-grant implementation is introduced.
+- **Validation**: Focused runtime/renderer tests, real-component browser checks,
+  local provider fixtures through actual execution processes, typecheck/build.
+  Full repository E2E suites remain unrun unless explicitly requested.

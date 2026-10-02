@@ -512,6 +512,13 @@ export const ko = {
     permissionAcceptEdits: "편집 허용",
     permissionAuto: "일상적인 작업 승인",
     permissionFullAccess: "전체 액세스",
+    permissionApprovalQuestion: "Nexus 작업을 어떻게 승인할까요?",
+    permissionDescription: {
+      ask: "편집이나 명령에 추가 권한이 필요하면 묻습니다.",
+      "accept-edits": "작업 공간 편집을 허용하고 명령 실행 전에 묻습니다.",
+      auto: "허용된 작업을 자동 승인합니다. 제한은 유지됩니다.",
+      "full-access": "네이티브 파일과 명령 제한을 해제합니다. 도구 정책은 유지됩니다.",
+    },
     permissionFullAccessTitle: "전체 액세스를 사용하시겠습니까?",
     permissionFullAccessDescription: "에이전트가 일반 승인 없이 허용된 작업을 수행할 수 있습니다. 기존 보안 및 정책 제한은 계속 적용됩니다.",
     permissionFullAccessFiles: "파일: 에이전트가 접근할 수 있는 파일을 만들거나 편집하거나 삭제합니다.",

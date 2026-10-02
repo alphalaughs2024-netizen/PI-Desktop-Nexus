@@ -28,6 +28,13 @@ function envelope(details) {
 const roles = (blocks) => blocks.map((block) => block.role);
 const byRole = (blocks, role) => blocks.find((block) => block.role === role);
 
+test("native patch approval renders operation/path evidence without a JSON blob", () => {
+  const blocks = buildToolPresentation({ toolName: "apply_patch", toolArgs: { files: [{ path: "b.ts", oldPath: "a.ts", operation: "update" }, { path: "c.ts", operation: "delete" }], grantRoot: "C:/project" } });
+  assert.deepEqual(byRole(blocks, "files"), { kind: "fields", role: "files", rows: [{ label: "update", value: "a.ts -> b.ts" }, { label: "delete", value: "c.ts" }] });
+  assert(!blocks.some(block => block.kind === "code" && block.lang === "json"));
+  assert(blocks.some(block => block.kind === "fields" && block.rows.some(row => row.value === "C:/project")));
+});
+
 test("unwraps the pi-ai envelope exactly once", () => {
   const details = { path: "a.ts", content: "line\n", root: "workspace" };
   assert.deepEqual(toolResultPayload({ toolResult: envelope(details) }), details);

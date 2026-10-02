@@ -23,7 +23,7 @@ test("Agent and Plan permission menus present only effective selectable modes", 
   );
   assert.match(
     permissionControlSource,
-    /\{t\(PERMISSION_MODE_I18N_KEYS\[candidate\]\)\}/,
+    /label=\{t\(PERMISSION_MODE_I18N_KEYS\[candidate\]\)\}/,
   );
   assert.doesNotMatch(permissionControlSource, /permissionInherit/);
   assert.doesNotMatch(permissionControlSource, /\["inherit",/);
@@ -57,9 +57,8 @@ test("Agent permission menu offers Full access while Plan does not", () => {
 });
 
 test("Full access confirmation is portaled outside the bottom composer dock", () => {
-  assert.match(composerSource, /createPortal\(/);
-  assert.match(composerSource, /document\.body/);
-  assert.match(composerSource, /composer-full-access-overlay/);
+  assert.match(composerSource, /<FullAccessConfirmation/);
+  assert.match(composerSource, /activeSessionId, mode, controlsBlocked/);
 });
 
 test("Full access confirmation action keeps readable text on the danger fill", async () => {
@@ -71,6 +70,6 @@ test("Full access confirmation action keeps readable text on the danger fill", a
     styles.indexOf(".composer-full-access-actions button.danger {"),
     styles.indexOf(".composer-full-access-actions button.danger:hover"),
   );
-  assert.match(dangerRule, /background: var\(--ds-error\)/);
+  assert.match(dangerRule, /background: color-mix\(in oklab, var\(--ds-error\) 64%, #000\)/);
   assert.match(dangerRule, /color: #fff/);
 });

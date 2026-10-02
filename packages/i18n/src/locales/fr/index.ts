@@ -503,6 +503,13 @@ export const fr = {
     "permissionAcceptEdits": "Accepter les modifications",
     "permissionAuto": "Approuver les actions courantes",
     "permissionFullAccess": "Accès complet",
+    permissionApprovalQuestion: "Comment approuver les actions de Nexus ?",
+    permissionDescription: {
+      ask: "Demander si les modifications ou commandes exigent des droits supplémentaires.",
+      "accept-edits": "Autoriser les modifications du projet ; demander avant les commandes.",
+      auto: "Approuver les actions autorisées ; les restrictions restent applicables.",
+      "full-access": "Fichiers et commandes natifs sans restriction ; les règles des outils restent applicables.",
+    },
     "permissionFullAccessTitle": "Activer l’accès complet ?",
     "permissionFullAccessDescription": "L’agent peut effectuer les actions autorisées sans les demandes d’approbation habituelles. Les restrictions de sécurité et de politique restent applicables.",
     "permissionFullAccessFiles": "Fichiers : créer, modifier ou supprimer les fichiers accessibles à l’agent.",

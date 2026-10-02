@@ -2,11 +2,22 @@
 
 ## 1. Goal
 
-Agent Composer offers Ask for approval, Approve routine actions (the existing
+Agent Composer offers Ask for approval, Approve for me (the existing
 `auto` policy), and Full access. Full access is a session-scoped Agent-only
 policy and requires explicit danger-styled confirmation. It does not bypass
 Plan/Goal hard denies or host policy, containment, canonicalization, remote
 control, administrator, platform, timeout, or audit restrictions.
+
+ADR 0280 adapts the compact approval menu to Nexus: each choice has a semantic
+icon, concise title, policy-accurate description, checked selection, keyboard
+navigation and theme tokens. Full access uses the warning accent; the menu
+never promises a new unsafe-action classifier. Plan retains Accept edits and
+Goal's permission choices stay disabled while mode changes remain available.
+Full access confirmation traps keyboard focus, starts on Cancel, supports
+Escape/backdrop dismissal before submission, restores focus, and allows one
+submission at a time. Changes to the active chat, mode or approval lock close
+the confirmation. A failed save keeps the dialog open with an error and permits
+retry; no failure is presented as successful elevation.
 
 Make high-risk local actions visible, interruptible, and predictable.
 
@@ -40,6 +51,12 @@ Auto.
 - `allow-once`
 - `allow-session` (scoped by toolName, **D006**)
 - `deny`
+
+Requests with explicit `allowedDecisions` show only the supported allow actions.
+Legacy host requests without that field retain their existing actions. Native
+requests omit Allow for this chat. Pending cards guard repeated clicks and
+restore composer focus; enabled primary text uses opaque, contrast-tested ink
+instead of a translucent scenic background token.
 
 No `allow-always` in MVP.
 
@@ -75,7 +92,7 @@ Must show:
 3. short reason
 4. args preview (redacted if needed)
 5. workspace context
-6. actions: Allow once / Allow for session / Deny
+6. supported actions: Allow once / Allow for session (if supported) / Deny
 
 The card is rendered inline only in its originating session's transcript.
 Background requests remain pending without opening an overlay, changing the

@@ -510,6 +510,13 @@ export const de = {
     "permissionAcceptEdits": "Änderungen akzeptieren",
     "permissionAuto": "Routineaktionen genehmigen",
     "permissionFullAccess": "Vollzugriff",
+    permissionApprovalQuestion: "Wie sollen Nexus-Aktionen genehmigt werden?",
+    permissionDescription: {
+      ask: "Nachfragen, wenn Bearbeitungen oder Befehle weitere Rechte brauchen.",
+      "accept-edits": "Bearbeitungen im Arbeitsbereich erlauben; vor Befehlen nachfragen.",
+      auto: "Erlaubte Aktionen automatisch genehmigen; Beschränkungen bleiben bestehen.",
+      "full-access": "Native Dateien und Befehle ohne Beschränkung; Werkzeugregeln gelten weiterhin.",
+    },
     "permissionFullAccessTitle": "Vollzugriff aktivieren?",
     "permissionFullAccessDescription": "Der Agent kann geeignete Aktionen ohne normale Genehmigungsanfragen ausführen. Bestehende Sicherheits- und Richtlinienbeschränkungen gelten weiterhin.",
     "permissionFullAccessFiles": "Dateien: Dateien erstellen, bearbeiten oder löschen, auf die der Agent zugreifen kann.",
