@@ -125,6 +125,30 @@ html[data-surface="browser-composer"] .browser-floating-shell .composer-shell::a
   display: none;
 }
 
+/* The native browser surface uses an icon-only model control, so its tools
+   fit on one row even below the regular composer's 540px breakpoint. */
+html[data-surface="browser-composer"] .composer-shell .composer-toolbar {
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+html[data-surface="browser-composer"] .composer-shell :is(.composer-left, .composer-right) {
+  grid-row: 1;
+}
+
+html[data-surface="browser-composer"] .composer-left .composer-permission {
+  min-width: 0;
+  flex: 0 1 auto;
+}
+
+html[data-surface="browser-composer"] .composer-shell .composer-configuration-chip {
+  max-width: 100%;
+}
+
+html[data-surface="browser-composer"] .composer-input {
+  min-height: 1lh;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .composer-shell::after { transition: none; }
   .composer-actions-menu { animation: none; }

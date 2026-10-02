@@ -2376,7 +2376,10 @@ reasoning-level control.
   container width or below, mode/actions occupy the first row and
   context/model/dictation/submission occupy the second. The model retains
   available space and its reasoning label. The floating browser composer keeps
-  its brain-only model control and existing outer frame.
+  its brain-only model control and existing outer frame. Its empty input starts
+  at one line (subject to the shared editor's minimum pixel height), and Add,
+  mode/permissions, context, model, dictation, and Send share one bottom toolbar
+  row below the normal composer's 540px breakpoint. Multiline drafts still grow.
   Native floating-surface height includes the actions menu so it remains
   visible above the live webpage.
 - The English welcome placeholder is `Ask Nexus anything` in both placements.

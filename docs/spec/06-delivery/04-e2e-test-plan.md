@@ -12068,6 +12068,10 @@ or delete caches, profiles or earlier recovery files to hide this condition.
   keyboard, and read older text during streaming. Open the Brain model selector
   and verify model/reasoning selection and tooltip. Reverse Full view during
   motion and resize; repeat with reduced motion.
+  Inspect the collapsed floating composer: Add and mode/permission controls
+  align with context, Brain, microphone, and Send in a single bottom row. Verify
+  the empty input is compact, multiline text grows without covering controls,
+  menus remain reachable, and the main chat keeps its responsive two-row layout.
   Drag the browser's left divider to the dock limit, then at least 32px beyond
   it. Check presentation before and after release. Repeat by dragging back,
   canceling with Escape/pointer cancellation, and with a collapsed sidebar and
