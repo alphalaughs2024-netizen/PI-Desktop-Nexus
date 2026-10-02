@@ -6,7 +6,11 @@
 - Sidebar owns navigation hierarchy, project/session rows, and Sidebar focus.
 - Main titlebar owns session title and top-level actions.
 - Chat surface owns transcript spacing and readable content surfaces.
-- Agent operation card owns active-workflow title/stage/actions.
+- Agent operation card owns the floating glass workflow strip, its disclosure,
+  bounded draggable position preference, and active-workflow title/stage/actions.
+  Its fluid energy core observes session-specific runtime activity; separate
+  light-spill and bounded glass surfaces preserve bloom without clipping it
+  or reserving composer/transcript space.
 - Composer owns prompt input, permission/model controls, send/stop, and focus.
 - Work Panel frame owns dock/maximize/close, outer surface, and frame focus.
 

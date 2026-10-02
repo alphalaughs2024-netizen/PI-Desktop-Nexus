@@ -2145,6 +2145,12 @@ export const es = {
     "justNow": "Justo ahora"
   },
   "workflow": {
+    "agentName": "Agente Nexus",
+    "stage": "Etapa",
+    "activated": "Activado",
+    "move": "Mover panel de flujo de trabajo",
+    "resetPosition": "Restablecer posición del panel",
+    "dismissFailed": "No se pudo descartar este flujo de trabajo. Inténtalo de nuevo.",
     "activeLabel": "Flujo de trabajo activo",
     "status": "Etapa: {{stage}} · Activado: {{reason}}",
     "inspect": "Inspeccionar",

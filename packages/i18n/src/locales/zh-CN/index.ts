@@ -2198,6 +2198,12 @@ export const zhCN = {
     justNow: "刚刚",
   },
   workflow: {
+    agentName: "Nexus 智能体",
+    stage: "阶段",
+    activated: "激活原因",
+    move: "移动工作流面板",
+    resetPosition: "重置面板位置",
+    dismissFailed: "无法忽略此工作流，请重试。",
     activeLabel: "当前工作流",
     status: "阶段：{{stage}} · 激活原因：{{reason}}",
     inspect: "查看",

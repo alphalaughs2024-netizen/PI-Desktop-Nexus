@@ -2313,17 +2313,49 @@ reasoning-level control.
 - In Twilight Mountains, a fixed conversation title bar reserves its own
   height plus an 8px visual clearance before the first transcript item. Live
   activity and subagent status must not paint beneath title-bar controls.
-- An active workflow strip is an in-content compact status surface below the
-  title band. It reserves the title-bar clearance, wraps its actions at narrow
-  widths, and never overlaps the conversation title, native controls, or their
-  portaled tooltips.
-- The active workflow strip exposes outlined `Inspect`, `Dismiss`, and
-  `Settings` buttons with visible keyboard focus. Inspect opens a full-width,
-  bounded scrolling guidance surface below the strip; it uses an explicit
-  readable background and never relies on a browser-default or black `pre`
-  surface. In Twilight Mountains the strip uses raised glass and the inspected
-  body uses the opaque safety tier. Labels and loading/error messages are
-  localized.
+- Active workflows appear in a floating glass panel (ADR 0273), collapsed by
+  default at the top right below the title band. The compact strip shows the
+  workflow name, activation reason, fluid-ribbon energy core, drag grip, and
+  disclosure arrow. The closed 352x48px bar has fully rounded pill ends,
+  two-line name/reason copy, and rounded hover controls;
+  it reserves no transcript or empty-state height. Long names are ellipsized.
+- Hover or click opens the panel's stage, activation reason, optional next
+  action, and icon-labelled `Inspect`, `Dismiss`, and `Settings` controls.
+  Click pins the panel open; outside click, Escape, or focus leaving closes it.
+  Escape returns focus to the disclosure. Closed contents are inert. Opening
+  and closing use a short reversible height/fade transition with reduced-motion
+  support. Inspect retains the bounded scrolling guidance reader within the
+  panel; it uses the theme's readable safety surface. Dismiss retains the saved
+  session workflow action; failure remains visible and retryable.
+- The grip supports pointer capture and arrow-key positioning; Home or the
+  reset-position action restores the top right. Position is stored as bounded
+  conversation-relative fractions in renderer-local preferences, shared across
+  conversations. Resize, sidebar, and work-panel changes clamp the widget below
+  the title band and inside the conversation. Positioning never changes host
+  workflow activation, tools, or permissions.
+- Twilight, Obsidian, Emerald, and Alpine share the same floating glass shape,
+  12px fixed blur, and readable theme-aware glass. Dark scenic themes use a
+  light deep-navy translucent fill; Alpine uses pale glass. Opposing inset
+  highlights and a soft lower shadow give depth. Diagonal caustics and diffuse
+  blue light spill beyond the capsule, independently of the clipped surface.
+  An Aceternity-inspired masked border moves a pale highlight around the edge
+  over 4s, then pauses and crossfades to a blue gradient bloom on hover/focus.
+  Leaving resumes the highlight and fades the blue bloom out. The border is
+  decorative, independent of runtime activity, and pointer-transparent. Its
+  cut-out center preserves the glass fill; no opaque backing covers the pill.
+  Reduced motion keeps highlights stationary. Reduced transparency and unsupported
+  blur use readable fallback surfaces. Labels and errors are localized.
+- The core observes only its displayed session's runtime state. Reported
+  reasoning gives slow organic motion; tool execution, answering, running
+  subagents, and compaction give a flowing ribbon. Preparing, recovery, model
+  waits, approval/input waits, and retry delays remain still. A completed turn
+  settles once into success; a failed turn has a stationary error treatment.
+  Interrupted/unavailable states never become a loading animation. The actual
+  activity label remains available to assistive technology, in the trigger's
+  tooltip, and in expanded details. It does not replace workflow stage data.
+  A freshly accepted turn ignores the previous turn's outcome/activity.
+  Continuous motion uses transforms/opacity on a small vector element; bloom
+  and backdrop blur strengths never animate. SVG IDs are unique per instance.
 - Project session rows retain a 4px gap between adjacent child sessions. The
   gap preserves separate touch targets and prevents an active row from merging
   visually with its sibling in scenic and standard themes.

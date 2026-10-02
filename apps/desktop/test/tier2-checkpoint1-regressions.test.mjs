@@ -37,11 +37,11 @@ test("Responses stream patch stops consuming after a terminal event", () => {
   assert.match(responsePatch, /response\.completed[\s\S]*?response\.incomplete[\s\S]*?(?:return|break);/);
 });
 
-test("active workflow inspection has a dedicated, localized, full-width surface", () => {
+test("active workflow inspection has a dedicated localized surface inside the floating panel", () => {
   assert.match(card, /useTranslation/);
   assert.match(card, /className="active-workflow-body-wrap"/);
   assert.match(card, /t\("workflow\.inspect"\)/);
-  assert.match(overlays, /\.active-workflow-body-wrap\s*\{[\s\S]*?flex-basis:\s*100%/);
+  assert.match(overlays, /\.active-workflow-body-wrap\s*\{[^}]*min-width:\s*0/);
   assert.match(overlays, /\.active-workflow-actions button\s*\{[\s\S]*?border:/);
   assert.match(
     twilight,
@@ -49,15 +49,15 @@ test("active workflow inspection has a dedicated, localized, full-width surface"
   );
 });
 
-test("active workflow card uses a soft borderless semantic tile in every theme", () => {
+test("active workflow card floats below title chrome with a subtle glass outline in every theme", () => {
   assert.match(
     overlays,
-    /\.active-workflow-card\s*\{[\s\S]*?border:\s*1px solid transparent/,
+    /\.active-workflow-card\s*\{[^}]*position:\s*absolute/,
   );
-  assert.match(overlays, /\.active-workflow-card\s*\{[\s\S]*?background:\s*color-mix\(in oklab, var\(--ds-bg-secondary\) 82%, transparent\)/);
+  assert.match(overlays, /\.active-workflow-surface\s*\{[^}]*background:\s*var\(--workflow-fill\);[^}]*backdrop-filter:\s*blur\(12px\)/);
   assert.match(
-    twilight,
-    /\[data-scenic-theme="twilight-mountains"\] \.active-workflow-card[\s\S]*?border-color:\s*transparent/,
+    scenicThemes,
+    /\[data-scenic-theme\] \.active-workflow-card\s*\{[^}]*--workflow-fill:\s*rgba/,
   );
 });
 

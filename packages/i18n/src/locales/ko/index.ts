@@ -2184,6 +2184,12 @@ export const ko = {
     justNow: "방금",
   },
   workflow: {
+    agentName: "Nexus 에이전트",
+    stage: "단계",
+    activated: "활성화 이유",
+    move: "워크플로 패널 이동",
+    resetPosition: "패널 위치 초기화",
+    dismissFailed: "워크플로를 닫을 수 없습니다. 다시 시도하세요.",
     activeLabel: "활성 워크플로",
     status: "단계: {{stage}} · 활성화: {{reason}}",
     inspect: "검사",

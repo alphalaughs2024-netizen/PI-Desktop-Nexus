@@ -2152,6 +2152,12 @@ export const de = {
     "justNow": "Gerade eben"
   },
   "workflow": {
+    "agentName": "Nexus-Agent",
+    "stage": "Phase",
+    "activated": "Aktiviert",
+    "move": "Workflow-Panel verschieben",
+    "resetPosition": "Panelposition zurücksetzen",
+    "dismissFailed": "Der Workflow konnte nicht geschlossen werden. Erneut versuchen.",
     "activeLabel": "Aktiver Arbeitsablauf",
     "status": "Phase: {{stage}} · Aktiviert: {{reason}}",
     "inspect": "Ansehen",

@@ -69,8 +69,8 @@ test("Twilight maps the persisted blur strengths only to its backdrop image", ()
 
 test("scenic themes keep the image bright beneath shared glass surfaces", () => {
   assert.match(scenicStyles, /:root\[data-scenic-theme\] :is\(\.app-shell, \.main-pane\) \{ background: transparent; \}/);
-  assert.match(scenicStyles, /:root\[data-scenic-theme\] \.active-workflow-card \{[^}]*background: var\(--scenic-chat-glass-fill\);[^}]*box-shadow: var\(--scenic-chat-glass-shadow\);[^}]*backdrop-filter: var\(--scenic-chat-glass-filter\);/);
-  assert.match(scenicStyles, /prefers-reduced-transparency[\s\S]*?\.active-workflow-card \{[\s\S]*?background: var\(--ds-bg-elevated-opaque\)/);
+  assert.match(scenicStyles, /:root\[data-scenic-theme\] \.active-workflow-card \{[^}]*--workflow-fill: rgba\(5, 18, 39, \.35\)/);
+  assert.match(scenicStyles, /prefers-reduced-transparency[\s\S]*?\.active-workflow-surface \{[\s\S]*?background: var\(--ds-bg-elevated-opaque\)/);
   for (const sheet of [twilightStyles, alpineStyles, obsidianStyles, emeraldStyles]) {
     assert.match(sheet, /\.app-scenic-backdrop::after \{[\s\S]*?background: transparent;/);
     assert.match(sheet, /--scenic-chat-glass-fill:/);
@@ -231,7 +231,7 @@ test("Twilight keeps workflow and native controls above the docked work panel", 
     /<section className="main-pane">[\s\S]*?<WindowControls contained \/>/,
   );
   assert.match(twilightStyles, /\.window-control-btn\s*\{[\s\S]*?color:\s*rgba\(246, 249, 255, 0\.92\)/);
-  assert.match(styles, /\.active-workflow-card\s*\{[\s\S]*?margin:\s*calc\(var\(--ds-toolbar-height\) \+ 10px\)/);
+  assert.match(styles, /\.active-workflow-card\s*\{[^}]*top:\s*calc\(var\(--ds-toolbar-height\) \+ 12px\)/);
   assert.match(styles, /\.active-workflow-card\s*\{[\s\S]*?z-index:\s*11/);
 });
 

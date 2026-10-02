@@ -45,19 +45,18 @@
 }
 
 :root[data-scenic-theme] .active-workflow-card {
-  border: 0;
-  background: var(--scenic-chat-glass-fill);
-  box-shadow: var(--scenic-chat-glass-shadow);
-  backdrop-filter: var(--scenic-chat-glass-filter);
-  -webkit-backdrop-filter: var(--scenic-chat-glass-filter);
+  --workflow-fill: rgba(5, 18, 39, .35);
 }
-
-:root[data-scenic-theme] .active-workflow-actions button {
-  border-radius: 8px;
+:root[data-scenic-theme="obsidian-horizon"] .active-workflow-card { --workflow-fill: rgba(5, 13, 25, .38); }
+:root[data-scenic-theme="emerald-afterglow"] .active-workflow-card { --workflow-fill: rgba(6, 20, 30, .33); }
+:root[data-scenic-theme="alpine-light"] .active-workflow-card {
+  --workflow-fill: rgba(230, 244, 255, .42);
+  --workflow-light: #64b1ea;
+  --workflow-light-highlight: #badfff;
 }
 
 @media (prefers-reduced-transparency: reduce) {
-  :root[data-scenic-theme] .active-workflow-card {
+  :root[data-scenic-theme] .active-workflow-surface {
     background: var(--ds-bg-elevated-opaque);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
@@ -71,7 +70,7 @@
 }
 
 @supports not (backdrop-filter: blur(1px)) {
-  :root[data-scenic-theme] .active-workflow-card {
+  :root[data-scenic-theme] .active-workflow-surface {
     background: var(--ds-bg-elevated-opaque);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;

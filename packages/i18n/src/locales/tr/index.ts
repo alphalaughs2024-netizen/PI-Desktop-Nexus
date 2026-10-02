@@ -2184,6 +2184,12 @@ export const tr = {
     justNow: "Az önce",
   },
   workflow: {
+    agentName: "Nexus ajanı",
+    stage: "Aşama",
+    activated: "Etkinleştirme",
+    move: "İş akışı panelini taşı",
+    resetPosition: "Panel konumunu sıfırla",
+    dismissFailed: "Bu iş akışı kapatılamadı. Tekrar deneyin.",
     activeLabel: "Etkin iş akışı",
     status: "Aşama: {{stage}} · Etkinleştirme: {{reason}}",
     inspect: "İncele",
