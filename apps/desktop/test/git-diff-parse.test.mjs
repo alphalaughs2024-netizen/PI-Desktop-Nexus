@@ -1,11 +1,23 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import {
   MAX_PATCH_BYTES,
+  collectWorkspaceDiff,
   parseFilePatch,
   parseStatusZ,
   splitUnifiedDiff,
 } from "../electron/main/git-diff.ts";
+
+test("Git inspection distinguishes non-repositories from inaccessible workspaces", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "nexus-diff-"));
+  try {
+    assert.deepEqual(await collectWorkspaceDiff(directory), { repo: false, clean: true, files: [] });
+    await assert.rejects(collectWorkspaceDiff(join(directory, "missing")), /Unable to inspect Git workspace/);
+  } finally { await rm(directory, { recursive: true, force: true }); }
+});
 
 test("parses porcelain -z status including renames and untracked", () => {
   const raw = [

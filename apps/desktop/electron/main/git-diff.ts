@@ -1,4 +1,4 @@
-import { spawn } from "node:child_process";
+import { execFile } from "node:child_process";
 import type {
   DiffFile,
   DiffFileStatus,
@@ -22,15 +22,11 @@ type RunResult = { code: number; stdout: string; stderr: string };
 
 function runGit(cwd: string, args: string[]): Promise<RunResult> {
   return new Promise((resolve) => {
-    const child = spawn("git", args, { cwd, env: process.env });
-    let stdout = "";
-    let stderr = "";
-    child.stdout.on("data", (d) => (stdout += String(d)));
-    child.stderr.on("data", (d) => (stderr += String(d)));
-    child.on("close", (code) => resolve({ code: code ?? 1, stdout, stderr }));
-    child.on("error", (err) =>
-      resolve({ code: 1, stdout: "", stderr: String(err) }),
-    );
+    execFile("git", args, { cwd, env: process.env, windowsHide: true,
+      timeout: 15_000, maxBuffer: 4 * 1024 * 1024, encoding: "utf8" }, (error, stdout, stderr) => {
+      resolve({ code: error ? typeof error.code === "number" ? error.code : -1 : 0,
+        stdout, stderr: stderr || (error ? error.message : "") });
+    });
   });
 }
 
@@ -201,6 +197,9 @@ export function parseFilePatch(
 
 export async function collectWorkspaceDiff(cwd: string): Promise<WorkspaceDiff> {
   const probe = await runGit(cwd, ["rev-parse", "--is-inside-work-tree"]);
+  if (probe.code !== 0 && !/not a git repository/i.test(probe.stderr)) {
+    throw new Error(`Unable to inspect Git workspace: ${probe.stderr.slice(0, 1000)}`);
+  }
   if (probe.code !== 0 || probe.stdout.trim() !== "true") {
     return { repo: false, clean: true, files: [] };
   }
@@ -212,7 +211,7 @@ export async function collectWorkspaceDiff(cwd: string): Promise<WorkspaceDiff> 
     "--untracked-files=all",
   ]);
   if (status.code !== 0) {
-    return { repo: false, clean: true, files: [] };
+    throw new Error(`Unable to read Git status: ${status.stderr.slice(0, 1000)}`);
   }
   const entries = parseStatusZ(status.stdout);
   if (entries.length === 0) {
@@ -221,6 +220,7 @@ export async function collectWorkspaceDiff(cwd: string): Promise<WorkspaceDiff> 
 
   const truncated = entries.length > MAX_DIFF_FILES;
   const scoped = entries.slice(0, MAX_DIFF_FILES);
+  const scopedPaths = new Set(scoped.map(entry => entry.path));
   const untrackedPaths = new Set(
     scoped.filter((e) => e.untracked).map((e) => e.path),
   );
@@ -241,10 +241,11 @@ export async function collectWorkspaceDiff(cwd: string): Promise<WorkspaceDiff> 
     "-M",
     "--unified=3",
   ]);
-  if (tracked.code === 0 || tracked.stdout) {
+  if (tracked.code !== 0) throw new Error(`Unable to read Git diff: ${tracked.stderr.slice(0, 1000)}`);
+  if (tracked.code === 0) {
     for (const chunk of splitUnifiedDiff(tracked.stdout)) {
       const file = parseFilePatch(chunk);
-      if (file && !untrackedPaths.has(file.path)) files.push(file);
+      if (file && scopedPaths.has(file.path) && !untrackedPaths.has(file.path)) files.push(file);
     }
   }
 
@@ -261,6 +262,7 @@ export async function collectWorkspaceDiff(cwd: string): Promise<WorkspaceDiff> 
       "/dev/null",
       entry.path,
     ]);
+    if (res.code !== 0 && res.code !== 1) throw new Error(`Unable to read Git file diff: ${res.stderr.slice(0, 1000)}`);
     const chunk = splitUnifiedDiff(res.stdout)[0];
     const file = chunk ? parseFilePatch(chunk, "untracked") : null;
     if (file) {
@@ -280,7 +282,7 @@ export async function collectWorkspaceDiff(cwd: string): Promise<WorkspaceDiff> 
   files.sort((a, b) => a.path.localeCompare(b.path));
   return {
     repo: true,
-    clean: files.length === 0,
+    clean: entries.length === 0,
     files,
     truncated: truncated || undefined,
   };
