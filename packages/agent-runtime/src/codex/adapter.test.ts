@@ -36,6 +36,24 @@ async function fixture(dataDir?: string, nativeTurns: any[] = [], options: { ste
 const settle = async () => { await new Promise(resolve => setTimeout(resolve, 30)); };
 const runningTool = (f: Awaited<ReturnType<typeof fixture>>) => f.event("item/started", { item: { id: "running-command", type: "commandExecution", command: "long-running fixture" } });
 describe("Codex adapter lifecycle", () => {
+  it("publishes and persists latest request usage while rejecting stale or foreign reports", async () => {
+    const f = await fixture(); await f.adapter.start({ turnId: "usage", text: "Inspect" }); await settle();
+    const tokenUsage = { total: { totalTokens: 50000 }, last: { inputTokens: 1000, cachedInputTokens: 800, outputTokens: 100, reasoningOutputTokens: 80, totalTokens: 1100 }, modelContextWindow: 32000 };
+    f.event("thread/tokenUsage/updated", { tokenUsage, threadId: "other-thread" });
+    f.event("thread/tokenUsage/updated", { tokenUsage, turnId: "old-turn" });
+    expect(f.adapter.snapshot().turn?.contextUsage).toBeUndefined();
+    f.event("thread/tokenUsage/updated", { tokenUsage });
+    const usage = { inputTokens: 200, cacheReadTokens: 800, cacheWriteTokens: 0, outputTokens: 20, reasoningTokens: 80, totalTokens: 1100 };
+    expect(f.adapter.snapshot().turn?.contextUsage).toEqual({ usage, contextWindow: 32000 });
+    expect(f.events.filter(e => e.event.type === "message_update").at(-1)?.event).toMatchObject({ message: { execution: { contextUsage: { usage, contextWindow: 32000 } } } });
+    f.event("thread/tokenUsage/updated", { tokenUsage: { last: {} } });
+    expect(f.adapter.snapshot().turn?.contextUsage?.usage).toEqual(usage);
+    f.event("turn/completed", { turn: { id: "native-1", status: "completed" } }); await settle();
+    const persisted = await new CodexSessionStore(f.dir, "s").read();
+    expect(persisted?.turn?.contextUsage).toEqual({ usage, contextWindow: 32000 });
+    f.event("thread/tokenUsage/updated", { tokenUsage: { ...tokenUsage, modelContextWindow: 1 } });
+    expect(f.adapter.snapshot().turn?.contextUsage?.contextWindow).toBe(32000);
+  });
   it("publishes native reasoning activity before optional summary text", async () => {
     const f = await fixture(); await f.adapter.start({ turnId: "reasoning-start", text: "Inspect" }); await settle();
     f.event("item/started", { item: { id: "reason", type: "reasoning", summary: [], content: [] } });

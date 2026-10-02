@@ -24,6 +24,20 @@ const providerModels = {
 };
 const providers = [{ id: "provider", contextWindow: 64_000, models: [] }];
 
+test("native execution usage survives reload and uses engine window without cumulative inflation", () => {
+  const usage = { inputTokens: 963, cacheReadTokens: 10752, outputTokens: 13, totalTokens: 11728 };
+  const messages = [message("u", "user", "test"), message("a", "assistant", "done"),
+    message("execution", "assistant", "", { turnId: "t", execution: { id: "t", contextUsage: { usage, contextWindow: 997500 } } }),
+    message("delegate", "assistant", "nested", { parentToolCallId: "task", usage: { inputTokens: 50000, outputTokens: 100, totalTokens: 50100 } })];
+  const inspector = latestTurnContextInspector(JSON.parse(JSON.stringify(messages)), providerModels, providers);
+  assert.deepEqual(inspector?.usage, usage);
+  assert.equal(inspector?.contextWindow, 997500);
+  messages[2].providerId = "provider";
+  messages[2].modelId = "catalog-model";
+  delete messages[2].execution.contextUsage.contextWindow;
+  assert.equal(latestTurnContextInspector(messages, providerModels, providers)?.contextWindow, 256000);
+});
+
 function message(id, role, content, extra = {}) {
   return {
     id,

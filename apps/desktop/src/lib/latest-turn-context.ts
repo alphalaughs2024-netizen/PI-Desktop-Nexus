@@ -14,7 +14,7 @@ import {
   buildTranscriptEntries,
   type AssistantTurnEntry,
 } from "./assistant-turns";
-import { latestMessageUsage, resolveContextWindow } from "./context-usage";
+import { resolveContextWindow } from "./context-usage";
 
 export type LatestTurnContextInspector = {
   usage: MessageUsage;
@@ -40,18 +40,17 @@ export function latestTurnContextInspector(
   // Delegate rows carry their own usage; remaining capacity is a parent-session
   // number, so those snapshots must not steal the composer ring.
   const parentMessages = messages.filter((message) => !message.parentToolCallId);
-  const latestUsage = latestMessageUsage(parentMessages);
+  const latestUsageMessage = [...parentMessages].reverse().find(message => message.usage || message.execution?.contextUsage);
+  const nativeContext = latestUsageMessage?.execution?.contextUsage;
+  const latestUsage = latestUsageMessage?.usage ?? nativeContext?.usage;
   if (!latestUsage) return undefined;
 
   const turns = buildTranscriptEntries(messages, compactions).entries.filter(
     (entry): entry is AssistantTurnEntry => entry.kind === "assistant-turn",
   );
   const latestTurn =
-    [...turns].reverse().find((turn) => assistantTurnUsage(turn)) ??
+    [...turns].reverse().find((turn) => assistantTurnUsage(turn) || turn.execution?.contextUsage) ??
     turns.at(-1);
-  const latestUsageMessage = [...parentMessages]
-    .reverse()
-    .find((message) => message.usage);
 
   return {
     // Occupancy and provider cache/input/output use this last request.
@@ -59,7 +58,7 @@ export function latestTurnContextInspector(
     usage: latestUsage,
     turnUsage:
       (latestTurn ? assistantTurnUsage(latestTurn) : undefined) ?? latestUsage,
-    contextWindow: resolveContextWindow(
+    contextWindow: nativeContext?.contextWindow ?? resolveContextWindow(
       latestUsageMessage?.providerId,
       latestUsageMessage?.modelId,
       providerModels,

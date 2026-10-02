@@ -207,6 +207,16 @@ launch and do not replace running workers or modify prompts/tools.
 
 ## Acceptance boundaries
 
+Native `thread/tokenUsage/updated` reports populate durable
+`EngineTurn.contextUsage` (ADR 0272). Accept only active owned thread/turn
+events and validated last-request counts; preserve the native model window
+when supplied. Cache/reasoning subsets are split from inclusive input/output
+totals for Nexus's additive accounting. Never use thread cumulative usage as
+occupancy, invent missing reports, or accept stale/terminal usage updates.
+Execution status, completion and recovery retain this metadata for the
+composer; delegate context does not replace parent context. Existing pi
+message usage remains a supported source.
+
 Browser results identify the resolved browserId; callers may omit it for the
 chat's active tab. Invalid explicit IDs return only the requesting chat's
 available IDs and never redirect. BrowserPreview rejection identifies the bound

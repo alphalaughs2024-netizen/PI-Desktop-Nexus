@@ -12098,6 +12098,19 @@ or delete caches, profiles or earlier recovery files to hide this condition.
   regression tests, desktop typecheck/build. Full local E2E suites require an
   explicit request. This trial requires user testing before merge.
 
+### E2E-Codex-Context-Usage: Native request accounting (ADR 0272)
+
+- **Steps**: Send several prompts using Codex, including a tool loop and a
+  subagent. Hover/click the context ring. Change chats, reload and restart.
+  Inject malformed, foreign-thread and retired-turn reports in contract tests.
+- **Expected**: The first valid report replaces the pending label. The ring
+  shows latest parent-request occupancy against the native window, not summed
+  conversation expenditure. Cache and reasoning are counted once. Usage remains
+  available after reload and restart. Subagents/stale events cannot overwrite
+  parent usage; absent reports remain honestly unavailable.
+- **Validation**: Native adapter/persistence and normalization tests, desktop
+  projection tests and typecheck/build. Full local E2E suites require a request.
+
 ### E2E-Browser-Document-Readiness: Slow resources and keyboard aliases (ADR 0268)
 
 - **Steps**: Submit a form using `ENTER`, `Enter` and a locator `ctrl+ENTER`

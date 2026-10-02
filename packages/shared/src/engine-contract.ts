@@ -53,6 +53,8 @@ export type EngineTurn = {
   progressPhase?: EngineProgressPhase;
   timeline?: EnginePhaseSpan[];
   omittedSpans?: number;
+  /** Latest native request occupancy, never cumulative thread expenditure. */
+  contextUsage?: { usage: import("./types.js").MessageUsage; contextWindow?: number };
   phase: "preparing" | "recovering" | "waiting-model" | "running" | "waiting-approval" | "terminal";
 };
 export type EngineSnapshot = {
@@ -72,6 +74,7 @@ export type EngineEvent = {
   | { type: "phase"; phase: EngineTurn["phase"]; nativeTurnId?: string; progressPhase?: EngineProgressPhase; detail?: string }
   | { type: "native-segment"; expectedNativeTurnId: string; outcome: "completed" | "interrupted" }
   | { type: "item"; item: EngineItem }
+  | { type: "context-usage"; contextUsage: NonNullable<EngineTurn["contextUsage"]> }
   | { type: "terminal"; outcome: EngineOutcome; error?: string }
 );
 export interface EngineAdapter {

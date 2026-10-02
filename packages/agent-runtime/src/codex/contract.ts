@@ -70,6 +70,8 @@ export class ExecutionContract {
       turn.nativeTurnId = undefined;
       turn.phase = "waiting-model";
       recordProgressPhase(turn, "waiting-model", event.ts);
+    } else if (event.type === "context-usage") {
+      turn.contextUsage = structuredClone(event.contextUsage);
     } else if (event.type === "item") {
       const index = this.state.items.findIndex(item => item.id === event.item.id);
       const old = this.state.items[index];

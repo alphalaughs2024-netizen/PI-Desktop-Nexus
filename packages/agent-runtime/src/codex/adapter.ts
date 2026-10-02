@@ -8,6 +8,7 @@ import { nativeEffort, nativePolicy, prepareLaunch, sessionDescriptor, type Code
 import { needsOpenRouterBridge, startOpenRouterBridge, startProviderBridge, type ProviderBridge } from "./openrouter-bridge.js";
 import { nexusToolDiagnostics, type NexusToolBridge } from "./nexus-tools.js";
 import { AppServerTransport, type CodexRpc, type NativeEvent, type NativeRequest } from "./transport.js";
+import { nativeContextUsage } from "./usage.js";
 export const CODEX_APPROVAL_TIMEOUT_MS = 120_000;
 export type CodexDependencies = {
   tools?: (snapshot: () => EngineSnapshot) => Promise<NexusToolBridge>;
@@ -161,7 +162,8 @@ export class CodexAdapter implements EngineAdapter {
     const turn = this.getStatus().execution?.turn;
     if (!turn) return;
     const message: UiMessage = { id: `${turn.id}:execution`, turnId: turn.id, role: "assistant", content: "",
-      createdAt: new Date().toISOString(), status: "complete", execution: turn };
+      createdAt: new Date().toISOString(), status: "complete", execution: turn,
+      modelId: this.config.provider.modelId, providerId: this.config.provider.id };
     this.event({ type: turn.outcome ? "message_end" : "message_update", message });
   }
   private apply(payload: any): boolean {
@@ -427,6 +429,10 @@ export class CodexAdapter implements EngineAdapter {
   private nativeEvent({ method, params: p }: NativeEvent): void {
     if (!this.belongs(p)) return;
     if (method === "turn/started") { this.apply({ type: "phase", phase: "waiting-model", nativeTurnId: p.turn.id }); this.status(); }
+    else if (method === "thread/tokenUsage/updated") {
+      const contextUsage = nativeContextUsage(p.tokenUsage);
+      if (contextUsage && this.apply({ type: "context-usage", contextUsage })) this.status();
+    }
     else if (method === "turn/completed") {
       const transition = this.steeringTransition;
       if (transition && transition.nativeTurnId === p.turn.id) transition.resolve(p.turn.status);

@@ -6,7 +6,8 @@ export function executionMessages(snapshot: EngineSnapshot): UiMessage[] {
   const turn = snapshot.turn;
   if (!turn) return [];
   const messages: UiMessage[] = [{ id: `${turn.id}:execution`, turnId: turn.id, role: "assistant", content: "",
-    status: "complete", createdAt: new Date(turn.completedAt ?? Date.now()).toISOString(), execution: turn }];
+    status: "complete", createdAt: new Date(turn.completedAt ?? Date.now()).toISOString(), execution: turn,
+    modelId: snapshot.session.modelId, providerId: snapshot.session.providerId }];
   for (const item of snapshot.items) {
     const status = item.status === "running" ? "streaming" : item.status === "interrupted" ? "aborted" : item.status === "failed" ? "error" : "complete";
     const base = { id: item.id, turnId: turn.id, createdAt: new Date(item.startedAt).toISOString(), status } as const;

@@ -263,3 +263,4 @@ Each ADR includes:
 | 0269 | Native Browser menu surface | User-approved direction; manual acceptance pending |
 | 0270 | Composer visual trial | Accepted |
 | 0271 | Minimal composer trial | User-approved trial; visual acceptance pending |
+| 0272 | Codex context usage | Fix implemented; app verification pending |
