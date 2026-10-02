@@ -30,6 +30,20 @@ Cargo. This is development reuse, not verification of a fresh or packaged build.
 
 ## Session / turn / items
 
+### Nexus identity and offered capabilities (ADR 0279)
+
+Nexus is the assistant/product identity; Codex is the internal execution engine.
+The model catalog template and developer instructions use the same identity on
+new and resumed chats, Plan/Goal transitions, and configured delegates. File,
+command, Browser, process, skill, workflow, plugin and Task tools are presented
+as Nexus capabilities using their actual names and permissions. Explicit engine
+or model questions are answered accurately. Technical engine identifiers and
+third-party diagnostics remain intact; user messages are never rewritten.
+Browser capability is derived from the available catalog and restricted tool
+grants. Delegates advertise managed previews only with the complete granted
+ProcessStart/ProcessRead/ProcessStop/PreviewServer catalog. An unavailable tool
+is never invented or silently substituted.
+
 EngineSession binds engine version, provider/model, workspace and native handle,
 with truthful capabilities. Temporary chats use their session scratch root.
 EngineTurn contains a durable host turn ID, fresh run ID, current native turn ID,
@@ -76,8 +90,12 @@ on-request escalation. Auto: workspace-write, no escalation grants. Full access
 maps to native danger-full-access with never approval, only when explicitly
 selected for this session; it is not a global default. Other modes retain their
 previous mappings. Windows uses the unelevated native sandbox for sandboxed modes.
-Only explicit Allow once grants a native escalation. Session grant controls are
-disabled for these requests. All approvals retain the 120-second deny timeout.
+Only explicit Allow once grants a native escalation. Unsupported session grant
+controls are omitted for these requests. Unsupported decisions are rejected
+without consuming the pending request; invalid permission modes fail closed.
+All approvals retain the 120-second deny timeout. Argument previews include
+available file-change paths/operations and linked command/cwd evidence. Nexus
+supplies neutral approval copy; explicit engine-supplied reasons remain intact.
 Native user questions retain the existing non-expiring Ask behavior.
 Unknown server requests and unsupported secret questions fail clearly.
 
@@ -141,6 +159,9 @@ mode, resumes the same native history and restores native tools. Invalid,
 unclaimed or mismatched execution descriptors fail before launch. Cancellation
 or a failed transition cannot restart the previous segment. Reload uses the host
 approval state and recovery handle; no mutation is replayed.
+Plan tool delivery uses the existing bounded matching-item wait before entering
+the control boundary. Cancellation or a missing matching item cannot submit a
+proposal or change the host mode.
 
 ## Trusted extensions (ADR 0257)
 

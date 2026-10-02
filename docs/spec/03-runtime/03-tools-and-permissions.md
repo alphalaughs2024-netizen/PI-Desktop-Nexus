@@ -58,6 +58,14 @@ CDP, page, or plugin payloads.
 | Edit contract | line-anchored ops + whole-file `tag`; no `old_string`/`new_string` (ADR 0087) |
 | asktool | interactive multi-question tool; no validity deadline; skipped answers become empty output fields |
 
+The opt-in execution backend retains distinct native sandbox enforcement:
+Ask = read-only/on-request; Accept edits = workspace-write/on-request;
+Auto = workspace-write/never; Full access = danger-full-access/never.
+Host/Browser/plugin mode and policy gates still apply to their tools. Auto is
+not a new unsafe-action classifier. Native approvals support Allow once/Deny
+only; session grants remain deferred. Unsupported decisions cannot consume a
+pending native request. See ADR 0279 and the execution contract.
+
 ## 1. Goal
 
 ### Phase 4 Managed Processes

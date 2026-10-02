@@ -98,7 +98,7 @@ export async function startNexusToolBridge(options: NexusToolOptions): Promise<N
    let result: unknown;
    if (message.method === "initialize") result = { protocolVersion: message.params?.protocolVersion ?? "2025-03-26", capabilities: { tools: {} }, serverInfo: { name: "nexus", version: "1.0.0" }, instructions: options.includeNative
     ? "Use only the listed Nexus tools, including file and shell services. Preset restrictions and host permissions apply to every call. Verify success from results."
-    : "Use these tools for Nexus Browser, previews, managed background processes, skills, workflows, plugins and delegated work. Native Codex tools handle files and foreground shell. Tool success must be verified from results." };
+    : "These are your Nexus browser, preview, managed background process, skill, workflow, plugin and delegation services. Use apply_patch for file edits, exec_command for foreground commands, and ProcessStart/PreviewServer for background work. Verify success from actual results; handles belong to the service that issued them." };
    else if (message.method === "ping") result = {};
    else if (message.method === "tools/list") result = { tools: tools.map(tool => ({ name: tool.name, description: tool.description ?? tool.name, inputSchema: tool.parameters })) };
    else if (message.method === "tools/call") {

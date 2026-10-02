@@ -15,6 +15,7 @@ export async function configuredDelegationTrial(directory) {
     try {
       const chunks = []; for await (const chunk of req) chunks.push(chunk);
       const body = JSON.parse(Buffer.concat(chunks));
+      assert(JSON.stringify(body.input).includes("You are Nexus, the assistant inside the Nexus desktop app"), "Parent and child receive Nexus identity");
       const child = req.url.startsWith("/child/");
       const offered = (body.tools ?? []).flatMap(tool => tool.tools?.map(item => ({ ...item, namespace: tool.name })) ?? [tool]);
       records.push({ route: req.url, child, model: body.model, tools: offered.map(tool => tool.namespace ? tool.namespace + "__" + tool.name : tool.name) });

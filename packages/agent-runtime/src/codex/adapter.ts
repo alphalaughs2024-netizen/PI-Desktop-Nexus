@@ -359,8 +359,8 @@ export class CodexAdapter implements EngineAdapter {
   }
   steeringContext(expectedTurnId: string): { projectPath: string; supportsVision: boolean } {
     const state = this.snapshot();
-    if (this.disposed) throw Object.assign(new Error("Codex steering session unavailable"), { errorCode: "MISSING_SESSION" });
-    if (state.turn?.id !== expectedTurnId) throw Object.assign(new Error("Codex steering target is stale"), { errorCode: "STALE_TURN" });
+    if (this.disposed) throw Object.assign(new Error("Nexus execution session unavailable"), { errorCode: "MISSING_SESSION" });
+    if (state.turn?.id !== expectedTurnId) throw Object.assign(new Error("The response being updated is no longer active"), { errorCode: "STALE_TURN" });
     if (!this.rpc || this.cancelled || this.ending || this.steeringTransition || !state.turn.nativeTurnId || state.turn.outcome) throw Object.assign(new Error("No native turn available to steer"), { errorCode: "NOT_RUNNING" });
     // Text-only until attachment preparation is shared with native steering.
     return { projectPath: this.config.workspace, supportsVision: false };
@@ -553,7 +553,7 @@ export class CodexAdapter implements EngineAdapter {
     const p = request.params;
     if (!this.belongs(p)) { this.rpc?.reject(request.id, "Stale or inactive turn"); return; }
     if (!["item/commandExecution/requestApproval", "item/fileChange/requestApproval", "item/tool/requestUserInput"].includes(request.method)) {
-      this.rpc?.reject(request.id, "Unsupported Codex request: " + request.method); return;
+      this.rpc?.reject(request.id, "Unsupported execution request: " + request.method); return;
     }
     const requestId = "codex:" + this.config.sessionId + ":" + randomUUID();
     const nativeId = "approval:" + String(request.id);
@@ -561,19 +561,23 @@ export class CodexAdapter implements EngineAdapter {
     this.update(item);
     const approval: Approval = { nativeId: request.id, itemId: nativeId, timer: request.method === "item/tool/requestUserInput" ? undefined : setTimeout(() => this.resolveApproval(requestId, "deny"), CODEX_APPROVAL_TIMEOUT_MS) };
     if (request.method === "item/tool/requestUserInput") {
-      if ((p.questions ?? []).some((q: any) => q.isSecret)) { this.rpc?.reject(request.id, "Secret input is not supported by this prototype"); clearTimeout(approval.timer); this.update({ ...item, status: "failed", result: "Secret input is unsupported", completedAt: Date.now() }); return; }
+      if ((p.questions ?? []).some((q: any) => q.isSecret)) { this.rpc?.reject(request.id, "Secret input is not supported in this question interface"); clearTimeout(approval.timer); this.update({ ...item, status: "failed", result: "Secret input is unsupported", completedAt: Date.now() }); return; }
       approval.questions = p.questions ?? [];
       this.approvals.set(requestId, approval);
       this.event({ type: "asktool_request", request: { requestId, sessionId: this.config.sessionId, toolCallId: item.id, questions: approval.questions!.map((q: any) => ({ question: q.question, options: (q.options ?? []).map((o: any) => o.label) })) } });
     } else {
       this.approvals.set(requestId, approval);
+      const nativeArgs = this.contract.item(p.itemId)?.args;
+      const commandArgs = nativeArgs && typeof nativeArgs === "object" && !Array.isArray(nativeArgs) ? nativeArgs as Record<string, unknown> : {};
+      const edits = nativeReviewChanges(nativeArgs).map(({ path, oldPath, operation }) => ({ path, oldPath, operation }));
       this.event({ type: "tool_permission_request", request: { requestId, allowedDecisions: ["allow-once", "deny"], sessionId: this.config.sessionId, toolCallId: item.id,
-        toolName: request.method.includes("commandExecution") ? "exec_command" : "apply_patch", argsPreview: { command: p.command, cwd: p.cwd, reason: p.reason, grantRoot: p.grantRoot }, risk: "high", reason: p.reason ?? "Codex requests permission beyond the current sandbox. Allow once; session-wide escalation is not supported in this prototype." } });
+        toolName: request.method.includes("commandExecution") ? "exec_command" : "apply_patch", argsPreview: { command: p.command ?? commandArgs.command, cwd: p.cwd ?? commandArgs.cwd, grantRoot: p.grantRoot, ...(edits.length ? { files: edits } : {}) }, risk: "high", reason: p.reason ?? "This action needs your approval under the current permission settings. Allow once applies only to this request." } });
     }
     this.status();
   }
   resolveApproval(requestId: string, decision: string): boolean {
     const approval = this.approvals.get(requestId); if (!approval) return false;
+    if (decision !== "allow-once" && decision !== "deny" || approval.questions && decision !== "deny") throw new Error("NEXUS_APPROVAL_DECISION_UNSUPPORTED: answer using the actions offered by this request");
     clearTimeout(approval.timer); this.approvals.delete(requestId);
     const allowed = decision === "allow-once";
     try {
@@ -633,7 +637,7 @@ export class CodexAdapter implements EngineAdapter {
       try { await this.checkpoint(); } catch (cause) { persistenceError = recoveryWriteError(cause); }
       this.status();
       if (outcome === "completed" && !persistenceError) { this.event({ type: "turn_end" }); this.event({ type: "agent_end", messageIds: this.snapshot().items.filter(item => ["assistant", "reasoning"].includes(item.kind)).map(item => item.id) }); }
-      else this.event({ type: "error", error: { code: persistenceError?.code ?? (outcome === "interrupted" ? "TURN_ABORTED" : "CODEX_RUNTIME_FAILED"), message: persistenceError?.message ?? error ?? (outcome === "interrupted" ? "Turn interrupted" : "Codex execution failed"), ...(persistenceError ? { details: persistenceError.details } : {}), retriable: false } });
+      else this.event({ type: "error", error: { code: persistenceError?.code ?? (outcome === "interrupted" ? "TURN_ABORTED" : "CODEX_RUNTIME_FAILED"), message: persistenceError?.message ?? error ?? (outcome === "interrupted" ? "Turn interrupted" : "Nexus execution failed"), ...(persistenceError ? { details: persistenceError.details } : {}), retriable: false } });
     })();
     return this.ending;
   }

@@ -33,6 +33,7 @@ const fixture = createServer(async (request,response)=>{
   try {
     const chunks=[]; for await(const chunk of request) chunks.push(chunk);
     const body=JSON.parse(Buffer.concat(chunks));
+    assert(JSON.stringify(body.input).includes("You are Nexus, the assistant inside the Nexus desktop app"),"Nexus identity must reach the execution backend");
     const tools=(body.tools??[]).flatMap(tool=>tool.tools?.map(child=>({...child,namespace:tool.name}))??[tool]);
     requests.push({sequence,stale,tools:tools.map(t=>t.name),input:body.input});
     const call=(name,args)=>{const tool=tools.find(t=>t.name===name);assert(tool,`Missing ${name}`);return {id:`item-${requests.length}`,call_id:`call-${requests.length}`,type:tool.type==="custom"?"custom_tool_call":"function_call",name,

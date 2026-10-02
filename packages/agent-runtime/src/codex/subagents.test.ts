@@ -5,8 +5,18 @@ import { join } from "node:path";
 import type { AgentEventEnvelope, SubagentDefinition } from "@pi-desktop/shared";
 import { CodexSubagents, DEFAULT_TASK_WAIT_SECONDS, MAX_TASK_WAIT_SECONDS } from "./subagents.js";
 import { CODEX_TOOL_TIMEOUT_SECONDS } from "./config.js";
+import { sessionDescriptor } from "./config.js";
 import type { CodexConfig } from "./config.js";
 const dirs: string[] = [];
+
+it("does not inherit browser or preview claims into a file-only delegate", async () => {
+  const f = await fixture();
+  f.options.parent.nexusToolsAvailable = true;
+  f.options.parent.managedPreviewAvailable = true;
+  await f.manager.execute("Task", { agent: "reviewer", task: "Inspect" }, "task");
+  expect(sessionDescriptor(f.children[0].config).capabilities).toMatchObject({ browser: false, managedPreview: false, nativeTools: false });
+  await f.manager.stopAll();
+});
 afterEach(async () => { vi.useRealTimers(); await Promise.all(dirs.splice(0).map(dir => rm(dir, { recursive: true, force: true }))); });
 async function fixture() {
   const dir = await mkdtemp(join(tmpdir(), "nexus-delegates-")); dirs.push(dir);

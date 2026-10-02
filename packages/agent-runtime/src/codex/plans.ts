@@ -11,7 +11,7 @@ export function planningTools(mode: Mode, tools: NexusTool[]): NexusTool[] {
   return tools.filter(tool => INSPECTION.has(tool.name) || tool.name === (mode === "goal" ? "SubmitGoal" : "SubmitPlan") || !!tool.planSafeActions?.length);
 }
 export function modeInstructions(mode: Mode): string {
-  return mode === "agent" ? "Use native Codex files, images and shell for execution. EnterPlanMode/EnterGoalMode stop this execution before entering the host approval workflow." :
+  return mode === "agent" ? "Use your offered file, image and command tools for execution. EnterPlanMode/EnterGoalMode stop execution before entering Nexus's approval workflow." :
     `You are in Nexus ${mode} mode. Use only offered Nexus inspection tools, including the permission-checked Bash tool. No implementation or delegation before approval. Clarify with asktool, then submit the complete exact Markdown through ${mode === "goal" ? "SubmitGoal" : "SubmitPlan"}. The host owns the artifact and approval; stop after submission.`;
 }
 export function approvedInstruction(execution: PlanExecution, sessionId: string): string {
@@ -41,7 +41,7 @@ export class CodexPlans {
     if (name.startsWith("Submit") && (typeof args.title !== "string" || !args.title.trim() || typeof args.markdown !== "string" || !args.markdown.trim() || typeof args.question !== "string" || !args.question.trim())) {
       return { ok: false, isError: true, content: "PLAN_INVALID_ARGUMENT" };
     }
-    const itemId = adapter.claimToolItem(name, args);
+    const itemId = await adapter.awaitToolItem(name, args);
     let result: unknown;
     await adapter.controlBoundary(itemId, async () => {
       if (name.startsWith("Enter")) {

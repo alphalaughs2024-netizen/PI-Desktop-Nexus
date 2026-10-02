@@ -462,10 +462,15 @@ describe("Codex adapter lifecycle", () => {
     expect(f.adapter.getStatus().isRunning).toBe(true);
   });
 
-  it("sends the explicit Full access policy to the native thread", async () => {
-    const f = await fixture(); f.config.permissionMode = "full-access";
+  it.each([
+    ["ask", "on-request", "read-only"],
+    ["accept-edits", "on-request", "workspace-write"],
+    ["auto", "never", "workspace-write"],
+    ["full-access", "never", "danger-full-access"],
+  ] as const)("sends the explicit %s policy to the native thread", async (mode, approvalPolicy, sandbox) => {
+    const f = await fixture(); f.config.permissionMode = mode;
     await f.adapter.start({ turnId: "full", text: "hi" }); await settle();
-    expect(f.calls.find(c => c.method === "thread/start")?.params).toMatchObject({ approvalPolicy: "never", sandbox: "danger-full-access" });
+    expect(f.calls.find(c => c.method === "thread/start")?.params).toMatchObject({ approvalPolicy, sandbox });
   });
   it("passes the selected effort to each turn without changing session identity", async () => {
     const f = await fixture();
@@ -550,11 +555,27 @@ describe("Codex adapter lifecycle", () => {
   });
   it("answers a native approval once and rejects stale answers", async () => {
     const f = await fixture(); await f.adapter.start({ turnId: "t", text: "hi" }); await settle();
-    f.request("item/fileChange/requestApproval", { itemId: "patch", reason: "write" });
+    f.event("item/started", { item: { id: "patch", type: "fileChange", changes: [{path:"a.ts",kind:{type:"update",move_path:"b.ts"},diff:"-old\n+new"}] } });
+    f.request("item/fileChange/requestApproval", { itemId: "patch" });
     const e = f.events.find(e => e.event.type === "tool_permission_request")!.event as any;
+    expect(e.request.allowedDecisions).toEqual(["allow-once", "deny"]);
+    expect(e.request.reason).not.toMatch(/Codex|prototype|session-wide/);
+    expect(e.request.argsPreview.files).toEqual([{path:"b.ts",oldPath:"a.ts",operation:"update"}]);
+    expect(() => f.adapter.resolveApproval(e.request.requestId, "allow-session")).toThrow("NEXUS_APPROVAL_DECISION_UNSUPPORTED");
+    expect(f.replies).toHaveLength(0);
     expect(f.adapter.resolveApproval(e.request.requestId, "allow-once")).toBe(true);
     expect(f.adapter.resolveApproval(e.request.requestId, "allow-once")).toBe(false);
     expect(f.replies[0].result).toEqual({ decision: "accept" });
+  });
+  it("uses native command evidence for approval previews and rejects invented decisions without consuming the request", async () => {
+    const f = await fixture(); await f.adapter.start({ turnId: "t", text: "hi" }); await settle();
+    f.event("item/started", { item: { id: "cmd", type: "commandExecution", command: "node build.mjs", cwd: f.config.workspace } });
+    f.request("item/commandExecution/requestApproval", { itemId: "cmd" });
+    const e = f.events.find(e => e.event.type === "tool_permission_request")!.event as any;
+    expect(e.request.argsPreview).toMatchObject({ command: "node build.mjs", cwd: f.config.workspace });
+    expect(() => f.adapter.resolveApproval(e.request.requestId, "allow-always")).toThrow("NEXUS_APPROVAL_DECISION_UNSUPPORTED");
+    expect(f.adapter.resolveApproval(e.request.requestId, "deny")).toBe(true);
+    expect(f.replies[0].result).toEqual({ decision: "decline" });
   });
   it("interrupts tools, retains partial output and rejects late completion", async () => {
     const f = await fixture(); await f.adapter.start({ turnId: "t", text: "hi" }); await settle();

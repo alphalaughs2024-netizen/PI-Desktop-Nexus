@@ -12,6 +12,7 @@ import { CodexSessionStore } from "./store.js";
 import { CodexSubagents } from "./subagents.js";
 import { CodexExtensions } from "./extensions.js";
 import { CodexPlans, modeInstructions, planningTools, approvedInstruction } from "./plans.js";
+import { NEXUS_IDENTITY, hasBrowserTools } from "./nexus-identity.js";
 export class CodexController {
   private sessions = new Map<string, CodexAdapter>();
   private delegates = new Map<string, CodexSubagents>();
@@ -44,7 +45,8 @@ export class CodexController {
           const hostTools = this.host ? (await this.host.call<{ tools: NexusTool[] }>("tools.list", { sessionId })).tools ?? [] : [];
           const available = nexusToolCatalog([...hostTools, ...(params.pluginTools ?? [])], true);
           const baseInstructions = [
-            "Nexus is the graphical host. Use Nexus MCP tools for browser/preview, skills, workflows and plugins. Every tool is bound to this chat. Preserve user work, inspect failures and never automatically replay an ambiguously applied mutation.",
+            NEXUS_IDENTITY,
+            "Your tools are bound to this Nexus chat. Use the offered browser/preview, skill, workflow, Git and plugin services directly. Preserve user work, inspect failures and never automatically replay an ambiguously applied mutation.",
             "Delegate through Nexus Task presets only in Agent mode. Saved provider/model and tools are authoritative; do not invent model overrides.",
             "A writing delegate shares this workspace. While it runs, do not edit files or run native shell commands in parallel; inspect TaskList and converge through TaskWait first. Ownership paths are scheduling metadata, not file locks. Use separate managed worktrees in separate chats for simultaneous mutations. Inspect stale patch failures and reread current files before retrying; never overwrite intervening user edits.",
             "Use ProcessStart for background commands and PreviewServer for website/dev servers. These host-owned processes survive response completion. Inspect the returned id through ProcessRead or PreviewServer status on later turns, verify exit/readiness, and stop them explicitly when no longer needed. Do not claim that native exec handles are Nexus-managed. App exit stops managed processes; recovered records are never auto-restarted.",
@@ -53,7 +55,7 @@ export class CodexController {
             projectInstructionsPrompt(params.projectInstructions), instructionCatalogPrompt(params.instructionCatalog ?? []), params.activeWorkflow?.body,
           ].filter(Boolean).join("\n\n");
           const config: CodexConfig = { sessionId, dataDir: this.dataDir, workspace: params.projectPath || params.scratchDir, provider: params.provider,
-            permissionMode, scratchDir: params.scratchDir, nexusToolsAvailable: !!this.host, mode,
+            permissionMode, scratchDir: params.scratchDir, nexusToolsAvailable: hasBrowserTools(available.map(tool => tool.name)), mode,
             managedPreviewAvailable: mode === "agent" && ["ProcessStart", "ProcessRead", "ProcessStop", "PreviewServer"].every(name => available.some(tool => tool.name === name)),
             serviceCatalogKey: createHash("sha256").update(JSON.stringify({ subagents: params.subagents ?? [], tools: available, extensions: params.trustedExtensions ?? [] })).digest("hex"),
             developerInstructions: baseInstructions + "\n\n" + modeInstructions(mode),
@@ -104,7 +106,7 @@ export class CodexController {
         try { await adapter?.interrupt(); }
         finally { await this.host?.call("process.stopSession", { sessionId }); }
         await this.host?.call("plans.abort", { sessionId }); return { ok: true };
-      case "agent.stop": return { requested: false, reason: "Graceful boundary stop is not available in the Codex prototype; use interrupt." };
+      case "agent.stop": return { requested: false, reason: "Stopping at the next execution boundary is unavailable; use Stop to interrupt the current response." };
       case "agent.getStatus": {
         if (adapter) return { status: adapter.getStatus() };
         const snapshot = await this.storedSnapshot(sessionId);
@@ -118,12 +120,12 @@ export class CodexController {
       }
       case "agent.recover": if (!adapter) throw new Error("CODEX_SESSION_NOT_LOADED"); return { snapshot: await adapter.recover() };
       case "agent.steeringContext": {
-        if (!adapter) throw Object.assign(new Error("Codex session unavailable"), { errorCode: "MISSING_SESSION" });
+        if (!adapter) throw Object.assign(new Error("Nexus execution session unavailable"), { errorCode: "MISSING_SESSION" });
         return adapter.steeringContext(String(params.expectedTurnId ?? ""));
       }
       case "agent.steer": {
         if (!adapter) return { state: "unavailable", reason: "missing_session" };
-        if (params.attachments?.length) return { state: "failed", reason: "Codex steering currently accepts text only. Send attachments in the next user turn." };
+        if (params.attachments?.length) return { state: "failed", reason: "Updates to a running response currently accept text only. Send attachments in the next message." };
         return adapter.steer({ expectedTurnId: String(params.expectedTurnId ?? ""), text: String(params.content ?? ""), messageId: params.messageId ?? params.message?.id });
       }
       case "agent.resolveApproval": {

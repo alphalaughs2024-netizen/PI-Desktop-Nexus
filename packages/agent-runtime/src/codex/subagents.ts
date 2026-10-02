@@ -179,6 +179,7 @@ export class CodexSubagents {
     }
     const parent = this.options.parent;
     const child: CodexConfig = { ...parent, sessionId: record.childSessionId, restrictedTools: allowed, maxModelRequests: definition.maxTurns,
+      managedPreviewAvailable: ["ProcessStart", "ProcessRead", "ProcessStop", "PreviewServer"].every(name => allowed.includes(name)),
       provider: { ...provider, modelConfig: provider.modelConfig && definition.maxTokens ? { ...provider.modelConfig, maxTokens: definition.maxTokens } : provider.modelConfig },
       developerInstructions: [parent.developerInstructions, "Workspace: " + parent.workspace, "Scratch: " + (parent.scratchDir ?? parent.workspace), definition.prompt,
         "You are a configured Nexus subagent. Complete only the supplied brief; use only your declared Nexus MCP tools, including files and shell. Your Bash uses Nexus host policy, not the parent's native shell sandbox. Ownership paths are task scope, not filesystem ACLs. Do not delegate or ask the user. Report exact commands, exit status and observed results; distinguish launch failure from failing tests."].filter(Boolean).join("\n\n") };

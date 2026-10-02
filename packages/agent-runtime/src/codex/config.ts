@@ -4,6 +4,7 @@ import { dirname, join, resolve } from "node:path";
 import { createRequire } from "node:module";
 import type { EngineSession, ThinkingLevel, Mode } from "@pi-desktop/shared";
 import type { RuntimeProviderConfig } from "../provider-binding.js";
+import { NEXUS_IDENTITY, hasBrowserTools } from "./nexus-identity.js";
 export const CODEX_VERSION = "0.157.1";
 export const CODEX_TOOL_TIMEOUT_SECONDS = 240;
 export type CodexLaunch = { command: string; args: string[]; cwd: string; env: NodeJS.ProcessEnv };
@@ -25,7 +26,7 @@ export type CodexConfig = {
 };
 export function sessionDescriptor(config: CodexConfig): EngineSession {
   return { sessionId: config.sessionId, engine: "codex", version: CODEX_VERSION, workspace: resolve(config.workspace), providerId: config.provider.id, modelId: config.provider.modelId,
-    capabilities: { imageInput: config.provider.modelConfig?.input.includes("image") === true, nativeTools: !config.restrictedTools, recovery: true, steering: true, browser: config.nexusToolsAvailable === true,
+    capabilities: { imageInput: config.provider.modelConfig?.input.includes("image") === true, nativeTools: !config.restrictedTools, recovery: true, steering: true, browser: config.nexusToolsAvailable === true && (!config.restrictedTools || hasBrowserTools(config.restrictedTools)),
       managedPreview: config.managedPreviewAvailable === true && (config.mode ?? "agent") === "agent" && (!config.restrictedTools || config.restrictedTools.includes("PreviewServer")) } };
 }
 /** Preserve the selected endpoint effort; never silently spend at a higher level. */
@@ -45,6 +46,7 @@ export function codexPermissionMode(value: unknown): CodexConfig["permissionMode
   throw new Error("CODEX_PERMISSION_MODE_UNSUPPORTED: use Ask, Accept edits, Auto or Full access");
 }
 export function nativePolicy(mode: CodexConfig["permissionMode"]) {
+  mode = codexPermissionMode(mode);
   return { approvalPolicy: mode === "auto" || mode === "full-access" ? "never" : "on-request",
     sandbox: mode === "full-access" ? "danger-full-access" : mode === "ask" ? "read-only" : "workspace-write" };
 }
@@ -74,7 +76,7 @@ export async function resolveCodexEntrypoint(packageRoot: string, platform: Node
   return { command, prefix: [] };
 }
 export async function prepareLaunch(config: CodexConfig, directory: string): Promise<CodexLaunch> {
-  if (config.provider.authKind && !["api-key", "api_key", "api_key_and_base_url", "none"].includes(config.provider.authKind)) throw new Error("CODEX_PROVIDER_UNSUPPORTED: select an API-key Responses endpoint for this prototype");
+  if (config.provider.authKind && !["api-key", "api_key", "api_key_and_base_url", "none"].includes(config.provider.authKind)) throw new Error("CODEX_PROVIDER_UNSUPPORTED: select an API-key Responses endpoint for Nexus execution");
   if (config.provider.apiStyle && !/responses/i.test(config.provider.apiStyle)) throw new Error("CODEX_RESPONSES_REQUIRED: configure this provider with the Responses API");
   if (!config.provider.apiKey && config.provider.authKind !== "none") throw new Error("CODEX_PROVIDER_KEY_REQUIRED");
   if (!config.provider.baseUrl) throw new Error("CODEX_ENDPOINT_REQUIRED");
@@ -82,7 +84,7 @@ export async function prepareLaunch(config: CodexConfig, directory: string): Pro
   if (endpoint.username || endpoint.password || endpoint.search || endpoint.hash || !["https:", "http:"].includes(endpoint.protocol)) throw new Error("CODEX_ENDPOINT_INVALID");
   const packageRoot = join(process.env.APPDATA ?? join(homedir(), ".local", "lib"), "npm", "node_modules", "@openai", "codex");
   const metadata = JSON.parse(await readFile(join(packageRoot, "package.json"), "utf8"));
-  if (metadata.version !== CODEX_VERSION) throw new Error("CODEX_VERSION_MISMATCH: this prototype requires " + CODEX_VERSION);
+  if (metadata.version !== CODEX_VERSION) throw new Error("CODEX_VERSION_MISMATCH: Nexus requires execution engine version " + CODEX_VERSION);
   const executable = await resolveCodexEntrypoint(packageRoot);
   await mkdir(directory, { recursive: true });
   const contextWindow = config.provider.modelConfig?.contextWindow ?? config.provider.modelConfig?.limit?.context ?? 32768;
@@ -91,7 +93,7 @@ export async function prepareLaunch(config: CodexConfig, directory: string): Pro
     slug: config.provider.modelId, display_name: config.provider.modelId, description: "Nexus custom provider",
     default_reasoning_level: null, supported_reasoning_levels: config.provider.supportsReasoning ? config.provider.supportedThinkingLevels.map(level => ({ effort: nativeEffort(config.provider, level), description: level })) : [], shell_type: "unified_exec", visibility: "list", supported_in_api: true, priority: 0,
     availability_nux: null, upgrade: null,
-    model_messages: { instructions_template: "You are a coding agent in Nexus. Inspect inputs, use available native tools, preserve work and report failures accurately. Never claim actions succeeded without evidence." },
+    model_messages: { instructions_template: NEXUS_IDENTITY + " Inspect inputs, preserve user work and report failures accurately." },
     include_skills_usage_instructions: false, include_apps_usage_instructions: false, include_plugin_usage_instructions: false,
     supports_reasoning_summary_parameter: false, default_reasoning_summary: "none", support_verbosity: false, default_verbosity: null,
     apply_patch_tool_type: "freeform", truncation_policy: { mode: "bytes", limit: 10000 }, supports_parallel_tool_calls: true,

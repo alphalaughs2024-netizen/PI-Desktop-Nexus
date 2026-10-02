@@ -17,7 +17,7 @@ export function bridgeRequest(request: any): any {
   return { ...request,
     tools: request.tools?.map((tool: any) => tool.type === "custom" && tool.name === "apply_patch" ? {
       type: "function", name: "apply_patch", strict: true,
-      description: "Apply a patch through the native Codex handler. input is the exact raw patch string. Use *** Begin Patch, *** Update File: relative/path, @@ context, -removed and +added lines, then *** End Patch. Add files with *** Add File: relative/path and +prefixed lines. Delete with *** Delete File: relative/path. Preserve existing file context.",
+      description: "Apply a file patch in Nexus. input is the exact raw patch string. Use *** Begin Patch, *** Update File: relative/path, @@ context, -removed and +added lines, then *** End Patch. Add files with *** Add File: relative/path and +prefixed lines. Delete with *** Delete File: relative/path. Preserve existing file context.",
       parameters: { type: "object", properties: { input: { type: "string" } }, required: ["input"], additionalProperties: false },
     } : tool),
     input: Array.isArray(request.input) ? request.input.map((item: any) => {

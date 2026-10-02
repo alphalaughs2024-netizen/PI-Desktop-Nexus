@@ -13,6 +13,11 @@ it("requires an explicit separate profile", () => {
 it("does not claim managed preview processes merely because the tool bridge exists", () => {
  expect(sessionDescriptor({ ...config, nexusToolsAvailable: true }).capabilities).toMatchObject({ browser: true, managedPreview: false });
 });
+it("reports browser access from actual restricted tool grants", () => {
+ expect(sessionDescriptor({ ...config, nexusToolsAvailable: true, restrictedTools: ["Read"] }).capabilities.browser).toBe(false);
+ expect(sessionDescriptor({ ...config, nexusToolsAvailable: true, restrictedTools: ["browser_snapshot"] }).capabilities.browser).toBe(true);
+ expect(sessionDescriptor({ ...config, nexusToolsAvailable: false, restrictedTools: ["browser_snapshot"] }).capabilities.browser).toBe(false);
+});
 it("advertises managed preview only for an available permitted service", () => {
  expect(sessionDescriptor({ ...config, managedPreviewAvailable: true }).capabilities.managedPreview).toBe(true);
  expect(sessionDescriptor({ ...config, managedPreviewAvailable: true, mode: "plan" }).capabilities.managedPreview).toBe(false);
@@ -42,6 +47,9 @@ it("keeps key and private header values out of argv and generated config", async
   expect(launch.env.NEXUS_CODEX_PROVIDER_KEY).toBe("transient-secret"); expect(launch.env.NEXUS_CODEX_HEADER_0).toBe("private-header");
   expect(JSON.stringify(launch.args)).not.toContain("transient-secret"); expect(JSON.stringify(launch.args)).not.toContain("private-header");
   expect(await readFile(join(root, "profile/model-catalog.json"), "utf8")).not.toContain("transient-secret");
+  const catalog = JSON.parse(await readFile(join(root, "profile/model-catalog.json"), "utf8"));
+  expect(catalog.models[0].model_messages.instructions_template).toContain("You are Nexus");
+  expect(catalog.models[0].model_messages.instructions_template).toContain("answer accurately");
 });
 it("refuses an untested Codex version", async () => {
   const root = await mkdtemp(join(tmpdir(), "nexus-pin-")); dirs.push(root); vi.stubEnv("APPDATA", root);
@@ -67,6 +75,7 @@ it("maps explicit Full access to native unrestricted policy without weakening ot
   expect(nativePolicy(codexPermissionMode(undefined))).toEqual({ approvalPolicy: "on-request", sandbox: "read-only" });
   expect(nativePolicy(codexPermissionMode("auto"))).toEqual({ approvalPolicy: "never", sandbox: "workspace-write" });
   expect(() => codexPermissionMode("unknown-mode")).toThrow("CODEX_PERMISSION_MODE_UNSUPPORTED");
+  expect(() => nativePolicy("unknown-mode" as any)).toThrow("CODEX_PERMISSION_MODE_UNSUPPORTED");
 });
 
 async function nativeFixture(arch: "x64" | "arm64", hoisted = false, version = "0.157.1-win32-" + arch) {
