@@ -2209,6 +2209,14 @@ async fn handle_request(
             Ok(json!({ "hits": hits }))
         }
 
+        "stats.recordUsage" => {
+            let st = state.lock().await;
+            crate::usage::record(&st.db, params).map_err(|e| rpc_err(1000, e.to_string(), "INVALID_USAGE"))
+        }
+        "stats.getUsageLedger" => {
+            let st = state.lock().await;
+            crate::usage::history(&st.db, &params).map_err(|e| rpc_err(1000, e.to_string(), "INTERNAL"))
+        }
         "stats.getTokenUsageHistory" => {
             let bucket = params
                 .get("bucket")

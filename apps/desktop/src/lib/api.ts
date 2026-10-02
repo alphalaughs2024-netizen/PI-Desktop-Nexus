@@ -338,7 +338,8 @@ function normalizePlansChangedEvent(value: unknown): PlanningStateEvent {
 }
 
 export const api = {
-  getProviderAccount: (input: { providerId: string; vendorKey?: string; baseUrl: string; period?: "day" | "week" | "month" }) => invoke<any>(IPC.invoke.providerAccountGet, input),
+  getProviderAccount: (input: { providerId: string; period?: "day" | "week" | "month" }) => invoke<import("@pi-desktop/shared").ProviderAccountResult>(IPC.invoke.providerAccountGet, input),
+  getUsageLedger: (query?: import("@pi-desktop/shared").UsageLedgerQuery) => invoke<import("@pi-desktop/shared").UsageLedger>(IPC.invoke.statsGetUsageLedger, query),
   getVersion: () => invoke<AppVersionInfo>(IPC.invoke.appGetVersion),
   health: () => invoke<HostHealth>(IPC.invoke.appHealth),
   exportSupportBundle: () =>

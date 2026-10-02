@@ -2420,6 +2420,8 @@ export type TokenUsageFacet = {
   outputTokens?: number;
   cacheReadTokens?: number;
   cacheWriteTokens?: number;
+  reasoningTokens?: number;
+  providerId?: string;
 };
 
 export type TokenUsageHistoryQuery = {

@@ -12282,3 +12282,51 @@ or delete caches, profiles or earlier recovery files to hide this condition.
 - **Validation**: Focused runtime/renderer tests, real-component browser checks,
   local provider fixtures through actual execution processes, typecheck/build.
   Full repository E2E suites remain unrun unless explicitly requested.
+
+### E2E-Nexus-Read-Scoped-Tasks: concurrent inspection delegates (ADR 0281)
+
+- **Steps**: Start two configured delegates with `ownership.access: read`,
+  including a preset that declares Bash. Inspect TaskList and each child
+  execution policy. Attempt a read-scoped preset that declares only Write.
+  Start a write-scoped delegate while a read-scoped delegate is running.
+- **Expected**: Both read tasks start together, each reports only Read/Glob/
+  Grep/ProcessRead or browser inspection tools, and neither starts shell,
+  write/edit, process-start or page-interaction calls. The Write-only read
+  request is refused with an unavailable-tool result. The write task is
+  admitted because read work does not claim the mutation slot; a second
+  overlapping write remains refused. The saved preset document is unchanged.
+- **Validation**: Focused subagent admission tests and runtime typecheck. Full
+  repository E2E suites remain unrun unless explicitly requested.
+
+### E2E-Nexus-Delegation-Guidance: model dispatch behavior
+
+- **Steps**: Start an Agent turn with multiple independent inspection questions,
+  a separate validation command, and a trivial single-file edit. Inspect the
+  native Task catalog and developer instructions. Observe the worker lifecycle
+  through TaskList and TaskWait.
+- **Expected**: Guidance tells the model to call Task for substantial
+  independent work, use read scope for parallel inspection, give bounded briefs,
+  keep trivial/tightly coupled work local, continue useful parent work, and
+  inspect reports before finalizing. It does not instruct delegation for every
+  prompt and does not claim a worker ran when it did not.
+- **Validation**: Guidance unit test plus focused runtime/subagent tests. Full
+  repository E2E suites remain unrun unless explicitly requested.
+
+### E2E-Nexus-Usage-Billing: local and provider cost coverage (ADR 0282)
+
+- **Steps**: Run parent, subagent and compaction Responses fixtures with
+  reported usage, a reported charge, a missing charge, a failed response and
+  an interrupted response. Reload the profile and open the cost popover in
+  This chat and All Nexus usage modes. Open Usage & Pricing, filter by provider
+  and model, and refresh OpenRouter, wikivibe, Xkiro and an unknown custom
+  endpoint against bounded provider fixtures.
+- **Expected**: Requests are counted once, delegates are attributed to the
+  parent chat, reported charges win over estimates, missing charges remain
+  labelled, and account/key totals stay separate. OpenRouter shows key limits
+  without claiming wallet access, wikivibe preserves its declared unit and
+  actual cost, Xkiro keeps account history separate, and authentication,
+  redirects, rate limits, malformed data and unsupported schemas never become
+  zero spend. Renderer state contains no API key.
+- **Validation**: Shared ledger tests, agent-runtime bridge tests, Rust ledger
+  migration/aggregation tests, provider fixture tests and desktop renderer
+  checks. Full repository E2E suites remain unrun unless explicitly requested.

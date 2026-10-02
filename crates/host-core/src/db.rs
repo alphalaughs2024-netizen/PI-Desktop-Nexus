@@ -9,7 +9,7 @@ use std::path::{Path, PathBuf};
 /// (D119, `transcripts.rs`). v11 adds the Plan/Goal approval kind (D198).
 /// v12 added A2A broker tables (ADR 0147); v13 drops them (ADR 0165).
 /// v14 adds plugin session ownership and the soft-delete marker (D367).
-pub const SCHEMA_VERSION: i64 = 18;
+pub const SCHEMA_VERSION: i64 = 19;
 
 /// Absolute approval deadline for a newly submitted Plan or Goal proposal.
 pub const PLAN_APPROVAL_TIMEOUT_MS: i64 = 30 * 60 * 1000;
@@ -220,6 +220,12 @@ CREATE TABLE turns (
 );
 CREATE INDEX idx_turns_session ON turns(session_id, started_at DESC);
 CREATE INDEX idx_turns_ended_at ON turns(ended_at DESC);
+CREATE TABLE usage_requests (
+  id TEXT PRIMARY KEY,
+  turn_id TEXT NOT NULL REFERENCES turns(id) ON DELETE CASCADE,
+  record_json TEXT NOT NULL
+);
+CREATE INDEX idx_usage_requests_turn ON usage_requests(turn_id);
 CREATE UNIQUE INDEX idx_turns_one_running_session
   ON turns(session_id) WHERE status = 'running';
 
@@ -559,6 +565,7 @@ impl Database {
             15 => migrate_v15_to_v17(&conn, path)?,
             16 => migrate_v16_to_v17(&conn, path)?,
             17 => {}
+            18 => {}
             SCHEMA_VERSION => {}
             other => {
                 return Err(anyhow!(
@@ -569,6 +576,9 @@ impl Database {
         let migrated: i64 = conn.query_row("PRAGMA user_version", [], |r| r.get(0))?;
         if migrated == 17 {
             migrate_v17_to_v18(&conn, path)?;
+        }
+        if conn.query_row("PRAGMA user_version", [], |r| r.get::<_, i64>(0))? == 18 {
+            migrate_v18_to_v19(&conn, path)?;
         }
         let db = Self { conn, data_dir };
         db.boot_maintenance()?;
@@ -1546,6 +1556,18 @@ fn migrate_v15_to_v17(conn: &Connection, path: &Path) -> Result<()> {
     migrate_v16_to_v17(conn, path)
 }
 
+fn migrate_v18_to_v19(conn: &Connection, path: &Path) -> Result<()> {
+    let backup = create_migration_backup(conn, path, 18)?;
+    let tx = conn.unchecked_transaction()?;
+    tx.execute_batch("CREATE TABLE IF NOT EXISTS usage_requests (
+        id TEXT PRIMARY KEY, turn_id TEXT NOT NULL REFERENCES turns(id) ON DELETE CASCADE,
+        record_json TEXT NOT NULL);
+        CREATE INDEX IF NOT EXISTS idx_usage_requests_turn ON usage_requests(turn_id);")?;
+    tx.pragma_update(None, "user_version", 19i64)?;
+    tx.commit().with_context(|| format!("commit usage migration; backup {} remains", backup.display()))?;
+    Ok(())
+}
+
 fn migrate_v17_to_v18(conn: &Connection, path: &Path) -> Result<()> {
     let backup = create_migration_backup(conn, path, 17)?;
     let tx = conn.unchecked_transaction()?;
@@ -1579,6 +1601,22 @@ fn migrate_v17_to_v18(conn: &Connection, path: &Path) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn v18_usage_migration_preserves_existing_turns_and_makes_a_backup() {
+        let dir = tempfile::tempdir().unwrap(); let path = dir.path().join("usage.sqlite");
+        {
+            let db = Database::open(&path).unwrap();
+            db.conn().execute_batch("DROP TABLE usage_requests;
+                INSERT INTO sessions(id,title,created_at,updated_at) VALUES('s','Preserved',1,1);
+                INSERT INTO turns(id,session_id,status,started_at) VALUES('t','s','completed',1);
+                PRAGMA user_version=18;").unwrap();
+        }
+        let db=Database::open(&path).unwrap();
+        assert!(table_exists(db.conn(),"usage_requests")); assert_eq!(schema_version(db.conn()),19);
+        assert_eq!(db.conn().query_row("SELECT title FROM sessions WHERE id='s'",[],|r|r.get::<_,String>(0)).unwrap(),"Preserved");
+        assert!(migration_backup_path(&path,18).exists());
+    }
 
     fn table_exists(conn: &Connection, name: &str) -> bool {
         conn.query_row(

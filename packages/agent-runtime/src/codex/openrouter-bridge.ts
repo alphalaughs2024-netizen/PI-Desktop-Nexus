@@ -1,9 +1,10 @@
-import { randomBytes, timingSafeEqual } from "node:crypto";
+import { randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
 import { createServer, type IncomingMessage } from "node:http";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import type { RuntimeProviderConfig } from "../provider-binding.js";
 import { CodexToolPolicy } from "./tool-policy.js";
+import { responseUsage, type WireUsage } from "./billing.js";
 
 const MAX_BODY_BYTES = 32 * 1024 * 1024;
 const MAX_FRAME_BYTES = 8 * 1024 * 1024;
@@ -47,12 +48,13 @@ export function bridgeResponse(response: any): any {
 export class PatchStreamMapper {
   private patchIds = new Set<string>();
   private patchIndices = new Set<number>();
-  constructor(private policy?: CodexToolPolicy, private patchCompatibility = true) {}
+  constructor(private policy?: CodexToolPolicy, private patchCompatibility = true, private observe?: (event: any) => void) {}
   frame(frame: string): string | undefined {
     const lines = frame.split(/\r?\n/);
     const data = lines.filter(line => line.startsWith("data:")).map(line => line.slice(5).trimStart()).join("\n");
     if (!data || data === "[DONE]") return frame;
     const event = JSON.parse(data);
+    this.observe?.(event);
     this.policy?.event(event);
     if (!this.patchCompatibility) return frame;
     if (event.type === "response.output_item.added" && event.item?.type === "function_call" && event.item.name === "apply_patch") {
@@ -65,8 +67,8 @@ export class PatchStreamMapper {
     return lines.filter(line => !line.startsWith("data:") && !line.startsWith("event:")).concat("event: " + event.type, "data: " + JSON.stringify(event)).join("\n");
   }
 }
-async function* mappedStream(body: AsyncIterable<Uint8Array>, policy?: CodexToolPolicy, patchCompatibility = true) {
-  const decoder = new TextDecoder(); const mapper = new PatchStreamMapper(policy, patchCompatibility); let buffer = "";
+async function* mappedStream(body: AsyncIterable<Uint8Array>, policy?: CodexToolPolicy, patchCompatibility = true, observe?: (event: any) => void) {
+  const decoder = new TextDecoder(); const mapper = new PatchStreamMapper(policy, patchCompatibility, observe); let buffer = "";
   for await (const chunk of body) {
     buffer += decoder.decode(chunk, { stream: true });
     if (Buffer.byteLength(buffer) > MAX_FRAME_BYTES) throw new Error("CODEX_BRIDGE_FRAME_LIMIT");
@@ -89,16 +91,23 @@ export async function startOpenRouterBridge(provider: RuntimeProviderConfig, fet
   if (!needsOpenRouterBridge(provider)) throw new Error("CODEX_BRIDGE_ENDPOINT_UNSUPPORTED");
   return startProviderBridge(provider, { patchCompatibility: true }, fetcher);
 }
-export async function startProviderBridge(provider: RuntimeProviderConfig, options: { patchCompatibility?: boolean; allowedTools?: ReadonlySet<string>; maxRequests?: number; maxOutputTokens?: number; onPolicyFailure?: (code: string) => void }, fetcher: typeof fetch = fetch): Promise<ProviderBridge> {
+export async function startProviderBridge(provider: RuntimeProviderConfig, options: { patchCompatibility?: boolean; allowedTools?: ReadonlySet<string>; maxRequests?: number; maxOutputTokens?: number; onPolicyFailure?: (code: string) => void; usageSink?: () => ((usage: WireUsage) => void) | undefined }, fetcher: typeof fetch = fetch): Promise<ProviderBridge> {
   const endpoint = new URL(provider.baseUrl ?? "");
   if (!["http:", "https:"].includes(endpoint.protocol) || endpoint.username || endpoint.password || endpoint.search || endpoint.hash) throw new Error("CODEX_ENDPOINT_INVALID");
   const token = randomBytes(32).toString("hex"); const expected = Buffer.from("Bearer " + token); const active = new Set<AbortController>();
+  const handlers = new Set<Promise<void>>();
   let requests = 0;
   const server = createServer(async (request, response) => {
     const received = Buffer.from(request.headers.authorization ?? "");
     if (received.length !== expected.length || !timingSafeEqual(received, expected)) { response.writeHead(401); response.end(); return; }
     if (request.method !== "POST" || !["/responses", "/responses/compact"].includes(request.url ?? "")) { response.writeHead(404); response.end(); return; }
     const abort = new AbortController(); active.add(abort);
+    let finish!: () => void;
+    const handler = new Promise<void>(resolve => { finish = resolve; }); handlers.add(handler);
+    const sink = options.usageSink?.();
+    const wire: WireUsage = { id: randomUUID(), occurredAt: Date.now(), kind: request.url === "/responses/compact" ? "compaction" : "response", outcome: "failed" };
+    let reported = false; let sent = false;
+    const report = () => { if (!reported && sent) { reported = true; sink?.({ ...wire }); } };
     response.once("close", () => { if (!response.writableEnded) abort.abort(); });
     try {
       const requestData = await bodyJson(request);
@@ -107,15 +116,27 @@ export async function startProviderBridge(provider: RuntimeProviderConfig, optio
       const policy = options.allowedTools ? new CodexToolPolicy(options.allowedTools) : undefined;
       const permitted = policy ? policy.request(requestData) : requestData;
       if (options.maxOutputTokens !== undefined) permitted.max_output_tokens = Math.min(options.maxOutputTokens, Number(permitted.max_output_tokens) || options.maxOutputTokens);
+      sent = true;
+      sink?.({ ...wire, outcome: "running" });
       const upstream = await fetcher(provider.baseUrl!.replace(/\/$/, "") + request.url, {
         method: "POST", headers: { "Content-Type": "application/json", ...provider.headers, Authorization: "Bearer " + provider.apiKey },
-        body: JSON.stringify(options.patchCompatibility ? bridgeRequest(permitted) : permitted), signal: abort.signal,
+        body: JSON.stringify(options.patchCompatibility ? bridgeRequest(permitted) : permitted), signal: abort.signal, redirect: "error",
       });
       response.writeHead(upstream.status, { "Content-Type": upstream.headers.get("content-type") ?? "application/json" });
-      if (!upstream.ok) { await pipeline(Readable.fromWeb(upstream.body as any), response); return; }
-      if (requestData.stream) await pipeline(Readable.from(mappedStream(upstream.body! as any, policy, options.patchCompatibility === true)), response);
+      if (!upstream.ok) { report(); await pipeline(Readable.fromWeb(upstream.body as any), response); return; }
+      if (requestData.stream) await pipeline(Readable.from(mappedStream(upstream.body! as any, policy, options.patchCompatibility === true, event => {
+        if (event.response?.id) wire.responseId = event.response.id;
+        if (["response.completed", "response.done", "response.failed", "response.incomplete"].includes(event.type)) {
+          Object.assign(wire, responseUsage(event.response, provider));
+          wire.outcome = ["response.completed", "response.done"].includes(event.type) && event.response?.status !== "failed" && event.response?.status !== "incomplete" ? "completed" : "failed";
+          report();
+        }
+      })), response);
       else {
         const result = await upstream.json();
+        Object.assign(wire, responseUsage(result, provider));
+        wire.outcome = ["failed", "incomplete"].includes((result as any)?.status) ? "failed" : "completed";
+        report();
         policy?.response(result);
         response.end(JSON.stringify(options.patchCompatibility ? bridgeResponse(result) : result));
       }
@@ -124,11 +145,17 @@ export async function startProviderBridge(provider: RuntimeProviderConfig, optio
       // No provider request bodies or credentials in transport errors.
       if (!response.headersSent) { response.writeHead(502, { "Content-Type": "application/json" }); response.end(JSON.stringify({ error: { message: "CODEX_PROVIDER_BRIDGE_FAILED" } })); }
       else response.destroy();
-    } finally { active.delete(abort); }
+    } finally { if (abort.signal.aborted) wire.outcome = "interrupted"; report(); active.delete(abort); handlers.delete(handler); finish(); }
   });
   server.headersTimeout = 30_000; server.requestTimeout = 30_000;
   await new Promise<void>((resolve, reject) => { server.once("error", reject); server.listen(0, "127.0.0.1", resolve); });
   const address = server.address(); if (!address || typeof address === "string") throw new Error("CODEX_BRIDGE_START_FAILED");
   let closing: Promise<void> | undefined;
-  return { url: "http://127.0.0.1:" + address.port, token, close: () => closing ??= new Promise(resolve => { for (const controller of active) controller.abort(); server.closeAllConnections(); server.close(() => resolve()); }) };
+  return { url: "http://127.0.0.1:" + address.port, token, close: () => closing ??= (async () => {
+    for (const controller of active) controller.abort();
+    const pending = [...handlers];
+    server.closeAllConnections();
+    await new Promise<void>(resolve => server.close(() => resolve()));
+    await Promise.all(pending);
+  })() };
 }

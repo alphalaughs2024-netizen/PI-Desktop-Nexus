@@ -289,3 +289,11 @@ A periodic save failure for the active run stops its owned execution before
 reporting failure; a late failed save from an older/terminal run cannot stop
 the new run. Its original filesystem code remains explicit even if the final
 snapshot write subsequently succeeds.
+
+Each provider Responses request is also recorded in the host-owned usage ledger
+when a bridge is available, including parent, delegate, compaction, failed and
+interrupted requests. Native provider usage and generation charges take
+precedence over provider-published or catalog estimates. Account-wide usage is
+never added to the local chat total. Records are idempotent, bound to their
+parent turn, and retain unknown charges as unknown for historical turns without
+request reports.

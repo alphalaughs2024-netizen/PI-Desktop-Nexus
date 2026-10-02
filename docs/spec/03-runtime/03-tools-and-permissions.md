@@ -481,6 +481,21 @@ not a capability grant, path allowlist, or substitute for host authorization.
   validation. `TaskWait` reports do not approve a plan, merge changes, or
   bypass any permission or confirmation.
 
+An explicit `ownership.access: read` request is enforced at delegation
+admission. Nexus intersects the preset's declared tools with `Read`, `Glob`,
+`Grep`, `ProcessRead`, and browser inspection tools. Shell, write/edit,
+process-start, and browser page interaction tools are removed for that
+invocation. If no inspection tool remains, the task is refused. The saved
+preset is unchanged, and the child report records the effective tool list.
+
+The model-facing Task guidance is operational: it tells the agent to dispatch
+substantial independent investigation, browser inspection, validation, and
+self-contained implementation work when that will materially improve the
+result; to keep trivial or tightly coupled work in the parent; to dispatch
+independent reads together; and to call `TaskWait` and inspect reports before
+finalizing. It also tells the agent to provide bounded briefs and never merely
+narrate a delegation that it did not dispatch.
+
 ### 5c. Author-owned workflow packages (ADR 0225)
 
 Author-owned workflow packages are versioned guidance data, not an extension

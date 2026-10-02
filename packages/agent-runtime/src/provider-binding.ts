@@ -58,6 +58,8 @@ export type RuntimeProviderConfig = {
    * Injected last via a fetch wrapper so Codex/Anthropic cannot overwrite them.
    */
   headers?: Record<string, string>;
+  /** Provider-published USD rates, captured for the selected model at launch. */
+  billingRates?: import("@pi-desktop/shared").ModelCost;
   /**
    * Vendor-account auth, resolved once per request by Electron main.
    *
