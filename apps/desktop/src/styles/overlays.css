@@ -797,8 +797,7 @@
 .active-workflow-card {
   --workflow-light: #72b5ff;
   --workflow-light-highlight: #bce8ff;
-  --workflow-fill: color-mix(in oklab, var(--ds-bg-secondary) 18%, transparent);
-  --workflow-reflection: rgb(235 247 255 / 75%);
+  --workflow-fill: color-mix(in oklab, var(--ds-bg-secondary) 68%, transparent);
   position: absolute;
   top: calc(var(--ds-toolbar-height) + 12px);
   right: 12px;
@@ -835,48 +834,8 @@
   transition: rx 300ms var(--motion-ease-out);
 }
 .active-workflow-card[data-open="true"] .active-workflow-light rect { rx: 15px; }
-.active-workflow-bloom { stroke-width: 5px; opacity: .5; }
-.active-workflow-caustic { stroke-width: 2px; opacity: .7; }
-.active-workflow-aura {
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  z-index: -1;
-}
-.active-workflow-aura::before,
-.active-workflow-aura::after {
-  content: "";
-  position: absolute;
-  width: 190px;
-  height: 84px;
-  border-radius: 50%;
-  background: radial-gradient(ellipse, color-mix(in srgb, var(--workflow-light) 48%, transparent), transparent 70%);
-  filter: blur(9px);
-  opacity: .7;
-  transition: opacity 250ms var(--motion-ease-out);
-}
-.active-workflow-aura::before { left: -42px; top: -34px; transform: rotate(-18deg); }
-.active-workflow-aura::after { right: -42px; bottom: -34px; transform: rotate(-18deg); }
-.active-workflow-card:is(:hover, :focus-within) .active-workflow-aura::before,
-.active-workflow-card:is(:hover, :focus-within) .active-workflow-aura::after { opacity: 1; }
-.active-workflow-particle {
-  position: absolute;
-  width: var(--particle-size);
-  height: var(--particle-size);
-  border-radius: 50%;
-  background: var(--workflow-light-highlight);
-  box-shadow: 0 0 5px 1px var(--workflow-light), 0 0 12px 3px color-mix(in srgb, var(--workflow-light) 30%, transparent);
-  opacity: .45;
-}
-.active-workflow-card:is(:hover, :focus-within) .active-workflow-particle {
-  animation: workflow-particle-drift 4.8s ease-in-out infinite;
-  animation-delay: var(--particle-delay);
-}
-@keyframes workflow-particle-drift {
-  0%, 100% { transform: translate(0, 0); opacity: .3; }
-  50% { transform: translate(5px, -5px); opacity: .8; }
-}
+.active-workflow-bloom { stroke-width: 9px; opacity: .7; }
+.active-workflow-caustic { stroke-width: 3px; opacity: .9; }
 .active-workflow-light .active-workflow-orbit {
   stroke: var(--workflow-light-highlight);
   stroke-width: 8px;
@@ -896,33 +855,13 @@
   flex-direction: column;
   max-height: var(--workflow-max-height, none);
   overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--workflow-reflection) 60%, transparent);
+  border: 1px solid color-mix(in oklab, var(--ds-text-primary) 14%, transparent);
   border-radius: inherit;
   background: var(--workflow-fill);
-  background-image: linear-gradient(135deg, rgb(255 255 255 / 20%), transparent 22%, transparent 76%, rgb(225 245 255 / 16%)),
-    linear-gradient(180deg, rgb(255 255 255 / 7%), transparent 48%, rgb(0 8 24 / 9%));
-  box-shadow: inset 2px -2px 1px -1px var(--workflow-reflection),
-    inset -2px 2px 1px -1px var(--workflow-reflection),
-    inset 6px -6px 2px -6px rgb(255 255 255 / 60%),
-    inset -6px 6px 2px -6px rgb(255 255 255 / 60%),
-    inset 0 0 3px rgb(0 8 24 / 65%),
-    0 3px 6px rgb(0 8 24 / 20%), 0 14px 22px -8px rgb(0 8 24 / 38%);
-  backdrop-filter: blur(3px);
-  -webkit-backdrop-filter: blur(3px);
-}
-.active-workflow-surface::before {
-  content: "";
-  position: absolute;
-  inset: 5px;
-  border: 1px solid rgb(235 247 255 / 24%);
-  border-radius: inherit;
-  box-shadow: inset 0 1px 2px rgb(255 255 255 / 9%);
-  pointer-events: none;
-}
-.active-workflow-card[data-open="true"] .active-workflow-surface {
-  background-color: color-mix(in srgb, var(--workflow-fill), var(--ds-bg-secondary) 35%);
-  backdrop-filter: blur(9px);
-  -webkit-backdrop-filter: blur(9px);
+  background-image: linear-gradient(155deg, rgb(210 235 255 / 12%), transparent 30%, transparent 70%, rgb(122 181 255 / 7%));
+  box-shadow: inset 0 2px 2px rgb(207 232 255 / 28%), inset 0 -2px 3px rgb(131 177 235 / 18%), 0 12px 32px rgb(0 8 24 / 28%);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 .active-workflow-card[data-open="true"] { border-radius: 16px; }
 .active-workflow-card[data-dragging="true"] { user-select: none; }
@@ -1021,23 +960,17 @@
   .active-workflow-card,
   .active-workflow-disclosure,
   .active-workflow-chevron,
-  .active-workflow-light rect,
-  .active-workflow-aura::before,
-  .active-workflow-aura::after { transition: none; }
+  .active-workflow-light rect { transition: none; }
   .active-workflow-orbit,
-  .active-workflow-particle,
   .agent-energy-flow,
   .agent-energy-highlight { animation: none !important; }
 }
 @media (prefers-reduced-transparency: reduce) {
-  .active-workflow-surface,
-  .active-workflow-card[data-open] .active-workflow-surface { background: var(--ds-bg-elevated-opaque); background-image: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
-  .active-workflow-light,
-  .active-workflow-aura { display: none; }
+  .active-workflow-surface { background: var(--ds-bg-elevated-opaque); background-image: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
+  .active-workflow-light { display: none; }
 }
 @supports not (backdrop-filter: blur(1px)) {
-  .active-workflow-surface,
-  .active-workflow-card[data-open] .active-workflow-surface { background: var(--ds-bg-elevated-opaque); }
+  .active-workflow-surface { background: var(--ds-bg-elevated-opaque); }
 }
 
 .chat-error-notice > span {

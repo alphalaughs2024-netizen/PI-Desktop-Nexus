@@ -67,9 +67,3 @@ and native CSS/SVG. Normative component/E2E contracts describe the implemented
 behavior. Validate session transitions, expanded/collapsed geometry, dragging,
 keyboard focus, reduced motion, all four themes, and composer clearance.
 Keep the result unmerged until visual testing is accepted.
-
-The next user reference supplied clear-glass button CSS with paired inset
-reflections and very little fill. Adapt that optical treatment locally without
-its whole-container contrast/brightness filters or decorative button copy.
-Preserve text contrast and the existing controls across scenic themes. The user
-also requested external particle light spill and click-only disclosure.

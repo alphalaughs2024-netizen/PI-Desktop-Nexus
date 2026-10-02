@@ -11,7 +11,7 @@ glass pill, initially at the top right below the conversation title band.
 The 48px closed bar has 24px end radii, a fluid ribbon, two-line name/reason
 copy, and pill-shaped hover controls; expanded
 details retain a compact rounded panel.
-Click reveals compact details; hovering affects light only. Outside click, Escape,
+Hover reveals compact details; clicking pins them open. Outside click, Escape,
 and focus leaving collapse the panel. Inspect, session-level dismissal, and
 navigation to Workflows retain their existing host contracts.
 
@@ -23,17 +23,11 @@ workflow, project, or prompt data and never alters host-owned activation.
 Unavailable storage defaults to the top right. Container and widget size
 observation keep the panel reachable when its contents or the window resize.
 
-Adapt the user's clear-glass reference with low-opacity theme fills, a fixed
-3px closed/9px expanded backdrop blur, paired sharp inset reflections, a fine
-inner contour, and a soft lower shadow. Dark scenic themes use lightly
+Use a bounded translucent glass surface with a fixed 12px backdrop blur,
+opposing reflections, and a soft lower shadow. Dark scenic themes use lightly
 tinted navy glass; Alpine uses pale glass. A separate pointer-transparent SVG
 owns diagonal caustics and diffuse light spill outside the surface's clipping
 boundary. Hover/focus adds a 5s orbiting bloom; reduced motion keeps it still.
-Small external light particles and two diffuse diagonal spill fields illuminate
-the wallpaper around the pill. Hover/focus drifts the particles using transforms
-and opacity only; idle particles remain stationary. Reduced transparency hides
-these decorative layers, and reduced motion disables their drift. The user
-requested this spill instead of a border-only glow and click-only expansion.
 The user selected an original blue-violet fluid ribbon after comparing three
 procedural SVG cores, then requested stronger bloom and visual depth.
 
@@ -89,11 +83,3 @@ settled success, and error. Session isolation, composer clearance and draft,
 Inspect, hover, dragging, keyboard focus/Escape, inert contents, reduced motion,
 dismissal rejection/success, long titles, and Settings passed without page errors.
 These fixture checks do not replace native-app testing or user visual acceptance.
-
-The clear-glass follow-up passed the same rendered scenarios in all four themes,
-including click-only disclosure, open state retained on pointer leave, particle
-transform changes on hover, reduced-motion particle suppression, and the
-expanded reduced-transparency fallback. The inner glass and document have no
-horizontal overflow; intentional external light is excluded from content-width
-assertions. No page errors were reported. Focused tests and desktop typecheck
-passed; the trial remains unmerged for the user's next visual test.

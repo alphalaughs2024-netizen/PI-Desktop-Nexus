@@ -45,13 +45,12 @@
 }
 
 :root[data-scenic-theme] .active-workflow-card {
-  --workflow-fill: rgba(5, 18, 39, .12);
+  --workflow-fill: rgba(5, 18, 39, .35);
 }
-:root[data-scenic-theme="obsidian-horizon"] .active-workflow-card { --workflow-fill: rgba(5, 13, 25, .16); }
-:root[data-scenic-theme="emerald-afterglow"] .active-workflow-card { --workflow-fill: rgba(6, 20, 30, .12); }
+:root[data-scenic-theme="obsidian-horizon"] .active-workflow-card { --workflow-fill: rgba(5, 13, 25, .38); }
+:root[data-scenic-theme="emerald-afterglow"] .active-workflow-card { --workflow-fill: rgba(6, 20, 30, .33); }
 :root[data-scenic-theme="alpine-light"] .active-workflow-card {
-  --workflow-fill: rgba(245, 250, 255, .12);
-  --workflow-reflection: rgb(255 255 255 / 90%);
+  --workflow-fill: rgba(230, 244, 255, .42);
   --workflow-light: #64b1ea;
   --workflow-light-highlight: #badfff;
 }
