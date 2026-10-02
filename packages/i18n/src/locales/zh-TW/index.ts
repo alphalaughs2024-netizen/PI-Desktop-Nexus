@@ -2163,6 +2163,12 @@ export const zhTW = {
     justNow: "剛剛",
   },
   workflow: {
+    agentName: "Nexus 智慧體",
+    stage: "階段",
+    activated: "啟用原因",
+    move: "移動工作流程面板",
+    resetPosition: "重設面板位置",
+    dismissFailed: "無法略過此工作流程，請重試。",
     activeLabel: "使用中的工作流程",
     status: "階段：{{stage}} · 啟用原因：{{reason}}",
     inspect: "查看",

@@ -2313,17 +2313,28 @@ reasoning-level control.
 - In Twilight Mountains, a fixed conversation title bar reserves its own
   height plus an 8px visual clearance before the first transcript item. Live
   activity and subagent status must not paint beneath title-bar controls.
-- An active workflow strip is an in-content compact status surface below the
-  title band. It reserves the title-bar clearance, wraps its actions at narrow
-  widths, and never overlaps the conversation title, native controls, or their
-  portaled tooltips.
-- The active workflow strip exposes outlined `Inspect`, `Dismiss`, and
-  `Settings` buttons with visible keyboard focus. Inspect opens a full-width,
-  bounded scrolling guidance surface below the strip; it uses an explicit
-  readable background and never relies on a browser-default or black `pre`
-  surface. In Twilight Mountains the strip uses raised glass and the inspected
-  body uses the opaque safety tier. Labels and loading/error messages are
-  localized.
+- Active workflows appear in a floating glass panel (ADR 0273), collapsed by
+  default at the top right below the title band. The compact strip shows the
+  workflow name, activation reason, status dot, drag grip, and disclosure arrow;
+  it reserves no transcript or empty-state height. Long names are ellipsized.
+- Hover or click opens the panel's stage, activation reason, optional next
+  action, and icon-labelled `Inspect`, `Dismiss`, and `Settings` controls.
+  Click pins the panel open; outside click, Escape, or focus leaving closes it.
+  Escape returns focus to the disclosure. Closed contents are inert. Opening
+  and closing use a short reversible height/fade transition with reduced-motion
+  support. Inspect retains the bounded scrolling guidance reader within the
+  panel; it uses the theme's readable safety surface. Dismiss retains the saved
+  session workflow action; failure remains visible and retryable.
+- The grip supports pointer capture and arrow-key positioning; Home or the
+  reset-position action restores the top right. Position is stored as bounded
+  conversation-relative fractions in renderer-local preferences, shared across
+  conversations. Resize, sidebar, and work-panel changes clamp the widget below
+  the title band and inside the conversation. Positioning never changes host
+  workflow activation, tools, or permissions.
+- Twilight, Obsidian, Emerald, and Alpine share the same floating glass shape,
+  subtle outline, blur, and controls with per-theme tinted translucent fills.
+  Standard themes use semantic surfaces. Reduced transparency and unsupported
+  blur use readable fallback surfaces. Labels and errors are localized.
 - Project session rows retain a 4px gap between adjacent child sessions. The
   gap preserves separate touch targets and prevents an active row from merging
   visually with its sibling in scenic and standard themes.

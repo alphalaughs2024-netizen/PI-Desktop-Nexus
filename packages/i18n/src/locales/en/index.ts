@@ -2225,6 +2225,12 @@ export const en = {
     justNow: "Just now",
   },
   workflow: {
+    agentName: "Nexus agent",
+    stage: "Stage",
+    activated: "Activated",
+    move: "Move workflow panel",
+    resetPosition: "Reset panel position",
+    dismissFailed: "Couldn't dismiss this workflow. Try again.",
     activeLabel: "Active workflow",
     status: "Stage: {{stage}} · Activated: {{reason}}",
     inspect: "Inspect",

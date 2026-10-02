@@ -2599,23 +2599,32 @@ membership when dropped on Ungrouped.
 - **Acceptance**: E (tools and permissions) + G (agent guidance)
 - **Status**: Unit/runtime/source-contract covered; visual scenario Draft
 
-#### E2E-024IAR: Workflow strip and session-settlement regression (ADR 0228)
+#### E2E-024IAR: Floating workflow panel and session settlement (ADRs 0228, 0273)
 
 - **Preconditions**: A Nexus session with an active workflow, a queued
   follow-up prompt, and a provider fixture that can complete, fail, or abort a
   turn; Twilight Mountains is enabled for the visual pass.
 - **Steps**: 1) Queue two prompts while a turn is running. 2) Finish the turn
   and wait for durable settlement. 3) Confirm only the first queued prompt
-  starts, then repeat for the second. 4) Open workflow Inspect and resize the
-  window through a narrow width. 5) Switch the app language and reopen the
-  card.
+  starts, then repeat for the second. 4) Hover/click the collapsed workflow
+  strip, inspect its guidance, and resize the conversation through a narrow
+  width. 5) Switch language and reopen the panel. 6) Drag its grip to the
+  center/edges, reload, open/close the sidebar and Work Panel, and use arrows,
+  Home, and reset position. 7) Close with Escape/outside click; check keyboard
+  focus and reduced motion/transparency. 8) Dismiss, including a rejected
+  dismissal and a late result after a session switch.
 - **Expected**: The queue remains blocked until terminal persistence settles,
-  then resumes FIFO exactly once. The workflow card remains above the shell,
-  its three actions have visible outlines/focus states, and Inspect renders a
-  full-width readable surface with no black rectangle or layout collision.
-  Labels and fallback text follow the selected locale; dismiss and Settings
-  retain their existing session/navigation behavior.
-- **Specs linked**: `03-runtime/01-ipc-protocol.md` §12b.1, ADR 0228
+  then resumes FIFO exactly once. The workflow panel floats without reserving
+  transcript space; its glass strip defaults to the top right below chrome.
+  Twilight, Obsidian, Emerald, and Alpine use matching shape/blur with readable
+  theme tints. Details animate reversibly, are inert while closed, and retain
+  visible focus and a bounded guidance reader. Position survives reload and
+  stays within the conversation after resize. Escape restores disclosure
+  focus; Home/reset restores the top right. Dismiss retains its session action,
+  removes the dismissed workflow, and reports failures without hiding it.
+  Stale results cannot replace another session's panel. Settings and localized
+  labels retain their existing behavior.
+- **Specs linked**: `03-runtime/01-ipc-protocol.md` §12b.1, `04-ux/08-component-spec.md`, ADRs 0228, 0273
 - **Acceptance**: E (tools and permissions) + G (agent guidance)
 - **Status**: Unit/source-contract covered; Electron visual journey Draft
 
@@ -11164,10 +11173,10 @@ restricted constructs and confirm they are accepted while real violations are
 still rejected. Sandbox preload output must be self-contained and free of local
 runtime `require()` chunks.
 
-When an active workflow is shown, verify its translucent borderless tile, stage
-text, and actions are visible in System, Light, Dark, and every scenic theme.
-No theme may add a high-contrast outer outline or degrade the card to unbounded
-floating text.
+When an active workflow is shown, verify its compact floating glass strip and
+expanded stage/actions in System, Light, Dark, and every scenic theme. Keep its
+outline subtle and its text readable, with no permanent full-width banner or
+unbounded floating text. Its position must remain reachable below title chrome.
 
 On the Scenic themes page, verify every preview card's name and description
 remain legible while each of Twilight, Alpine, Obsidian, and Emerald is active.
