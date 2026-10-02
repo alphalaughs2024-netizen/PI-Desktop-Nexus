@@ -291,6 +291,8 @@ export const en = {
     sendNow: "Send now",
     sendNowPending: "Sending next",
     enhancePrompt: "Enhance prompt",
+    composerActions: "More actions",
+    permissionAskShort: "Ask",
     enhancingPrompt: "Enhancing…",
     undoEnhancement: "Undo enhancement",
     enhancementFailed: "Prompt enhancement failed",

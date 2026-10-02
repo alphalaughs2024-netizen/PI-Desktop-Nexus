@@ -16,14 +16,19 @@ import { en, flattenCatalog } from "@pi-desktop/i18n";
 import { Composer } from "../../src/components/Composer.tsx";
 import { VoiceModeProvider } from "../../src/components/VoiceConversation.tsx";
 import { useAppStore } from "../../src/stores/app-store.ts";
+import { api } from "../../src/lib/api.ts";
 import "../../src/styles/globals.css";
 await i18n.use(initReactI18next).init({lng:"en",resources:{en:{translation:flattenCatalog(en)}},interpolation:{escapeValue:false}});
 const sessionId="composer-inspection";
 const model={modelId:"trial-model",providerId:"trial-provider",displayName:"Space Bunny Alpha",contextWindow:128000,maxTokens:16000,capabilities:["text","reasoning"],source:"user"};
 useAppStore.setState({activeSessionId:sessionId,providers:[{id:"trial-provider",name:"Trial",kind:"openai-compatible",authKind:"none",enabled:true,defaultModelId:model.modelId,models:[{id:model.modelId,alias:model.displayName,thinkingLevels:["off","low","medium","high"]}]}],providerModels:{"trial-provider":[model]},sessions:[{id:sessionId,title:"Composer inspection",mode:"agent",permissionMode:"ask",providerId:"trial-provider",modelId:model.modelId,thinkingLevel:"medium",createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),messageCount:0}],loadProviderModels:async()=>{},configureActiveSession:async(config)=>useAppStore.setState(state=>({sessions:state.sessions.map(session=>({...session,...config}))}))});
 const root=ReactDOM.createRoot(document.querySelector('#root'));
-function render(compact=false){root.render(React.createElement(VoiceModeProvider,null,React.createElement(Composer,{compactModelSelector:compact})));}
-window.composerInspection={store:useAppStore,render};
+const usage={inputTokens:24000,outputTokens:1200,cacheReadTokens:0,cacheWriteTokens:0};
+const contextUsage={usage,turnUsage:usage,contextWindow:128000,tools:[],responseOutputEstimated:false};
+function render(compact=false){root.render(React.createElement(VoiceModeProvider,null,React.createElement(Composer,{compactModelSelector:compact,contextUsage})));}
+let releaseEnhancement;
+api.enhancePrompt=request=>new Promise(resolve=>{releaseEnhancement=()=>resolve({enhancedDraft:`Improved: ${request.draft}`});});
+window.composerInspection={store:useAppStore,render,finishEnhancement:()=>releaseEnhancement?.()};
 render();
 document.querySelector('#theme').addEventListener('change',event=>{const theme=event.target.value;document.documentElement.dataset.theme=theme==="light"||theme==="alpine-light"?"light":"dark";document.documentElement.dataset.scenicTheme=theme==="dark"||theme==="light"?"":theme;});
 </script></body></html>

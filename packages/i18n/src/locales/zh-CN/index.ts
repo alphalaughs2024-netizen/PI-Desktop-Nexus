@@ -286,6 +286,8 @@ export const zhCN = {
     sendNow: "立即发送",
     sendNowPending: "即将发送",
     enhancePrompt: "增强提示词",
+    composerActions: "更多操作",
+    permissionAskShort: "询问",
     enhancingPrompt: "增强中…",
     undoEnhancement: "撤回增强",
     enhancementFailed: "提示词增强失败",

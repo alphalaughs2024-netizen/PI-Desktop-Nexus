@@ -73,10 +73,10 @@ import { RendererSlotMount } from "../plugins/renderer-slots";
 import { PlanApprovalBar } from "./PlanApprovalBar";
 import { QueuedPromptRow } from "./QueuedPromptRow";
 import { SpeechControl } from "./SpeechControl";
+import { ComposerActions } from "./ComposerActions";
 import {
   IconArrowUp,
   IconCornerDownLeft,
-  IconUndo2,
   IconPlus,
   IconShield,
   IconStop,
@@ -2541,12 +2541,13 @@ export function Composer({
                   <TooltipButton
                     type="button"
                     className={`icon-btn mode-chip ${permissionOpen ? "active" : ""}`}
+                    data-permission-mode={composerPermissionMode}
                     tooltip={
                       mode === "goal"
                         ? `${t("chat.permissionMode")} · ${t("goal.autoWarning")}`
                         : mode === "plan" && composerPermissionMode === "auto"
                           ? `${t("chat.permissionMode")} · ${t("plan.autoWarning")}`
-                          : t("chat.permissionMode")
+                          : `${t("chat.permissionMode")}: ${t(PERMISSION_MODE_I18N_KEYS[composerPermissionMode])}`
                     }
                     ariaLabel={
                       mode === "goal"
@@ -2564,7 +2565,7 @@ export function Composer({
                     }}
                   >
                     <span className="text-sm">
-                      {t(PERMISSION_MODE_I18N_KEYS[composerPermissionMode])}
+                      {t(composerPermissionMode === "ask" ? "chat.permissionAskShort" : PERMISSION_MODE_I18N_KEYS[composerPermissionMode])}
                     </span>
                     <IconChevronDown size={12} />
                   </TooltipButton>
@@ -2876,12 +2877,22 @@ export function Composer({
                   </div>
                 ) : null}
               </div>
-              <RendererSlotMount slot="composerControl" position="left" props={{ position: "left", disabled: controlsBlocked }} />
-            </div>
-            <div className="composer-right">
               {composerContextUsage ? (
                 <ContextUsageInspector {...composerContextUsage} />
               ) : null}
+              <ComposerActions
+                key={activeSessionId ?? HOME_DRAFT_KEY}
+                disabled={controlsBlocked}
+                enhancementDisabled={!enhancementDraft.trim() || enhancementDraft.trim().startsWith("/") || !modelReady || sendBlocked || enhancingPrompt}
+                enhancing={enhancingPrompt}
+                canUndo={enhancementUndoText !== null}
+                onEnhance={() => void enhancePrompt()}
+                onUndo={undoPromptEnhancement}
+                onOpen={() => { setModelThinkingOpen(false); setPermissionOpen(false); }}
+              />
+              <RendererSlotMount slot="composerControl" position="left" props={{ position: "left", disabled: controlsBlocked }} />
+            </div>
+            <div className="composer-right">
               <SpeechControl
                 disabled={controlsBlocked || pasting}
                 canVoice={modelReady && !runActive}
@@ -2897,46 +2908,6 @@ export function Composer({
                   applyEditorDraft(prefix + inserted + current.slice(end), fileReferencesRef.current, start + inserted.length);
                 }}
               />
-              <TooltipButton
-                type="button"
-                className={`icon-btn composer-enhance-btn${enhancingPrompt ? " is-loading" : ""}`}
-                tooltip={t("chat.enhancePrompt")}
-                ariaLabel={
-                  enhancingPrompt
-                    ? t("chat.enhancingPrompt")
-                    : t("chat.enhancePrompt")
-                }
-                aria-busy={enhancingPrompt}
-                disabled={
-                  !enhancementDraft.trim() ||
-                  enhancementDraft.trim().startsWith("/") ||
-                  !modelReady ||
-                  sendBlocked ||
-                  enhancingPrompt
-                }
-                onClick={() => void enhancePrompt()}
-              >
-                {enhancingPrompt ? (
-                  <>
-                    <span className="tool-spinner" aria-hidden="true" />
-                    <span>{t("chat.enhancingPrompt")}</span>
-                  </>
-                ) : (
-                  <IconSparkles size={15} aria-hidden="true" />
-                )}
-              </TooltipButton>
-              {enhancementUndoText !== null ? (
-                <TooltipButton
-                  type="button"
-                  className="icon-btn composer-enhance-undo"
-                  tooltip={t("chat.undoEnhancement")}
-                  ariaLabel={t("chat.undoEnhancement")}
-                  disabled={controlsBlocked}
-                  onClick={undoPromptEnhancement}
-                >
-                  <IconUndo2 size={15} aria-hidden="true" />
-                </TooltipButton>
-              ) : null}
               {runActive && !hasDraftContent ? (
                 <TooltipButton
                   type="button"

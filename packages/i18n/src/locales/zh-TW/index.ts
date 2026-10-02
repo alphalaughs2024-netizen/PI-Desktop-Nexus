@@ -290,6 +290,8 @@ export const zhTW = {
     sendNow: "立即傳送",
     sendNowPending: "即將傳送",
     enhancePrompt: "增強提示詞",
+    composerActions: "更多操作",
+    permissionAskShort: "詢問",
     enhancingPrompt: "增強中…",
     undoEnhancement: "撤回增強",
     enhancementFailed: "提示詞增強失敗",

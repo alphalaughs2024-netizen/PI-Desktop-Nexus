@@ -12063,7 +12063,14 @@ or delete caches, profiles or earlier recovery files to hide this condition.
 - **Expected**: Existing width and theme fills remain; empty input reserves
   two lines. A subtle inset hairline strengthens on focus with no geometry
   shift. Controls are 32px tall with separate left, model and submission
-  groups, wrapping without collisions. The English welcome reads `Ask Nexus
+  groups, wrapping without collisions. Ask is abbreviated only in the trigger;
+  the tooltip/menu retain the full policy name. Model, context and More actions
+  share one row, above mode/permission and voice/submission in narrow panels.
+  More actions exposes enhancement and available Undo, respects disabled and
+  busy states, supports keyboard traversal/Escape focus restore and outside
+  dismissal, and fits the native floating surface. Below 460px, longer policy
+  names reserve another row so they cannot overlap voice or submission. The
+  English welcome reads `Ask Nexus
   anything`; contextual hints remain. Disabled Send is subdued; a ready draft
   enables it. Multiline growth and menu/input behavior remain intact. The
   browser composer retains its brain selector and single outer frame.

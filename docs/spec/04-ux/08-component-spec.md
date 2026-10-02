@@ -2270,16 +2270,21 @@ reasoning-level control.
   The permission menu stays 120px wide; its Chinese Composer short label for
   Accept edits is `允许编辑` / `允許編輯` so the option remains single-line
   beside its selection indicator.
+  The composer Ask label is abbreviated locally; its tooltip and the
+  permission menu retain the full policy name. No permission semantics change.
 - Attachment, mode and permission form the left toolbar group. The combined
-  model × reasoning-level chip has its own flexible group. The right toolbar
-  owns the remaining-capacity context inspector (when the newest assistant
-  turn has usage), dictation/voice, the standalone prompt-enhancement action and
-  the
-  single Stop/Send submit slot (D347). The inspector trigger shows the ring
+  model × reasoning-level chip, remaining-capacity context inspector and
+  More actions trigger form a flexible middle group. The right toolbar owns
+  dictation/voice and the single Stop/Send submit slot (D347), with extra
+  spacing before submission. The inspector trigger shows the ring
   and percentage only. The chip shows Bot, the current model name, and the
   current reasoning level separated by `·`; `off` omits the level text. The
-  prompt-enhancement action shows Sparkles while idle, uses the shared
-  `.tool-spinner` and localized `Enhancing…` label while running, and remains
+  More actions menu contains prompt enhancement and Undo enhancement when
+  available. It supports arrow/Home/End navigation, Escape with restored
+  trigger focus, Tab and outside-click dismissal, and closes on session change
+  or blocked controls. A disabled enhancement remains visible but unavailable.
+  Its trigger uses the shared `.tool-spinner` and localized `Enhancing…`
+  tooltip while running. Enhancement remains
   a one-shot draft rewrite action. Inline file-reference chips, including
   pasted image chips, do not disable this action and remain in the draft.
 - The combined chip opens one anchored menu above itself. The menu starts with
@@ -2321,10 +2326,15 @@ reasoning-level control.
   visually with its sibling in scenic and standard themes.
 - Empty draft height: `.composer-input` uses `min-height: 2lh`, then grows
   naturally through seven visible lines. Toolbar controls reserve 32px height
-  with 6px gaps within groups; icon hover surfaces use an 8px radius. At 540px
-  container width or below the left group occupies its own row and the model
-  and submission groups wrap beneath it. The floating browser composer keeps
+  with 6px gaps within groups; icon hover surfaces use an 8px radius. At 620px
+  container width or below, the model/context/actions group spans one row;
+  left controls and voice/submission occupy the next row. The model retains
+  available space and its reasoning label. The floating browser composer keeps
   its brain-only model control and existing outer frame.
+  Below 460px, longer permission names reserve a separate controls row and
+  submission moves beneath it, preserving policy wording without collisions.
+  Native floating-surface height includes the actions menu so it remains
+  visible above the live webpage.
 - The English welcome placeholder is `Ask Nexus anything` in both placements.
   Placeholder ink uses semantic secondary text. Enabled Send retains its
   theme treatment; disabled Send uses a subdued surface and muted arrow.

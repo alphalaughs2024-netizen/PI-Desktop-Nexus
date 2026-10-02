@@ -90,7 +90,7 @@ export function BrowserComposerSurface() {
     const measure = () => {
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
-        const elements = document.querySelectorAll<HTMLElement>(".browser-floating-shell, .composer-stack, .composer-model-menu, .composer-plus-menu, .composer-permission-menu, .composer-autocomplete, .context-inspector-popover, .overlay, .speech-overlay, .ui-tooltip");
+        const elements = document.querySelectorAll<HTMLElement>(".browser-floating-shell, .composer-stack, .composer-model-menu, .composer-actions-menu, .composer-plus-menu, .composer-permission-menu, .composer-autocomplete, .context-inspector-popover, .overlay, .speech-overlay, .ui-tooltip");
         let top = window.innerHeight;
         for (const element of elements) {
           const rect = element.getBoundingClientRect();

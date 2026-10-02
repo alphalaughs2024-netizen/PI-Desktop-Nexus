@@ -37,8 +37,8 @@ test("composer send/stop button follows draft content and the visible session's 
   assert.doesNotMatch(composerRight, /\{runActive \? \(/);
   assert.match(
     composer.slice(composer.indexOf('<div className="composer-model-group-control">')),
-    /composer-model-thinking-chip[\s\S]*composer-enhance-btn[\s\S]*className="(?:stop|send)-btn"/,
-    "Model selection should precede the separate voice/enhancement/submit group",
+    /composer-model-thinking-chip[\s\S]*<ComposerActions[\s\S]*className="(?:stop|send)-btn"/,
+    "Model selection and occasional actions should precede the voice/submit group",
   );
   const modelTrigger =
     composer.match(

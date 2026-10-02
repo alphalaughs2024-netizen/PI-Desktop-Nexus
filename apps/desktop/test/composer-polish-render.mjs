@@ -48,6 +48,7 @@ try {
       await page.waitForTimeout(220);
       assert.deepEqual(await shell.boundingBox(), initial, `${theme}/${width}: focus shifted shell`);
       await page.locator(".send-btn").isDisabled().then(disabled => assert.ok(disabled));
+      assert.equal(await page.locator(".composer-permission .mode-chip").innerText(), "Ask");
       await page.locator("#theme").focus();
       await page.waitForTimeout(220);
       await shell.screenshot({ path: resolve(output, `${theme}-${width}-empty.png`) });
@@ -65,6 +66,29 @@ try {
       const menuBounds = await menu.boundingBox();
       assert.ok(menuBounds.x >= 0 && menuBounds.x + menuBounds.width <= width + 1, `${theme}/${width}: model menu clipped`);
       await page.keyboard.press("Escape");
+      const actions = page.getByRole("button", { name: "More actions", exact: true });
+      await actions.focus();
+      await page.keyboard.press("ArrowDown");
+      const actionsMenu = page.getByRole("menu", { name: "More actions", exact: true });
+      await actionsMenu.waitFor();
+      assert.ok(await page.getByRole("menuitem", { name: "Enhance prompt", exact: true }).isDisabled());
+      const actionsBounds = await actionsMenu.boundingBox();
+      assert.ok(actionsBounds.x >= 0 && actionsBounds.x + actionsBounds.width <= width + 1, `${theme}/${width}: actions menu clipped`);
+      await page.keyboard.press("Escape");
+      assert.ok(await actions.evaluate(element => element === document.activeElement));
+      await input.fill("Organize this prompt");
+      await actions.click();
+      await page.getByRole("menuitem", { name: "Enhance prompt", exact: true }).click();
+      await page.locator('.composer-actions-trigger[aria-busy="true"]').waitFor();
+      await page.evaluate(() => window.composerInspection.finishEnhancement());
+      await page.waitForFunction(() => document.querySelector(".composer-input").textContent === "Improved: Organize this prompt");
+      await actions.click();
+      assert.ok(await page.getByRole("menuitem", { name: "Enhance prompt", exact: true }).evaluate(element => document.activeElement === element));
+      await page.keyboard.press("ArrowDown");
+      assert.ok(await page.getByRole("menuitem", { name: "Undo enhancement", exact: true }).evaluate(element => document.activeElement === element));
+      await page.keyboard.press("Enter");
+      await page.waitForFunction(() => document.querySelector(".composer-input").textContent === "Organize this prompt");
+      await input.fill("");
       await page.getByRole("button", { name: "Permission mode", exact: true }).click();
       await page.locator(".composer-permission-menu").waitFor();
       await page.mouse.click(10, 100);
@@ -76,7 +100,22 @@ try {
   assert.equal(await page.locator(".composer-shell").evaluate(element => getComputedStyle(element, "::after").transitionDuration), "0s");
   await page.evaluate(() => { document.documentElement.dataset.surface = "browser-composer"; window.composerInspection.render(true); });
   assert.ok(await page.locator(".composer-model-thinking-compact").isVisible());
-  assert.equal(await page.locator(".composer-model-group-control").evaluate(element => element.getBoundingClientRect().width), 32);
+  assert.equal(await page.locator(".composer-model-thinking-compact").evaluate(element => element.getBoundingClientRect().width), 32);
+  assert.equal(await page.locator(".composer-model-group-control .context-inspector").count(), 1);
+  for (const policy of ["ask", "accept-edits", "auto", "full-access"]) {
+    await page.evaluate(policy => window.composerInspection.store.setState(state => ({ sessions: state.sessions.map(session => ({ ...session, mode: "agent", permissionMode: policy })) })), policy);
+    await page.waitForTimeout(50);
+    const controls = await page.locator(".composer-toolbar button").evaluateAll(elements => elements.map(element => {
+      const { left, right, top, bottom } = element.getBoundingClientRect();
+      return { left, right, top, bottom };
+    }));
+    for (let index = 0; index < controls.length; index++) {
+      for (const other of controls.slice(index + 1)) {
+        const control = controls[index];
+        assert.ok(control.right <= other.left + 1 || other.right <= control.left + 1 || control.bottom <= other.top + 1 || other.bottom <= control.top + 1, `${policy}: narrow control collision`);
+      }
+    }
+  }
   assert.deepEqual(errors, []);
   console.log(JSON.stringify({ observations, reducedMotion: "passed", compactModel: "passed", rendererErrors: errors }, null, 2));
 } finally {

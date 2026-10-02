@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 const read = (path) => readFile(new URL(path, import.meta.url), "utf8");
+const composerActions = await read("../src/components/ComposerActions.tsx");
 
 const [composer, api, main, protocol, runtime, oneShot, en, zh] = await Promise.all([
   read("../src/components/Composer.tsx"),
@@ -37,11 +38,11 @@ test("Composer enables enhancement with inline file references and guards stale 
   assert.match(composer, /!modelReady/);
   assert.match(
     composer,
-    /className=\{`icon-btn composer-enhance-btn/,
+    /<ComposerActions[\s\S]*onEnhance=\{\(\) => void enhancePrompt\(\)\}/,
   );
-  assert.match(composer, /aria-busy=\{enhancingPrompt\}/);
-  assert.match(composer, /className="tool-spinner"/);
-  assert.match(composer, /IconUndo2/);
+  assert.match(composerActions, /aria-busy=\{enhancing\}/);
+  assert.match(composerActions, /className="tool-spinner"/);
+  assert.match(composerActions, /IconUndo2/);
   assert.match(composer, /setEnhancementUndoText\(sourceText\)/);
   assert.match(composer, /enhancementVersionRef\.current !== sourceVersion/);
   assert.match(composer, /currentKey !== sourceKey/);
