@@ -158,7 +158,7 @@ export class CodexSubagents {
     const allowed = available.filter(tool => definition.inheritTools ? true : definition.tools.includes(tool.name)).map(tool => tool.name);
     const missing = definition.inheritTools ? [] : definition.tools.filter(name => !allowed.includes(name));
     if (missing.length || !allowed.length) return result("Preset tools unavailable: " + (missing.join(", ") || "empty tool set"), true);
-    const mutating = !!definition.inheritTools || allowed.some(name => !["Read", "Glob", "Grep", "BrowserPreview"].includes(name));
+    const mutating = !!definition.inheritTools || allowed.some(name => !["Read", "Glob", "Grep", "ProcessRead", "BrowserPreview"].includes(name));
     const ownership = normalizeDelegationOwnership(args.ownership ?? { access: mutating ? "write" : "read" }, mutating);
     if (running.some(record => concurrentMutationConflict(record.ownership, ownership))) return result("Concurrent mutating delegates share one workspace and are refused. Wait or use separate managed worktrees in separate chats.", true);
     if (this.options.currentTurn() !== turnId) return result("Parent turn changed during delegation admission", true);
@@ -168,7 +168,7 @@ export class CodexSubagents {
     const completion = new Promise<void>(resolve => { resolveCompletion = resolve; });
     const record: Record = { delegationId, childSessionId: this.options.parent.sessionId + ":delegate:" + delegationId, turnId, parentToolCallId,
       agent: definition.name, modelId: provider.modelId, providerId: provider.id, thinkingLevel: thinkingLevel ?? "omit", status: "running", startedAt: Date.now(), ownership, delivered: false,
-      executionPolicy: { tools: allowed, shell: allowed.includes("Bash") ? "nexus-host" : "unavailable", permissionScope: definition.permission ?? "inherit", parentPermissionMode: this.options.parent.permissionMode, ownershipEnforcement: "scheduling-only" },
+      executionPolicy: { tools: allowed, shell: allowed.some(name => ["Bash", "ProcessStart", "PreviewServer"].includes(name)) ? "nexus-host" : "unavailable", permissionScope: definition.permission ?? "inherit", parentPermissionMode: this.options.parent.permissionMode, ownershipEnforcement: "scheduling-only" },
       completion, resolve: resolveCompletion };
     this.records.set(delegationId, record);
     try { await this.save(); }

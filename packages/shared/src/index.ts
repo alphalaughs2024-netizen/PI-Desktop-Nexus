@@ -30,3 +30,4 @@ export * from "./built-in-themes.js";
 export * from "./feature-flags.js";
 
 export * from "./engine-contract.js";
+export * from "./managed-process.js";

@@ -26,9 +26,9 @@ enum ToolClass {
 impl ToolClass {
     fn from_name(tool_name: &str) -> Self {
         match tool_name {
-            "Read" | "Glob" | "Grep" => Self::Read,
+            "Read" | "Glob" | "Grep" | "ProcessRead" => Self::Read,
             "Write" | "Edit" => Self::Mutation,
-            "Bash" => Self::Shell,
+            "Bash" | "ProcessStart" => Self::Shell,
             _ => Self::Plugin,
         }
     }

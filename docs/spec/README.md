@@ -24,6 +24,7 @@ protocol is v11; storage schema is v17 (see `00-baseline.md`).
 | [02-architecture/05-remote-agent-control.md](02-architecture/05-remote-agent-control.md) | Remote Agent Host and Gateway target |
 | [03-runtime/05-host-core-rust.md](03-runtime/05-host-core-rust.md) | Rust host core |
 | [03-runtime/19-remote-agent-control-protocol.md](03-runtime/19-remote-agent-control-protocol.md) | Remote control protocol |
+| [03-runtime/23-managed-processes-and-previews.md](03-runtime/23-managed-processes-and-previews.md) | Phase 4 managed commands and preview servers |
 | [05-security/02-remote-control-security.md](05-security/02-remote-control-security.md) | Remote control security |
 | [04-ux/02-i18n-english-first.md](04-ux/02-i18n-english-first.md) | i18n policy |
 | [04-ux/07-ui-design-system.md](04-ux/07-ui-design-system.md) | Design system (tokens, motion, density) |

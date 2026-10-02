@@ -6,6 +6,12 @@ import { CodexController } from "./controller.js";
 import { CodexSessionStore } from "./store.js";
 import type { EngineSnapshot } from "@pi-desktop/shared";
 const dirs: string[] = [];
+it("stops host-owned processes even when cancellation has no live native adapter", async () => {
+  const calls: string[] = [];
+  const controller = new CodexController(() => undefined, { call: async (method: string) => { calls.push(method); return {} as any; } });
+  await controller.handle("agent.abort", { sessionId: "s" });
+  expect(calls).toEqual(["process.stopSession", "plans.abort"]);
+});
 afterEach(async () => { vi.unstubAllEnvs(); await Promise.all(dirs.splice(0).map(p => rm(p, { recursive: true, force: true }))); });
 it("reconstructs cold unresolved state as interrupted without launching an engine", async () => {
   const dir = await mkdtemp(join(tmpdir(), "nexus-controller-")); dirs.push(dir); vi.stubEnv("PI_DESKTOP_DATA_DIR", dir);

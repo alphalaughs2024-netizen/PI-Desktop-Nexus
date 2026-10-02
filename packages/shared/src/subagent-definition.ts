@@ -99,6 +99,10 @@ export const SUBAGENT_ASSIGNABLE_TOOLS = [
   "Bash",
   "Edit",
   "Write",
+  "ProcessStart",
+  "ProcessRead",
+  "ProcessStop",
+  "PreviewServer",
   ...SUBAGENT_BROWSER_TOOLS,
 ] as const;
 
@@ -106,7 +110,7 @@ export type SubagentAssignableTool = (typeof SUBAGENT_ASSIGNABLE_TOOLS)[number];
 
 /** Tools that can change the workspace; declaring one makes a delegate
  * write-capable, which drives the write lock and permission attribution. */
-export const SUBAGENT_MUTATING_TOOLS = ["Bash", "Edit", "Write"] as const;
+export const SUBAGENT_MUTATING_TOOLS = ["Bash", "Edit", "Write", "ProcessStart", "ProcessStop", "PreviewServer"] as const;
 
 /** What a definition gets when it stays silent about tools. */
 export const DEFAULT_SUBAGENT_TOOLS: readonly SubagentAssignableTool[] = [

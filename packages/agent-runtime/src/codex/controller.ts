@@ -46,11 +46,14 @@ export class CodexController {
           const baseInstructions = [
             "Nexus is the graphical host. Use Nexus MCP tools for browser/preview, skills, workflows and plugins. Every tool is bound to this chat. Preserve user work, inspect failures and never automatically replay an ambiguously applied mutation.",
             "Delegate through Nexus Task presets only in Agent mode. Saved provider/model and tools are authoritative; do not invent model overrides.",
+            "Use ProcessStart for background commands and PreviewServer for website/dev servers. These host-owned processes survive response completion. Inspect the returned id through ProcessRead or PreviewServer status on later turns, verify exit/readiness, and stop them explicitly when no longer needed. Do not claim that native exec handles are Nexus-managed. App exit stops managed processes; recovered records are never auto-restarted.",
+            params.commandShell ? `Managed commands use the Nexus host shell ${params.commandShell.id} (${params.commandShell.dialect}); write commands for that dialect.` : "",
             params.scratchDir ? "Session scratch directory: " + params.scratchDir + ". Keep temporary files there; workspace deliverables belong in the workspace." : "",
             projectInstructionsPrompt(params.projectInstructions), instructionCatalogPrompt(params.instructionCatalog ?? []), params.activeWorkflow?.body,
           ].filter(Boolean).join("\n\n");
           const config: CodexConfig = { sessionId, dataDir: this.dataDir, workspace: params.projectPath || params.scratchDir, provider: params.provider,
             permissionMode, scratchDir: params.scratchDir, nexusToolsAvailable: !!this.host, mode,
+            managedPreviewAvailable: mode === "agent" && ["ProcessStart", "ProcessRead", "ProcessStop", "PreviewServer"].every(name => available.some(tool => tool.name === name)),
             serviceCatalogKey: createHash("sha256").update(JSON.stringify({ subagents: params.subagents ?? [], tools: available, extensions: params.trustedExtensions ?? [] })).digest("hex"),
             developerInstructions: baseInstructions + "\n\n" + modeInstructions(mode),
             ...(mode !== "agent" ? { restrictedTools: planningTools(mode, available).map(tool => tool.name).concat(mode === "plan" ? "SubmitPlan" : "SubmitGoal", "asktool") } : {}),
@@ -96,7 +99,10 @@ export class CodexController {
           return await runtime.start({ turnId: params.turnId, text: content, acceptedAt: params.acceptedAt, thinkingLevel: params.thinkingLevel, images: (params.attachments ?? []).filter((a: any) => a.kind === "image" && a.data).map((a: any) => ({ mimeType: a.mimeType ?? "image/png", data: a.data })) });
         } finally { this.admitting.delete(sessionId); }
       }
-      case "agent.abort": await adapter?.interrupt(); await this.host?.call("plans.abort", { sessionId }); return { ok: true };
+      case "agent.abort":
+        try { await adapter?.interrupt(); }
+        finally { await this.host?.call("process.stopSession", { sessionId }); }
+        await this.host?.call("plans.abort", { sessionId }); return { ok: true };
       case "agent.stop": return { requested: false, reason: "Graceful boundary stop is not available in the Codex prototype; use interrupt." };
       case "agent.getStatus": {
         if (adapter) return { status: adapter.getStatus() };

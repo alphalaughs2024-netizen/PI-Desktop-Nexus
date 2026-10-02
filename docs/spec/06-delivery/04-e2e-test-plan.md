@@ -1,5 +1,30 @@
 # 04. E2E Test Plan
 
+### Phase 4 Managed Commands And Previews
+
+- Start a long-running command, finish the response, and inspect its output and
+  actual exit by the same id on a later turn. Wait timeout must not stop it.
+  Another chat cannot list/read/stop it. A changed shell rejects before spawn.
+- Start a website through PreviewServer. Readiness requires HTTP response and a
+  live owned command. Inspect the page through browser tools. Delayed startup
+  returns ready=false; later inspection reuses its handle without relaunching.
+- Try occupied ports and concurrent starts at one preview authority. Verify no
+  unrelated server is adopted, replaced or killed. External URLs, credentials
+  and redirected requests must not reach an external readiness target.
+- Deny approval or cancel during approval/startup, then retry. No late admitted
+  command survives cancellation. Ask/Accept edits/Auto/Full access and delegate
+  permission scope must preserve existing host policy.
+- In Plan/Goal, inspect processes/previews; start/stop remain denied even when
+  the caller claims Agent mode. Built-ins receive documented catalogs; custom
+  lists gain no tools automatically.
+- Stop a command, delete/rebind its chat and Quit. Verify owned descendants
+  exit. Restart with an unfinished record: interrupted, unknown exit, no live
+  logs and no replay. Exceed 96KB output: bounded tail and loss/cursor markers.
+- Simulate lifecycle storage failure: admission fails closed; launch-state
+  failure stops the owned command rather than reporting a durable launch.
+
+Full local E2E execution remains opt-in.
+
 ### Speech input and voice mode
 
 - In the fresh Codex profile, finish Dictate using both Parakeet v2 and v3.

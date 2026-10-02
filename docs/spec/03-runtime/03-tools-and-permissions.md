@@ -60,6 +60,16 @@ CDP, page, or plugin payloads.
 
 ## 1. Goal
 
+### Phase 4 Managed Processes
+
+ProcessStart reuses the Rust shell identity and high-risk permission gate and is
+Agent-only. ProcessRead inspects caller-owned handles and is Plan/Goal-safe.
+ProcessStop is low risk but Agent-only and stops only an exact owned tree.
+Main PreviewServer forwards the original turn/shell/delegate permission scope;
+its status/list actions are inspection-only in Plan/Goal. See
+[Managed processes and previews](23-managed-processes-and-previews.md) and
+ADR 0274 for logs, readiness, interruption and recovery.
+
 Let the agent get things done, but stay under control by default.
 
 ## 2. MVP Built-in Tools

@@ -83,10 +83,11 @@ Unknown server requests and unsupported secret questions fail clearly.
 
 Cancel interrupts and closes the owned native process tree, preserving partial
 output. Native command sessions are engine-owned. Dedicated preview process
-supervision is a later service and is not claimed by this phase. ADR 0254 adds
+supervision is the separate Phase 4 service in ADR 0274. ADR 0254 adds
 session-bound Browser viewports and screenshots. File previews are available
-through the private tool bridge; `managedPreview` remains false until
-session-owned process supervision is implemented.
+through the private tool bridge; `managedPreview` now reflects availability and
+permission of the complete managed service catalog. Native exec handles are not
+adopted. See [Managed processes and previews](23-managed-processes-and-previews.md).
 
 ## Nexus tool bridge (ADR 0255)
 

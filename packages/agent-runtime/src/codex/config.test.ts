@@ -13,6 +13,11 @@ it("requires an explicit separate profile", () => {
 it("does not claim managed preview processes merely because the tool bridge exists", () => {
  expect(sessionDescriptor({ ...config, nexusToolsAvailable: true }).capabilities).toMatchObject({ browser: true, managedPreview: false });
 });
+it("advertises managed preview only for an available permitted service", () => {
+ expect(sessionDescriptor({ ...config, managedPreviewAvailable: true }).capabilities.managedPreview).toBe(true);
+ expect(sessionDescriptor({ ...config, managedPreviewAvailable: true, mode: "plan" }).capabilities.managedPreview).toBe(false);
+ expect(sessionDescriptor({ ...config, managedPreviewAvailable: true, restrictedTools: ["Read"] }).capabilities.managedPreview).toBe(false);
+});
 it("rejects unsupported endpoint transports and OAuth rather than falling back", async () => {
   await expect(prepareLaunch({ ...config, provider: { ...config.provider, apiStyle: "openai-completions" } }, "unused")).rejects.toThrow("CODEX_RESPONSES_REQUIRED");
   await expect(prepareLaunch({ ...config, provider: { ...config.provider, authKind: "oauth" } }, "unused")).rejects.toThrow("CODEX_PROVIDER_UNSUPPORTED");

@@ -21,6 +21,7 @@ use crate::workspace::{resolve_tool_path_with_external, simple_canonicalize, Too
 mod grep_rg;
 pub mod hashline;
 pub mod ignore_rules;
+pub mod managed;
 pub mod shell;
 
 pub use hashline::{HashlineContext, HashlineStore};
@@ -2757,6 +2758,24 @@ pub fn builtin_tool_defs() -> Value {
                 },
                 "required": ["path", "tag", "ops"]
             }
+        },
+        {
+            "name": "ProcessStart",
+            "description": "Start a session-owned background shell command. Returns a process id, not proof of readiness or completion. Use ProcessRead for logs/exit and ProcessStop for cleanup. Survives response completion; app exit stops the process tree. Existing shell permissions apply.",
+            "risk": "high",
+            "parameters": { "type": "object", "properties": { "command": { "type": "string" }, "cwd": { "type": "string", "description": "Directory inside the session workspace; default workspace root." }, "previewUrl": { "type": "string", "description": "Optional preview metadata; this alone does not establish server readiness." } }, "required": ["command"], "additionalProperties": false }
+        },
+        {
+            "name": "ProcessRead",
+            "description": "List this session's managed processes or inspect one exact id. Returns bounded output after cursor, exit status and loss markers. waitMs is capped at 30 seconds and timeout does not stop work. Recovered records have no live logs and are never replayed.",
+            "risk": "low",
+            "parameters": { "type": "object", "properties": { "id": { "type": "string" }, "cursor": { "type": "integer", "minimum": 0 }, "waitMs": { "type": "integer", "minimum": 0, "maximum": 30000 } }, "additionalProperties": false }
+        },
+        {
+            "name": "ProcessStop",
+            "description": "Stop and reap an exact managed process owned by this session. Never accepts an OS pid or another chat's handle. Already exited handles are inspectable; stopping does not undo filesystem changes.",
+            "risk": "low",
+            "parameters": { "type": "object", "properties": { "id": { "type": "string" } }, "required": ["id"], "additionalProperties": false }
         },
         {
             "name": "Bash",

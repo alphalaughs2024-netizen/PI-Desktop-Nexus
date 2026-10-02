@@ -19,7 +19,7 @@ const MAX_TURNS_CEILING: u32 = 80;
 /// accepts an output limit above 128k, so a larger declared value is a typo.
 const MAX_TOKENS_CEILING: u32 = 200_000;
 const DEFAULT_TOOLS: [&str; 3] = ["Read", "Glob", "Grep"];
-const ASSIGNABLE_TOOLS: [&str; 7] = [
+const ASSIGNABLE_TOOLS: [&str; 11] = [
     "Read",
     "Glob",
     "Grep",
@@ -27,6 +27,10 @@ const ASSIGNABLE_TOOLS: [&str; 7] = [
     "Bash",
     "Edit",
     "Write",
+    "ProcessStart",
+    "ProcessRead",
+    "ProcessStop",
+    "PreviewServer",
 ];
 const THINKING_LEVELS: [&str; 8] = [
     "off", "minimal", "low", "medium", "high", "xhigh", "max", "omit",

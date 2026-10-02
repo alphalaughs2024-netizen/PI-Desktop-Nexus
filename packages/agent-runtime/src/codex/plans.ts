@@ -5,7 +5,7 @@ import type { CodexAdapter } from "./adapter.js";
 import type { NexusTool, NexusToolResult } from "./nexus-tools.js";
 
 const CONTROL = new Set(["EnterPlanMode", "EnterGoalMode", "SubmitPlan", "SubmitGoal"]);
-const INSPECTION = new Set(["Read", "Glob", "Grep", "Bash", "BrowserPreview", "Skill", "Workflow", "asktool"]);
+const INSPECTION = new Set(["Read", "Glob", "Grep", "Bash", "ProcessRead", "PreviewServer", "BrowserPreview", "Skill", "Workflow", "asktool"]);
 const schema = (properties = {}, required: string[] = []) => ({ type: "object", properties, required, additionalProperties: false });
 export function planningTools(mode: Mode, tools: NexusTool[]): NexusTool[] {
   return tools.filter(tool => INSPECTION.has(tool.name) || tool.name === (mode === "goal" ? "SubmitGoal" : "SubmitPlan") || !!tool.planSafeActions?.length);

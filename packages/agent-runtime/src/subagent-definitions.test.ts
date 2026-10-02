@@ -58,7 +58,7 @@ describe("builtin subagent documents", () => {
     expect(mutating.map((d) => d.name)).toEqual(["fixer", "ui-designer"]);
     expect(mutating[0]?.permission ?? "inherit").toBe("inherit");
     const explorer = definitions.find((definition) => definition.name === "explorer")!;
-    expect(explorer.tools).toEqual(["Read", "Glob", "Grep", "Bash", ...SUBAGENT_BROWSER_INSPECTION_TOOLS]);
+    expect(explorer.tools).toEqual(["Read", "Glob", "Grep", "Bash", "ProcessRead", ...SUBAGENT_BROWSER_INSPECTION_TOOLS]);
     expect(subagentCanMutate(explorer)).toBe(true);
     expect(explorer.maxTurns).toBe(60);
     expect(explorer.idleTimeoutSeconds).toBe(
@@ -75,7 +75,7 @@ describe("builtin subagent documents", () => {
       expect(definitions.find(definition => definition.name === role)?.tools).toEqual(expect.arrayContaining([...SUBAGENT_BROWSER_TOOLS]));
     }
     const reviewer = definitions.find(definition => definition.name === "code-reviewer")!;
-    expect(reviewer.tools).toEqual(["Read", "Glob", "Grep", ...SUBAGENT_BROWSER_INSPECTION_TOOLS]);
+    expect(reviewer.tools).toEqual(["Read", "Glob", "Grep", "ProcessRead", ...SUBAGENT_BROWSER_INSPECTION_TOOLS]);
     expect(reviewer.tools).not.toContain("browser_evaluate");
     expect(reviewer.tools).not.toContain("browser_interact");
     expect(designer.maxTurns).toBe(80);

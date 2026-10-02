@@ -115,8 +115,8 @@ pub struct PermissionManager {
 impl PermissionManager {
     pub fn tool_risk_with_declared(tool_name: &str, declared: Option<&str>) -> Risk {
         match tool_name {
-            "Read" | "Glob" | "Grep" => Risk::Low,
-            "Write" | "Edit" | "Bash" => Risk::High,
+            "Read" | "Glob" | "Grep" | "ProcessRead" | "ProcessStop" => Risk::Low,
+            "Write" | "Edit" | "Bash" | "ProcessStart" => Risk::High,
             name if name.starts_with("plugin_") => match declared {
                 Some("low") => Risk::Low,
                 Some("high") => Risk::High,
@@ -137,7 +137,7 @@ impl PermissionManager {
     pub fn plan_mode_allows(tool_name: &str) -> bool {
         matches!(
             tool_name,
-            "Read" | "Glob" | "Grep" | "Bash" | "BrowserPreview" | "new_context"
+            "Read" | "Glob" | "Grep" | "Bash" | "ProcessRead" | "BrowserPreview" | "new_context"
         )
     }
 

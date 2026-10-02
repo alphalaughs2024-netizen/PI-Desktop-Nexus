@@ -16,6 +16,7 @@ import {
 import * as path from "node:path";
 import { dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { execFileSync } from "node:child_process";
+import { runPreviewServer } from "./preview-server";
 import { homedir } from "node:os";
 import * as fs from "node:fs";
 import { existsSync, mkdirSync, statSync, writeFileSync } from "node:fs";
@@ -5433,6 +5434,11 @@ async function startSidecar(): Promise<void> {
       supportedThinkingLevels: [...capabilities.supportedThinkingLevels],
       ...(modelConfig ? { modelConfig } : {}),
     };
+  });
+  s.setLocalTool("PreviewServer", async (input) => {
+    if (!host || !input.commandShell) return { ok: false, isError: true, content: "PreviewServer requires a host-bound command shell." };
+    try { return await runPreviewServer(host, input, input.commandShell); }
+    catch (error) { return { ok: false, isError: true, content: error instanceof Error ? error.message : String(error) }; }
   });
   // Agent-driven work panel preview (D100): open a workspace HTML file in
   // the embedded browser; live reload keeps it current through later edits.

@@ -45,6 +45,7 @@ const HOST_PROXY_ALLOWED = new Set([
   "tools.execute",
   "tools.abort",
   "tools.list",
+  "process.stopSession",
   "session.get",
   "session.appendMessage",
   "session.appendCompaction",
@@ -232,8 +233,9 @@ export class AgentSidecar {
   private async runLocalTool(
     handler: LocalToolHandler,
     input: Parameters<LocalToolHandler>[0],
+    timeoutMs?: number,
   ): Promise<LocalToolResult> {
-    return this.localToolExecutor.run(handler, input);
+    return this.localToolExecutor.run(handler, input, timeoutMs);
   }
 
   onExit(handler: ProcessExitHandler): () => void {
@@ -493,7 +495,11 @@ export class AgentSidecar {
                   toolCallId: String(params.toolCallId ?? ""),
                   args: params.args,
                   mode,
-                });
+                  turnId: typeof params.turnId === "string" ? params.turnId : undefined,
+                  permissionScope: typeof params.permissionScope === "string" ? params.permissionScope : undefined,
+                  commandShell: typeof params.expectedCommandShellId === "string" && typeof params.expectedCommandShellDialect === "string"
+                    ? { id: params.expectedCommandShellId, dialect: params.expectedCommandShellDialect } : undefined,
+                }, rpcTimeoutMs(method, params));
           this.writeToChild(
             JSON.stringify({ jsonrpc: "2.0", id: msg.id, result }) + "\n",
           );

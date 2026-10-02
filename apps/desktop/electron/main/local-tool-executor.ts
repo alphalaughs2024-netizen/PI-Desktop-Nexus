@@ -10,6 +10,9 @@ export type LocalToolInput = {
   toolCallId: string;
   args: unknown;
   mode?: "agent" | "plan" | "goal";
+  turnId?: string;
+  permissionScope?: string;
+  commandShell?: { id: string; dialect: string };
   signal?: AbortSignal;
 };
 export type LocalToolHandler = (input: LocalToolInput) => Promise<LocalToolResult>;
@@ -30,12 +33,12 @@ export class LocalToolExecutor {
     for (const controller of this.active.values()) controller.abort(new Error("TOOL_ABORTED: execution owner closed."));
   }
 
-  async run(handler: LocalToolHandler, input: LocalToolInput): Promise<LocalToolResult> {
+  async run(handler: LocalToolHandler, input: LocalToolInput, timeoutMs = this.timeoutMs): Promise<LocalToolResult> {
     const key = JSON.stringify([input.sessionId, input.toolCallId]);
     if (this.active.has(key)) throw new Error("TOOL_CALL_ALREADY_RUNNING");
     const controller = new AbortController();
     this.active.set(key, controller);
-    const timer = setTimeout(() => controller.abort(new Error("TOOL_TIMEOUT: Main-owned work timed out; inspect any applied changes.")), this.timeoutMs);
+    const timer = setTimeout(() => controller.abort(new Error("TOOL_TIMEOUT: Main-owned work timed out; inspect any applied changes.")), timeoutMs);
     let onAbort!: () => void;
     try {
       return await Promise.race([

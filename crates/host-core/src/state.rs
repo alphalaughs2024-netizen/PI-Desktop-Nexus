@@ -67,6 +67,7 @@ pub struct AppState {
     /// Session-scoped Read/Edit snapshot store (ADR 0087). Interior mutex so
     /// tool execution does not hold the AppState lock.
     pub hashline: crate::tools::HashlineStore,
+    pub managed_processes: crate::tools::managed::Registry,
 }
 
 impl AppState {
@@ -130,6 +131,7 @@ impl AppState {
             pending_permissions: HashMap::new(),
             pending_bash_aborts: HashMap::new(),
             hashline: crate::tools::HashlineStore::new(),
+            managed_processes: crate::tools::managed::Registry::open(data_dir)?,
         })
     }
 
@@ -271,6 +273,7 @@ impl AppState {
 
     pub fn shutdown(&mut self) {
         self.shutting_down = true;
+        self.managed_processes.shutdown();
         for sender in self.active_bash_cancellations.values() {
             let _ = sender.send(true);
         }

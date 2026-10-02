@@ -1,5 +1,16 @@
 # 01. IPC Protocol
 
+### Phase 4 Managed Processes (ADR 0274)
+
+Existing tools.execute carries ProcessStart/Read/Stop through the Rust host.
+Original session/turn, effective shell identity and delegate permission scope
+remain required for start. Main's PreviewServer composes those typed operations;
+no new renderer process-launch IPC is introduced. process.stopSession is a
+sidecar lifecycle operation used for user cancellation, scoped to an existing
+session and exposing no arbitrary OS PID. Shared ManagedProcessRecord/Read
+describe results; see [managed processes](23-managed-processes-and-previews.md).
+Protocol 11 and SQLite schema 17 remain unchanged by these additive host tools.
+
 ## 1. Goal
 
 Define a stable contract between the renderer and main.

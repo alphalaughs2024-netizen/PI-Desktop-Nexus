@@ -22,6 +22,7 @@ export function rpcTimeoutMs(
   if (method !== "tools.execute") return DEFAULT_RPC_TIMEOUT_MS;
 
   const input = isRecord(params) ? params : undefined;
+  if (input?.toolName === "PreviewServer") return PERMISSION_TIMEOUT_MS + 30_000 + COMMAND_RPC_BUFFER_MS;
   if (input?.toolName !== "Bash") return DEFAULT_RPC_TIMEOUT_MS;
   if (input?.timeoutMs === undefined) return DEFAULT_BASH_RPC_TIMEOUT_MS;
 

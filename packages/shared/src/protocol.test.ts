@@ -237,6 +237,7 @@ describe("Plan protocol contracts", () => {
       }),
     ).toBe(2_147_483_647);
     expect(rpcTimeoutMs("tools.execute", { toolName: "Read" })).toBe(130_000);
+    expect(rpcTimeoutMs("tools.execute", { toolName: "PreviewServer" })).toBe(160_000);
     expect(rpcTimeoutMs("tools.execute", { toolName: "BrowserPreview" })).toBe(
       130_000,
     );

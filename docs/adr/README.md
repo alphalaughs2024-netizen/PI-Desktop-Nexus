@@ -265,3 +265,4 @@ Each ADR includes:
 | 0271 | Minimal composer trial | Accepted |
 | 0272 | Codex context usage | Accepted |
 | 0273 | Floating workflow panel | User-approved direction; visual acceptance pending |
+| 0274 | Session-owned background processes and preview servers | Implemented; manual acceptance pending |

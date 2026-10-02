@@ -445,6 +445,8 @@ pub async fn serve(state: Arc<Mutex<AppState>>) -> Result<()> {
             tracing::warn!(error = %error, "RPC request task failed during shutdown");
         }
     }
+    let processes = state.lock().await.managed_processes.clone();
+    processes.drain().await;
     drop(tx);
     if !writer_done {
         input_error = match tokio::time::timeout(STDOUT_WRITER_SHUTDOWN, writer_done_rx).await {
@@ -879,7 +881,7 @@ fn bash_cancellation_requested(receiver: &Option<tokio::sync::watch::Receiver<bo
 }
 
 async fn clear_bash_cancellation(state: &Arc<Mutex<AppState>>, p: &ToolsExecuteParams) {
-    if p.tool_name != "Bash" {
+    if !matches!(p.tool_name.as_str(), "Bash" | "ProcessStart") {
         return;
     }
     let mut st = state.lock().await;
@@ -1683,6 +1685,8 @@ async fn handle_request(
                 .get("id")
                 .and_then(|v| v.as_str())
                 .ok_or_else(|| rpc_err(1002, "id required", "INVALID_PARAMS"))?;
+            let processes = state.lock().await.managed_processes.clone();
+            processes.stop_session(id).await.map_err(|error| rpc_err(1000, error.1, &error.0))?;
             let st = state.lock().await;
             let ok = sessions::delete_session(&st.db, id)
                 .map_err(|e| rpc_err(1000, e.to_string(), "INTERNAL"))?;
@@ -1715,6 +1719,8 @@ async fn handle_request(
                 .and_then(|v| v.as_str())
                 .ok_or_else(|| rpc_err(1002, "id required", "INVALID_PARAMS"))?;
             let project_path = params.get("projectPath").and_then(|v| v.as_str());
+            let processes = state.lock().await.managed_processes.clone();
+            processes.stop_session(id).await.map_err(|error| rpc_err(1000, error.1, &error.0))?;
             let st = state.lock().await;
             let session = sessions::move_session_project(&st.db, id, project_path)
                 .map_err(|e| rpc_err(1002, e.to_string(), "INVALID_PARAMS"))?
@@ -2726,7 +2732,7 @@ async fn handle_request(
                 .map_err(|e| rpc_err(1002, e.to_string(), "INVALID_PARAMS"))?;
             let execution_timeout_ms = tools::effective_timeout_ms(&p.tool_name, p.timeout_ms);
 
-            let command_shell_id = if p.tool_name == "Bash" {
+            let command_shell_id = if matches!(p.tool_name.as_str(), "Bash" | "ProcessStart") {
                 let catalog = {
                     let st = state.lock().await;
                     command_shell_catalog(&st)?
@@ -2788,7 +2794,7 @@ async fn handle_request(
 
             // Register before permission evaluation so tools.abort can cancel
             // an approval wait as well as an already-spawned process.
-            let cancellation_receiver = if p.tool_name == "Bash" {
+            let cancellation_receiver = if matches!(p.tool_name.as_str(), "Bash" | "ProcessStart") {
                 let mut st = state.lock().await;
                 match st.register_bash_cancellation(&p.session_id, &p.tool_call_id) {
                     Ok(receiver) => Some(receiver),
@@ -2922,6 +2928,7 @@ async fn handle_request(
                             match p.tool_name.as_str() {
                                 "Write" | "Edit" => "Modifies files in your workspace",
                                 "Bash" => "Runs a shell command in your workspace",
+                                "ProcessStart" => "Starts a background command that remains active across responses until stopped or the app exits",
                                 name if name.starts_with("mcp_") => {
                                     "MCP server tool requires approval"
                                 }
@@ -3156,7 +3163,7 @@ async fn handle_request(
                     None
                 });
                 let mut bash_options = None;
-                if p.tool_name == "Bash" {
+                if matches!(p.tool_name.as_str(), "Bash" | "ProcessStart") {
                     let (shell_id, cancellation) = {
                         let st = state.lock().await;
                         let catalog = command_shell_catalog(&st)?;
@@ -3209,7 +3216,27 @@ async fn handle_request(
                     });
                 }
 
-                let mut result = if tools::is_desktop_dispatched(&p.tool_name) {
+                let mut result = if matches!(p.tool_name.as_str(), "ProcessStart" | "ProcessRead" | "ProcessStop") {
+                    let processes = state.lock().await.managed_processes.clone();
+                    let began = std::time::Instant::now();
+                    let content = match p.tool_name.as_str() {
+                        "ProcessStart" => match ws_path.as_deref() {
+                            Some(root) => processes.start(root, scratch_path.as_deref(), &p.args, bash_options.take().unwrap()).await,
+                            None => Err(("INVALID_ARGUMENT".into(), "A session workspace is required.".into())),
+                        },
+                        "ProcessRead" => processes.read(&p.session_id, &p.args).await,
+                        _ => match p.args.get("id").and_then(Value::as_str) {
+                            Some(id) => processes.stop(&p.session_id, id).await,
+                            None => Err(("INVALID_ARGUMENT".into(), "id is required.".into())),
+                        },
+                    };
+                    let (ok, content, error_code) = match content {
+                        Ok(content) => (true, content, None),
+                        Err((code, message)) => (false, json!({ "error": message, "code": code }), Some(code)),
+                    };
+                    tools::ToolsExecuteResult { tool_call_id: p.tool_call_id.clone(), ok, content, error_code,
+                        is_error: (!ok).then_some(true), denied: None, command_shell_id: command_shell_id.clone(), duration_ms: began.elapsed().as_millis() as u64 }
+                } else if tools::is_desktop_dispatched(&p.tool_name) {
                     // Desktop dispatch keeps its existing bounded default timeout;
                     // command-shell timeout semantics apply only to Bash.
                     execute_plugin_tool(&state, &tx, &p, p.timeout_ms.unwrap_or(60_000), &durable_mode).await
@@ -3315,6 +3342,18 @@ async fn handle_request(
             outcome
         }
 
+        "process.stopSession" => {
+            let session_id = params.get("sessionId").and_then(Value::as_str)
+                .ok_or_else(|| rpc_err(1002, "sessionId required", "INVALID_PARAMS"))?;
+            let processes = {
+                let st = state.lock().await;
+                if sessions::session_mode(&st.db, session_id).map_err(|error| rpc_err(1000, error.to_string(), "INTERNAL"))?.is_none() {
+                    return Err(rpc_err(1007, "session not found", "SESSION_NOT_FOUND"));
+                }
+                st.managed_processes.clone()
+            };
+            processes.stop_session(session_id).await.map_err(|error| rpc_err(1000, error.1, &error.0))
+        }
         "tools.abort" => {
             let session_id = params
                 .get("sessionId")
@@ -4341,6 +4380,37 @@ mod tests {
     #[cfg(not(windows))]
     fn sleeping_bash_command() -> &'static str {
         "sleep 30"
+    }
+
+    #[tokio::test]
+    async fn managed_process_host_gate_preserves_mode_shell_and_session_ownership() {
+        let Some(shell_id) = available_test_shell_id() else { return; };
+        let dir = tempfile::tempdir().unwrap();
+        let project = dir.path().join("project");
+        fs::create_dir_all(&project).unwrap();
+        let mut app_state = AppState::open(dir.path()).unwrap();
+        app_state.handshook = true;
+        let session = sessions::create_session(&app_state.db, Some("Managed fixture".into()), Some("plan".into()), None, None, Some(project.to_string_lossy().into_owned())).unwrap();
+        sessions::configure_session_with_thinking(&app_state.db, &session.id, "plan", None, None, None, Some("auto")).unwrap();
+        let other = sessions::create_session(&app_state.db, Some("Other fixture".into()), Some("agent".into()), None, None, Some(project.to_string_lossy().into_owned())).unwrap();
+        let state = Arc::new(Mutex::new(app_state));
+        let (tx, _rx) = mpsc::unbounded_channel();
+        let start = json!({ "sessionId": session.id, "toolCallId": "managed-start", "toolName": "ProcessStart", "mode": "agent",
+            "expectedCommandShellId": shell_id, "expectedCommandShellDialect": crate::tools::shell::dialect_for_id(&shell_id), "args": { "command": sleeping_bash_command() } });
+        let denied = handle_request(state.clone(), "tools.execute", start.clone(), tx.clone()).await.unwrap();
+        assert_eq!(denied["ok"], false);
+        assert_eq!(handle_request(state.clone(), "tools.execute", json!({ "sessionId": session.id, "toolCallId": "read-before", "toolName": "ProcessRead", "mode": "plan", "args": {} }), tx.clone()).await.unwrap()["content"]["processes"], json!([]));
+        sessions::configure_session_with_thinking(&state.lock().await.db, &session.id, "agent", None, None, None, Some("auto")).unwrap();
+        let mut wrong_shell = start.clone();
+        wrong_shell["expectedCommandShellDialect"] = json!("invalid");
+        assert_eq!(handle_request(state.clone(), "tools.execute", wrong_shell, tx.clone()).await.unwrap()["errorCode"], "COMMAND_SHELL_CHANGED");
+        let launched = handle_request(state.clone(), "tools.execute", start, tx.clone()).await.unwrap();
+        assert_eq!(launched["ok"], true);
+        let id = launched["content"]["process"]["id"].clone();
+        let foreign = handle_request(state.clone(), "tools.execute", json!({ "sessionId": other.id, "toolCallId": "foreign-read", "toolName": "ProcessRead", "mode": "agent", "args": { "id": id } }), tx.clone()).await.unwrap();
+        assert_eq!(foreign["errorCode"], "PROCESS_NOT_FOUND");
+        let stopped = handle_request(state.clone(), "tools.execute", json!({ "sessionId": session.id, "toolCallId": "managed-stop", "toolName": "ProcessStop", "mode": "agent", "args": { "id": id } }), tx).await.unwrap();
+        assert_eq!(stopped["content"]["process"]["status"], "stopped");
     }
 
     #[cfg(windows)]
