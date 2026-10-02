@@ -2607,7 +2607,7 @@ membership when dropped on Ungrouped.
 - **Steps**: 1) Queue two prompts while a turn is running. 2) Finish the turn
   and wait for durable settlement. 3) Confirm only the first queued prompt
   starts, then repeat for the second. 4) Hover/click the collapsed workflow
-  strip, inspect its guidance, and resize the conversation through a narrow
+  pill, inspect its guidance, and resize the conversation through a narrow
   width. 5) Switch language and reopen the panel. 6) Drag its grip to the
   center/edges, reload, open/close the sidebar and Work Panel, and use arrows,
   Home, and reset position. 7) Close with Escape/outside click; check keyboard
@@ -2615,7 +2615,8 @@ membership when dropped on Ungrouped.
   dismissal and a late result after a session switch.
 - **Expected**: The queue remains blocked until terminal persistence settles,
   then resumes FIFO exactly once. The workflow panel floats without reserving
-  transcript space; its glass strip defaults to the top right below chrome.
+  transcript space; its glass pill defaults to the top right below chrome and
+  retains fully rounded ends and rounded hover controls when collapsed.
   Twilight, Obsidian, Emerald, and Alpine use matching shape/blur with readable
   theme tints. Details animate reversibly, are inert while closed, and retain
   visible focus and a bounded guidance reader. Position survives reload and

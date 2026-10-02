@@ -2315,7 +2315,8 @@ reasoning-level control.
   activity and subagent status must not paint beneath title-bar controls.
 - Active workflows appear in a floating glass panel (ADR 0273), collapsed by
   default at the top right below the title band. The compact strip shows the
-  workflow name, activation reason, status dot, drag grip, and disclosure arrow;
+  workflow name, activation reason, status dot, drag grip, and disclosure arrow.
+  The closed 38px bar has fully rounded pill ends and rounded hover controls;
   it reserves no transcript or empty-state height. Long names are ellipsized.
 - Hover or click opens the panel's stage, activation reason, optional next
   action, and icon-labelled `Inspect`, `Dismiss`, and `Settings` controls.

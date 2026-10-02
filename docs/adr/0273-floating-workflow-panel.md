@@ -7,7 +7,9 @@
 ## Decision
 
 Replace the permanent full-width workflow banner with a collapsed floating
-glass strip, initially at the top right below the conversation title band.
+glass pill, initially at the top right below the conversation title band.
+The 38px closed bar has 19px end radii and pill-shaped hover controls; expanded
+details retain a compact rounded panel.
 Hover reveals compact details; clicking pins them open. Outside click, Escape,
 and focus leaving collapse the panel. Inspect, session-level dismissal, and
 navigation to Workflows retain their existing host contracts.
