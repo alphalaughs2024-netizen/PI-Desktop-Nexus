@@ -2333,8 +2333,8 @@ reasoning-level control.
   the title band and inside the conversation. Positioning never changes host
   workflow activation, tools, or permissions.
 - Twilight, Obsidian, Emerald, and Alpine share the same floating glass shape,
-  subtle outline, blur, and controls with per-theme tinted translucent fills.
-  Standard themes use semantic surfaces. Reduced transparency and unsupported
+  subtle outline, 8px blur, and controls with a transparent, untinted surface
+  that preserves the background's color and brightness. Reduced transparency and unsupported
   blur use readable fallback surfaces. Labels and errors are localized.
 - Project session rows retain a 4px gap between adjacent child sessions. The
   gap preserves separate touch targets and prevents an active row from merging

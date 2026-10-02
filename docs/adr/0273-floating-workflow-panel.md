@@ -22,7 +22,8 @@ workflow, project, or prompt data and never alters host-owned activation.
 Unavailable storage defaults to the top right. Container and widget size
 observation keep the panel reachable when its contents or the window resize.
 
-Use one translucent surface with a smooth reversible disclosure, theme-aware
+Use one transparent, untinted surface with an 8px backdrop blur, a subtle edge,
+and no colored fill or sheen so the scenery retains its brightness. Use a smooth reversible disclosure, theme-aware
 text and controls, reduced-motion/reduced-transparency support, and localized
 errors. Hidden contents are inert; Escape restores disclosure focus. Ignore
 late status/inspection/dismissal responses from a previously selected session.

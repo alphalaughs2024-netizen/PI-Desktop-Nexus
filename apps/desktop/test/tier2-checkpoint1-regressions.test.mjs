@@ -54,10 +54,10 @@ test("active workflow card floats below title chrome with a subtle glass outline
     overlays,
     /\.active-workflow-card\s*\{[^}]*position:\s*absolute/,
   );
-  assert.match(overlays, /\.active-workflow-card\s*\{[^}]*backdrop-filter:\s*blur\(20px\)/);
+  assert.match(overlays, /\.active-workflow-card\s*\{[^}]*background:\s*transparent;[^}]*backdrop-filter:\s*blur\(8px\)/);
   assert.match(
     scenicThemes,
-    /\[data-scenic-theme\] \.active-workflow-card\s*\{[^}]*background:\s*var\(--workflow-glass-fill/,
+    /\[data-scenic-theme\] \.active-workflow-card\s*\{[^}]*background:\s*transparent;[^}]*backdrop-filter:\s*blur\(8px\)/,
   );
 });
 
