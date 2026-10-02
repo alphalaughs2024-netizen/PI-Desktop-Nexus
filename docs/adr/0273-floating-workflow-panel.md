@@ -83,3 +83,8 @@ settled success, and error. Session isolation, composer clearance and draft,
 Inspect, hover, dragging, keyboard focus/Escape, inert contents, reduced motion,
 dismissal rejection/success, long titles, and Settings passed without page errors.
 These fixture checks do not replace native-app testing or user visual acceptance.
+
+On 2026-10-02, the user accepted merging the current pill trial into local main.
+The final trial uses the restored glass treatment, state-driven fluid ribbon,
+and Aceternity-inspired hover gradient border. Native-app checks and their
+limits are recorded in `docs/research/nexus-energy-pill-study.md`.

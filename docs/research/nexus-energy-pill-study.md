@@ -1,7 +1,7 @@
 # Nexus Energy Pill Study
 
 - Date: 2026-10-02
-- Status: Fluid ribbon selected; application trial implementation underway
+- Status: Accepted by the user for merging into local main on 2026-10-02
 - Branch: `codex/energy-pill-20261002`
 
 ## Existing architecture
@@ -66,7 +66,9 @@ trial reuses session-keyed store selectors, the existing disclosure/drag/actions
 and native CSS/SVG. Normative component/E2E contracts describe the implemented
 behavior. Validate session transitions, expanded/collapsed geometry, dragging,
 keyboard focus, reduced motion, all four themes, and composer clearance.
-Keep the result unmerged until visual testing is accepted.
+The visual trial remained isolated until the user requested merging all current
+pill changes on 2026-10-02. The accepted result includes the restored glass
+treatment, fluid ribbon, and hover-border adaptation described below.
 
 ## Hover border adaptation
 
