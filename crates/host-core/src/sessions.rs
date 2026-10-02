@@ -2710,6 +2710,8 @@ pub fn end_turn_settling(
     create_notification: bool,
     recover_inflight: bool,
 ) -> Result<EndTurnResult> {
+    let ledger_usage = crate::usage::turn_usage(db, turn_id)?;
+    let usage = ledger_usage.as_ref().or(usage);
     let status = match status {
         "completed" | "aborted" | "error" => status,
         _ => "completed",
@@ -2980,7 +2982,7 @@ impl UsageBucketAcc {
     }
 
     fn total_tokens(&self) -> i64 {
-        self.input + self.output + self.cache_read + self.cache_write
+        self.input + self.output + self.cache_read + self.cache_write + self.reasoning
     }
 
     fn to_json(&self, date: &str) -> Value {
@@ -3101,16 +3103,16 @@ pub fn get_token_usage_history_filtered(
         total_cache_read += cache_read;
         total_cache_write += cache_write;
         total_reasoning += reasoning;
-        let turn_tokens = input_tokens + output_tokens + cache_read + cache_write;
+        let turn_tokens = input_tokens + output_tokens + cache_read + cache_write + reasoning;
         hour_tokens[dt.format("%H").to_string().parse::<usize>().unwrap_or(0)] += turn_tokens;
         token_timeline.push((ended_at, turn_tokens));
         for (map, key) in [(&mut facet_sources, source), (&mut facet_models, model), (&mut facet_providers, format!("{}\u{1f}{}", provider_id, provider_label))] {
             let entry = map.entry(key).or_insert((0, 0, 0, 0, 0, 0));
-            entry.0 += input_tokens + output_tokens + cache_read + cache_write; entry.1 += 1; entry.2 += input_tokens; entry.3 += output_tokens; entry.4 += cache_read; entry.5 += cache_write;
+            entry.0 += turn_tokens; entry.1 += 1; entry.2 += input_tokens; entry.3 += output_tokens; entry.4 += cache_read; entry.5 += cache_write;
         }
         let session_label = if title.trim().is_empty() { session_id.clone() } else { title };
         let entry = facet_sessions.entry(session_label).or_insert((0, 0, 0, 0, 0, 0));
-        entry.0 += input_tokens + output_tokens + cache_read + cache_write; entry.1 += 1; entry.2 += input_tokens; entry.3 += output_tokens; entry.4 += cache_read; entry.5 += cache_write;
+        entry.0 += turn_tokens; entry.1 += 1; entry.2 += input_tokens; entry.3 += output_tokens; entry.4 += cache_read; entry.5 += cache_write;
 
         let key = usage_bucket_key(&dt, bucket);
         bucket_map.entry(key).or_default().add(
@@ -3142,7 +3144,7 @@ pub fn get_token_usage_history_filtered(
     let today = chrono::Local::now().date_naive();
     let current_streak = previous.filter(|date| *date == today || *date == today - chrono::Duration::days(1)).map(|_| run).unwrap_or(0);
     let milestone_values = [1_000_000i64, 5_000_000, 10_000_000, 25_000_000, 50_000_000, 100_000_000, 250_000_000, 500_000_000, 1_000_000_000, 2_000_000_000, 5_000_000_000, 10_000_000_000];
-    let grand_total = total_input + total_output + total_cache_read + total_cache_write;
+    let grand_total = total_input + total_output + total_cache_read + total_cache_write + total_reasoning;
     let reached_value = milestone_values.iter().copied().filter(|value| *value <= grand_total).max();
     let milestone = reached_value.and_then(|value| {
         let mut cumulative = 0i64;

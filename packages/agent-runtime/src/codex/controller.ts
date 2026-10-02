@@ -80,7 +80,7 @@ export class CodexController {
                 ?? (name === "asktool" ? await runtime!.askQuestions(args, internalId) : undefined)
                 ?? await delegates?.execute(name, args, name === "Task" ? await runtime!.awaitToolItem(name, args) : internalId)
                 ?? await this.extensions.get(sessionId)?.execute(name, args, internalId),
-            }), beforeComplete: signal => delegates?.beforeComplete(signal) ?? Promise.resolve(undefined), stopOwnedWork: () => delegates?.stopAll() ?? Promise.resolve() } : {});
+            }), recordUsage: request => this.host!.call("stats.recordUsage", request), beforeComplete: signal => delegates?.beforeComplete(signal) ?? Promise.resolve(undefined), stopOwnedWork: () => delegates?.stopAll() ?? Promise.resolve() } : {});
             this.sessions.set(sessionId, runtime);
           }
           if (this.host) {

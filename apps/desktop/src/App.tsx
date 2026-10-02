@@ -14,7 +14,6 @@ import {
 import i18n from "i18next";
 import { useTranslation } from "react-i18next";
 import {
-  estimateUsageCost,
   KEYBOARD_SHORTCUTS,
   builtInThemeBase,
   builtInThemeMetadata,
@@ -32,6 +31,7 @@ import {
 import { Sidebar } from "./components/Sidebar";
 import { BrandLogo } from "./components/BrandLogo";
 import { ConversationTopbar } from "./components/ConversationTopbar";
+import { CostPopover } from "./components/usage/CostPopover";
 import { WorkPanel } from "./components/workpanel/WorkPanel";
 import { isBrowserFullView, useBrowserComposerBridge } from "./lib/browser-composer-bridge";
 import { ChatSurface } from "./components/ChatSurface";
@@ -253,46 +253,8 @@ function AppShell() {
   const refreshPluginThemes = useAppStore((s) => s.refreshPluginThemes);
   const plugins = useAppStore((s) => s.plugins);
   const projectPath = useAppStore((s) => s.workspace?.path ?? null);
-  const providerModels = useAppStore((s) => s.providerModels);
-  const draftConfiguration = useAppStore((s) => s.draftConfiguration);
-  const [costSummary, setCostSummary] = useState<{ overall: number; session: number; turns: number } | null>(null);
-  const [providerAccount, setProviderAccount] = useState<any>(null);
   const [costOpen, setCostOpen] = useState(false);
-  const refreshUsageSummary = useCallback(() => {
-    const sessionId = useAppStore.getState().activeSessionId;
-    void Promise.all([api.getTokenUsageHistory({ bucket: "month" }), sessionId ? api.getTokenUsageHistory({ bucket: "month", sessionId }) : Promise.resolve(null)])
-      .then(([overall, session]) => setCostSummary({ overall: estimateUsageCost(overall, providerModels).total, session: session ? estimateUsageCost(session, providerModels).total : 0, turns: session?.totals.turnCount ?? 0 }))
-      .catch(() => setCostSummary(null));
-  }, [providerModels]);
-  useEffect(() => {
-    let alive = true;
-    void Promise.all([
-      api.getTokenUsageHistory({ bucket: "month" }),
-      activeSessionId ? api.getTokenUsageHistory({ bucket: "month", sessionId: activeSessionId }) : Promise.resolve(null),
-    ]).then(([overall, session]) => {
-      if (!alive) return;
-      const overallCost = estimateUsageCost(overall, providerModels).total;
-      const sessionCost = session ? estimateUsageCost(session, providerModels).total : 0;
-      setCostSummary({ overall: overallCost, session: sessionCost, turns: session?.totals.turnCount ?? 0 });
-    }).catch(() => { if (alive) setCostSummary(null); });
-    return () => { alive = false; };
-  }, [activeSessionId, providerModels]);
-  useEffect(() => { if (costOpen) refreshUsageSummary(); }, [costOpen, refreshUsageSummary]);
-  useEffect(() => {
-    if (!costOpen) return;
-    const providers = useAppStore.getState().providers ?? [];
-    const provider = providers.find((candidate) => candidate.id === draftConfiguration?.providerId)
-      ?? providers.find((candidate) => candidate.id === settings?.defaultProviderId);
-    if (!provider) { setProviderAccount(null); return; }
-    setProviderAccount((previous: any) => previous ? { ...previous, snapshot: { ...previous.snapshot, state: "loading" } } : { snapshot: { provider: provider.id, state: "loading" } });
-    void api.getProviderAccount({ providerId: provider.id, vendorKey: provider.vendorKey, baseUrl: provider.baseUrl ?? "" })
-      .then(setProviderAccount)
-      .catch(() => setProviderAccount((previous: any) => previous ? { ...previous, snapshot: { ...previous.snapshot, state: "stale", error: "refresh_failed" } } : { snapshot: { provider: provider.id, state: "unavailable", error: "refresh_failed" } }));
-  }, [costOpen, draftConfiguration?.providerId, settings?.defaultProviderId]);
-  useEffect(() => {
-    const off = api.onAgentEvent((envelope) => { if (envelope.sessionId === activeSessionId && ["agent_end", "turn_end", "error"].includes(envelope.event.type)) window.setTimeout(refreshUsageSummary, 150); });
-    return off;
-  }, [activeSessionId, refreshUsageSummary]);
+  const closeCost = useCallback(() => setCostOpen(false), []);
 
 
   const [searchOpen, setSearchOpen] = useState(false);
@@ -1146,14 +1108,7 @@ function AppShell() {
               this after the dock guarantees the controls win while it is open. */}
           <WindowControls contained />
 
-          {costOpen && (
-            <div className="cost-summary-popover" role="dialog" aria-label="Spend & limits">
-              <header className="cost-summary-header"><div><strong>Spend &amp; limits</strong><small>This Nexus session</small></div><button type="button" className="cost-summary-settings" onClick={() => { setCostOpen(false); useAppStore.getState().setSettingsTab("usage"); }}>Settings</button></header>
-              <section className="cost-summary-session"><div className="cost-summary-session-top"><span>Session spend</span><b>{costSummary && costSummary.session > 0 ? `$${costSummary.session.toFixed(2)}` : "—"}</b></div><div className="cost-summary-meta"><span>Catalog estimate</span><span>{costSummary?.turns ?? "—"} turns</span></div><div className="cost-summary-scope">Local Nexus session</div></section>
-              <section className="cost-summary-account"><div className="cost-summary-section-heading"><span>Provider account</span><em>{providerAccount?.snapshot?.state === "ready" ? "Updated" : "Unavailable"}</em></div><div className="cost-summary-provider"><strong>{providerAccount?.snapshot?.provider ?? "XKIRO"}</strong><span>Account data is separate from session spend.</span></div><div className="cost-summary-provider-grid"><span>Balance <b>{providerAccount?.snapshot?.wallet?.balanceUsd ? `$${providerAccount.snapshot.wallet.balanceUsd}` : "—"}</b></span><span>Limit <b>{providerAccount?.snapshot?.windows?.[0]?.remainingUsd ? `$${providerAccount.snapshot.windows[0].remainingUsd}` : "—"}</b></span><span>Reset <b>{providerAccount?.snapshot?.windows?.[0]?.resetsInSec ? `${Math.ceil(providerAccount.snapshot.windows[0].resetsInSec / 3600)}h` : "—"}</b></span></div></section>
-              <footer className="cost-summary-footer"><span>Account data is separate from session spend.</span><button type="button" onClick={() => { setCostOpen(false); useAppStore.getState().setSettingsTab("usage"); }}>View usage details <span aria-hidden="true">→</span></button></footer>
-            </div>
-          )}
+          {costOpen && <CostPopover key={activeSessionId ?? "draft"} sessionId={activeSessionId ?? undefined} onClose={closeCost} />}
 
           <SearchDialog open={searchOpen} onClose={() => setSearchOpen(false)} />
           <ToastHost />

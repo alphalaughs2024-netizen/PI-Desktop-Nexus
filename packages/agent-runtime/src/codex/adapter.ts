@@ -5,12 +5,14 @@ import type { AgentEvent, AgentEventEnvelope, AgentStatus, AskToolResolution, St
 import { ExecutionContract } from "./contract.js";
 import { CodexSessionStore, recoveryWriteError } from "./store.js";
 import { nativeEffort, nativePolicy, prepareLaunch, sessionDescriptor, type CodexConfig, type CodexLaunch } from "./config.js";
-import { needsOpenRouterBridge, startOpenRouterBridge, startProviderBridge, type ProviderBridge } from "./openrouter-bridge.js";
+import { needsOpenRouterBridge, startProviderBridge, type ProviderBridge } from "./openrouter-bridge.js";
+import { priceWireUsage } from "./billing.js";
 import { nexusToolDiagnostics, type NexusToolBridge } from "./nexus-tools.js";
 import { AppServerTransport, type CodexRpc, type NativeEvent, type NativeRequest } from "./transport.js";
 import { nativeContextUsage } from "./usage.js";
 export const CODEX_APPROVAL_TIMEOUT_MS = 120_000;
 export type CodexDependencies = {
+  recordUsage?: (request: import("@pi-desktop/shared").UsageRequest) => Promise<unknown>;
   tools?: (snapshot: () => EngineSnapshot) => Promise<NexusToolBridge>;
   steeringTimeoutMs?: number;
   launch?: (config: CodexConfig, directory: string) => Promise<CodexLaunch>;
@@ -49,6 +51,9 @@ export class CodexAdapter implements EngineAdapter {
   private disposed = false;
   private admission?: { id: string; startedAt: number };
   private turnLifetime = new AbortController();
+  private usageWrites = new Set<Promise<void>>();
+  private requestWrites = new Map<string, Promise<void>>();
+  private usageWriteFailed = false;
   private claimedTools = new Set<string>();
   private toolItemWaiters = new Set<() => void>();
   private delegationActivity?: { phase: "waiting-subagents"; since: number; subagentCount: number };
@@ -263,13 +268,32 @@ export class CodexAdapter implements EngineAdapter {
       toolBridge = await this.dependencies.tools?.(() => this.snapshot());
       this.nexusToolBridge = toolBridge;
       checkPreparation();
-      bridge = this.config.restrictedTools
+      bridge = this.config.restrictedTools || !this.dependencies.launch
         ? await startProviderBridge(this.config.provider, {
-          allowedTools: new Set(this.config.restrictedTools.map(name => "mcp__nexus__" + name)), maxRequests: this.config.maxModelRequests,
+          patchCompatibility: needsOpenRouterBridge(this.config.provider),
+          ...(this.config.restrictedTools ? { allowedTools: new Set(this.config.restrictedTools.map(name => "mcp__nexus__" + name)) } : {}), maxRequests: this.config.maxModelRequests,
           maxOutputTokens: this.config.provider.modelConfig?.maxTokens,
           onPolicyFailure: code => { void this.end("failed", code).finally(() => this.closeProcess()); },
+          usageSink: () => {
+            const turnId = this.activeTurnId();
+            if (!turnId || !this.dependencies.recordUsage) return undefined;
+            return wire => {
+              const previous = this.requestWrites.get(wire.id);
+              const write = (async () => {
+                await previous;
+                const cost = await priceWireUsage(wire, this.config.provider);
+                await this.dependencies.recordUsage!({ ...wire, ...cost, sessionId: this.config.sessionId, turnId,
+                  providerId: this.config.provider.id, modelId: this.config.provider.modelId });
+              })().catch(() => { this.usageWriteFailed = true; }).finally(() => {
+                this.usageWrites.delete(write);
+                if (wire.outcome !== "running" && this.requestWrites.get(wire.id) === write) this.requestWrites.delete(wire.id);
+              });
+              this.requestWrites.set(wire.id, write);
+              this.usageWrites.add(write);
+            };
+          },
         })
-        : !this.dependencies.launch && needsOpenRouterBridge(this.config.provider) ? await startOpenRouterBridge(this.config.provider) : undefined;
+        : undefined;
       this.providerBridge = bridge;
       checkPreparation();
       const launchConfig = { ...this.config, ...(toolBridge ? { toolBridge } : {}), ...(bridge ? { provider: { ...this.config.provider, baseUrl: bridge.url, apiKey: bridge.token, headers: undefined } } : {}) };
@@ -332,7 +356,7 @@ export class CodexAdapter implements EngineAdapter {
     if (previous) this.retiredTurns.add(previous);
     const turn = this.contract.accept(input.turnId, acceptedAt, recoveringAt);
     this.sequence = 0; this.cancelled = false; this.ending = undefined; this.turnGeneration = turn.runId; this.rawCalls.clear(); this.steeringMessages.clear(); this.steeringQueue = Promise.resolve();
-    this.turnLifetime = new AbortController(); this.claimedTools.clear();
+    this.turnLifetime = new AbortController(); this.claimedTools.clear(); this.usageWriteFailed = false;
     await this.checkpoint();
     this.event({ type: "agent_start" }); this.event({ type: "turn_start" }); this.status();
     this.starting = this.begin(input).finally(() => { this.starting = undefined; });
@@ -629,6 +653,9 @@ export class CodexAdapter implements EngineAdapter {
       }
       if (outcome === "completed" && this.cancelled) { outcome = "interrupted"; error = "Turn interrupted by user"; }
       if (outcome !== "completed") { this.turnLifetime.abort(); await this.dependencies.stopOwnedWork?.(); }
+      if (outcome !== "completed") await this.closeProcess();
+      await Promise.all([...this.usageWrites]);
+      if (this.usageWriteFailed) this.event({ type: "message_end", message: { id: "usage-warning:" + this.snapshot().turn!.id, role: "system", content: "Some request usage could not be saved. Spend totals may be incomplete.", createdAt: new Date().toISOString(), status: "complete" } });
       for (const id of [...this.approvals.keys()]) this.resolveApproval(id, "deny");
       // Emit final partial item states before the terminal signal.
       for (const item of this.snapshot().items) if (item.status === "running" && item.kind !== "approval") this.update({ ...item, status: outcome === "completed" ? item.command?.yieldedAt !== undefined ? "completed" : "failed" : outcome, completedAt: item.command?.yieldedAt ?? Date.now() });

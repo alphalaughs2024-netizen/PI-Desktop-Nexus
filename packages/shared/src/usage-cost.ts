@@ -1,4 +1,5 @@
 import type { ModelInfo, TokenUsageFacet, TokenUsageHistoryResult } from "./types.js";
+import { estimateRequestUsd } from "./usage-ledger.js";
 
 export type UsageCostRow = TokenUsageFacet & {
   cost: number | null;
@@ -21,16 +22,12 @@ export function estimateUsageCost(
 ): UsageCostEstimate {
   const catalog = Array.isArray(models) ? models : Object.values(models).flat();
   const rows = history.facets.models.map((facet) => {
-    const model = catalog.find((candidate) => candidate.modelId === facet.id || candidate.displayName === facet.label);
-    if (!model?.cost) return { ...facet, cost: null, provenance: "unpriced" as const };
-    const cost = model.cost;
-    const amount = (
-      (facet.inputTokens ?? 0) * (cost.input ?? 0) +
-      (facet.outputTokens ?? 0) * (cost.output ?? 0) +
-      (facet.cacheReadTokens ?? 0) * (cost.cacheRead ?? 0) +
-      (facet.cacheWriteTokens ?? 0) * (cost.cacheWrite ?? 0)
-    ) / 1_000_000;
-    return { ...facet, cost: amount, provenance: "catalog_estimate" as const };
+    const candidates = catalog.filter(candidate => (candidate.modelId === facet.id || candidate.displayName === facet.label) && (!facet.providerId || candidate.providerId === facet.providerId));
+    const model = candidates.length === 1 ? candidates[0] : undefined;
+    if (!model?.cost || facet.inputTokens === undefined || facet.outputTokens === undefined || facet.totalTokens === 0)
+      return { ...facet, cost: null, provenance: "unpriced" as const };
+    const amount = estimateRequestUsd({ ...facet, inputTokens: facet.inputTokens, outputTokens: facet.outputTokens }, model.cost);
+    return { ...facet, cost: amount === undefined ? null : Number(amount), provenance: amount === undefined ? "unpriced" as const : "catalog_estimate" as const };
   });
   return {
     total: rows.reduce((sum, row) => sum + (row.cost ?? 0), 0),

@@ -201,7 +201,9 @@ export class CodexSubagents {
         if (record.status !== "running" || record.stopped || this.options.currentTurn() !== turnId) throw new Error("CODEX_DELEGATION_PARENT_INACTIVE");
         return { turnId, mode: "agent" };
       } });
-    record.adapter = this.options.create ? this.options.create(child, emit, tools) : new CodexAdapter(child, emit, { tools });
+    record.adapter = this.options.create ? this.options.create(child, emit, tools) : new CodexAdapter(child, emit, { tools,
+      recordUsage: request => this.options.host.call("stats.recordUsage", { ...request, sessionId: parent.sessionId, turnId, agentName: definition.name }),
+    });
     void record.adapter.start({ turnId: delegationId, text: args.task.trim(), thinkingLevel }).catch(error => this.settle(record, record.stopped ? "stopped" : "failed", error.message));
     return result(summary(record));
   }

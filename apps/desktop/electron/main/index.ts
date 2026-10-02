@@ -32,7 +32,7 @@ import {
   currentNetworkProxy,
   testNetworkProxy,
 } from "./network-proxy";
-import { providerAccountAdapters } from "./provider-account-adapters";
+import { ProviderBillingService } from "./provider-account-adapters";
 import {
   APP_ID,
   APP_NAME,
@@ -469,6 +469,10 @@ let workPanelChatResizeActive = false;
 let workPanelChatResizeTimer: NodeJS.Timeout | null = null;
 let setWorkPanelChatWidthForWindow: ((width: number) => number) | null = null;
 let host: HostProcess | null = null;
+const providerBilling = new ProviderBillingService({ call: <T>(method: string, input: unknown) => {
+  if (!host) return Promise.reject(new Error("host unavailable"));
+  return host.call<T>(method, input);
+} });
 let sidecar: AgentSidecar | null = null;
 let mcpControl: McpControlServer | null = null;
 let agentHostBridge: AgentHostBridge | null = null;
@@ -2032,6 +2036,11 @@ async function resolveAgentRuntimeLaunch(
     ...subagentCatalog.diagnostics,
     ...subagentBindings.diagnostics,
   ];
+  await Promise.all(Object.values(subagentBindings.providers).map(async binding => {
+    const rates = await providerBilling.rates(binding.id, binding.modelId);
+    if (rates) binding.billingRates = rates;
+  }));
+  const billingRates = await providerBilling.rates(provider.id, modelId);
   if (subagentDiagnostics.length > 0) {
     logger.app("session", "warn", "subagent definitions have problems", {
       sessionId,
@@ -2082,6 +2091,7 @@ async function resolveAgentRuntimeLaunch(
         apiKey: secret.value || "",
         authKind: provider.authKind,
         apiStyle,
+        ...(billingRates ? { billingRates } : {}),
         ...optionalProviderHeaders(provider.headers),
         supportsReasoning: thinkingCapabilities.supportsReasoning,
         supportsVision: visionFromModelConfig(modelConfig),
@@ -8335,14 +8345,13 @@ function registerIpc() {
     },
   );
 
-  handle(IPC.invoke.providerAccountGet, async (input: { providerId: string; vendorKey?: string; baseUrl: string; period?: "day" | "week" | "month" }) => {
+  handle(IPC.invoke.statsGetUsageLedger, async (input?: import("@pi-desktop/shared").UsageLedgerQuery) => {
     if (!host) throw new Error("host unavailable");
-    const provider = await host.call<any>("providers.get", { id: input.providerId });
-    const secret = await host.call<{ value?: string }>("providers.getSecret", { id: input.providerId });
-    const adapter = providerAccountAdapters.find((candidate) => candidate.matches({ providerId: input.providerId, vendorKey: input.vendorKey, baseUrl: input.baseUrl })) ?? providerAccountAdapters.at(-1)!;
-    const snapshot = await adapter.getSnapshot({ providerId: input.providerId, baseUrl: input.baseUrl, apiKey: secret.value ?? "" });
-    const history = adapter.getHistory && input.period ? await adapter.getHistory({ providerId: input.providerId, baseUrl: input.baseUrl, apiKey: secret.value ?? "", period: input.period }) : undefined;
-    return { snapshot, history };
+    return host.call("stats.getUsageLedger", input ?? {});
+  });
+  handle(IPC.invoke.providerAccountGet, async (input: { providerId: string; period?: "day" | "week" | "month" }) => {
+    if (!input || input.period !== undefined && !["day", "week", "month"].includes(input.period)) throw new Error("invalid billing input");
+    return providerBilling.account(input.providerId, input.period);
   });
 
   handle(IPC.invoke.browserTabActivate, async (input: { sessionId?: string; browserId?: string } = {}) => {
