@@ -2315,8 +2315,9 @@ reasoning-level control.
   activity and subagent status must not paint beneath title-bar controls.
 - Active workflows appear in a floating glass panel (ADR 0273), collapsed by
   default at the top right below the title band. The compact strip shows the
-  workflow name, activation reason, status dot, drag grip, and disclosure arrow.
-  The closed 38px bar has fully rounded pill ends and rounded hover controls;
+  workflow name, activation reason, fluid-ribbon energy core, drag grip, and
+  disclosure arrow. The closed 352x48px bar has fully rounded pill ends,
+  two-line name/reason copy, and rounded hover controls;
   it reserves no transcript or empty-state height. Long names are ellipsized.
 - Hover or click opens the panel's stage, activation reason, optional next
   action, and icon-labelled `Inspect`, `Dismiss`, and `Settings` controls.
@@ -2333,13 +2334,24 @@ reasoning-level control.
   the title band and inside the conversation. Positioning never changes host
   workflow activation, tools, or permissions.
 - Twilight, Obsidian, Emerald, and Alpine share the same floating glass shape,
-  subtle outline, 8px blur, and controls with a transparent, untinted surface
-  that preserves the background's color and brightness. A static accent glow
-  follows only the upper-left and lower-right rim; it never fills the capsule.
-  Hover or keyboard focus adds a smoothly orbiting rim highlight (2.8s cycle),
-  fading away on leave. Reduced motion keeps the highlight stationary.
-  Reduced transparency and unsupported
+  12px fixed blur, and readable theme-aware glass. Dark scenic themes use a
+  light deep-navy translucent fill; Alpine uses pale glass. Opposing inset
+  highlights and a soft lower shadow give depth. Diagonal caustics and diffuse
+  blue light spill beyond the capsule, independently of the clipped surface.
+  Hover/focus adds a 5s orbiting light spill that fades away on leave.
+  Reduced motion keeps highlights stationary. Reduced transparency and unsupported
   blur use readable fallback surfaces. Labels and errors are localized.
+- The core observes only its displayed session's runtime state. Reported
+  reasoning gives slow organic motion; tool execution, answering, running
+  subagents, and compaction give a flowing ribbon. Preparing, recovery, model
+  waits, approval/input waits, and retry delays remain still. A completed turn
+  settles once into success; a failed turn has a stationary error treatment.
+  Interrupted/unavailable states never become a loading animation. The actual
+  activity label remains available to assistive technology, in the trigger's
+  tooltip, and in expanded details. It does not replace workflow stage data.
+  A freshly accepted turn ignores the previous turn's outcome/activity.
+  Continuous motion uses transforms/opacity on a small vector element; bloom
+  and backdrop blur strengths never animate. SVG IDs are unique per instance.
 - Project session rows retain a 4px gap between adjacent child sessions. The
   gap preserves separate touch targets and prevents an active row from merging
   visually with its sibling in scenic and standard themes.

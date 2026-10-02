@@ -8,7 +8,8 @@
 
 Replace the permanent full-width workflow banner with a collapsed floating
 glass pill, initially at the top right below the conversation title band.
-The 38px closed bar has 19px end radii and pill-shaped hover controls; expanded
+The 48px closed bar has 24px end radii, a fluid ribbon, two-line name/reason
+copy, and pill-shaped hover controls; expanded
 details retain a compact rounded panel.
 Hover reveals compact details; clicking pins them open. Outside click, Escape,
 and focus leaving collapse the panel. Inspect, session-level dismissal, and
@@ -22,11 +23,21 @@ workflow, project, or prompt data and never alters host-owned activation.
 Unavailable storage defaults to the top right. Container and widget size
 observation keep the panel reachable when its contents or the window resize.
 
-Use one transparent, untinted surface with an 8px backdrop blur, a subtle edge,
-and no colored fill or sheen so the scenery retains its brightness. A masked
-accent rim glows at the upper-left and lower-right diagonals, without filling
-the capsule or changing its geometry. Hover/focus adds a 2.8s orbiting rim
-highlight with a short fade; reduced motion keeps that highlight stationary.
+Use a bounded translucent glass surface with a fixed 12px backdrop blur,
+opposing reflections, and a soft lower shadow. Dark scenic themes use lightly
+tinted navy glass; Alpine uses pale glass. A separate pointer-transparent SVG
+owns diagonal caustics and diffuse light spill outside the surface's clipping
+boundary. Hover/focus adds a 5s orbiting bloom; reduced motion keeps it still.
+The user selected an original blue-violet fluid ribbon after comparing three
+procedural SVG cores, then requested stronger bloom and visual depth.
+
+Observe the displayed session's engine progress and terminal results directly,
+without changing host-owned operations. Workflow activation is not execution
+activity. Quiet waits stay still, actual reasoning/execution animate, completion
+settles once, and error stays stationary. New runs ignore stale terminal or
+reasoning snapshots. All core motion uses transforms/opacity with fixed blur;
+the SVG light-spill orbit uses a bounded dash-offset animation. No new package,
+downloaded visual asset, host channel, or global status projection is introduced.
 Use a smooth reversible disclosure, theme-aware
 text and controls, reduced-motion/reduced-transparency support, and localized
 errors. Hidden contents are inert; Escape restores disclosure focus. Ignore
@@ -59,3 +70,16 @@ Visual acceptance by the user remains pending.
 The untinted revision passed the four-theme rendered checks and build. The
 hover rim's computed angle advanced during the loop, faded out on leave, and
 reported no animation under reduced motion.
+That untinted rim treatment was superseded by the selected fluid-ribbon/glass
+revision above. Its validation is recorded separately when complete.
+
+The selected ribbon revision passed 13 focused state/position/regression checks,
+the changed scenic-theme source check, desktop typecheck, and the Electron build.
+Rendered checks used the actual component with a mocked host/store: four scenic
+themes at 1280x800 and a 375px narrow viewport. The closed pill is 352x48;
+the default expanded panel is about 352x187, with intermediate expansion frames.
+Pixel comparisons confirmed moving reasoning/tool states and stationary waits,
+settled success, and error. Session isolation, composer clearance and draft,
+Inspect, hover, dragging, keyboard focus/Escape, inert contents, reduced motion,
+dismissal rejection/success, long titles, and Settings passed without page errors.
+These fixture checks do not replace native-app testing or user visual acceptance.

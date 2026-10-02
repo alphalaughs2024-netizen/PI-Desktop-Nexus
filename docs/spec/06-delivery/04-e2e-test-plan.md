@@ -11178,12 +11178,23 @@ When an active workflow is shown, verify its compact floating glass strip and
 expanded stage/actions in System, Light, Dark, and every scenic theme. Keep its
 outline subtle and its text readable, with no permanent full-width banner or
 unbounded floating text. Its position must remain reachable below title chrome.
-The capsule has no tint or sheen: scenery keeps its color and brightness through
-an 8px blur. Its upper-left and lower-right rim glow without covering the
-contents or altering the capsule's size. Hover/focus adds a traveling rim glow
-that fades away on leave and is stationary with reduced motion enabled.
-Reduced transparency retains the
-readable opaque fallback.
+The 352x48px capsule has a fluid ribbon, readable translucent glass with a fixed
+12px blur, restrained opposing reflections, and diffuse light beyond the
+upper-left/lower-right rim. Hover/focus adds an orbiting light spill; neither
+glow nor changing core states move the controls or cover the composer.
+Reduced transparency retains the readable opaque fallback.
+
+With the same session selected, verify idle, reported reasoning, running tools,
+answer streaming, model waits, approval/input waits, completed, failed, and
+interrupted transitions. Only reported reasoning and actual execution animate
+continuously. Success settles once and error stays stationary. Check the
+localized activity label in expanded details and the accessible status/tooltip.
+Start another turn before its first status: the old turn's reasoning/outcome
+must not leak into the new core. Run another session independently and verify
+its events do not animate this pill. Reduced motion stops both the core and
+hover orbit. Inspect content scrolls within the available conversation height;
+the external light layers remain pointer-transparent and do not clip or
+interfere with drag, dismissal, Settings, typing, or keyboard focus.
 
 On the Scenic themes page, verify every preview card's name and description
 remain legible while each of Twilight, Alpine, Obsidian, and Emerald is active.

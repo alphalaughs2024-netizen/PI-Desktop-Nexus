@@ -1,7 +1,7 @@
 # Nexus Energy Pill Study
 
 - Date: 2026-10-02
-- Status: Visual choice pending; no application implementation yet
+- Status: Fluid ribbon selected; application trial implementation underway
 - Branch: `codex/energy-pill-20261002`
 
 ## Existing architecture
@@ -61,8 +61,9 @@ because the workflow is active. Reduced motion disables continuous animation.
 
 ## Next gate
 
-Ask the user to choose the core and glass direction from the animated preview.
-Only then implement the chosen design, update normative component and E2E
-contracts, and validate real session transitions, expanded/collapsed geometry,
-dragging, keyboard focus, reduced motion, all four themes, and composer clearance.
+The user chose Fluid ribbon and requested stronger glow and glass depth. The
+trial reuses session-keyed store selectors, the existing disclosure/drag/actions,
+and native CSS/SVG. Normative component/E2E contracts describe the implemented
+behavior. Validate session transitions, expanded/collapsed geometry, dragging,
+keyboard focus, reduced motion, all four themes, and composer clearance.
 Keep the result unmerged until visual testing is accepted.

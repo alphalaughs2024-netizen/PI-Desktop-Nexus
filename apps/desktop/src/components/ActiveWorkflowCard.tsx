@@ -1,9 +1,11 @@
-import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 import { Activity, ChevronDown, Compass, GripVertical, RotateCcw, Settings, SquareCode, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { WorkflowSessionStatus } from "@pi-desktop/shared";
 import { api } from "../lib/api";
 import { useAppStore } from "../stores/app-store";
+import { AgentEnergyCore, WorkflowPillLight } from "./AgentEnergyCore";
+import { workflowAgentActivity } from "../lib/workflow-agent-activity";
 import {
   DEFAULT_WORKFLOW_POSITION, readWorkflowWidgetPosition, rememberWorkflowWidgetPosition,
   workflowWidgetBounds, workflowWidgetPoint, workflowWidgetPosition,
@@ -14,6 +16,12 @@ export function ActiveWorkflowCard({ sessionId }: { sessionId?: string | null })
   const { t } = useTranslation();
   const panelId = useId();
   const bodyId = useId();
+  const agentStatus = useAppStore(state => sessionId ? state.agentStatuses[sessionId] : undefined);
+  const running = useAppStore(state => sessionId ? state.runningSessions[sessionId] ?? state.agentStatuses[sessionId]?.isRunning ?? false : false);
+  const activeTurnId = useAppStore(state => sessionId ? state.activeTurnIds[sessionId] : undefined);
+  const result = useAppStore(state => sessionId ? state.latestTurnResults[sessionId] : undefined);
+  const activity = workflowAgentActivity({ running, status: agentStatus, activeTurnId, result });
+  const activityLabel = t(activity.phase === "ready" ? "status.ready" : `chat.execution.${activity.phase}`);
   const [status, setStatus] = useState<WorkflowSessionStatus | null>(null);
   const [loadedSession, setLoadedSession] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -24,6 +32,7 @@ export function ActiveWorkflowCard({ sessionId }: { sessionId?: string | null })
   const [position, setPosition] = useState(readWorkflowWidgetPosition);
   const [bounds, setBounds] = useState<WorkflowWidgetBounds | null>(null);
   const [dragging, setDragging] = useState(false);
+  const [maxHeight, setMaxHeight] = useState<number>();
   const cardRef = useRef<HTMLElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const pinnedRef = useRef(false);
@@ -86,6 +95,7 @@ export function ActiveWorkflowCard({ sessionId }: { sessionId?: string | null })
     if (!card || !container) return;
     const measure = () => {
       const toolbar = parseFloat(getComputedStyle(container).getPropertyValue("--ds-toolbar-height")) || 46;
+      setMaxHeight(Math.max(0, container.clientHeight - toolbar - 24));
       const next = workflowWidgetBounds(container.clientWidth, container.clientHeight, card.offsetWidth, card.offsetHeight, toolbar);
       setBounds((previous) => previous && Object.keys(next).every(
         (key) => previous[key as keyof WorkflowWidgetBounds] === next[key as keyof WorkflowWidgetBounds],
@@ -152,9 +162,10 @@ export function ActiveWorkflowCard({ sessionId }: { sessionId?: string | null })
   };
   return (
     <aside
-      ref={cardRef} className="active-workflow-card" data-open={open} data-dragging={dragging}
+      ref={cardRef} className="active-workflow-card" data-open={open} data-dragging={dragging} data-agent-state={activity.state}
       aria-label={t("workflow.activeLabel")}
-      style={point ? { left: point.left, top: point.top, right: "auto" } : undefined}
+      style={{ ...(point ? { left: point.left, top: point.top, right: "auto" } : {}),
+        ...(maxHeight !== undefined ? { "--workflow-max-height": `${maxHeight}px` } : {}) } as CSSProperties}
       onPointerEnter={(event) => {
         clearHover();
         if (event.pointerType === "mouse" && !dragRef.current) hoverTimer.current = setTimeout(() => setOpen(true), 180);
@@ -165,6 +176,9 @@ export function ActiveWorkflowCard({ sessionId }: { sessionId?: string | null })
       }}
       onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node)) close(); }}
     >
+      <WorkflowPillLight />
+      <span className="sr-only" role="status">{activityLabel}</span>
+      <div className="active-workflow-surface">
       <div className="active-workflow-heading">
         <button type="button" className="active-workflow-grip" title={t("workflow.move")} aria-label={t("workflow.move")}
           onPointerDown={(event) => {
@@ -214,21 +228,24 @@ export function ActiveWorkflowCard({ sessionId }: { sessionId?: string | null })
             rememberWorkflowWidgetPosition(next);
           }}
         ><GripVertical size={14} aria-hidden /></button>
-        <button ref={triggerRef} type="button" className="active-workflow-trigger" aria-expanded={open} aria-controls={panelId} title={primary.name}
+        <button ref={triggerRef} type="button" className="active-workflow-trigger" aria-expanded={open} aria-controls={panelId} title={`${primary.name} · ${activityLabel}`}
           onClick={() => {
             clearHover();
             if (open && pinnedRef.current) close();
             else { pinnedRef.current = true; setOpen(true); }
           }}
         >
-          <span className="active-workflow-dot" aria-hidden />
-          <span className="active-workflow-label">{label}</span>
-          <span className="active-workflow-summary" aria-hidden>· {reason}</span>
+          <AgentEnergyCore state={activity.state} turnId={activity.turnId} />
+          <span className="active-workflow-label-group">
+            <span className="active-workflow-label">{label}</span>
+            <span className="active-workflow-summary" aria-hidden>{reason}</span>
+          </span>
           <ChevronDown className="active-workflow-chevron" size={14} aria-hidden />
         </button>
       </div>
       <div className="active-workflow-disclosure" data-open={open}>
         <div id={panelId} className="active-workflow-panel" inert={!open} aria-hidden={!open}>
+          <p className="active-workflow-runtime" aria-hidden="true">{activityLabel}</p>
           <dl className="active-workflow-copy">
             <div><Activity size={14} aria-hidden /><dt>{t("workflow.stage")}</dt><dd>{primary.stage.replaceAll("_", " ")}</dd></div>
             <div><Compass size={14} aria-hidden /><dt>{t("workflow.activated")}</dt><dd>{reason}</dd></div>
@@ -254,6 +271,7 @@ export function ActiveWorkflowCard({ sessionId }: { sessionId?: string | null })
             </div>
           ) : null}
         </div>
+      </div>
       </div>
     </aside>
   );

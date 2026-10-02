@@ -69,8 +69,8 @@ test("Twilight maps the persisted blur strengths only to its backdrop image", ()
 
 test("scenic themes keep the image bright beneath shared glass surfaces", () => {
   assert.match(scenicStyles, /:root\[data-scenic-theme\] :is\(\.app-shell, \.main-pane\) \{ background: transparent; \}/);
-  assert.match(scenicStyles, /:root\[data-scenic-theme\] \.active-workflow-card \{[^}]*background: transparent;[^}]*backdrop-filter: blur\(8px\)/);
-  assert.match(scenicStyles, /prefers-reduced-transparency[\s\S]*?\.active-workflow-card \{[\s\S]*?background: var\(--ds-bg-elevated-opaque\)/);
+  assert.match(scenicStyles, /:root\[data-scenic-theme\] \.active-workflow-card \{[^}]*--workflow-fill: rgba\(5, 18, 39, \.35\)/);
+  assert.match(scenicStyles, /prefers-reduced-transparency[\s\S]*?\.active-workflow-surface \{[\s\S]*?background: var\(--ds-bg-elevated-opaque\)/);
   for (const sheet of [twilightStyles, alpineStyles, obsidianStyles, emeraldStyles]) {
     assert.match(sheet, /\.app-scenic-backdrop::after \{[\s\S]*?background: transparent;/);
     assert.match(sheet, /--scenic-chat-glass-fill:/);
