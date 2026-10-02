@@ -12282,3 +12282,18 @@ or delete caches, profiles or earlier recovery files to hide this condition.
 - **Validation**: Focused runtime/renderer tests, real-component browser checks,
   local provider fixtures through actual execution processes, typecheck/build.
   Full repository E2E suites remain unrun unless explicitly requested.
+
+### E2E-Nexus-Read-Scoped-Tasks: concurrent inspection delegates (ADR 0281)
+
+- **Steps**: Start two configured delegates with `ownership.access: read`,
+  including a preset that declares Bash. Inspect TaskList and each child
+  execution policy. Attempt a read-scoped preset that declares only Write.
+  Start a write-scoped delegate while a read-scoped delegate is running.
+- **Expected**: Both read tasks start together, each reports only Read/Glob/
+  Grep/ProcessRead or browser inspection tools, and neither starts shell,
+  write/edit, process-start or page-interaction calls. The Write-only read
+  request is refused with an unavailable-tool result. The write task is
+  admitted because read work does not claim the mutation slot; a second
+  overlapping write remains refused. The saved preset document is unchanged.
+- **Validation**: Focused subagent admission tests and runtime typecheck. Full
+  repository E2E suites remain unrun unless explicitly requested.

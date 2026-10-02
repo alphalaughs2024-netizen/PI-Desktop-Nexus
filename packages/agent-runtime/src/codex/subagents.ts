@@ -11,6 +11,14 @@ import { CODEX_TOOL_TIMEOUT_SECONDS, type CodexConfig } from "./config.js";
 import { CodexSessionStore } from "./store.js";
 import { nexusToolCatalog, startNexusToolBridge, type NexusTool, type NexusToolResult } from "./nexus-tools.js";
 
+/** Tools safe to run concurrently when a Task explicitly requests read access. */
+export const READ_DELEGATE_TOOLS = new Set<string>([
+  "Read", "Glob", "Grep", "ProcessRead", "BrowserPreview",
+  "browser_capabilities", "browser_list_tabs", "browser_open", "browser_navigate",
+  "browser_snapshot", "browser_screenshot", "browser_wait", "browser_console",
+  "browser_page", "browser_set_viewport",
+]);
+
 type Summary = {
   delegationId: string; childSessionId: string; turnId: string; parentToolCallId: string;
   agent: string; modelId: string; providerId: string; thinkingLevel?: string;
@@ -66,7 +74,7 @@ export class CodexSubagents {
     if (!this.options.definitions.length) return [];
     const ids = { type: "array", items: { type: "string" } };
     return [
-      { name: "Task", description: "Start a configured subagent in the background. Saved provider/model and tools are fixed; omit model overrides. Children use Nexus host tools, not the parent's native shell sandbox: command results can differ between them. Bash permits mutation under host policy. Ownership paths/access schedule work, not filesystem ACLs; a requested read scope cannot make Bash read-only. Read-only tasks may overlap; one mutating delegate runs per workspace. Converge with TaskWait and compare actual tool outputs before disputing a report. Available presets:\n" + this.options.definitions.map(definition => definition.name + ": " + definition.description + " Tools: " + (definition.inheritTools ? "inherit" : definition.tools.join(", "))).join("\n"), parameters: objectSchema({ agent: { type: "string" }, task: { type: "string" }, description: { type: "string" }, ownership: objectSchema({ access: { type: "string", enum: ["read", "write"] }, paths: ids }) }, ["agent", "task"]) },
+      { name: "Task", description: "Start a configured subagent in the background. Saved provider/model and tools are fixed; omit model overrides. Children use Nexus host tools, not the parent's native shell sandbox. An explicit ownership.access=read request restricts the child to Read, Glob, Grep, ProcessRead and browser inspection tools so read tasks can overlap; shell, writes, process starts and page interaction are unavailable for that invocation. Write-capable tasks use host policy and one mutating delegate runs per workspace. Converge with TaskWait and compare actual tool outputs before disputing a report. Available presets:\n" + this.options.definitions.map(definition => definition.name + ": " + definition.description + " Tools: " + (definition.inheritTools ? "inherit" : definition.tools.join(", "))).join("\n"), parameters: objectSchema({ agent: { type: "string" }, task: { type: "string" }, description: { type: "string" }, ownership: objectSchema({ access: { type: "string", enum: ["read", "write"] }, paths: ids }) }, ["agent", "task"]) },
       { name: "TaskWait", description: "Read or await child reports (default 60 seconds, capped at 180 seconds per call). A timeout preserves running workers and returns their current status; call TaskWait again with the same IDs to continue waiting. Reports also reach the parent when it becomes idle.", parameters: objectSchema({ delegationIds: ids, mode: { type: "string", enum: ["all", "any"] }, minCompleted: { type: "integer", minimum: 1 }, timeoutSeconds: { type: "number", minimum: 1, maximum: MAX_TASK_WAIT_SECONDS } }) },
       { name: "TaskList", description: "List this chat's delegations and exact provider/model identities.", parameters: objectSchema() },
       { name: "TaskStop", description: "Stop selected running delegates, preserving partial results. Omit ids to stop all running delegates.", parameters: objectSchema({ delegationIds: ids }) },
@@ -155,11 +163,14 @@ export class CodexSubagents {
     if (running.length >= MAX_SUBAGENT_CONCURRENCY || this.records.size >= 100 && ![...this.records.values()].some(record => record.status !== "running" && record.delivered)) return result("Delegation limit reached. Converge with TaskWait or stop existing work.", true);
     const listed = await this.options.host.call<{ tools: NexusTool[] }>("tools.list", { sessionId: this.options.parent.sessionId });
     const available = nexusToolCatalog([...(listed.tools ?? []), ...(this.options.tools ?? [])], true).filter(tool => !CONTROL_TOOLS.has(tool.name));
-    const allowed = available.filter(tool => definition.inheritTools ? true : definition.tools.includes(tool.name)).map(tool => tool.name);
-    const missing = definition.inheritTools ? [] : definition.tools.filter(name => !allowed.includes(name));
+    const declared = available.filter(tool => definition.inheritTools ? true : definition.tools.includes(tool.name)).map(tool => tool.name);
+    const requestedOwnership = args.ownership;
+    const readRequested = requestedOwnership && typeof requestedOwnership === "object" && requestedOwnership.access === "read";
+    const allowed = (readRequested ? declared.filter(name => READ_DELEGATE_TOOLS.has(name)) : declared);
+    const missing = readRequested || definition.inheritTools ? [] : definition.tools.filter(name => !allowed.includes(name));
     if (missing.length || !allowed.length) return result("Preset tools unavailable: " + (missing.join(", ") || "empty tool set"), true);
-    const mutating = !!definition.inheritTools || allowed.some(name => !["Read", "Glob", "Grep", "ProcessRead", "BrowserPreview"].includes(name));
-    const ownership = normalizeDelegationOwnership(args.ownership ?? { access: mutating ? "write" : "read" }, mutating);
+    const mutating = !readRequested && (!!definition.inheritTools || allowed.some(name => !READ_DELEGATE_TOOLS.has(name)));
+    const ownership = normalizeDelegationOwnership(readRequested ? { ...args.ownership, access: "read" } : args.ownership ?? { access: mutating ? "write" : "read" }, mutating);
     if (running.some(record => concurrentMutationConflict(record.ownership, ownership))) return result("Concurrent mutating delegates share one workspace and are refused. Wait or use separate managed worktrees in separate chats.", true);
     if (this.options.currentTurn() !== turnId) return result("Parent turn changed during delegation admission", true);
     const delegationId = randomUUID();
@@ -182,7 +193,7 @@ export class CodexSubagents {
       managedPreviewAvailable: ["ProcessStart", "ProcessRead", "ProcessStop", "PreviewServer"].every(name => allowed.includes(name)),
       provider: { ...provider, modelConfig: provider.modelConfig && definition.maxTokens ? { ...provider.modelConfig, maxTokens: definition.maxTokens } : provider.modelConfig },
       developerInstructions: [parent.developerInstructions, "Workspace: " + parent.workspace, "Scratch: " + (parent.scratchDir ?? parent.workspace), definition.prompt,
-        "You are a configured Nexus subagent. Complete only the supplied brief; use only your declared Nexus MCP tools, including files and shell. Your Bash uses Nexus host policy, not the parent's native shell sandbox. Ownership paths are task scope, not filesystem ACLs. Do not delegate or ask the user. Report exact commands, exit status and observed results; distinguish launch failure from failing tests."].filter(Boolean).join("\n\n") };
+        "You are a configured Nexus subagent. Complete only the supplied brief; use only the tools in your execution policy. A read-scoped task is inspection-only: do not write files, run shell commands, start processes or interact with pages beyond the listed browser inspection tools. Ownership paths are task scope, not filesystem ACLs. Do not delegate or ask the user. Report exact observed results; distinguish launch failure from failing tests."].filter(Boolean).join("\n\n") };
     const emit = (event: AgentEventEnvelope) => {
       if (record.status !== "running") return;
       if (["message_start", "message_update", "message_end", "tool_start", "tool_update", "tool_end"].includes(event.event.type)) {

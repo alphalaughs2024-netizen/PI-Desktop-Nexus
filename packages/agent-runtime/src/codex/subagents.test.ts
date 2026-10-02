@@ -97,11 +97,12 @@ it("keeps live reasoning, commentary and final output inside the owning Task", a
   for (const event of f.events) expect(event).toMatchObject({ parentToolCallId: "task-owner", event: { message: { parentToolCallId: "task-owner", agentName: "reviewer" } } });
   await f.manager.stopAll();
 });
-it("reports actual shell policy and advisory ownership without changing tool rights", async () => {
+it("enforces explicit read scope without changing the saved preset", async () => {
   const f = await fixture(); f.definition.tools = ["Read", "Bash"];
   const started = await f.manager.execute("Task", { agent: "reviewer", task: "Inspect", ownership: { access: "read", paths: ["src"] } }, "t");
-  expect(started?.content).toMatchObject({ ownership: { access: "write" }, executionPolicy: { tools: ["Read", "Bash"], shell: "nexus-host", permissionScope: "ask", parentPermissionMode: "auto", ownershipEnforcement: "scheduling-only" } });
-  expect(f.manager.catalog()[0].description).toContain("not the parent's native shell sandbox");
+  expect(started?.content).toMatchObject({ ownership: { access: "read" }, executionPolicy: { tools: ["Read"], shell: "unavailable", permissionScope: "ask", parentPermissionMode: "auto", ownershipEnforcement: "scheduling-only" } });
+  expect(f.children[0].config.restrictedTools).toEqual(["Read"]);
+  expect(f.manager.catalog()[0].description).toContain("explicit ownership.access=read");
   await f.manager.stopAll();
 });
 it("delivers a declared browser screenshot as image input with parent execution identity", async () => {
@@ -131,12 +132,16 @@ it("refuses model overrides, missing pins and unavailable tools without launchin
   expect((await f.manager.execute("Task", { agent: "reviewer", task: "Review" }, "t"))?.ok).toBe(false);
   expect(f.children).toHaveLength(0);
 });
-it("inherits the selected chat model when unpinned and refuses concurrent writers", async () => {
-  const f = await fixture(); f.definition.model = undefined; f.definition.tools = ["Write"];
-  const first = await f.manager.execute("Task", { agent: "reviewer", task: "Write", ownership: { access: "read", paths: ["a"] } }, "t1");
+it("inherits the selected chat model and allows concurrent read tasks while refusing writes", async () => {
+  const f = await fixture(); f.definition.model = undefined; f.definition.tools = ["Read", "Bash"];
+  const first = await f.manager.execute("Task", { agent: "reviewer", task: "Inspect", ownership: { access: "read", paths: ["a"] } }, "t1");
   expect(first?.ok).toBe(true); expect(f.children[0].config.provider.id).toBe("parent-provider");
-  expect((await f.manager.execute("Task", { agent: "reviewer", task: "Write", ownership: { access: "write", paths: ["b"] } }, "t2"))?.ok).toBe(false);
-  await f.manager.stopAll();
+  const second = await f.manager.execute("Task", { agent: "reviewer", task: "Inspect", ownership: { access: "read", paths: ["b"] } }, "t2");
+  expect(second?.ok).toBe(true); expect(f.children[1].config.restrictedTools).toEqual(["Read"]);
+  f.definition.tools = ["Write"];
+  expect((await f.manager.execute("Task", { agent: "reviewer", task: "Write", ownership: { access: "read", paths: ["c"] } }, "t3"))?.ok).toBe(false);
+  f.children[0].finish(); f.children[1].finish();
+  await f.manager.execute("TaskWait", { delegationIds: [(first!.content as any).delegationId, (second!.content as any).delegationId] }, "wait");
 });
 it("keeps idle parent work open until reports can be delivered and delivers each once", async () => {
   const f = await fixture(); await f.manager.execute("Task", { agent: "reviewer", task: "Review" }, "task");

@@ -481,6 +481,13 @@ not a capability grant, path allowlist, or substitute for host authorization.
   validation. `TaskWait` reports do not approve a plan, merge changes, or
   bypass any permission or confirmation.
 
+An explicit `ownership.access: read` request is enforced at delegation
+admission. Nexus intersects the preset's declared tools with `Read`, `Glob`,
+`Grep`, `ProcessRead`, and browser inspection tools. Shell, write/edit,
+process-start, and browser page interaction tools are removed for that
+invocation. If no inspection tool remains, the task is refused. The saved
+preset is unchanged, and the child report records the effective tool list.
+
 ### 5c. Author-owned workflow packages (ADR 0225)
 
 Author-owned workflow packages are versioned guidance data, not an extension
