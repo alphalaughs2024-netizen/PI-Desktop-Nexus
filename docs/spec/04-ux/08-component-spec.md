@@ -2254,7 +2254,7 @@ reasoning-level control.
 - Padding: px-4 py-3 inner textarea
 - Font: text-sm for Agent, Plan, and Goal; mode changes semantics and tool
   controls, not the typography
-- The minimalist composer trial (ADR 0271; acceptance pending) combines
+- The accepted minimalist composer (ADR 0271) combines
   Agent/Plan/Goal and permission in one flexible control, such as `Agent · Ask`.
   Its menu contains separate mode and permission radio groups, supports
   arrow/Home/End navigation, Escape focus restore, Tab and outside dismissal.

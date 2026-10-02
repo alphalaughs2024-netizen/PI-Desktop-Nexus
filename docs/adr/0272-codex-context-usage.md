@@ -1,7 +1,7 @@
 # ADR 0272: Codex Context Usage
 
 - Date: 2026-10-02
-- Status: Fix implemented; app verification pending
+- Status: Accepted by the user for local main on 2026-10-02
 - Scope: Codex execution metadata and composer context accounting
 
 ## Evidence
@@ -32,9 +32,11 @@ Targeted native normalization, adapter lifecycle/persistence, generation
 ownership and composer projection tests cover actual reported counts, absent
 fields, malformed reports, reload and cache/reasoning accounting. Build and
 typecheck the corrected runtime and desktop. Full local E2E suites remain
-unrun. User testing precedes merging the composer trial.
+unrun. The user approved merging the composer and usage fixes on 2026-10-02.
 
 The focused runtime suites passed 75 checks; desktop context/projection checks
 passed, as did runtime/shared and desktop typechecks and the desktop build.
-The isolated corrected sidecar passed its startup handshake. Actual app usage
-remains pending a fresh launch and one new response.
+The isolated corrected sidecar passed its startup handshake. The test app was
+relaunched with that runtime and loaded successfully before user approval.
+The latest test-session snapshot retained a reported 17,969-token request
+against a 950,000-token native window, confirming live usage persistence.

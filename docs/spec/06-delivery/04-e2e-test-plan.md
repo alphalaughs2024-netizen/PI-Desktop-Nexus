@@ -12096,7 +12096,8 @@ or delete caches, profiles or earlier recovery files to hide this condition.
   states, draft behavior, theme materials and compact Brain selector remain.
 - **Validation**: Actual-component geometry/interaction inspection, focused
   regression tests, desktop typecheck/build. Full local E2E suites require an
-  explicit request. This trial requires user testing before merge.
+  explicit request. The user approved this implementation for local main
+  on 2026-10-02 after testing.
 
 ### E2E-Codex-Context-Usage: Native request accounting (ADR 0272)
 

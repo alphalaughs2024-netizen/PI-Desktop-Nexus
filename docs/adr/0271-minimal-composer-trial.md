@@ -1,7 +1,7 @@
 # ADR 0271: Minimal Composer Trial
 
 - Date: 2026-10-02
-- Status: User-approved trial; visual acceptance and merge pending
+- Status: Accepted by the user for local main on 2026-10-02
 - Scope: Composer presentation and action organization
 
 ## Decision
@@ -26,8 +26,8 @@ group occupies the first row and the right group the second.
 Inspect the actual Composer across themes and widths, keyboard/menu behavior,
 mode selection, permissions, enhancement/Undo, reduced motion and native
 composer contracts. Run focused regressions and desktop typecheck/build.
-Full local E2E suites are not authorized. Keep this branch unmerged until the
-user tests and accepts it; publishing requires separate authorization.
+Full local E2E suites are not authorized. The user approved merging after the
+test launches on 2026-10-02; publishing requires separate authorization.
 
 The actual-component inspection passed 18 theme/viewport combinations at
 1280px, 560px and 375px, including menu bounds, mock file-picker routing,
