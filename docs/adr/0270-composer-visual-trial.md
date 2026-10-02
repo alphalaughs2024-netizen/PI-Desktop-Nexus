@@ -1,7 +1,7 @@
 # ADR 0270: Composer Visual Trial
 
 - Date: 2026-10-02
-- Status: User-approved trial; adoption and merge pending visual acceptance
+- Status: Accepted by the user for local main on 2026-10-02
 - Scope: Composer presentation only
 
 ## Decision
@@ -34,15 +34,16 @@ context with model/reasoning. Put enhancement and its conditional Undo in a
 keyboard-accessible More actions menu. Keep voice and submission visible with
 extra submission spacing. At narrow widths give model/context/actions their
 own full-width row above mode/permission and voice/submission. Floating browser
-surface measurement includes the new menu. This remains an unmerged trial.
+surface measurement includes the new menu. The user approved merging this version
+before a separate minimalist composer trial.
 Below 460px, non-Ask policies give the left controls a full row and move voice
 and submission beneath them, keeping complete policy names readable.
 
 Inspect the real Composer at desktop and narrow sizes across standard and
 scenic themes, with empty/multiline drafts, focus, menus and reduced motion.
 Run focused input/model/permission/send checks and the desktop typecheck/build.
-Local E2E suites require a separate request. Leave this request committed in
-its own worktree, unmerged and unpushed, for the user's comparison.
+Local E2E suites require a separate request. User testing preceded acceptance;
+remote publishing remains separately authorized.
 
 The 2026-10-02 renderer inspection passed all six themes at 1280px, 560px and
 375px, control geometry, focus stability, seven-line scrolling, menu bounds,

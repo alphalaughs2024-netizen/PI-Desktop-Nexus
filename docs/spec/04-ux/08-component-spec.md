@@ -2241,7 +2241,7 @@ reasoning-level control.
   fills, respectively. Their composer materials do not change the
   toolbar controls, width, or the other themes.
 - Elevation: 20px radius with the existing theme shadow. The user-approved
-  composer trial (ADR 0270) amends D297 with an inset, theme-colored hairline
+  composer treatment (ADR 0270) amends D297 with an inset, theme-colored hairline
   that strengthens on focus without changing layout;
   the docked transcript fade is outside the composer shell
 - The solid/near-opaque surface uses no `backdrop-filter`; focus-within changes
